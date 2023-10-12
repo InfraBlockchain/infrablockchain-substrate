@@ -21,7 +21,7 @@ sp-consensus-babe = { path = "../../../substrate/primitives/consensus/babe" }
 sp-authority-discovery = { path = "../../../substrate/primitives/authority-discovery" }
 sc-client-api = { path = "../../../substrate/client/api" }
 sc-transaction-pool-api = { path = "../../../substrate/client/transaction-pool/api" }
-smallvec = "1.8.0"
+smallvec = "1.11.1"
 substrate-prometheus-endpoint = { path = "../../../substrate/utils/prometheus" }
 thiserror = "1.0.48"
 async-trait = "0.1.57"
