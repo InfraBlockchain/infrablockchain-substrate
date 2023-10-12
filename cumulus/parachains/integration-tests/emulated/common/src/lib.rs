@@ -1,0 +1,305 @@
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: Apache-2.0
+
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+pub mod constants;
+pub mod impls;
+pub mod xcm_helpers;
+
+use constants::{
+	accounts::{ALICE, BOB},
+	asset_hub_rococo, asset_hub_westend, bridge_hub_rococo, penpal, rococo, westend,
+};
+use impls::{RococoWococoMessageHandler, WococoRococoMessageHandler};
+
+// Substrate
+use frame_support::traits::OnInitialize;
+
+// Cumulus
+use xcm_emulator::{
+	decl_test_bridges, decl_test_networks, decl_test_parachains, decl_test_relay_chains,
+	decl_test_sender_receiver_accounts_parameter_types, DefaultMessageProcessor,
+};
+
+decl_test_relay_chains! {
+	#[api_version(7)]
+	pub struct Westend {
+		genesis = westend::genesis(),
+		on_init = (),
+		runtime = westend_runtime,
+		core = {
+			MessageProcessor: DefaultMessageProcessor<Westend>,
+			SovereignAccountOf: westend_runtime::xcm_config::LocationConverter, //TODO: rename to SovereignAccountOf,
+		},
+		pallets = {
+			XcmPallet: westend_runtime::XcmPallet,
+			Sudo: westend_runtime::Sudo,
+			Balances: westend_runtime::Balances,
+			Treasury: westend_runtime::Treasury,
+			AssetRate: westend_runtime::AssetRate,
+		}
+	},
+	#[api_version(7)]
+	pub struct Rococo {
+		genesis = rococo::genesis(),
+		on_init = (),
+		runtime = rococo_runtime,
+		core = {
+			MessageProcessor: DefaultMessageProcessor<Rococo>,
+			SovereignAccountOf: rococo_runtime::xcm_config::LocationConverter, //TODO: rename to SovereignAccountOf,
+		},
+		pallets = {
+			XcmPallet: rococo_runtime::XcmPallet,
+			Sudo: rococo_runtime::Sudo,
+			Balances: rococo_runtime::Balances,
+		}
+	},
+	#[api_version(7)]
+	pub struct Wococo {
+		genesis = rococo::genesis(),
+		on_init = (),
+		runtime = rococo_runtime,
+		core = {
+			MessageProcessor: DefaultMessageProcessor<Wococo>,
+			SovereignAccountOf: rococo_runtime::xcm_config::LocationConverter, //TODO: rename to SovereignAccountOf,
+		},
+		pallets = {
+			XcmPallet: rococo_runtime::XcmPallet,
+			Sudo: rococo_runtime::Sudo,
+			Balances: rococo_runtime::Balances,
+		}
+	}
+}
+
+decl_test_parachains! {
+	// Westend Parachains
+	pub struct AssetHubWestend {
+		genesis = asset_hub_westend::genesis(),
+		on_init = {
+			asset_hub_westend_runtime::AuraExt::on_initialize(1);
+		},
+		runtime = asset_hub_westend_runtime,
+		core = {
+			XcmpMessageHandler: asset_hub_westend_runtime::XcmpQueue,
+			DmpMessageHandler: asset_hub_westend_runtime::DmpQueue,
+			LocationToAccountId: asset_hub_westend_runtime::xcm_config::LocationToAccountId,
+			ParachainInfo: asset_hub_westend_runtime::ParachainInfo,
+		},
+		pallets = {
+			PolkadotXcm: asset_hub_westend_runtime::PolkadotXcm,
+			Balances: asset_hub_westend_runtime::Balances,
+			Assets: asset_hub_westend_runtime::Assets,
+			ForeignAssets: asset_hub_westend_runtime::ForeignAssets,
+			PoolAssets: asset_hub_westend_runtime::PoolAssets,
+			AssetConversion: asset_hub_westend_runtime::AssetConversion,
+		}
+	},
+	pub struct PenpalWestendA {
+		genesis = penpal::genesis(penpal::PARA_ID_A),
+		on_init = {
+			penpal_runtime::AuraExt::on_initialize(1);
+		},
+		runtime = penpal_runtime,
+		core = {
+			XcmpMessageHandler: penpal_runtime::XcmpQueue,
+			DmpMessageHandler: penpal_runtime::DmpQueue,
+			LocationToAccountId: penpal_runtime::xcm_config::LocationToAccountId,
+			ParachainInfo: penpal_runtime::ParachainInfo,
+		},
+		pallets = {
+			PolkadotXcm: penpal_runtime::PolkadotXcm,
+			Assets: penpal_runtime::Assets,
+		}
+	},
+	// Rococo Parachains
+	pub struct BridgeHubRococo {
+		genesis = bridge_hub_rococo::genesis(),
+		on_init = {
+			bridge_hub_rococo_runtime::AuraExt::on_initialize(1);
+		},
+		runtime = bridge_hub_rococo_runtime,
+		core = {
+			XcmpMessageHandler: bridge_hub_rococo_runtime::XcmpQueue,
+			DmpMessageHandler: bridge_hub_rococo_runtime::DmpQueue,
+			LocationToAccountId: bridge_hub_rococo_runtime::xcm_config::LocationToAccountId,
+			ParachainInfo: bridge_hub_rococo_runtime::ParachainInfo,
+		},
+		pallets = {
+			PolkadotXcm: bridge_hub_rococo_runtime::PolkadotXcm,
+			Balances: bridge_hub_rococo_runtime::Balances,
+		}
+	},
+	// AssetHubRococo (aka Rockmine/Rockmine2) mirrors AssetHubKusama
+	pub struct AssetHubRococo {
+		genesis = asset_hub_rococo::genesis(),
+		on_init = {
+			asset_hub_polkadot_runtime::AuraExt::on_initialize(1);
+		},
+		runtime = asset_hub_kusama_runtime,
+		core = {
+			XcmpMessageHandler: asset_hub_kusama_runtime::XcmpQueue,
+			DmpMessageHandler: asset_hub_kusama_runtime::DmpQueue,
+			LocationToAccountId: asset_hub_kusama_runtime::xcm_config::LocationToAccountId,
+			ParachainInfo: asset_hub_kusama_runtime::ParachainInfo,
+		},
+		pallets = {
+			PolkadotXcm: asset_hub_kusama_runtime::PolkadotXcm,
+			Assets: asset_hub_kusama_runtime::Assets,
+		}
+	},
+	// Wococo Parachains
+	pub struct BridgeHubWococo {
+		genesis = bridge_hub_rococo::genesis(),
+		on_init = {
+			bridge_hub_rococo_runtime::AuraExt::on_initialize(1);
+		},
+		runtime = bridge_hub_rococo_runtime,
+		core = {
+			XcmpMessageHandler: bridge_hub_rococo_runtime::XcmpQueue,
+			DmpMessageHandler: bridge_hub_rococo_runtime::DmpQueue,
+			LocationToAccountId: bridge_hub_rococo_runtime::xcm_config::LocationToAccountId,
+			ParachainInfo: bridge_hub_rococo_runtime::ParachainInfo,
+		},
+		pallets = {
+			PolkadotXcm: bridge_hub_rococo_runtime::PolkadotXcm,
+		}
+	},
+	pub struct AssetHubWococo {
+		genesis = asset_hub_westend::genesis(),
+		on_init = {
+			asset_hub_polkadot_runtime::AuraExt::on_initialize(1);
+		},
+		runtime = asset_hub_polkadot_runtime,
+		core = {
+			XcmpMessageHandler: asset_hub_polkadot_runtime::XcmpQueue,
+			DmpMessageHandler: asset_hub_polkadot_runtime::DmpQueue,
+			LocationToAccountId: asset_hub_polkadot_runtime::xcm_config::LocationToAccountId,
+			ParachainInfo: asset_hub_polkadot_runtime::ParachainInfo,
+		},
+		pallets = {
+			PolkadotXcm: asset_hub_polkadot_runtime::PolkadotXcm,
+			Assets: asset_hub_polkadot_runtime::Assets,
+		}
+	},
+	pub struct PenpalRococoA {
+		genesis = penpal::genesis(penpal::PARA_ID_A),
+		on_init = {
+			penpal_runtime::AuraExt::on_initialize(1);
+		},
+		runtime = penpal_runtime,
+		core = {
+			XcmpMessageHandler: penpal_runtime::XcmpQueue,
+			DmpMessageHandler: penpal_runtime::DmpQueue,
+			LocationToAccountId: penpal_runtime::xcm_config::LocationToAccountId,
+			ParachainInfo: penpal_runtime::ParachainInfo,
+		},
+		pallets = {
+			PolkadotXcm: penpal_runtime::PolkadotXcm,
+			Assets: penpal_runtime::Assets,
+		}
+	}
+}
+
+decl_test_networks! {
+	pub struct WestendMockNet {
+		relay_chain = Westend,
+		parachains = vec![
+			AssetHubWestend,
+			PenpalWestendA,
+		],
+		bridge = ()
+	},
+	pub struct RococoMockNet {
+		relay_chain = Rococo,
+		parachains = vec![
+			AssetHubRococo,
+			BridgeHubRococo,
+			PenpalRococoA,
+		],
+		bridge = RococoWococoMockBridge
+	},
+	pub struct WococoMockNet {
+		relay_chain = Wococo,
+		parachains = vec![
+			AssetHubWococo,
+			BridgeHubWococo,
+		],
+		bridge = WococoRococoMockBridge
+	}
+}
+
+decl_test_bridges! {
+	pub struct RococoWococoMockBridge {
+		source = BridgeHubRococo,
+		target = BridgeHubWococo,
+		handler = RococoWococoMessageHandler
+	},
+	pub struct WococoRococoMockBridge {
+		source = BridgeHubWococo,
+		target = BridgeHubRococo,
+		handler = WococoRococoMessageHandler
+	}
+	// TODO: uncomment when https://github.com/paritytech/polkadot-sdk/pull/1352 is merged
+	// pub struct PolkadotKusamaMockBridge {
+	// 	source = BridgeHubPolkadot,
+	// 	target = BridgeHubKusama,
+	//  handler = PolkadotKusamaMessageHandler
+	// },
+	// pub struct KusamaPolkadotMockBridge {
+	// 	source = BridgeHubKusama,
+	// 	target = BridgeHubPolkadot,
+	// 	handler = KusamaPolkadotMessageHandler
+	// }
+}
+
+// Westend implementation
+impl_accounts_helpers_for_relay_chain!(Westend);
+impl_assert_events_helpers_for_relay_chain!(Westend);
+
+// Rococo implementation
+impl_accounts_helpers_for_relay_chain!(Rococo);
+impl_assert_events_helpers_for_relay_chain!(Rococo);
+
+// Wococo implementation
+impl_accounts_helpers_for_relay_chain!(Wococo);
+impl_assert_events_helpers_for_relay_chain!(Wococo);
+
+// AssetHubWestend implementation
+impl_accounts_helpers_for_parachain!(AssetHubWestend);
+impl_assets_helpers_for_parachain!(AssetHubWestend, Westend);
+impl_assert_events_helpers_for_parachain!(AssetHubWestend);
+
+// PenpalWestendA implementation
+impl_assert_events_helpers_for_parachain!(PenpalWestendA);
+
+// BridgeHubRococo implementation
+impl_accounts_helpers_for_parachain!(BridgeHubRococo);
+impl_assert_events_helpers_for_parachain!(BridgeHubRococo);
+
+decl_test_sender_receiver_accounts_parameter_types! {
+	// Relays
+	Westend { sender: ALICE, receiver: BOB },
+	Rococo { sender: ALICE, receiver: BOB },
+	Wococo { sender: ALICE, receiver: BOB },
+	// Asset Hubs
+	AssetHubWestend { sender: ALICE, receiver: BOB },
+	AssetHubRococo { sender: ALICE, receiver: BOB },
+	AssetHubWococo { sender: ALICE, receiver: BOB },
+	// Bridged Hubs
+	BridgeHubRococo { sender: ALICE, receiver: BOB },
+	BridgeHubWococo { sender: ALICE, receiver: BOB },
+	// Penpals
+	PenpalWestendA { sender: ALICE, receiver: BOB },
+	PenpalRococoA { sender: ALICE, receiver: BOB }
+}
