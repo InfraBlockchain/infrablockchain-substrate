@@ -720,6 +720,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 				sufficients: 0,
 				approvals: 0,
 				status: AssetStatus::Live,
+				system_token_weight: 100000,
 			},
 		);
 		ensure!(T::CallbackHandle::created(&id, &owner).is_ok(), Error::<T, I>::CallbackFailed);
@@ -1012,5 +1013,117 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 				Self::maybe_balance(id.clone(), account.clone()).map(|balance| (id, balance))
 			})
 			.collect::<Vec<_>>()
+	}
+}
+
+// Custom impl
+impl<T: Config<I>, I: 'static> Pallet<T, I> {
+	pub fn asset_detail(asset_id: &T::AssetId) -> Option<AssetDetails<T::Balance, T::AccountId, DepositBalanceOf<T, I>>> {
+		Asset::<T,I>::get(asset_id)
+	}
+
+	pub fn do_create_asset_with_metadata(
+		id: T::AssetIdParameter,
+		owner: AccountIdLookupOf<T>,
+		is_sufficient: bool,
+		min_balance: T::Balance,
+		name: Vec<u8>,
+		symbol: Vec<u8>,
+		decimals: u8,
+		is_frozen: bool,
+		system_token_id: SystemTokenId,
+		asset_link_parents: u8,
+		system_token_weight: SystemTokenWeight
+	) -> DispatchResult {
+		let owner = T::Lookup::lookup(owner)?;
+		let id: T::AssetId = id.into();
+
+		let bounded_name: BoundedVec<u8, T::StringLimit> =
+			name.clone().try_into().map_err(|_| Error::<T, I>::BadMetadata)?;
+
+		let bounded_symbol: BoundedVec<u8, T::StringLimit> =
+			symbol.clone().try_into().map_err(|_| Error::<T, I>::BadMetadata)?;
+
+		Self::do_force_create(id.clone(), owner, is_sufficient, min_balance)?;
+		ensure!(Asset::<T, I>::contains_key(&id), Error::<T, I>::Unknown);
+
+		T::AssetLink::link_system_token(asset_link_parents, &id, system_token_id)?;
+
+		let mut details = Asset::<T, I>::get(&id).ok_or(Error::<T, I>::Unknown)?;
+		details.system_token_weight = system_token_weight;
+		Asset::<T, I>::insert(&id, details);
+		Metadata::<T, I>::try_mutate_exists(&id, |metadata| {
+			let deposit = metadata.take().map_or(Zero::zero(), |m| m.deposit);
+			*metadata = Some(AssetMetadata {
+				deposit,
+				name: bounded_name,
+				symbol: bounded_symbol,
+				decimals,
+				is_frozen,
+			});
+
+			Self::deposit_event(Event::MetadataSet {
+				asset_id: id.clone(),
+				name,
+				symbol,
+				decimals,
+				is_frozen,
+			});
+
+			Ok(())
+		})
+	}
+
+	pub fn do_update_system_token_weight(
+		id: T::AssetIdParameter,
+		system_token_weight: SystemTokenWeight,
+	) -> DispatchResult {
+		let id: T::AssetId = id.into();
+		Asset::<T,I>::try_mutate_exists(&id, |maybe_detail| -> DispatchResult {
+			let mut asset_detail = maybe_detail.take().ok_or(Error::<T, I>::Unknown)?;
+			asset_detail.system_token_weight = system_token_weight;
+			*maybe_detail = Some(asset_detail);
+			Ok(())
+		})?;
+
+		Ok(())
+	}
+
+	pub fn do_set_sufficient_and_unlink(
+		asset_id: &T::AssetId,
+		is_sufficient: bool,
+	) -> DispatchResult {
+
+		Asset::<T,I>::try_mutate_exists(asset_id, |maybe_detail| -> DispatchResult {
+			let mut asset_detail = maybe_detail.take().ok_or(Error::<T,I>::Unknown)?;
+			asset_detail.is_sufficient = is_sufficient;
+			*maybe_detail = Some(asset_detail);
+
+			Ok(())
+		})?;
+
+		T::AssetLink::unlink_system_token(asset_id)?;
+
+		Ok(())
+	}
+}
+
+impl<T: Config<I>, I: 'static> SystemTokenLocalAssetProvider for Pallet<T, I> {
+	fn token_list() -> Option<Vec<sp_runtime::types::AssetId>> {
+		let assets = Asset::<T, I>::iter_keys();
+		let token_list = assets
+			.into_iter()
+			.filter_map(|asset| {
+				Asset::<T,I>::get(&asset)
+					.filter(|detail| detail.is_sufficient)
+					.map(|_| asset.into())
+			})
+			.collect::<Vec<sp_runtime::types::AssetId>>();
+		if token_list.is_empty() {
+			Self::deposit_event(Event::<T, I>::NoSufficientTokenToPay);
+			None
+		} else {
+			Some(token_list)
+		}
 	}
 }

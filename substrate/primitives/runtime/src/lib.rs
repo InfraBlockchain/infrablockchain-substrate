@@ -91,6 +91,7 @@ mod runtime_string;
 pub mod testing;
 pub mod traits;
 pub mod transaction_validity;
+pub mod types;
 
 pub use crate::runtime_string::*;
 

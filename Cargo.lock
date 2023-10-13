@@ -8873,6 +8873,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-asset-link"
+version = "0.0.1"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-assets",
+ "pallet-balances",
+ "pallet-xcm",
+ "parity-scale-codec",
+ "polkadot-core-primitives",
+ "polkadot-parachain-primitives",
+ "polkadot-runtime-parachains",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "staging-xcm",
+ "staging-xcm-builder",
+ "staging-xcm-executor",
+ "xcm-primitives",
+ "xcm-simulator",
+]
+
+[[package]]
 name = "pallet-asset-rate"
 version = "4.0.0-dev"
 dependencies = [
@@ -10564,6 +10590,43 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-system-token"
+version = "0.1.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-assets",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-system-token-tx-payment"
+version = "0.1.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-assets",
+ "pallet-authorship",
+ "pallet-balances",
+ "pallet-transaction-payment",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-template"
 version = "4.0.0-dev"
 dependencies = [
@@ -10754,6 +10817,29 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+]
+
+[[package]]
+name = "pallet-validator-election"
+version = "0.1.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-assets",
+ "pallet-authorship",
+ "pallet-session",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-application-crypto",
+ "sp-core",
+ "sp-io",
+ "sp-keyring",
+ "sp-runtime",
+ "sp-std",
+ "sp-tracing",
 ]
 
 [[package]]
@@ -12672,6 +12758,8 @@ dependencies = [
  "hex-literal",
  "impl-trait-for-tuples",
  "log",
+ "pallet-asset-link",
+ "pallet-assets",
  "pallet-authority-discovery",
  "pallet-authorship",
  "pallet-babe",
@@ -12679,8 +12767,11 @@ dependencies = [
  "pallet-message-queue",
  "pallet-session",
  "pallet-staking",
+ "pallet-system-token",
  "pallet-timestamp",
+ "pallet-validator-election",
  "pallet-vesting",
+ "pallet-xcm",
  "parity-scale-codec",
  "polkadot-core-primitives",
  "polkadot-parachain-primitives",
@@ -17258,6 +17349,7 @@ dependencies = [
 name = "sp-runtime"
 version = "24.0.0"
 dependencies = [
+ "bounded-collections",
  "either",
  "hash256-std-hasher",
  "impl-trait-for-tuples",
@@ -20604,6 +20696,17 @@ dependencies = [
  "sp-runtime",
  "sp-state-machine",
  "sp-tracing",
+ "staging-xcm",
+ "staging-xcm-executor",
+]
+
+[[package]]
+name = "xcm-primitives"
+version = "0.0.1"
+dependencies = [
+ "frame-support",
+ "sp-runtime",
+ "sp-std",
  "staging-xcm",
  "staging-xcm-executor",
 ]

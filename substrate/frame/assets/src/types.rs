@@ -35,6 +35,8 @@ pub(super) type AssetAccountOf<T, I> = AssetAccount<
 pub(super) type ExistenceReasonOf<T, I> =
 	ExistenceReason<DepositBalanceOf<T, I>, <T as SystemConfig>::AccountId>;
 
+pub(super) const DEFAULT_SYSTEM_TOKEN_WEIGHT: u128 = 100_000;
+
 /// AssetStatus holds the current state of the asset. It could either be Live and available for use,
 /// or in a Destroying state.
 #[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
@@ -75,6 +77,8 @@ pub struct AssetDetails<Balance, AccountId, DepositBalance> {
 	pub(super) approvals: u32,
 	/// The status of the asset
 	pub(super) status: AssetStatus,
+	/// The system token weight compared with base system token.
+	pub(super) system_token_weight: SystemTokenWeight,
 }
 
 /// Data concerning an approval.

@@ -1605,31 +1605,31 @@ impl<T: Config> Pallet<T> {
 		index: ReferendumIndex,
 		status: ReferendumStatus<BlockNumberFor<T>, BoundedCallOf<T>, BalanceOf<T>>,
 	) -> bool {
-		let total_issuance = T::Currency::total_issuance();
-		let approved = status.threshold.approved(status.tally, total_issuance);
+		// The referendum is enacted by the scheduler without any further voting,
+		// as it had secured the approval of more than 2/3 of validators in the earlier Motion.
+		Self::deposit_event(Event::<T>::Passed { ref_index: index });
+		// Actually `hold` the proposal now since we didn't hold it when it came in via the
+		// submit extrinsic and we now know that it will be needed. This will be reversed by
+		// Scheduler pallet once it is executed which assumes that we will already have placed
+		// a `hold` on it.
+		T::Preimages::hold(&status.proposal);
 
-		if approved {
-			Self::deposit_event(Event::<T>::Passed { ref_index: index });
-
-			// Earliest it can be scheduled for is next block.
-			let when = now.saturating_add(status.delay.max(One::one()));
-			if T::Scheduler::schedule_named(
-				(DEMOCRACY_ID, index).encode_into::<_, T::Hashing>(),
-				DispatchTime::At(when),
-				None,
-				63,
-				frame_system::RawOrigin::Root.into(),
-				status.proposal,
-			)
-			.is_err()
-			{
-				frame_support::print("LOGIC ERROR: bake_referendum/schedule_named failed");
-			}
-		} else {
-			Self::deposit_event(Event::<T>::NotPassed { ref_index: index });
+		// Earliest it can be scheduled for is next block.
+		let when = now.saturating_add(status.delay.max(One::one()));
+		if T::Scheduler::schedule_named(
+			(DEMOCRACY_ID, index).encode_into::<_, T::Hashing>(),
+			DispatchTime::At(when),
+			None,
+			63,
+			frame_system::RawOrigin::Root.into(),
+			status.proposal,
+		)
+		.is_err()
+		{
+			frame_support::print("LOGIC ERROR: bake_referendum/schedule_named failed");
 		}
 
-		approved
+		true
 	}
 
 	/// Current era is ending; we should finish up any proposals.

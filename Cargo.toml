@@ -1,7 +1,7 @@
 [workspace.package]
-authors = ["Parity Technologies <admin@parity.io>"]
+authors = ["blockchain labs"]
 edition = "2021"
-repository = "https://github.com/paritytech/polkadot-sdk.git"
+repository = "https://github.com/paritytech/infrablockspace-sdk.git"
 license = "GPL-3.0-only"
 
 [workspace]
@@ -167,6 +167,8 @@ members = [
 	"polkadot/xcm",
 	"polkadot/xcm/pallet-xcm-benchmarks",
 	"polkadot/xcm/pallet-xcm",
+	"polkadot/xcm/xcm-primitives",
+	"polkadot/xcm/asset-link",
 	"polkadot/xcm/procedural",
 	"polkadot/xcm/xcm-builder",
 	"polkadot/xcm/xcm-executor",
@@ -346,6 +348,7 @@ members = [
 	"substrate/frame/support/test/compile_pass",
 	"substrate/frame/support/test/pallet",
 	"substrate/frame/system",
+	"substrate/frame/system-token",
 	"substrate/frame/system/benchmarking",
 	"substrate/frame/system/rpc/runtime-api",
 	"substrate/frame/timestamp",
@@ -353,6 +356,7 @@ members = [
 	"substrate/frame/transaction-payment",
 	"substrate/frame/transaction-payment/asset-conversion-tx-payment",
 	"substrate/frame/transaction-payment/asset-tx-payment",
+	"substrate/frame/transaction-payment/system-token-tx-payment",
 	"substrate/frame/transaction-payment/rpc",
 	"substrate/frame/transaction-payment/rpc/runtime-api",
 	"substrate/frame/transaction-storage",
@@ -362,6 +366,7 @@ members = [
 	"substrate/frame/uniques",
 	"substrate/frame/utility",
 	"substrate/frame/vesting",
+	"substrate/frame/validator-election",
 	"substrate/frame/whitelist",
 	"substrate/primitives/api",
 	"substrate/primitives/api/proc-macro",
