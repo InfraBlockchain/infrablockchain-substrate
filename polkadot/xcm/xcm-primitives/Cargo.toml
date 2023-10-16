@@ -4,6 +4,7 @@ version = "0.0.1"
 edition.workspace = true
 
 [dependencies]
+impl-trait-for-tuples = "0.2"
 sp-std = { package = "sp-std", path = "../../../substrate/primitives/std", default-features = false }
 sp-runtime = { path = "../../../substrate/primitives/runtime", default-features = false, features=["serde"] }
 frame-support = { path = "../../../substrate/frame/support", default-features = false }

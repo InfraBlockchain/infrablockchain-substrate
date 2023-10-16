@@ -39,6 +39,9 @@ tx-pool-api = { package = "sp-transaction-pool", path = "../../../substrate/prim
 block-builder-api = { package = "sp-block-builder", path = "../../../substrate/primitives/block-builder", default-features = false }
 sp-npos-elections = { path = "../../../substrate/primitives/npos-elections", default-features = false }
 
+# custom
+pallet-validator-election = { path = "../../../substrate/frame/validator-election", default-features = false }
+
 frame-election-provider-support = { path = "../../../substrate/frame/election-provider-support", default-features = false }
 frame-executive = { path = "../../../substrate/frame/executive", default-features = false }
 frame-support = { path = "../../../substrate/frame/support", default-features = false, features = ["tuples-96"] }
@@ -144,6 +147,7 @@ std = [
 	"inherents/std",
 	"log/std",
 	"offchain-primitives/std",
+	"pallet-validator-election/std",
 	"pallet-asset-rate/std",
 	"pallet-authority-discovery/std",
 	"pallet-authorship/std",

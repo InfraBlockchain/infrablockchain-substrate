@@ -29,7 +29,7 @@ use sp_std::{
 use application_crypto::KeyTypeId;
 use inherents::InherentIdentifier;
 use primitives::RuntimeDebug;
-use runtime_primitives::traits::{AppVerify, Header as HeaderT};
+use runtime_primitives::{traits::{AppVerify, Header as HeaderT}, types::PotVotesResult};
 use sp_arithmetic::traits::{BaseArithmetic, Saturating};
 
 pub use runtime_primitives::traits::{BlakeTwo256, Hash as HashT};
@@ -72,6 +72,13 @@ pub use metrics::{
 
 /// The key type ID for a collator key.
 pub const COLLATOR_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"coll");
+
+/// The number of blocks per year. i.e) 10 blocks/min * 60 min/hours* 24 hours/day * 365 days/year = 5_256_000
+pub const BLOCKS_PER_YEAR: f32 = 5_256_000.0;
+
+/// The block time weight that doubles every year. Decimal is 3.
+/// i.e) 1_000 equals 1.
+pub type MilliBlockTimeWeight = u128;
 
 mod collator_app {
 	use application_crypto::{app_crypto, sr25519};
@@ -662,6 +669,8 @@ pub struct CandidateCommitments<N = BlockNumber> {
 	/// The mark which specifies the block number up to which all inbound HRMP messages are
 	/// processed.
 	pub hrmp_watermark: N,
+	/// Result of pot votes sent by the parachain
+	pub vote_result: Option<PotVotesResult>,
 }
 
 impl CandidateCommitments {
@@ -1039,6 +1048,9 @@ pub enum CandidateEvent<H = Hash> {
 	/// This includes the core index the candidate was occupying.
 	#[codec(index = 2)]
 	CandidateTimedOut(CandidateReceipt<H>, HeadData, CoreIndex),
+	/// Collecting vote for each parachain
+	#[codec(index = 3)]
+	VoteCollected(Id, PotVotesResult, MilliBlockTimeWeight),
 }
 
 /// Scraped runtime backing votes and resolved disputes.

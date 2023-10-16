@@ -21,7 +21,7 @@
 use codec::{Decode, Encode};
 use polkadot_parachain_primitives::primitives::HeadData;
 use scale_info::TypeInfo;
-use sp_runtime::RuntimeDebug;
+use sp_runtime::{RuntimeDebug, types::PotVotesResult};
 use sp_std::prelude::*;
 
 pub use polkadot_core_primitives::InboundDownwardMessage;
@@ -302,6 +302,8 @@ pub struct CollationInfoV1 {
 	/// The mark which specifies the block number up to which all inbound HRMP messages are
 	/// processed.
 	pub hrmp_watermark: relay_chain::BlockNumber,
+	/// The vote result sent by the parachain.
+	pub vote_result: Option<PotVotesResult>,
 }
 
 impl CollationInfoV1 {
@@ -314,6 +316,7 @@ impl CollationInfoV1 {
 			processed_downward_messages: self.processed_downward_messages,
 			hrmp_watermark: self.hrmp_watermark,
 			head_data,
+			vote_result: self.vote_result,
 		}
 	}
 }
@@ -334,6 +337,8 @@ pub struct CollationInfo {
 	pub hrmp_watermark: relay_chain::BlockNumber,
 	/// The head data, aka encoded header, of the block that corresponds to the collation.
 	pub head_data: HeadData,
+	/// The vote result sent by the parachain.
+	pub vote_result: Option<PotVotesResult>,
 }
 
 sp_api::decl_runtime_apis! {

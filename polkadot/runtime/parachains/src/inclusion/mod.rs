@@ -24,7 +24,9 @@ use crate::{
 	disputes, dmp, hrmp, paras,
 	scheduler::{self, AvailabilityTimeoutStatus},
 	shared::{self, AllowedRelayParentsTracker},
+	system_token_manager::SystemTokenInterface
 };
+pub use micromath::F32Ext;
 use bitvec::{order::Lsb0 as BitOrderLsb0, vec::BitVec};
 use frame_support::{
 	defensive,
@@ -34,16 +36,17 @@ use frame_support::{
 };
 use frame_system::pallet_prelude::*;
 use pallet_message_queue::OnQueueChanged;
+use pallet_validator_election::{RewardInterface, VotingInterface};
 use parity_scale_codec::{Decode, Encode};
 use primitives::{
 	effective_minimum_backing_votes, supermajority_threshold, well_known_keys,
 	AvailabilityBitfield, BackedCandidate, CandidateCommitments, CandidateDescriptor,
 	CandidateHash, CandidateReceipt, CommittedCandidateReceipt, CoreIndex, GroupIndex, Hash,
 	HeadData, Id as ParaId, SignedAvailabilityBitfields, SigningContext, UpwardMessage,
-	ValidatorId, ValidatorIndex, ValidityAttestation,
+	ValidatorId, ValidatorIndex, ValidityAttestation, MilliBlockTimeWeight, BLOCKS_PER_YEAR
 };
 use scale_info::TypeInfo;
-use sp_runtime::{traits::One, DispatchError, SaturatedConversion, Saturating};
+use sp_runtime::{traits::One, types::PotVotesResult, DispatchError, SaturatedConversion, Saturating};
 #[cfg(feature = "std")]
 use sp_std::fmt;
 use sp_std::{
@@ -280,6 +283,10 @@ pub mod pallet {
 		/// adding new variants to `AggregateMessageOrigin`.
 		type MessageQueue: EnqueueMessage<AggregateMessageOrigin>;
 
+		type VotingManager: VotingInterface<Self>;
+		type SystemTokenManager: SystemTokenInterface;
+		type RewardInterface: RewardInterface;
+
 		/// Weight info for the calls of this pallet.
 		type WeightInfo: WeightInfo;
 	}
@@ -295,6 +302,8 @@ pub mod pallet {
 		CandidateTimedOut(CandidateReceipt<T::Hash>, HeadData, CoreIndex),
 		/// Some upward messages have been received and will be processed.
 		UpwardMessagesReceived { from: ParaId, count: u32 },
+		/// Pot Vote has been collected
+		VoteCollected(ParaId, PotVotesResult, MilliBlockTimeWeight),
 	}
 
 	#[pallet::error]
@@ -905,6 +914,55 @@ impl<T: Config> Pallet<T> {
 			receipt.descriptor.para_id,
 			commitments.horizontal_messages,
 		));
+
+		let mut is_collected: bool = false;
+
+		let milli_block_time_weight: u128 = {
+			let exp: u32 = relay_parent_number.saturated_into();
+			let base: f32 = 2.0;
+			let block_time_weight = base.powf(exp as f32 / BLOCKS_PER_YEAR);
+			(block_time_weight * 1_000.0) as u128
+		};
+
+		if let Some(vote_result) = commitments.vote_result {
+			let session_index = shared::Pallet::<T>::session_index();
+			for vote in vote_result.clone().into_iter() {
+				if let Some(system_token_id) =
+					T::SystemTokenManager::convert_to_original_system_token(
+						vote.clone().system_token_id,
+					) {
+					if !is_collected {
+						is_collected = true;
+					}
+					let who = vote.clone().account_id;
+					let weight = vote.clone().vote_weight;
+
+					let adjusted_weight = {
+						let res = milli_block_time_weight.saturating_mul(
+							T::SystemTokenManager::adjusted_weight(system_token_id.clone(), weight),
+						);
+
+						// correction for consideration of milli_block_time_weight
+						res.saturating_div(1_000)
+					};
+
+					T::VotingManager::update_vote_status(who, adjusted_weight);
+					T::RewardInterface::aggregate_reward(
+						session_index,
+						vote.clone().system_token_id.para_id,
+						system_token_id.clone(),
+						weight,
+					);
+				};
+			}
+			if is_collected {
+				Self::deposit_event(Event::<T>::VoteCollected(
+					receipt.descriptor.para_id,
+					vote_result,
+					milli_block_time_weight,
+				));
+			}
+		};
 
 		Self::deposit_event(Event::<T>::CandidateIncluded(
 			plain,

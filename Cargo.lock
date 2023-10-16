@@ -7813,6 +7813,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "micromath"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "39617bc909d64b068dcffd0e3e31679195b5576d0c83fadc52690268cc2b2b55"
+
+[[package]]
 name = "mime"
 version = "0.3.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -12758,6 +12764,7 @@ dependencies = [
  "hex-literal",
  "impl-trait-for-tuples",
  "log",
+ "micromath",
  "pallet-asset-link",
  "pallet-assets",
  "pallet-authority-discovery",
@@ -12801,6 +12808,7 @@ dependencies = [
  "staging-xcm-executor",
  "static_assertions",
  "thousands",
+ "xcm-primitives",
 ]
 
 [[package]]
@@ -14153,6 +14161,7 @@ dependencies = [
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-treasury",
  "pallet-utility",
+ "pallet-validator-election",
  "pallet-vesting",
  "pallet-whitelist",
  "pallet-xcm",
@@ -20249,6 +20258,7 @@ dependencies = [
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-treasury",
  "pallet-utility",
+ "pallet-validator-election",
  "pallet-vesting",
  "pallet-whitelist",
  "pallet-xcm",
@@ -20705,6 +20715,7 @@ name = "xcm-primitives"
 version = "0.0.1"
 dependencies = [
  "frame-support",
+ "impl-trait-for-tuples",
  "sp-runtime",
  "sp-std",
  "staging-xcm",

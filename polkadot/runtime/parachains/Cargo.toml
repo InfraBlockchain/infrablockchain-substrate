@@ -6,6 +6,7 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
+micromath = "2.0.0"
 impl-trait-for-tuples = "0.2.2"
 bitvec = { version = "1.0.0", default-features = false, features = ["alloc"] }
 parity-scale-codec = { version = "3.6.1", default-features = false, features = ["derive", "max-encoded-len"] }
@@ -57,6 +58,7 @@ xcm-executor = { package = "staging-xcm-executor", path = "../../xcm/xcm-executo
 primitives = { package = "polkadot-primitives", path = "../../primitives", default-features = false }
 pallet-xcm = { path = "../../xcm/pallet-xcm", default-features = false }
 pallet-asset-link = { path = "../../xcm/asset-link", default-features = false }
+xcm-primitives = { path = "../../xcm/xcm-primitives", default-features = false }
 
 polkadot-parachain-primitives = { path = "../../parachain", default-features = false }
 polkadot-runtime-metrics = { path = "../metrics", default-features = false}
@@ -115,6 +117,7 @@ std = [
 	"sp-session/std",
 	"sp-staking/std",
 	"sp-std/std",
+	"xcm-primitives/std",
 	"xcm-executor/std",
 	"xcm/std",
 ]

@@ -60,7 +60,7 @@ impl ValidatorReward {
 	}
 }
 
-#[frame_support::pallet]
+#[frame_support::pallet(dev_mode)]
 pub mod pallet {
 	use crate::{configuration, dmp, paras, system_token_helper};
 
@@ -71,7 +71,6 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	#[pallet::without_storage_info]
-	#[pallet::generate_store(pub(crate) trait Store)]
 	#[pallet::storage_version(STORAGE_VERSION)]
 	pub struct Pallet<T>(_);
 

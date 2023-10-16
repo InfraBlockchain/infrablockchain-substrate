@@ -282,6 +282,7 @@ where
 			hrmp_watermark: collation_info.hrmp_watermark,
 			head_data: collation_info.head_data,
 			proof_of_validity: MaybeCompressedPoV::Compressed(pov),
+			vote_result: collation_info.vote_result,
 		};
 
 		Some((collation, block_data))

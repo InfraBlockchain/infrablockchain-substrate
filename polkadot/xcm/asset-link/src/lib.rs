@@ -88,11 +88,11 @@ pub mod pallet {
 			T::ReserveAssetModifierOrigin::ensure_origin(origin)?;
 
 			// verify asset exists on pallet-assets
-			ensure!(Self::asset_exists(asset_id), Error::<T>::AssetDoesNotExist);
+			ensure!(Self::asset_exists(&asset_id), Error::<T>::AssetDoesNotExist);
 
 			// verify asset is not yet registered
 			ensure!(
-				!AssetIdMultiLocation::<T>::contains_key(asset_id),
+				!AssetIdMultiLocation::<T>::contains_key(&asset_id),
 				Error::<T>::AssetAlreadyLinked
 			);
 
@@ -114,8 +114,8 @@ pub mod pallet {
 			ensure!(junctions_multi_location_ok, Error::<T>::WrongMultiLocation);
 
 			// register asset
-			AssetIdMultiLocation::<T>::insert(asset_id, &asset_multi_location);
-			AssetMultiLocationId::<T>::insert(&asset_multi_location, asset_id);
+			AssetIdMultiLocation::<T>::insert(&asset_id, &asset_multi_location);
+			AssetMultiLocationId::<T>::insert(&asset_multi_location, asset_id.clone());
 
 			Self::deposit_event(Event::AssetLinked { asset_id, asset_multi_location });
 
@@ -129,10 +129,10 @@ pub mod pallet {
 
 			// verify asset is registered
 			let asset_multi_location =
-				AssetIdMultiLocation::<T>::get(asset_id).ok_or(Error::<T>::AssetIsNotLinked)?;
+				AssetIdMultiLocation::<T>::get(&asset_id).ok_or(Error::<T>::AssetIsNotLinked)?;
 
 			// unregister asset
-			AssetIdMultiLocation::<T>::remove(asset_id);
+			AssetIdMultiLocation::<T>::remove(&asset_id);
 			AssetMultiLocationId::<T>::remove(&asset_multi_location);
 
 			Self::deposit_event(Event::AssetUnlinked { asset_id, asset_multi_location });
@@ -152,8 +152,8 @@ pub mod pallet {
 
 	impl<T: Config> Pallet<T> {
 		// check if the asset exists
-		fn asset_exists(asset_id: AssetIdOf<T>) -> bool {
-			T::Assets::asset_exists(asset_id)
+		fn asset_exists(asset_id: &AssetIdOf<T>) -> bool {
+			T::Assets::asset_exists(asset_id.clone())
 		}
 	}
 
@@ -163,7 +163,7 @@ pub mod pallet {
 	{
 		fn link_system_token(
 			parents: u8,
-			asset_id: AssetIdOf<T>,
+			asset_id: &AssetIdOf<T>,
 			system_token_id: SystemTokenId,
 		) -> DispatchResult {
 			// verify asset exists on pallet-assets
@@ -196,12 +196,12 @@ pub mod pallet {
 			AssetIdMultiLocation::<T>::insert(asset_id, &asset_multi_location);
 			AssetMultiLocationId::<T>::insert(&asset_multi_location, asset_id);
 
-			Self::deposit_event(Event::AssetLinked { asset_id, asset_multi_location });
+			Self::deposit_event(Event::AssetLinked { asset_id: asset_id.clone(), asset_multi_location });
 
 			Ok(())
 		}
 
-		fn unlink_system_token(asset_id: AssetIdOf<T>) -> DispatchResult {
+		fn unlink_system_token(asset_id: &AssetIdOf<T>) -> DispatchResult {
 			// verify asset is registered
 			let asset_multi_location =
 				AssetIdMultiLocation::<T>::get(asset_id).ok_or(Error::<T>::AssetIsNotLinked)?;
@@ -210,7 +210,7 @@ pub mod pallet {
 			AssetIdMultiLocation::<T>::remove(asset_id);
 			AssetMultiLocationId::<T>::remove(&asset_multi_location);
 
-			Self::deposit_event(Event::AssetUnlinked { asset_id, asset_multi_location });
+			Self::deposit_event(Event::AssetUnlinked { asset_id: asset_id.clone(), asset_multi_location });
 			Ok(())
 		}
 	}

@@ -33,6 +33,7 @@
 
 pub use crate::system_token_helper;
 use frame_support::{pallet_prelude::*, traits::OriginTrait};
+use frame_system::pallet_prelude::BlockNumberFor;
 pub use pallet::*;
 use sp_runtime::{
 	self,
@@ -44,7 +45,7 @@ use xcm::opaque::lts::MultiLocation;
 use xcm_primitives::AssetMultiLocationGetter;
 type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
 
-#[frame_support::pallet]
+#[frame_support::pallet(dev_mode)]
 pub mod pallet {
 	use super::*;
 	use frame_system::pallet_prelude::*;
@@ -59,7 +60,7 @@ pub mod pallet {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		#[pallet::constant]
-		type Period: Get<Self::BlockNumber>;
+		type Period: Get<BlockNumberFor<Self>>;
 		type AssetMultiLocationGetter: AssetMultiLocationGetter<AssetId>;
 	}
 
@@ -85,7 +86,7 @@ pub mod pallet {
 		[u8; 32]: From<<T as frame_system::Config>::AccountId>,
 		u128: From<<T as pallet_assets::Config>::Balance>,
 	{
-		fn on_initialize(n: T::BlockNumber) -> Weight {
+		fn on_initialize(n: BlockNumberFor<T>) -> Weight {
 			if n % T::Period::get() == Zero::zero() {
 				Self::do_aggregate_system_token();
 				T::DbWeight::get().reads(3)
@@ -99,7 +100,7 @@ pub mod pallet {
 impl<T: Config> Pallet<T> {
 	pub(crate) fn do_aggregate_system_token()
 	where
-		u32: From<<T as frame_system::Config>::BlockNumber>,
+		u32: From<BlockNumberFor<T>>,
 		<<T as frame_system::Config>::RuntimeOrigin as OriginTrait>::AccountId:
 			From<AccountIdOf<T>>,
 		[u8; 32]: From<<T as frame_system::Config>::AccountId>,
@@ -110,7 +111,7 @@ impl<T: Config> Pallet<T> {
 			pallet_assets::Pallet::<T>::token_list().map_or(Default::default(), |l| l);
 		let balances = pallet_assets::Pallet::<T>::account_balances(fee_account.clone());
 		for (asset_id, amount) in balances.iter() {
-			if !system_token_helper::inspect_account_and_check_is_owner::<T>(*asset_id) ||
+			if !system_token_helper::inspect_account_and_check_is_owner::<T>(&asset_id) ||
 				!system_token_asset_list.contains(&asset_id.clone().into())
 			{
 				continue

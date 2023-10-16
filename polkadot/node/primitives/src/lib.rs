@@ -38,7 +38,7 @@ use polkadot_primitives::{
 pub use sp_consensus_babe::{
 	AllowedSlots as BabeAllowedSlots, BabeEpochConfiguration, Epoch as BabeEpoch,
 };
-
+use sp_runtime::types::PotVotesResult;
 pub use polkadot_parachain_primitives::primitives::{
 	BlockData, HorizontalMessages, UpwardMessages,
 };
@@ -425,6 +425,8 @@ pub struct Collation<BlockNumber = polkadot_primitives::BlockNumber> {
 	/// The mark which specifies the block number up to which all inbound HRMP messages are
 	/// processed.
 	pub hrmp_watermark: BlockNumber,
+	/// Pot Vote Result
+	pub vote_result: Option<PotVotesResult>,
 }
 
 /// Signal that is being returned when a collation was seconded by a validator.

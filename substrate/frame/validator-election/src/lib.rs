@@ -59,8 +59,7 @@ macro_rules! log {
 }
 
 /// Compose of validator pool
-#[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen, serde::Serialize, serde::Deserialize)]
 pub enum Pool {
 	// Seed Trust & PoT validators will be elected
 	All,
@@ -74,8 +73,7 @@ impl Default for Pool {
 	}
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen, serde::Serialize, serde::Deserialize)]
 pub enum Forcing {
 	/// Not forcing anything - just let whatever happen.
 	NotForcing,
@@ -208,7 +206,6 @@ pub mod pallet {
 		pub vote_status_at_genesis: Vec<(T::InfraVoteAccountId, T::InfraVotePoints)>,
 	}
 
-	#[cfg(feature = "std")]
 	impl<T: Config> Default for GenesisConfig<T> {
 		fn default() -> Self {
 			GenesisConfig {

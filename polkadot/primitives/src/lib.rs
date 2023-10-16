@@ -56,9 +56,9 @@ pub use v6::{
 	UncheckedSignedAvailabilityBitfields, UncheckedSignedStatement, UpgradeGoAhead,
 	UpgradeRestriction, UpwardMessage, ValidDisputeStatementKind, ValidationCode,
 	ValidationCodeHash, ValidatorId, ValidatorIndex, ValidatorSignature, ValidityAttestation,
-	ValidityError, ASSIGNMENT_KEY_TYPE_ID, LEGACY_MIN_BACKING_VOTES, LOWEST_PUBLIC_ID,
+	ValidityError, MilliBlockTimeWeight, ASSIGNMENT_KEY_TYPE_ID, LEGACY_MIN_BACKING_VOTES, LOWEST_PUBLIC_ID,
 	MAX_CODE_SIZE, MAX_HEAD_DATA_SIZE, MAX_POV_SIZE, ON_DEMAND_DEFAULT_QUEUE_MAX_SIZE,
-	PARACHAINS_INHERENT_IDENTIFIER, PARACHAIN_KEY_TYPE_ID,
+	PARACHAINS_INHERENT_IDENTIFIER, PARACHAIN_KEY_TYPE_ID, BLOCKS_PER_YEAR
 };
 
 #[cfg(feature = "std")]

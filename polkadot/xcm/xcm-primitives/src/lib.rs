@@ -3,7 +3,7 @@
 use frame_support::{
 	sp_runtime::SaturatedConversion,
 	traits::{fungibles::Inspect, Currency},
-	weights::{OldWeight, Weight},
+	weights::Weight,
 };
 use sp_runtime::types::AssetId as IbsAssetId;
 use sp_std::{borrow::Borrow, marker::PhantomData, vec::Vec, prelude::*};
@@ -81,7 +81,7 @@ impl<A: Clone, B: Clone> Convert<A, B> for Tuple {
 pub struct AsAssetMultiLocation<AssetId, AssetIdInfoGetter>(
 	PhantomData<(AssetId, AssetIdInfoGetter)>,
 );
-impl<AssetId, AssetIdInfoGetter> xcm_executor::traits::Convert<MultiLocation, AssetId>
+impl<AssetId, AssetIdInfoGetter> Convert<MultiLocation, AssetId>
 	for AsAssetMultiLocation<AssetId, AssetIdInfoGetter>
 where
 	AssetId: Clone,
@@ -197,7 +197,7 @@ impl<AssetId, AssetIdInfoGetter, AssetsPallet, BalancesPallet, XcmPallet, Accoun
 		}
 
 		// TODO: put real weight of execution up until this point here
-		let mut weight = Weight::from(OldWeight(0));
+		let mut weight = Weight::from(Weight::default());
 
 		if !trap.is_empty() {
 			// we have filtered out non-compliant assets

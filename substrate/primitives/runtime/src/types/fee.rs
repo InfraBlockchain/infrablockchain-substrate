@@ -23,6 +23,7 @@ pub struct ExtrinsicMetadata {
 }
 
 impl ExtrinsicMetadata {
+	#[allow(missing_docs)]
 	pub fn new<Pallet: Encode, Call: Encode>(pallet_name: Pallet, call_name: Call) -> Self {
 		Self {
 			pallet_name: pallet_name.encode(),

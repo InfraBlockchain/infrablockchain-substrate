@@ -35,7 +35,7 @@ use sp_runtime::{
 use sp_std::prelude::*;
 use types::*;
 
-#[frame_support::pallet]
+#[frame_support::pallet(dev_mode)]
 pub mod pallet {
 	use super::*;
 
@@ -945,7 +945,7 @@ where
 		if para_id == 0u32 {
 			// Relay Chain
 			pallet_assets::pallet::Pallet::<T>::do_set_sufficient_and_unlink(
-				asset_id.into(),
+				&asset_id.into(),
 				false,
 			)?;
 		} else {

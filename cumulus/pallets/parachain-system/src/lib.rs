@@ -40,7 +40,7 @@ use frame_support::{
 	ensure,
 	inherent::{InherentData, InherentIdentifier, ProvideInherent},
 	storage,
-	traits::Get,
+	traits::{Get, ibs_support::pot::VotingHandler},
 	weights::Weight,
 };
 use frame_system::{ensure_none, ensure_root, pallet_prelude::HeaderFor};
@@ -52,6 +52,7 @@ use sp_runtime::{
 		InvalidTransaction, TransactionLongevity, TransactionSource, TransactionValidity,
 		ValidTransaction,
 	},
+	types::{PotVotes, SystemTokenId, VoteAccountId, VoteWeight},
 	DispatchError, RuntimeDebug,
 };
 use sp_std::{cmp, collections::btree_map::BTreeMap, prelude::*};
@@ -426,6 +427,7 @@ pub mod pallet {
 			UpwardMessages::<T>::kill();
 			HrmpOutboundMessages::<T>::kill();
 			CustomValidationHeadData::<T>::kill();
+			CollectedPotVotes::<T>::kill();
 
 			weight += T::DbWeight::get().writes(6);
 
@@ -885,6 +887,10 @@ pub mod pallet {
 	#[pallet::storage]
 	pub(super) type CustomValidationHeadData<T: Config> = StorageValue<_, Vec<u8>, OptionQuery>;
 
+	/// The vote weight of a specific account for a specific asset.
+	#[pallet::storage]
+	pub(super) type CollectedPotVotes<T: Config> = StorageValue<_, PotVotes, OptionQuery>;
+
 	#[pallet::inherent]
 	impl<T: Config> ProvideInherent for Pallet<T> {
 		type Call = Call<T>;
@@ -944,6 +950,29 @@ pub mod pallet {
 			}
 			Err(InvalidTransaction::Call.into())
 		}
+	}
+}
+
+impl<T: Config> VotingHandler for Pallet<T> {
+	fn update_pot_vote(who: VoteAccountId, asset_id: SystemTokenId, vote_weight: VoteWeight) {
+		Self::do_update_pot_vote(asset_id, who, vote_weight);
+	}
+}
+
+impl<T: Config> Pallet<T> {
+	/// Update vote weight for given (asset_id, candidate)
+	fn do_update_pot_vote(
+		vote_asset_id: SystemTokenId,
+		vote_account_id: VoteAccountId,
+		vote_weight: VoteWeight,
+	) {
+		let pot_votes = if let Some(mut old) = CollectedPotVotes::<T>::get() {
+			old.update_vote_weight(vote_asset_id, vote_account_id, vote_weight);
+			old
+		} else {
+			PotVotes::new(vote_asset_id, vote_account_id, vote_weight)
+		};
+		CollectedPotVotes::<T>::put(pot_votes);
 	}
 }
 
@@ -1373,6 +1402,12 @@ impl<T: Config> Pallet<T> {
 	/// This is expected to be used by the
 	/// [`CollectCollationInfo`](cumulus_primitives_core::CollectCollationInfo) runtime api.
 	pub fn collect_collation_info(header: &HeaderFor<T>) -> CollationInfo {
+		let vote_result = if let Some(res) = CollectedPotVotes::<T>::get() {
+			let vote_result = res.votes();
+			Some(vote_result)
+		} else {
+			None
+		};
 		CollationInfo {
 			hrmp_watermark: HrmpWatermark::<T>::get(),
 			horizontal_messages: HrmpOutboundMessages::<T>::get(),
@@ -1384,6 +1419,7 @@ impl<T: Config> Pallet<T> {
 			head_data: CustomValidationHeadData::<T>::get()
 				.map_or_else(|| header.encode(), |v| v)
 				.into(),
+			vote_result,
 		}
 	}
 

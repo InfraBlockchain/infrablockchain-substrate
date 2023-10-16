@@ -85,6 +85,7 @@ use sp_runtime::{
 		Extrinsic as ExtrinsicT, IdentityLookup, Keccak256, OpaqueKeys, SaturatedConversion,
 		Verify,
 	},
+	types::{VoteAccountId, VoteWeight},
 	transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, FixedU128, KeyTypeId, Perbill, Percent, Permill, RuntimeDebug,
 };
@@ -870,11 +871,25 @@ impl runtime_parachains::inclusion::RewardValidators for RewardValidators {
 	fn reward_bitfields(_: impl IntoIterator<Item = ValidatorIndex>) {}
 }
 
+impl pallet_validator_election::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type SessionsPerEra = SessionsPerEra;
+	type InfraVoteAccountId = VoteAccountId;
+	type InfraVotePoints = VoteWeight;
+	type NextNewSession = Session;
+	type SessionInterface = Self;
+	type CollectiveInterface = ();
+	type RewardInterface = ();
+}
+
 impl parachains_inclusion::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type DisputesHandler = ParasDisputes;
 	type RewardValidators = RewardValidators;
 	type MessageQueue = MessageQueue;
+	type VotingManager = ValidatorElection;
+	type SystemTokenManager = ();
+	type RewardInterface = ();
 	type WeightInfo = weights::runtime_parachains_inclusion::WeightInfo<Runtime>;
 }
 
@@ -1360,6 +1375,9 @@ construct_runtime! {
 
 		// Pallet for sending XCM.
 		XcmPallet: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin, Config<T>} = 99,
+
+		// infra-related
+		ValidatorElection: pallet_validator_election::{Pallet, Call, Storage, Config<T>, Event<T>} = 100,
 
 		ParasSudoWrapper: paras_sudo_wrapper::{Pallet, Call} = 250,
 		AssignedSlots: assigned_slots::{Pallet, Call, Storage, Event<T>, Config<T>} = 251,

@@ -18,19 +18,25 @@ pub type VoteWeight = u128;
 pub type VoteAssetId = u32;
 
 pub const MAX_VOTE_NUM: u32 = 16 * 1024;
+
+/// Aggregated votes with maximum amount `MAX_VOTE_NUM`
 pub type PotVotesResult = BoundedVec<PotVote, ConstU32<MAX_VOTE_NUM>>;
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, sp_core::RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Default, Hash))]
 /// Single Pot vote type
 pub struct PotVote {
+	#[allow(missing_docs)]
 	pub system_token_id: SystemTokenId,
+	#[allow(missing_docs)]
 	pub account_id: VoteAccountId,
+	#[allow(missing_docs)]
 	#[codec(compact)]
 	pub vote_weight: VoteWeight,
 }
 
 impl PotVote {
+	#[allow(missing_docs)]
 	pub fn new(
 		system_token_id: SystemTokenId,
 		account_id: VoteAccountId,
@@ -39,6 +45,7 @@ impl PotVote {
 		Self { system_token_id, account_id, vote_weight }
 	}
 }
+
 
 #[derive(Encode, Decode, PartialEq, Eq, Clone, sp_core::RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
@@ -56,6 +63,7 @@ pub struct PotVotes {
 
 /// An interface for dealing with vote info
 impl PotVotes {
+	#[allow(missing_docs)]
 	pub fn new(
 		system_token_id: SystemTokenId,
 		candidate: VoteAccountId,

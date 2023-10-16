@@ -12,10 +12,11 @@ readme = "README.md"
 [dependencies]
 
 # External
-serde = { version = "1.0.188", default-features = false, optional = true, features = ["derive", "alloc"] }
+serde = { version = "1.0.188", default-features = false, features = ["alloc", "derive"]}
 codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false, features = ["derive", "max-encoded-len"] }
 log = { version = "0.4.17", default-features = false }
 scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
+
 # primitives
 sp-application-crypto = { path = "../../primitives/application-crypto", default-features = false }
 sp-core = { path = "../../../substrate/primitives/core", default-features= false }
@@ -39,7 +40,7 @@ sp-keyring = { path = "../../../substrate/primitives/keyring" }
 [features]
 default = ["std"]
 std = [
-	"serde",
+	"serde/std",
 	"scale-info/std",
 	"codec/std",
 	"log/std",

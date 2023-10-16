@@ -6,6 +6,7 @@ use frame_support::{
 	pallet_prelude::{DispatchResult, Weight},
 	traits::{fungibles::roles::Inspect, OriginTrait},
 };
+use frame_system::pallet_prelude::BlockNumberFor;
 use parity_scale_codec::Encode;
 use sp_runtime::{
 	traits::AccountIdConversion,
@@ -35,15 +36,15 @@ pub fn sovereign_account<T: frame_system::Config>() -> T::AccountId {
 	frame_support::PalletId(*b"infrapid").into_account_truncating()
 }
 
-pub fn inspect_account_and_check_is_owner<T: pallet_assets::Config>(asset_id: T::AssetId) -> bool {
+pub fn inspect_account_and_check_is_owner<T: pallet_assets::Config>(asset_id: &T::AssetId) -> bool {
 	let default_acc: T::AccountId = frame_support::PalletId(*b"infrapid").into_account_truncating();
 	let root_acc = root_account::<T>();
-	root_acc == pallet_assets::Pallet::<T>::owner(asset_id).map_or(default_acc.clone(), |a| a) &&
+	root_acc == pallet_assets::Pallet::<T>::owner(asset_id.clone()).map_or(default_acc.clone(), |a| a) &&
 		root_acc ==
-			pallet_assets::Pallet::<T>::issuer(asset_id).map_or(default_acc.clone(), |a| a) &&
+			pallet_assets::Pallet::<T>::issuer(asset_id.clone()).map_or(default_acc.clone(), |a| a) &&
 		root_acc ==
-			pallet_assets::Pallet::<T>::admin(asset_id).map_or(default_acc.clone(), |a| a) &&
-		root_acc == pallet_assets::Pallet::<T>::freezer(asset_id).map_or(default_acc, |a| a)
+			pallet_assets::Pallet::<T>::admin(asset_id.clone()).map_or(default_acc.clone(), |a| a) &&
+		root_acc == pallet_assets::Pallet::<T>::freezer(asset_id.clone()).map_or(default_acc, |a| a)
 }
 
 fn encode_pallet_call(pallet_id: PalletId, mut encoded_call: Vec<u8>) -> Vec<u8> {
@@ -103,7 +104,7 @@ pub fn do_teleport_asset<T>(
 	asset_multi_loc: MultiLocation,
 ) where
 	T: pallet_xcm::Config + pallet_assets::Config,
-	u32: From<<T as frame_system::Config>::BlockNumber>,
+	u32: From<BlockNumberFor<T>>,
 	<<T as frame_system::Config>::RuntimeOrigin as OriginTrait>::AccountId: From<AccountIdOf<T>>,
 	[u8; 32]: From<<T as frame_system::Config>::AccountId>,
 	u128: From<<T as pallet_assets::Config>::Balance>,

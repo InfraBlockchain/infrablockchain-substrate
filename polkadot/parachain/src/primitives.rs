@@ -25,7 +25,7 @@ use parity_scale_codec::{CompactAs, Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_core::{bytes, RuntimeDebug, TypeId};
-use sp_runtime::traits::Hash as _;
+use sp_runtime::{traits::Hash as _, types::PotVotesResult};
 
 use polkadot_core_primitives::{Hash, OutboundHrmpMessage};
 
@@ -416,4 +416,6 @@ pub struct ValidationResult {
 	/// The mark which specifies the block number up to which all inbound HRMP messages are
 	/// processed.
 	pub hrmp_watermark: RelayChainBlockNumber,
+	/// Vote Result for the parachain block. Should be bounded
+	pub vote_result: Option<PotVotesResult>,
 }

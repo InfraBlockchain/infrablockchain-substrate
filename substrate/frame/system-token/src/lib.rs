@@ -22,7 +22,7 @@ use sp_runtime::types::ExtrinsicMetadata;
 pub use pallet::*;
 use sp_std::vec::Vec;
 
-#[frame_support::pallet]
+#[frame_support::pallet(dev_mode)]
 pub mod pallet {
 	use super::*;
 	use frame_support::pallet_prelude::*;

@@ -84,6 +84,7 @@ use sp_runtime::{
 		AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, Extrinsic as ExtrinsicT,
 		IdentityLookup, Keccak256, OpaqueKeys, SaturatedConversion, Verify,
 	},
+	types::{VoteAccountId, VoteWeight},
 	transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, FixedU128, KeyTypeId, Perbill, Percent, Permill,
 };
@@ -1126,11 +1127,25 @@ impl parachains_session_info::Config for Runtime {
 	type ValidatorSet = Historical;
 }
 
+impl pallet_validator_election::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type SessionsPerEra = SessionsPerEra;
+	type InfraVoteAccountId = VoteAccountId;
+	type InfraVotePoints = VoteWeight;
+	type NextNewSession = Session;
+	type SessionInterface = Self;
+	type CollectiveInterface = ();
+	type RewardInterface = ();
+}
+
 impl parachains_inclusion::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type DisputesHandler = ParasDisputes;
 	type RewardValidators = parachains_reward_points::RewardValidatorsWithEraPoints<Runtime>;
 	type MessageQueue = MessageQueue;
+	type VotingManager = ValidatorElection;
+	type SystemTokenManager = ();
+	type RewardInterface = ();
 	type WeightInfo = weights::runtime_parachains_inclusion::WeightInfo<Runtime>;
 }
 
@@ -1489,6 +1504,9 @@ construct_runtime! {
 
 		// Asset rate.
 		AssetRate: pallet_asset_rate::{Pallet, Call, Storage, Event<T>} = 101,
+
+		// infra-related
+		ValidatorElection: pallet_validator_election::{Pallet, Call, Storage, Config<T>, Event<T>} = 150,
 	}
 }
 

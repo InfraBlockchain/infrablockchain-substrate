@@ -675,6 +675,7 @@ async fn validate_candidate_exhaustive(
 					new_validation_code: res.new_validation_code,
 					processed_downward_messages: res.processed_downward_messages,
 					hrmp_watermark: res.hrmp_watermark,
+					vote_result: res.vote_result.clone(),
 				};
 				if candidate_receipt.commitments_hash != outputs.hash() {
 					gum::info!(

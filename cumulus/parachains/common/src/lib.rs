@@ -17,7 +17,6 @@
 
 pub mod impls;
 pub mod kusama;
-pub mod polkadot;
 pub mod rococo;
 pub mod westend;
 pub mod xcm_config;

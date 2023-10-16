@@ -513,6 +513,7 @@ async fn construct_and_distribute_receipt(
 		head_data: collation.head_data,
 		processed_downward_messages: collation.processed_downward_messages,
 		hrmp_watermark: collation.hrmp_watermark,
+		vote_result: collation.vote_result,
 	};
 
 	let ccr = CandidateReceipt {
