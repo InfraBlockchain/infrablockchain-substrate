@@ -55,12 +55,12 @@ sc-executor-wasmtime = { path = "../../../substrate/client/executor/wasmtime" }
 sc-executor-common = { path = "../../../substrate/client/executor/common" }
 
 # Polkadot
-polkadot-primitives = { path = "../../../polkadot/primitives" }
-polkadot-service = { path = "../../../polkadot/node/service" }
-polkadot-test-service = { path = "../../../polkadot/node/test/service" }
-polkadot-cli = { path = "../../../polkadot/cli" }
-polkadot-node-subsystem = { path = "../../../polkadot/node/subsystem" }
-polkadot-overseer = { path = "../../../polkadot/node/overseer" }
+polkadot-primitives = { path = "../../../infrablockspace/primitives" }
+polkadot-service = { path = "../../../infrablockspace/node/service" }
+polkadot-test-service = { path = "../../../infrablockspace/node/test/service" }
+polkadot-cli = { path = "../../../infrablockspace/cli" }
+polkadot-node-subsystem = { path = "../../../infrablockspace/node/subsystem" }
+polkadot-overseer = { path = "../../../infrablockspace/node/overseer" }
 
 # Cumulus
 cumulus-client-cli = { path = "../../client/cli" }
@@ -89,7 +89,7 @@ sp-authority-discovery = { path = "../../../substrate/primitives/authority-disco
 cumulus-test-client = { path = "../client" }
 
 # Polkadot dependencies
-polkadot-test-service = { path = "../../../polkadot/node/test/service" }
+polkadot-test-service = { path = "../../../infrablockspace/node/test/service" }
 
 # Substrate dependencies
 sc-cli = { path = "../../../substrate/client/cli" }

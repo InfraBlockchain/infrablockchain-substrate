@@ -6,17 +6,17 @@ edition.workspace = true
 
 [dependencies]
 # polkadot deps
-polkadot-primitives = { path = "../../../polkadot/primitives" }
-polkadot-core-primitives = { path = "../../../polkadot/core-primitives" }
-polkadot-overseer = { path = "../../../polkadot/node/overseer" }
-polkadot-node-subsystem-util = { path = "../../../polkadot/node/subsystem-util" }
-polkadot-node-network-protocol = { path = "../../../polkadot/node/network/protocol" }
+polkadot-primitives = { path = "../../../infrablockspace/primitives" }
+polkadot-core-primitives = { path = "../../../infrablockspace/core-primitives" }
+polkadot-overseer = { path = "../../../infrablockspace/node/overseer" }
+polkadot-node-subsystem-util = { path = "../../../infrablockspace/node/subsystem-util" }
+polkadot-node-network-protocol = { path = "../../../infrablockspace/node/network/protocol" }
 
-polkadot-availability-recovery = { path = "../../../polkadot/node/network/availability-recovery" }
-polkadot-collator-protocol = { path = "../../../polkadot/node/network/collator-protocol" }
-polkadot-network-bridge = { path = "../../../polkadot/node/network/bridge" }
-polkadot-node-collation-generation = { path = "../../../polkadot/node/collation-generation" }
-polkadot-node-core-runtime-api = { path = "../../../polkadot/node/core/runtime-api" }
+polkadot-availability-recovery = { path = "../../../infrablockspace/node/network/availability-recovery" }
+polkadot-collator-protocol = { path = "../../../infrablockspace/node/network/collator-protocol" }
+polkadot-network-bridge = { path = "../../../infrablockspace/node/network/bridge" }
+polkadot-node-collation-generation = { path = "../../../infrablockspace/node/collation-generation" }
+polkadot-node-core-runtime-api = { path = "../../../infrablockspace/node/core/runtime-api" }
 
 # substrate deps
 sc-authority-discovery = { path = "../../../substrate/client/authority-discovery" }

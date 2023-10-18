@@ -1014,6 +1014,22 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			})
 			.collect::<Vec<_>>()
 	}
+
+	/// Returns most balance for the given asset id.
+	pub fn get_most_account_balance(
+		asset_ids: impl IntoIterator<Item = sp_runtime::types::AssetId>,
+		account: T::AccountId,
+	) -> sp_runtime::types::AssetId {
+		let mut most_balance: (sp_runtime::types::AssetId, T::Balance) = Default::default();
+		for asset_id in asset_ids {
+			if let Some(balance) = Self::maybe_balance(asset_id.into(), account.clone()) {
+				if most_balance.1 < balance {
+					most_balance = (asset_id, balance);
+				}
+			}
+		}
+		most_balance.0
+	}
 }
 
 // Custom impl

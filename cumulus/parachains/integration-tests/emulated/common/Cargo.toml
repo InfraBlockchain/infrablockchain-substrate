@@ -25,17 +25,17 @@ pallet-im-online = { path = "../../../../../substrate/frame/im-online", default-
 beefy-primitives = { package = "sp-consensus-beefy", path = "../../../../../substrate/primitives/consensus/beefy" }
 
 # Polkadot
-polkadot-core-primitives = { path = "../../../../../polkadot/core-primitives", default-features = false}
-polkadot-parachain-primitives = { path = "../../../../../polkadot/parachain", default-features = false}
-polkadot-service = { path = "../../../../../polkadot/node/service", default-features = false, features = ["full-node"] }
-polkadot-primitives = { path = "../../../../../polkadot/primitives", default-features = false}
-polkadot-runtime-parachains = { path = "../../../../../polkadot/runtime/parachains" }
-rococo-runtime = { path = "../../../../../polkadot/runtime/rococo" }
-rococo-runtime-constants = { path = "../../../../../polkadot/runtime/rococo/constants" }
-westend-runtime = { path = "../../../../../polkadot/runtime/westend" }
-westend-runtime-constants = { path = "../../../../../polkadot/runtime/westend/constants" }
-xcm = { package = "staging-xcm", path = "../../../../../polkadot/xcm", default-features = false}
-pallet-xcm = { path = "../../../../../polkadot/xcm/pallet-xcm", default-features = false}
+polkadot-core-primitives = { path = "../../../../../infrablockspace/core-primitives", default-features = false}
+polkadot-parachain-primitives = { path = "../../../../../infrablockspace/parachain", default-features = false}
+polkadot-service = { path = "../../../../../infrablockspace/node/service", default-features = false, features = ["full-node"] }
+polkadot-primitives = { path = "../../../../../infrablockspace/primitives", default-features = false}
+polkadot-runtime-parachains = { path = "../../../../../infrablockspace/runtime/parachains" }
+rococo-runtime = { path = "../../../../../infrablockspace/runtime/rococo" }
+rococo-runtime-constants = { path = "../../../../../infrablockspace/runtime/rococo/constants" }
+westend-runtime = { path = "../../../../../infrablockspace/runtime/westend" }
+westend-runtime-constants = { path = "../../../../../infrablockspace/runtime/westend/constants" }
+xcm = { package = "staging-xcm", path = "../../../../../infrablockspace/xcm", default-features = false}
+pallet-xcm = { path = "../../../../../infrablockspace/xcm/pallet-xcm", default-features = false}
 
 # Cumulus
 parachains-common = { path = "../../../common" }

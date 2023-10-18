@@ -22,8 +22,8 @@ sp-runtime = { path = "../../../substrate/primitives/runtime" }
 sp-state-machine = { path = "../../../substrate/primitives/state-machine" }
 
 # Polkadot
-polkadot-cli = { path = "../../../polkadot/cli", default-features = false, features = ["cli"] }
-polkadot-service = { path = "../../../polkadot/node/service" }
+polkadot-cli = { path = "../../../infrablockspace/cli", default-features = false, features = ["cli"] }
+polkadot-service = { path = "../../../infrablockspace/node/service" }
 
 # Cumulus
 cumulus-primitives-core = { path = "../../primitives/core" }
@@ -35,8 +35,8 @@ cumulus-relay-chain-interface = { path = "../relay-chain-interface" }
 sp-keyring = { path = "../../../substrate/primitives/keyring" }
 
 # Polkadot
-polkadot-primitives = { path = "../../../polkadot/primitives" }
-polkadot-test-client = { path = "../../../polkadot/node/test/client" }
+polkadot-primitives = { path = "../../../infrablockspace/primitives" }
+polkadot-test-client = { path = "../../../infrablockspace/node/test/client" }
 metered = { package = "prioritized-metered-channel", version = "0.5.1", default-features = false, features=["futures_channel"] }
 
 # Cumulus

@@ -74,10 +74,10 @@ substrate-state-trie-migration-rpc = { path = "../../substrate/utils/frame/rpc/s
 
 # Polkadot
 # Use rococo-native as this is currently the default "local" relay chain
-polkadot-cli = { path = "../../polkadot/cli", features = ["rococo-native"] }
-polkadot-primitives = { path = "../../polkadot/primitives" }
-polkadot-service = { path = "../../polkadot/node/service" }
-xcm = { package = "staging-xcm", path = "../../polkadot/xcm" }
+polkadot-cli = { path = "../../infrablockspace/cli", features = ["rococo-native"] }
+polkadot-primitives = { path = "../../infrablockspace/primitives" }
+polkadot-service = { path = "../../infrablockspace/node/service" }
+xcm = { package = "staging-xcm", path = "../../infrablockspace/xcm" }
 
 # Cumulus
 cumulus-client-cli = { path = "../client/cli" }

@@ -38,7 +38,7 @@ pub enum InitialPayment<T: Config> {
 	/// The initial fee was payed in the native currency.
 	Native(LiquidityInfoOf<T>),
 	/// The initial fee was payed in an asset.
-	Asset(CreditOf<T::AccountId, T::Assets>),
+	Asset(Credit<T::AccountId, T::Assets>),
 }
 
 #[derive(Encode, Decode, Debug, Clone, TypeInfo, PartialEq)]

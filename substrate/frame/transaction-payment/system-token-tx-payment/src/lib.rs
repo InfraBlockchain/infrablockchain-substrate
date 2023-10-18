@@ -32,7 +32,7 @@ use frame_support::{
 	traits::{
 		ibs_support::{fee::FeeTableProvider, pot::VotingHandler},
 		tokens::{
-			fungibles::{Balanced, CreditOf, Inspect},
+			fungibles::{Balanced, Credit, Inspect},
 			WithdrawConsequence,
 		},
 		CallMetadata, GetCallMetadata, IsType,
@@ -127,7 +127,7 @@ where
 	AssetBalanceOf<T>: Send + Sync + FixedPointOperand,
 	BalanceOf<T>: Send + Sync + FixedPointOperand + IsType<ChargeAssetBalanceOf<T>>,
 	ChargeSystemTokenAssetIdOf<T>: Send + Sync,
-	CreditOf<T::AccountId, T::Assets>: IsType<ChargeAssetLiquidityOf<T>>,
+	Credit<T::AccountId, T::Assets>: IsType<ChargeAssetLiquidityOf<T>>,
 {
 	// For benchmarking only
 	pub fn new() -> Self {
@@ -204,7 +204,7 @@ where
 	AssetBalanceOf<T>: Send + Sync + FixedPointOperand + IsType<VoteWeight>,
 	BalanceOf<T>: Send + Sync + From<u64> + FixedPointOperand + IsType<ChargeAssetBalanceOf<T>>,
 	ChargeSystemTokenAssetIdOf<T>: Send + Sync,
-	CreditOf<T::AccountId, T::Assets>: IsType<ChargeAssetLiquidityOf<T>>,
+	Credit<T::AccountId, T::Assets>: IsType<ChargeAssetLiquidityOf<T>>,
 {
 	const IDENTIFIER: &'static str = "ChargeSystemToken";
 	type AccountId = T::AccountId;
@@ -350,7 +350,7 @@ where
 
 pub struct CreditToBucket<T>(PhantomData<T>);
 impl<T: Config> HandleCredit<T::AccountId, T::Assets> for CreditToBucket<T> {
-	fn handle_credit(credit: CreditOf<T::AccountId, T::Assets>) {
+	fn handle_credit(credit: Credit<T::AccountId, T::Assets>) {
 		let dest = T::PalletId::get().into_account_truncating();
 		let _ = <T::Assets as Balanced<T::AccountId>>::resolve(&dest, credit);
 	}
