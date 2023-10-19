@@ -5,7 +5,7 @@ use frame_support::{
 	traits::{fungibles::Inspect, Currency},
 	weights::Weight,
 };
-use sp_runtime::types::AssetId as IbsAssetId;
+use sp_runtime::{types::AssetId as IbsAssetId, traits::MaybeEquivalence};
 use sp_std::{borrow::Borrow, marker::PhantomData, vec::Vec, prelude::*};
 use xcm::{
 	latest::{AssetId::Concrete, Fungibility::Fungible, MultiAsset, MultiLocation},
@@ -81,6 +81,21 @@ impl<A: Clone, B: Clone> Convert<A, B> for Tuple {
 pub struct AsAssetMultiLocation<AssetId, AssetIdInfoGetter>(
 	PhantomData<(AssetId, AssetIdInfoGetter)>,
 );
+impl<AssetId, AssetIdInfoGetter> MaybeEquivalence<MultiLocation, AssetId>
+	for AsAssetMultiLocation<AssetId, AssetIdInfoGetter>
+where
+	AssetId: Clone,
+	AssetIdInfoGetter: AssetMultiLocationGetter<AssetId>,
+{
+	fn convert(a: &MultiLocation) -> Option<AssetId> {
+		AssetIdInfoGetter::get_asset_id(a.clone())
+	}
+
+	fn convert_back(b: &AssetId) -> Option<MultiLocation> {
+		AssetIdInfoGetter::get_asset_multi_location(b.clone())
+	}
+}
+
 impl<AssetId, AssetIdInfoGetter> Convert<MultiLocation, AssetId>
 	for AsAssetMultiLocation<AssetId, AssetIdInfoGetter>
 where

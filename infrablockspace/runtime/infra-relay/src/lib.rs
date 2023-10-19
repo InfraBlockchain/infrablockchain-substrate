@@ -28,7 +28,10 @@ use runtime_common::{
 };
 
 use runtime_parachains::{
+	assigner as parachains_assigner, assigner_on_demand as parachains_assigner_on_demand,
+	assigner_parachains as parachains_assigner_parachains,
 	configuration as parachains_configuration, disputes as parachains_disputes,
+	disputes::slashing as parachains_slashing,
 	dmp as parachains_dmp, hrmp as parachains_hrmp, inclusion as parachains_inclusion,
 	inclusion::{AggregateMessageOrigin, UmpQueueId}, initializer as parachains_initializer, origin as parachains_origin, paras as parachains_paras,
 	paras_inherent as parachains_paras_inherent,
@@ -42,14 +45,14 @@ use beefy_primitives::ecdsa_crypto::{AuthorityId as BeefyId, Signature as BeefyS
 use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{
-		tokens::fungibles::{Balanced, Credit},
+		tokens::{fungibles::{Balanced, Credit}, pay::PayAssetFromAccount},
 		AsEnsureOriginWithArg, ConstU128, ConstU32, EitherOfDiverse, InstanceFilter,
-		KeyOwnerProofSystem, LockIdentifier, PrivilegeCmp, ProcessMessage, ProcessMessageError, WithdrawReasons
+		KeyOwnerProofSystem, LockIdentifier, PrivilegeCmp, ProcessMessage, ProcessMessageError
 	},
 	weights::{ConstantMultiplier, WeightMeter},
 	PalletId,
 };
-use frame_system::EnsureRoot;
+use frame_system::{EnsureRoot, EnsureWithSuccess};
 use pallet_grandpa::{fg_primitives, AuthorityId as GrandpaId};
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use pallet_session::historical as session_historical;
@@ -58,10 +61,10 @@ use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
 use pallet_validator_election::SessionIndex;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use primitives::{
-	AccountId, AccountIndex, Balance, BlockNumber, CandidateEvent, CommittedCandidateReceipt,
+	AccountId, AccountIndex, Balance, BlockNumber, CandidateEvent, CommittedCandidateReceipt, CandidateHash,
 	CoreState, GroupRotationInfo, Hash, Id as ParaId, InboundDownwardMessage, InboundHrmpMessage,
-	Moment, Nonce, OccupiedCoreAssumption, PersistedValidationData, ScrapedOnChainVotes,
-	SessionInfo, Signature, ValidationCode, ValidationCodeHash, ValidatorId, ValidatorIndex,
+	Moment, Nonce, OccupiedCoreAssumption, PersistedValidationData, ScrapedOnChainVotes, ExecutorParams,
+	SessionInfo, Signature, ValidationCode, ValidationCodeHash, ValidatorId, ValidatorIndex, DisputeState, slashing, PARACHAIN_KEY_TYPE_ID
 };
 use sp_core::OpaqueMetadata;
 use sp_mmr_primitives as mmr;
@@ -73,7 +76,7 @@ use sp_runtime::{
 	},
 	transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
 	types::{VoteAccountId, VoteWeight},
-	ApplyExtrinsicResult, KeyTypeId, Perbill, Percent, Permill,
+	ApplyExtrinsicResult, KeyTypeId, Perbill, Percent, Permill, FixedU128
 };
 
 use sp_std::{cmp::Ordering, collections::btree_map::BTreeMap, prelude::*};
@@ -173,6 +176,7 @@ impl frame_system::Config for Runtime {
 impl pallet_sudo::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
+	type WeightInfo = weights::pallet_sudo::WeightInfo<Runtime>;
 }
 
 impl paras_sudo_wrapper::Config for Runtime {}
@@ -527,6 +531,8 @@ pub type ValidatorCollective = pallet_collective::Instance1;
 impl pallet_collective::Config<ValidatorCollective> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;
+	type SetMembersOrigin = EnsureRoot<AccountId>;
+	type MaxProposalWeight = MaximumSchedulerWeight;
 	type Proposal = RuntimeCall;
 	type MotionDuration = CouncilMotionDuration;
 	type MaxProposals = CouncilMaxProposals;
@@ -585,10 +591,12 @@ pub type TechnicalCollective = pallet_collective::Instance2;
 impl pallet_collective::Config<TechnicalCollective> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;
+	type SetMembersOrigin = EnsureRoot<AccountId>;
 	type Proposal = RuntimeCall;
 	type MotionDuration = TechnicalMotionDuration;
 	type MaxProposals = TechnicalMaxProposals;
 	type MaxMembers = TechnicalMaxMembers;
+	type MaxProposalWeight = MaximumSchedulerWeight;
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
 	type WeightInfo = weights::pallet_collective_technical_committee::WeightInfo<Runtime>;
 }
@@ -613,7 +621,7 @@ parameter_types! {
 	pub const SpendPeriod: BlockNumber = 24 * DAYS;
 	pub const Burn: Permill = Permill::from_percent(1);
 	pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
-
+	pub TreasuryAccount: AccountId = Treasury::account_id();
 	pub const TipCountdown: BlockNumber = 1 * DAYS;
 	pub const TipFindersFee: Percent = Percent::from_percent(20);
 	pub const TipReportDepositBase: Balance = 1 * DOLLARS;
@@ -623,6 +631,8 @@ parameter_types! {
 	pub const MaxKeys: u32 = 10_000;
 	pub const MaxPeerInHeartbeats: u32 = 10_000;
 	pub const RootSpendOriginMaxAmount: Balance = Balance::MAX;
+	pub const SpendPayoutPeriod: BlockNumber = 30 * DAYS;
+	pub const MaxBalance: Balance = Balance::max_value();
 }
 
 type ApproveOrigin = EitherOfDiverse<
@@ -631,11 +641,12 @@ type ApproveOrigin = EitherOfDiverse<
 >;
 
 impl pallet_treasury::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
 	type PalletId = TreasuryPalletId;
 	type Currency = Balances;
 	type ApproveOrigin = ApproveOrigin;
-	type RejectOrigin = MoreThanHalfCouncil;
-	type RuntimeEvent = RuntimeEvent;
+	type RejectOrigin = EnsureRoot<AccountId>;
+	type SpendOrigin = EnsureWithSuccess<EnsureRoot<AccountId>, AccountId, MaxBalance>;
 	type OnSlash = Treasury;
 	type ProposalBond = ProposalBond;
 	type ProposalBondMinimum = ProposalBondMinimum;
@@ -645,8 +656,27 @@ impl pallet_treasury::Config for Runtime {
 	type BurnDestination = ();
 	type SpendFunds = Bounties;
 	type MaxApprovals = MaxApprovals;
+	type AssetKind = u32;
+	type Beneficiary = AccountId;
+	type BeneficiaryLookup = Indices;
+	type Paymaster = PayAssetFromAccount<Assets, TreasuryAccount>;
+	type BalanceConverter = AssetRate;
+	type PayoutPeriod = SpendPayoutPeriod;
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = ();
 	type WeightInfo = weights::pallet_treasury::WeightInfo<Runtime>;
-	type SpendOrigin = frame_system::EnsureRootWithSuccess<AccountId, RootSpendOriginMaxAmount>;
+}
+
+impl pallet_asset_rate::Config for Runtime {
+	type CreateOrigin = EnsureRoot<AccountId>;
+	type RemoveOrigin = EnsureRoot<AccountId>;
+	type UpdateOrigin = EnsureRoot<AccountId>;
+	type Currency = Balances;
+	type AssetKind = u32;
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = weights::pallet_asset_rate::WeightInfo<Runtime>;
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = ();
 }
 
 parameter_types! {
@@ -695,6 +725,7 @@ impl pallet_tips::Config for Runtime {
 	type TipCountdown = TipCountdown;
 	type TipFindersFee = TipFindersFee;
 	type TipReportDepositBase = TipReportDepositBase;
+	type MaxTipAmount = ConstU128<{ 500 * DOLLARS }>;
 	type WeightInfo = weights::pallet_tips::WeightInfo<Runtime>;
 }
 
@@ -1023,6 +1054,8 @@ impl parachains_inclusion::Config for Runtime {
 	type VotingManager = ValidatorElection;
 	type SystemTokenManager = SystemTokenManager;
 	type RewardInterface = ValidatorRewardManager;
+	type MessageQueue = MessageQueue;
+	type WeightInfo = weights::runtime_parachains_inclusion::WeightInfo<Runtime>;
 }
 
 parameter_types! {
@@ -1075,7 +1108,9 @@ impl parachains_paras::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = weights::runtime_parachains_paras::WeightInfo<Runtime>;
 	type UnsignedPriority = ParasUnsignedPriority;
+	type QueueFootprinter = ParaInclusion;
 	type NextSessionRotation = Babe;
+	type OnNewHead = Registrar;
 }
 
 parameter_types! {
@@ -1132,6 +1167,7 @@ impl parachains_dmp::Config for Runtime {}
 impl parachains_hrmp::Config for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeEvent = RuntimeEvent;
+	type ChannelManager = EnsureRoot<AccountId>;
 	type Currency = Balances;
 	type WeightInfo = weights::runtime_parachains_hrmp::WeightInfo<Self>;
 }
@@ -1140,7 +1176,27 @@ impl parachains_paras_inherent::Config for Runtime {
 	type WeightInfo = weights::runtime_parachains_paras_inherent::WeightInfo<Runtime>;
 }
 
-impl parachains_scheduler::Config for Runtime {}
+impl parachains_scheduler::Config for Runtime {
+	type AssignmentProvider = ParaAssignmentProvider;
+}
+
+parameter_types! {
+	pub const OnDemandTrafficDefaultValue: FixedU128 = FixedU128::from_u32(1);
+}
+
+impl parachains_assigner_on_demand::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Currency = Balances;
+	type TrafficDefaultValue = OnDemandTrafficDefaultValue;
+	type WeightInfo = weights::runtime_parachains_assigner_on_demand::WeightInfo<Runtime>;
+}
+
+impl parachains_assigner_parachains::Config for Runtime {}
+
+impl parachains_assigner::Config for Runtime {
+	type OnDemandAssignmentProvider = OnDemandAssignmentProvider;
+	type ParachainsAssignmentProvider = ParachainsAssignmentProvider;
+}
 
 impl parachains_initializer::Config for Runtime {
 	type Randomness = pallet_babe::RandomnessFromOneEpochAgo<Runtime>;
@@ -1153,6 +1209,23 @@ impl parachains_disputes::Config for Runtime {
 	type RewardValidators = ();
 	type SlashingHandler = ();
 	type WeightInfo = weights::runtime_parachains_disputes::WeightInfo<Runtime>;
+}
+
+impl parachains_slashing::Config for Runtime {
+	type KeyOwnerProofSystem = Historical;
+	type KeyOwnerProof =
+		<Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, ValidatorId)>>::Proof;
+	type KeyOwnerIdentification = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
+		KeyTypeId,
+		ValidatorId,
+	)>>::IdentificationTuple;
+	type HandleReports = parachains_slashing::SlashingReportHandler<
+		Self::KeyOwnerIdentification,
+		Offences,
+		ReportLongevity,
+	>;
+	type WeightInfo = parachains_slashing::TestWeightInfo;
+	type BenchmarkingConfig = parachains_slashing::BenchConfig<200>;
 }
 
 parameter_types! {
@@ -1280,7 +1353,9 @@ construct_runtime! {
 		// Basic stuff; balances is uncallable initially.
 		System: frame_system::{Pallet, Call, Storage, Config<T>, Event<T>} = 0,
 		Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 1,
-		Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>} = 10,
+		Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>, HoldReason} = 10,
+		// Asset rate.
+		AssetRate: pallet_asset_rate::{Pallet, Call, Storage, Event<T>} = 39,
 
 		// IBS Support
 		SystemTokenManager: system_token_manager::{Pallet, Call, Storage, Event<T>} = 20,
@@ -1353,6 +1428,11 @@ construct_runtime! {
 		Hrmp: parachains_hrmp::{Pallet, Call, Storage, Event<T>, Config<T>} = 60,
 		ParaSessionInfo: parachains_session_info::{Pallet, Storage} = 61,
 		ParasDisputes: parachains_disputes::{Pallet, Call, Storage, Event<T>} = 62,
+		ParasSlashing: parachains_slashing::{Pallet, Call, Storage, ValidateUnsigned} = 63,
+		MessageQueue: pallet_message_queue::{Pallet, Call, Storage, Event<T>} = 64,
+		ParaAssignmentProvider: parachains_assigner::{Pallet, Storage} = 65,
+		OnDemandAssignmentProvider: parachains_assigner_on_demand::{Pallet, Call, Storage, Event<T>} = 66,
+		ParachainsAssignmentProvider: parachains_assigner_parachains::{Pallet} = 67,
 
 		// Parachain Onboarding Pallets. Start indices at 70 to leave room.
 		Registrar: paras_registrar::{Pallet, Call, Storage, Event<T>} = 70,
@@ -1365,9 +1445,6 @@ construct_runtime! {
 
 		// Pallet for sending XCM.
 		XcmPallet: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin, Config<T>} = 99,
-
-		// Generalized message queue
-		MessageQueue: pallet_message_queue::{Pallet, Call, Storage, Event<T>} = 100,
 	}
 }
 
@@ -1492,6 +1569,13 @@ sp_api::impl_runtime_apis! {
 		fn metadata() -> OpaqueMetadata {
 			OpaqueMetadata::new(Runtime::metadata().into())
 		}
+		fn metadata_at_version(version: u32) -> Option<OpaqueMetadata> {
+			Runtime::metadata_at_version(version)
+		}
+
+		fn metadata_versions() -> sp_std::vec::Vec<u32> {
+			Runtime::metadata_versions()
+		}
 	}
 
 	impl block_builder_api::BlockBuilder<Block> for Runtime {
@@ -1531,6 +1615,7 @@ sp_api::impl_runtime_apis! {
 		}
 	}
 
+	#[api_version(7)]
 	impl primitives::runtime_api::ParachainHost<Block, Hash, BlockNumber> for Runtime {
 		fn validators() -> Vec<ValidatorId> {
 			parachains_runtime_api_impl::validators::<Runtime>()
@@ -1594,6 +1679,10 @@ sp_api::impl_runtime_apis! {
 			parachains_runtime_api_impl::session_info::<Runtime>(index)
 		}
 
+		fn session_executor_params(session_index: SessionIndex) -> Option<ExecutorParams> {
+			parachains_runtime_api_impl::session_executor_params::<Runtime>(session_index)
+		}
+
 		fn dmq_contents(recipient: ParaId) -> Vec<InboundDownwardMessage<BlockNumber>> {
 			parachains_runtime_api_impl::dmq_contents::<Runtime>(recipient)
 		}
@@ -1627,6 +1716,47 @@ sp_api::impl_runtime_apis! {
 			-> Option<ValidationCodeHash>
 		{
 			parachains_runtime_api_impl::validation_code_hash::<Runtime>(para_id, assumption)
+		}
+
+		fn disputes() -> Vec<(SessionIndex, CandidateHash, DisputeState<BlockNumber>)> {
+			parachains_runtime_api_impl::get_session_disputes::<Runtime>()
+		}
+
+		fn unapplied_slashes(
+		) -> Vec<(SessionIndex, CandidateHash, slashing::PendingSlashes)> {
+			parachains_runtime_api_impl::unapplied_slashes::<Runtime>()
+		}
+
+		fn key_ownership_proof(
+			validator_id: ValidatorId,
+		) -> Option<slashing::OpaqueKeyOwnershipProof> {
+			use parity_scale_codec::Encode;
+
+			Historical::prove((PARACHAIN_KEY_TYPE_ID, validator_id))
+				.map(|p| p.encode())
+				.map(slashing::OpaqueKeyOwnershipProof::new)
+		}
+
+		fn submit_report_dispute_lost(
+			dispute_proof: slashing::DisputeProof,
+			key_ownership_proof: slashing::OpaqueKeyOwnershipProof,
+		) -> Option<()> {
+			parachains_runtime_api_impl::submit_unsigned_slashing_report::<Runtime>(
+				dispute_proof,
+				key_ownership_proof,
+			)
+		}
+
+		fn minimum_backing_votes() -> u32 {
+			parachains_runtime_api_impl::minimum_backing_votes::<Runtime>()
+		}
+
+		fn para_backing_state(para_id: ParaId) -> Option<primitives::async_backing::BackingState> {
+			parachains_runtime_api_impl::backing_state::<Runtime>(para_id)
+		}
+
+		fn async_backing_params() -> primitives::AsyncBackingParams {
+			parachains_runtime_api_impl::async_backing_params::<Runtime>()
 		}
 	}
 

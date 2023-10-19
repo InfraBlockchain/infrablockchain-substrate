@@ -257,5 +257,11 @@ sp_api::decl_runtime_apis! {
 		/// Returns candidate's acceptance limitations for asynchronous backing for a relay parent.
 		#[api_version(7)]
 		fn async_backing_params() -> AsyncBackingParams;
+
+		/***** Added in v8 *****/
+
+		/// Returns a list of all disabled validators at the given block.
+		#[api_version(8)]
+		fn disabled_validators() -> Vec<ValidatorIndex>;
 	}
 }

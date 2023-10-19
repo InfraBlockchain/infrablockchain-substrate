@@ -118,7 +118,7 @@ pub type AssetTransactors = (ForeignFungiblesTransactor, LocalIssuedFungiblesTra
 
 parameter_types! {
 	/// The infrablockspace network ID. This is named.
-	pub const ThisNetwork: NetworkId = NetworkId::Infrablockspace;
+	pub const ThisNetwork: NetworkId = NetworkId::InfraRelay;
 	/// Our location in the universe of consensus systems.
 	pub const UniversalLocation: InteriorMultiLocation = X1(GlobalConsensus(ThisNetwork::get()));
 	/// The Checking Account, which holds any native assets that have been teleported out and not back in (yet).
@@ -126,7 +126,7 @@ parameter_types! {
 	pub TrustBackedAssetsPalletLocation: MultiLocation =
 		PalletInstance(<Assets as PalletInfoAccess>::index() as u8).into();
 	pub UniversalLocationNetworkId: NetworkId = UniversalLocation::get().global_consensus().unwrap();
-	pub const RelayNetwork: Option<NetworkId> = Some(NetworkId::Infrablockspace);
+	pub const RelayNetwork: Option<NetworkId> = Some(NetworkId::InfraRelay);
 	pub XcmAssetFeesReceiver: Option<AccountId> = Authorship::author();
 }
 
@@ -337,6 +337,7 @@ impl xcm_executor::Config for XcmConfig {
 	type UniversalAliases = Nothing;
 	type CallDispatcher = WithOriginFilter<SafeCallFilter>;
 	type SafeCallFilter = SafeCallFilter;
+	type Aliasers = Nothing;
 }
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -392,7 +393,10 @@ impl pallet_xcm::Config for Runtime {
 	type TrustedLockers = ();
 	type SovereignAccountOf = SovereignAccountOf;
 	type MaxLockers = ConstU32<8>;
+	type MaxRemoteLockConsumers = ConstU32<0>;
+	type RemoteLockConsumerIdentifier = ();
 	type WeightInfo = crate::weights::pallet_xcm::WeightInfo<Runtime>;
 	#[cfg(feature = "runtime-benchmarks")]
 	type ReachableDest = ReachableDest;
+	type AdminOrigin = frame_system::EnsureRoot<AccountId>;
 }

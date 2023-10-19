@@ -78,6 +78,38 @@ pub struct Extensions {
 // Generic chain spec, in case when we don't have the native runtime.
 pub type GenericChainSpec = service::GenericChainSpec<(), Extensions>;
 
+/// The 'ChainSpec' parameterized for the infra-relay runtime
+#[cfg(feature = "infra-relay-native")]
+pub type InfraRelayChainSpec = service::GenericChainSpec<InfraRelayGenesisExt, Extensions>;
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[cfg(feature = "infra-relay-native")]
+pub struct InfraRelayGenesisExt {
+	/// The runtime genesis config.
+	runtime_genesis_config: infra_relay::RuntimeGenesisConfig,
+	/// The session length in blocks.
+	///
+	/// If `None` is supplied, the default value is used.
+	session_length_in_blocks: Option<u32>,
+}
+
+#[cfg(feature = "infra-relay-native")]
+impl sp_runtime::BuildStorage for InfraRelayGenesisExt {
+	fn assimilate_storage(&self, storage: &mut sp_core::storage::Storage) -> Result<(), String> {
+		sp_state_machine::BasicExternalities::execute_with_storage(storage, || {
+			if let Some(length) = self.session_length_in_blocks.as_ref() {
+				infra_relay_runtime_constants::time::EpochDurationInSlots::set(length);
+			}
+		});
+		self.runtime_genesis_config.assimilate_storage(storage)
+	}
+}
+
+/// The `ChainSpec` parameterized for the westend runtime.
+// Dummy chain spec, but that is fine when we don't have the native runtime.
+#[cfg(not(feature = "infra-relay-native"))]
+pub type InfraRelayChainSpec = GenericChainSpec;
+
 /// The `ChainSpec` parameterized for the westend runtime.
 #[cfg(feature = "westend-native")]
 pub type WestendChainSpec = service::GenericChainSpec<westend::RuntimeGenesisConfig, Extensions>;
@@ -100,6 +132,11 @@ pub type VersiChainSpec = RococoChainSpec;
 // Dummy chain spec, but that is fine when we don't have the native runtime.
 #[cfg(not(feature = "rococo-native"))]
 pub type RococoChainSpec = GenericChainSpec;
+
+pub fn infra_relay_config() -> Result<InfraRelayChainSpec, String> {
+	// ToDo: Should change
+	InfraRelayChainSpec::from_json_bytes(&include_bytes!("../chain-specs/polkadot.json")[..])
+}
 
 pub fn polkadot_config() -> Result<GenericChainSpec, String> {
 	GenericChainSpec::from_json_bytes(&include_bytes!("../chain-specs/polkadot.json")[..])
@@ -232,7 +269,7 @@ fn rococo_session_keys(
 #[cfg(feature = "infra-relay-native")]
 fn infra_relay_staging_testnet_config_genesis(
 	wasm_binary: &[u8],
-) -> infra_relay::GenesisConfig {
+) -> infra_relay::RuntimeGenesisConfig {
 	// subkey inspect "$SECRET"
 	let endowed_accounts = vec![];
 
@@ -247,13 +284,13 @@ fn infra_relay_staging_testnet_config_genesis(
 		AuthorityDiscoveryId,
 	)> = vec![];
 
-	const ENDOWMENT: u128 = 1_000_000 * UNITS;
-	const STASH: u128 = 100 * UNITS;
+	const ENDOWMENT: u128 = 1_000_000 * UNIT;
+	const STASH: u128 = 100 * UNIT;
 
 	let root_key = get_account_id_from_seed::<sr25519::Public>("Alice");
 
-	infra_relay::GenesisConfig {
-		system: infra_relay::SystemConfig { code: wasm_binary.to_vec() },
+	infra_relay::RuntimeGenesisConfig {
+		system: infra_relay::SystemConfig { code: wasm_binary.to_vec(), ..Default::default() },
 		balances: infra_relay::BalancesConfig {
 			balances: endowed_accounts
 				.iter()
@@ -299,13 +336,14 @@ fn infra_relay_staging_testnet_config_genesis(
 			phantom: Default::default(),
 		},
 		technical_membership: Default::default(),
-		babe: infrablockspace::BabeConfig {
+		babe: infra_relay::BabeConfig {
 			authorities: Default::default(),
 			epoch_config: Some(infra_relay::BABE_GENESIS_EPOCH_CONFIG),
+			..Default::default()
 		},
 		grandpa: Default::default(),
 		im_online: Default::default(),
-		authority_discovery: infra_relay::AuthorityDiscoveryConfig { keys: vec![] },
+		authority_discovery: infra_relay::AuthorityDiscoveryConfig { keys: vec![], ..Default::default() },
 		treasury: Default::default(),
 		hrmp: Default::default(),
 		configuration: infra_relay::ConfigurationConfig {
@@ -852,6 +890,30 @@ fn rococo_staging_testnet_config_genesis(
 	}
 }
 
+#[cfg(feature = "infra-relay-native")]
+pub fn infra_relay_staging_testnet_config() -> Result<InfraRelayChainSpec, String> {
+	let wasm_binary = infra_relay::WASM_BINARY.ok_or("Infra Relay development wasm not available")?;
+	let boot_nodes = vec![];
+
+	Ok(InfraRelayChainSpec::from_genesis(
+		"Infra Relay Staging Testnet", 
+		"infra_relay_staging_testnet", 
+		ChainType::Live, 
+		move || InfraRelayGenesisExt {
+			runtime_genesis_config: infra_relay_staging_testnet_config_genesis(wasm_binary),
+			session_length_in_blocks: None
+		}, 
+		boot_nodes, 
+		Some(
+			TelemetryEndpoints::new(vec![(WESTEND_STAGING_TELEMETRY_URL.to_string(), 0)])
+				.expect("Westend Staging telemetry url is valid; qed"),
+		), 
+		Some(DEFAULT_PROTOCOL_ID), 
+		None, 
+		None, Default::default()
+	))
+}
+
 /// Westend staging testnet config.
 #[cfg(feature = "westend-native")]
 pub fn westend_staging_testnet_config() -> Result<WestendChainSpec, String> {
@@ -990,7 +1052,7 @@ pub fn get_authority_keys_from_seed_no_beefy(
 	)
 }
 
-#[cfg(any(feature = "westend-native", feature = "rococo-native"))]
+#[cfg(any(feature = "infra-native", feature = "westend-native", feature = "rococo-native"))]
 fn testnet_accounts() -> Vec<AccountId> {
 	vec![
 		get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -1006,6 +1068,100 @@ fn testnet_accounts() -> Vec<AccountId> {
 		get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 		get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 	]
+}
+
+/// Helper function to create infra-relay `RuntimeGenesisConfig` for testing
+#[cfg(feature = "infra-relay-native")]
+pub fn infra_relay_testnet_genesis(
+	wasm_binary: &[u8],
+	initial_authorities: Vec<(
+		AccountId,
+		AccountId,
+		BabeId,
+		GrandpaId,
+		ImOnlineId,
+		ValidatorId,
+		AssignmentId,
+		AuthorityDiscoveryId,
+	)>,
+	root_key: AccountId,
+	endowed_accounts: Option<Vec<AccountId>>,
+) -> infra_relay::RuntimeGenesisConfig {
+	let endowed_accounts: Vec<AccountId> = endowed_accounts.unwrap_or_else(testnet_accounts);
+
+	const ENDOWMENT: u128 = 1_000_000 * UNIT;
+
+	infra_relay::RuntimeGenesisConfig {
+		system: infra_relay::SystemConfig { code: wasm_binary.to_vec(), ..Default::default() },
+		indices: infra_relay::IndicesConfig { indices: vec![] },
+		balances: infra_relay::BalancesConfig {
+			balances: endowed_accounts.iter().map(|k| (k.clone(), ENDOWMENT)).collect(),
+		},
+		assets: infra_relay::AssetsConfig {
+			assets: vec![(
+				99,                                                 // asset_id
+				get_account_id_from_seed::<sr25519::Public>("Bob"), // owner
+				true,                                               // is_sufficient
+				1,                                                  // min_balance
+			)],
+			metadata: vec![(99, "iTEST".into(), "iTEST".into(), 12)],
+			accounts: vec![(
+				99,
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				1_000_000_000_000, // endow only 1 iTest for test
+			)],
+			..Default::default()
+		},
+		session: infra_relay::SessionConfig {
+			keys: initial_authorities
+				.iter()
+				.map(|x| {
+					(
+						x.0.clone(),
+						x.0.clone(),
+						infra_relay_session_keys(
+							x.2.clone(),
+							x.3.clone(),
+							x.4.clone(),
+							x.5.clone(),
+							x.6.clone(),
+							x.7.clone(),
+						),
+					)
+				})
+				.collect::<Vec<_>>(),
+		},
+		sudo: infra_relay::SudoConfig { key: Some(root_key) },
+		phragmen_election: Default::default(),
+		democracy: infra_relay::DemocracyConfig::default(),
+		council: infra_relay::CouncilConfig { members: vec![], phantom: Default::default() },
+		technical_committee: infra_relay::TechnicalCommitteeConfig {
+			members: vec![],
+			phantom: Default::default(),
+		},
+		technical_membership: Default::default(),
+		babe: infra_relay::BabeConfig {
+			authorities: Default::default(),
+			epoch_config: Some(infra_relay::BABE_GENESIS_EPOCH_CONFIG),
+			..Default::default()
+		},
+		grandpa: Default::default(),
+		im_online: Default::default(),
+		authority_discovery: infra_relay::AuthorityDiscoveryConfig { keys: vec![], ..Default::default() },
+		treasury: Default::default(),
+		hrmp: Default::default(),
+		configuration: infra_relay::ConfigurationConfig {
+			config: default_parachains_host_configuration(),
+		},
+		paras: Default::default(),
+		xcm_pallet: Default::default(),
+		validator_election: infra_relay::ValidatorElectionConfig {
+			seed_trust_validators: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
+			total_number_of_validators: 4,
+			number_of_seed_trust_validators: 4,
+			..Default::default()
+		},
+	}
 }
 
 /// Helper function to create westend `RuntimeGenesisConfig` for testing
@@ -1193,6 +1349,18 @@ pub fn rococo_testnet_genesis(
 	}
 }
 
+#[cfg(feature = "infra-relay-native")]
+fn infra_relay_development_config_genesis(
+	wasm_binary: &[u8],
+) -> infra_relay::RuntimeGenesisConfig {
+	infra_relay_testnet_genesis(
+		wasm_binary,
+		vec![get_authority_keys_from_seed_no_beefy("Alice")],
+		get_account_id_from_seed::<sr25519::Public>("Alice"),
+		None,
+	)
+}
+
 #[cfg(feature = "westend-native")]
 fn westend_development_config_genesis(wasm_binary: &[u8]) -> westend::RuntimeGenesisConfig {
 	westend_testnet_genesis(
@@ -1201,6 +1369,40 @@ fn westend_development_config_genesis(wasm_binary: &[u8]) -> westend::RuntimeGen
 		get_account_id_from_seed::<sr25519::Public>("Alice"),
 		None,
 	)
+}
+
+/// Returns the properties for the [`InfraBlockspaceChainSpec`].
+pub fn infra_relay_chain_spec_properties() -> serde_json::map::Map<String, serde_json::Value> {
+	serde_json::json!({
+		"tokenDecimals": 10,
+	})
+	.as_object()
+	.expect("Map given; qed")
+	.clone()
+}
+
+/// Infra Relay development config 
+#[cfg(feature = "infra-relay-native")]
+pub fn infra_relay_development_config() -> Result<InfraRelayChainSpec, String> {
+	let wasm_binary =
+		infra_relay::WASM_BINARY.ok_or("Infra Relay development wasm not available")?;
+
+	Ok(InfraRelayChainSpec::from_genesis(
+		"Infra Relay Devnet",
+		"infra_relay_devnet",
+		ChainType::Development,
+		move || InfraRelayGenesisExt {
+			runtime_genesis_config: infra_relay_development_config_genesis(wasm_binary),
+			// Use 1 minute session length.
+			session_length_in_blocks: Some(10),
+		},
+		vec![],
+		None,
+		Some(DEFAULT_PROTOCOL_ID),
+		None,
+		Some(infra_relay_chain_spec_properties()),
+		Default::default(),
+	))
 }
 
 #[cfg(feature = "rococo-native")]

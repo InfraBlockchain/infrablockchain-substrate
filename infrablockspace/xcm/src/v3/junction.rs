@@ -54,6 +54,8 @@ pub enum NetworkId {
 	ByGenesis([u8; 32]),
 	/// Network defined by the first 32-bytes of the hash and number of some block it contains.
 	ByFork { block_number: u64, block_hash: [u8; 32] },
+	/// The Infrablockspace mainnet Relay-chain.
+	InfraRelay,
 	/// The Polkadot mainnet Relay-chain.
 	Polkadot,
 	/// The Kusama canary-net Relay-chain.
