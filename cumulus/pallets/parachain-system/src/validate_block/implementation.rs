@@ -226,7 +226,7 @@ where
 			processed_downward_messages,
 			horizontal_messages,
 			hrmp_watermark,
-			vote_result
+			vote_result,
 		}
 	})
 }

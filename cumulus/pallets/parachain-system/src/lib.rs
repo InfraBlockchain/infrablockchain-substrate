@@ -40,7 +40,7 @@ use frame_support::{
 	ensure,
 	inherent::{InherentData, InherentIdentifier, ProvideInherent},
 	storage,
-	traits::{Get, ibs_support::pot::VotingHandler},
+	traits::{ibs_support::pot::VotingHandler, Get},
 	weights::Weight,
 };
 use frame_system::{ensure_none, ensure_root, pallet_prelude::HeaderFor};

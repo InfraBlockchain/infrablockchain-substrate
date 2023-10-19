@@ -21,7 +21,7 @@
 use codec::{Decode, Encode};
 use polkadot_parachain_primitives::primitives::HeadData;
 use scale_info::TypeInfo;
-use sp_runtime::{RuntimeDebug, types::PotVotesResult};
+use sp_runtime::{types::PotVotesResult, RuntimeDebug};
 use sp_std::prelude::*;
 
 pub use polkadot_core_primitives::InboundDownwardMessage;

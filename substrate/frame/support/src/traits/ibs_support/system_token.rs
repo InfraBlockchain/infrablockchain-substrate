@@ -18,8 +18,8 @@ impl SystemTokenInterface for () {
 		false
 	}
 	fn convert_to_original_system_token(
-			_wrapped_token: WrappedSystemTokenId,
-		) -> Option<SystemTokenId> {
+		_wrapped_token: WrappedSystemTokenId,
+	) -> Option<SystemTokenId> {
 		None
 	}
 	fn adjusted_weight(_system_token: SystemTokenId, _vote_weight: VoteWeight) -> VoteWeight {

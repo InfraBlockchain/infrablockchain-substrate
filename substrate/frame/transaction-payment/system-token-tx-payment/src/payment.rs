@@ -20,8 +20,10 @@ use crate::Config;
 use frame_support::{
 	traits::{
 		fungibles::{Balanced, Credit, Inspect},
-		tokens::{AssetId, Balance, ConversionToAssetBalance, Fortitude::Polite, Precision::Exact,
-			Preservation::Protect,},
+		tokens::{
+			AssetId, Balance, ConversionToAssetBalance, Fortitude::Polite, Precision::Exact,
+			Preservation::Protect,
+		},
 	},
 	unsigned::TransactionValidityError,
 };
@@ -152,8 +154,15 @@ where
 		if !matches!(can_withdraw, WithdrawConsequence::Success) {
 			return Err(InvalidTransaction::Payment.into())
 		}
-		<T::Assets as Balanced<T::AccountId>>::withdraw(system_token_asset_id, who, converted_fee, Exact, Protect, Polite)
-			.map_err(|_| TransactionValidityError::from(InvalidTransaction::Payment))
+		<T::Assets as Balanced<T::AccountId>>::withdraw(
+			system_token_asset_id,
+			who,
+			converted_fee,
+			Exact,
+			Protect,
+			Polite,
+		)
+		.map_err(|_| TransactionValidityError::from(InvalidTransaction::Payment))
 	}
 
 	/// Hand the fee and the tip over to the `[HandleCredit]` implementation.

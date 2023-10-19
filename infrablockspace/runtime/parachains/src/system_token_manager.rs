@@ -75,7 +75,8 @@ pub mod pallet {
 		WrappedSystemTokenDeregistered { wrapped: SystemTokenId },
 		/// Converting from `wrapped` to `original` has happened
 		SystemTokenConverted { from: SystemTokenId, to: SystemTokenId },
-		/// Update the weight for system token. The weight is calculated based on the exchange_rate and decimal.
+		/// Update the weight for system token. The weight is calculated based on the exchange_rate
+		/// and decimal.
 		SetSystemTokenWeight { original: SystemTokenId, property: SystemTokenProperty },
 		/// Update the fee rate of the parachain. The default value is 1_000.
 		SetParaFeeRate { para_id: IbsParaId, para_fee_rate: u32 },
@@ -105,7 +106,8 @@ pub mod pallet {
 		WrappedForRelayNotProvided,
 		/// Registered System Tokens are out of limit
 		TooManySystemTokensOnPara,
-		/// Number of para ids using `original` system tokens has reached `MaxSystemTokenUsedParaIds`
+		/// Number of para ids using `original` system tokens has reached
+		/// `MaxSystemTokenUsedParaIds`
 		TooManyUsed,
 		/// String metadata is out of limit
 		BadMetadata,
@@ -184,7 +186,6 @@ pub mod pallet {
 	/// **Value:**
 	///
 	/// `original` system token id
-	///
 	pub type OriginalSystemTokenConverter<T: Config> =
 		StorageMap<_, Blake2_128Concat, SystemTokenId, SystemTokenId, OptionQuery>;
 
@@ -192,7 +193,8 @@ pub mod pallet {
 	#[pallet::getter(fn para_id_system_tokens)]
 	/// **Description:**
 	///
-	/// List of system tokens(either `original` or `wrapped`) that are used from a parachain, which is identified by `para_id`
+	/// List of system tokens(either `original` or `wrapped`) that are used from a parachain, which
+	/// is identified by `para_id`
 	///
 	/// **Key:**
 	///
@@ -246,7 +248,8 @@ pub mod pallet {
 		// - original: `Original` system token id expected to be registered
 		// - wrapped_fore_relay_chain: Original's `Wrapped` system token for relay chain
 		// - issuer: Human-readable issuer of system token which is metadata for Relay Chain
-		// - description: Human-readable description of system token which is metadata for Relay Chain
+		// - description: Human-readable description of system token which is metadata for Relay
+		//   Chain
 		// - url: Human-readable url of system token which is metadata for Relay Chain
 		// - name: Name of system token which is same as original chain
 		// - symbol: Symbol of system token which is same as original chain
@@ -468,8 +471,8 @@ pub mod pallet {
 		// - fee: Amount of fee to be set
 		//
 		// Logic:
-		// When fee is charged on the parachain, extract the metadata of the call, which is 'pallet_name' and 'call_name'
-		// Lookup the fee table with `key = (pallet_name, call_name)`.
+		// When fee is charged on the parachain, extract the metadata of the call, which is
+		// 'pallet_name' and 'call_name' Lookup the fee table with `key = (pallet_name, call_name)`.
 		// If value exists, we charged with that fee. Otherwise, default fee will be charged
 		pub fn set_fee_table(
 			origin: OriginFor<T>,
@@ -555,7 +558,8 @@ where
 	///
 	/// **Changes:**
 	///
-	/// `ParaIdSystemTokens`, `SystemTokenUsedParaIds`, `SystemTokenProperties`, `OriginalSystemTokenConverter`, `OriginalSystemTokenMetadata`
+	/// `ParaIdSystemTokens`, `SystemTokenUsedParaIds`, `SystemTokenProperties`,
+	/// `OriginalSystemTokenConverter`, `OriginalSystemTokenMetadata`
 	fn try_register_original(
 		original: &SystemTokenId,
 		system_token_weight: SystemTokenWeight,
@@ -580,7 +584,8 @@ where
 				created_at: Self::unix_time(),
 			},
 		);
-		// Self registered as wrapped token, which would be used for knowing it is 'original system token'
+		// Self registered as wrapped token, which would be used for knowing it is 'original system
+		// token'
 		OriginalSystemTokenConverter::<T>::insert(&original, &original);
 
 		OriginalSystemTokenMetadata::<T>::insert(
@@ -605,7 +610,8 @@ where
 	///
 	/// **Changes:**
 	///
-	/// - `OriginalSystemTokenConverter`, `ParaIdSystemTokens`, `SystemTokenUsedParaIds`, `SystemTokenProperties`
+	/// - `OriginalSystemTokenConverter`, `ParaIdSystemTokens`, `SystemTokenUsedParaIds`,
+	///   `SystemTokenProperties`
 	fn try_register_wrapped(
 		original: &SystemTokenId,
 		wrapped: &SystemTokenId,
@@ -650,7 +656,6 @@ where
 	///
 	/// **Changes:**
 	///
-	///
 	fn try_deregister_all(original: SystemTokenId) -> DispatchResult {
 		let wrapped_system_tokens = Self::try_get_wrapped_system_token_list(&original)?;
 		for wrapped_system_token_id in wrapped_system_tokens {
@@ -666,7 +671,8 @@ where
 	///
 	/// **Changes:**
 	///
-	/// `ParaIdSystemTokens`, `SystemTokenUsedParaIds`, `OriginalSystemTokenConverter`, `SystemTokenProperties`
+	/// `ParaIdSystemTokens`, `SystemTokenUsedParaIds`, `OriginalSystemTokenConverter`,
+	/// `SystemTokenProperties`
 	fn try_deregister(
 		wrapped: &SystemTokenId,
 		is_allowed_to_remove_original: bool,
@@ -701,7 +707,6 @@ where
 	/// Try suspend for all `original` and `wrapped` system tokens registered on runtime.
 	///
 	/// **Changes:**
-	///
 	///
 	fn try_suspend_all(original: SystemTokenId) -> DispatchResult {
 		let wrapped_system_tokens = Self::try_get_wrapped_system_token_list(&original)?;
@@ -753,7 +758,6 @@ where
 	/// Try unsuspend for all `original` and `wrapped` system tokens registered on runtime.
 	///
 	/// **Changes:**
-	///
 	///
 	fn try_unsuspend_all(original: SystemTokenId) -> DispatchResult {
 		let wrapped_system_tokens = Self::try_get_wrapped_system_token_list(&original)?;
@@ -855,7 +859,8 @@ where
 	///
 	/// **Errors:**
 	///
-	/// - `TooManyUsed`: Number of para ids using `original` system tokens has reached `MaxSystemTokenUsedParaIds`
+	/// - `TooManyUsed`: Number of para ids using `original` system tokens has reached
+	///   `MaxSystemTokenUsedParaIds`
 	fn try_push_para_id(para_id: IbsParaId, original: &SystemTokenId) -> DispatchResult {
 		SystemTokenUsedParaIds::<T>::try_mutate_exists(
 			original,
@@ -923,7 +928,8 @@ where
 {
 	/// **Description:**
 	///
-	/// Try change state of `wrapped` system token, which is `sufficient` and unlink the system token with local asset
+	/// Try change state of `wrapped` system token, which is `sufficient` and unlink the system
+	/// token with local asset
 	///
 	/// **Params:**
 	///
@@ -934,7 +940,8 @@ where
 	/// **Logic:**
 	///
 	/// If `para_id == 0`, which means Relay Chain, call internal `Assets` pallet method.
-	/// Otherwise, send DMP of `set_sufficient_with_unlink_system_token` to expected `para_id` destination
+	/// Otherwise, send DMP of `set_sufficient_with_unlink_system_token` to expected `para_id`
+	/// destination
 	fn try_set_sufficient_and_unlink(
 		wrapped: SystemTokenId,
 		is_sufficient: bool,
@@ -962,7 +969,8 @@ where
 	/// **Description:**
 	///
 	/// Try sending DMP of call `set_sufficient_and_system_token_weight` to specific parachain.
-	/// If success, destination parachain's local asset's `sufficient` state to `is_sufficient`, and set its weight
+	/// If success, destination parachain's local asset's `sufficient` state to `is_sufficient`, and
+	/// set its weight
 	fn try_set_sufficient_and_weight(
 		system_token_id: &SystemTokenId,
 		is_sufficient: bool,

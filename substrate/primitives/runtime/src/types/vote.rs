@@ -46,7 +46,6 @@ impl PotVote {
 	}
 }
 
-
 #[derive(Encode, Decode, PartialEq, Eq, Clone, sp_core::RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 /// Transaction-as-a-Vote

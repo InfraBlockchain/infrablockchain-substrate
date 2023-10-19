@@ -1034,8 +1034,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 // Custom impl
 impl<T: Config<I>, I: 'static> Pallet<T, I> {
-	pub fn asset_detail(asset_id: &T::AssetId) -> Option<AssetDetails<T::Balance, T::AccountId, DepositBalanceOf<T, I>>> {
-		Asset::<T,I>::get(asset_id)
+	pub fn asset_detail(
+		asset_id: &T::AssetId,
+	) -> Option<AssetDetails<T::Balance, T::AccountId, DepositBalanceOf<T, I>>> {
+		Asset::<T, I>::get(asset_id)
 	}
 
 	pub fn do_create_asset_with_metadata(
@@ -1049,7 +1051,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		is_frozen: bool,
 		system_token_id: SystemTokenId,
 		asset_link_parents: u8,
-		system_token_weight: SystemTokenWeight
+		system_token_weight: SystemTokenWeight,
 	) -> DispatchResult {
 		let owner = T::Lookup::lookup(owner)?;
 		let id: T::AssetId = id.into();
@@ -1095,7 +1097,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		system_token_weight: SystemTokenWeight,
 	) -> DispatchResult {
 		let id: T::AssetId = id.into();
-		Asset::<T,I>::try_mutate_exists(&id, |maybe_detail| -> DispatchResult {
+		Asset::<T, I>::try_mutate_exists(&id, |maybe_detail| -> DispatchResult {
 			let mut asset_detail = maybe_detail.take().ok_or(Error::<T, I>::Unknown)?;
 			asset_detail.system_token_weight = system_token_weight;
 			*maybe_detail = Some(asset_detail);
@@ -1109,9 +1111,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		asset_id: &T::AssetId,
 		is_sufficient: bool,
 	) -> DispatchResult {
-
-		Asset::<T,I>::try_mutate_exists(asset_id, |maybe_detail| -> DispatchResult {
-			let mut asset_detail = maybe_detail.take().ok_or(Error::<T,I>::Unknown)?;
+		Asset::<T, I>::try_mutate_exists(asset_id, |maybe_detail| -> DispatchResult {
+			let mut asset_detail = maybe_detail.take().ok_or(Error::<T, I>::Unknown)?;
 			asset_detail.is_sufficient = is_sufficient;
 			*maybe_detail = Some(asset_detail);
 
@@ -1130,7 +1131,7 @@ impl<T: Config<I>, I: 'static> SystemTokenLocalAssetProvider for Pallet<T, I> {
 		let token_list = assets
 			.into_iter()
 			.filter_map(|asset| {
-				Asset::<T,I>::get(&asset)
+				Asset::<T, I>::get(&asset)
 					.filter(|detail| detail.is_sufficient)
 					.map(|_| asset.into())
 			})

@@ -18,8 +18,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::traits::ibs_support::fee::FeeTableProvider;
-use sp_runtime::types::ExtrinsicMetadata;
 pub use pallet::*;
+use sp_runtime::types::ExtrinsicMetadata;
 use sp_std::vec::Vec;
 
 #[frame_support::pallet(dev_mode)]
@@ -48,13 +48,19 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::unbounded]
-	pub type FeeTable<T: Config> = StorageMap<_, Twox128, ExtrinsicMetadata, T::Balance, OptionQuery>;
+	pub type FeeTable<T: Config> =
+		StorageMap<_, Twox128, ExtrinsicMetadata, T::Balance, OptionQuery>;
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::call_index(0)]
 		#[pallet::weight(1_000)]
-		pub fn set_fee_table(origin: OriginFor<T>, pallet_name: Vec<u8>, call_name: Vec<u8>, fee: T::Balance) -> DispatchResult {
+		pub fn set_fee_table(
+			origin: OriginFor<T>,
+			pallet_name: Vec<u8>,
+			call_name: Vec<u8>,
+			fee: T::Balance,
+		) -> DispatchResult {
 			T::AuthorizedOrigin::ensure_origin(origin)?;
 			let extrinsic_metadata = ExtrinsicMetadata::new(pallet_name, call_name);
 			FeeTable::<T>::insert(&extrinsic_metadata, fee);

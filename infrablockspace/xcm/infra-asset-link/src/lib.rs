@@ -196,7 +196,10 @@ pub mod pallet {
 			AssetIdMultiLocation::<T>::insert(asset_id, &asset_multi_location);
 			AssetMultiLocationId::<T>::insert(&asset_multi_location, asset_id);
 
-			Self::deposit_event(Event::AssetLinked { asset_id: asset_id.clone(), asset_multi_location });
+			Self::deposit_event(Event::AssetLinked {
+				asset_id: asset_id.clone(),
+				asset_multi_location,
+			});
 
 			Ok(())
 		}
@@ -210,7 +213,10 @@ pub mod pallet {
 			AssetIdMultiLocation::<T>::remove(asset_id);
 			AssetMultiLocationId::<T>::remove(&asset_multi_location);
 
-			Self::deposit_event(Event::AssetUnlinked { asset_id: asset_id.clone(), asset_multi_location });
+			Self::deposit_event(Event::AssetUnlinked {
+				asset_id: asset_id.clone(),
+				asset_multi_location,
+			});
 			Ok(())
 		}
 	}

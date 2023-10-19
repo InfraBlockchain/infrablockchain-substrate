@@ -13,8 +13,8 @@ pub type ParaId = u32;
 pub type PalletId = u8;
 /// Identifier of asset
 pub type AssetId = u32;
-/// Weight of system token. 
-/// 
+/// Weight of system token.
+///
 /// For example,
 pub type SystemTokenWeight = u128;
 /// Data structure for Original system tokens

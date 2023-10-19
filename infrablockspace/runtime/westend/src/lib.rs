@@ -84,8 +84,8 @@ use sp_runtime::{
 		AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, Extrinsic as ExtrinsicT,
 		IdentityLookup, Keccak256, OpaqueKeys, SaturatedConversion, Verify,
 	},
-	types::{VoteAccountId, VoteWeight},
 	transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
+	types::{VoteAccountId, VoteWeight},
 	ApplyExtrinsicResult, FixedU128, KeyTypeId, Perbill, Percent, Permill,
 };
 use sp_staking::SessionIndex;

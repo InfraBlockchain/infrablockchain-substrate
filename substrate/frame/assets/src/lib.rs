@@ -160,7 +160,7 @@ pub use types::*;
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Saturating, StaticLookup, Zero},
-	types::{SystemTokenLocalAssetProvider, SystemTokenWeight, SystemTokenId},
+	types::{SystemTokenId, SystemTokenLocalAssetProvider, SystemTokenWeight},
 	ArithmeticError, DispatchError, TokenError,
 };
 use sp_std::prelude::*;
@@ -254,7 +254,12 @@ pub mod pallet {
 		type RemoveItemsLimit: Get<u32>;
 
 		/// Identifier for the class of asset.
-		type AssetId: Member + Parameter + Clone + MaybeSerializeDeserialize + MaxEncodedLen + IsType<sp_runtime::types::AssetId>;
+		type AssetId: Member
+			+ Parameter
+			+ Clone
+			+ MaybeSerializeDeserialize
+			+ MaxEncodedLen
+			+ IsType<sp_runtime::types::AssetId>;
 
 		/// Wrapper around `Self::AssetId` to use in dispatchable call signatures. Allows the use
 		/// of compact encoding in instances of the pallet, which will prevent breaking changes
@@ -537,7 +542,10 @@ pub mod pallet {
 		/// The is_sufficient of an asset has been updated by the asset owner.
 		AssetIsSufficientChanged { asset_id: T::AssetId, is_sufficient: bool },
 		/// The is_sufficient of an asset has been updated by the asset owner.
-		AssetSystemTokenWeightChanged { asset_id: T::AssetId, system_token_weight: SystemTokenWeight },
+		AssetSystemTokenWeightChanged {
+			asset_id: T::AssetId,
+			system_token_weight: SystemTokenWeight,
+		},
 		/// No sufficient token to pay the transaciton fee
 		NoSufficientTokenToPay,
 		/// The ParaFeeRate has been updated
@@ -1723,10 +1731,7 @@ pub mod pallet {
 
 			Asset::<T, I>::insert(&id, details);
 
-			Self::deposit_event(Event::AssetIsSufficientChanged {
-				asset_id: id,
-				is_sufficient,
-			});
+			Self::deposit_event(Event::AssetIsSufficientChanged { asset_id: id, is_sufficient });
 			Ok(())
 		}
 
@@ -1750,11 +1755,8 @@ pub mod pallet {
 			let asset_id: T::AssetId = id.into();
 			Self::do_set_sufficient_and_unlink(&asset_id, is_sufficient)?;
 
-			Self::deposit_event(Event::AssetIsSufficientChanged {
-				asset_id,
-				is_sufficient,
-			});
-			
+			Self::deposit_event(Event::AssetIsSufficientChanged { asset_id, is_sufficient });
+
 			Ok(())
 		}
 
@@ -1795,17 +1797,17 @@ pub mod pallet {
 		) -> DispatchResult {
 			T::ForceOrigin::ensure_origin(origin.clone())?;
 			Self::do_create_asset_with_metadata(
-				id, 
-				owner, 
-				is_sufficient, 
+				id,
+				owner,
+				is_sufficient,
 				min_balance,
 				name,
 				symbol,
 				decimals,
-				is_frozen, 
+				is_frozen,
 				system_token_id,
 				asset_link_parents,
-				system_token_weight
+				system_token_weight,
 			)?;
 
 			Ok(())

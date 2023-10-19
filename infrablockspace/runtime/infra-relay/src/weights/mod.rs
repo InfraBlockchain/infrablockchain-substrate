@@ -16,7 +16,7 @@
 //! A list of the different weight modules for our runtime.
 
 pub mod frame_system;
-pub mod pallet_sudo;
+pub mod pallet_asset_rate;
 pub mod pallet_balances;
 pub mod pallet_bounties;
 pub mod pallet_child_bounties;
@@ -24,7 +24,6 @@ pub mod pallet_collective_council;
 pub mod pallet_collective_technical_committee;
 pub mod pallet_democracy;
 pub mod pallet_elections_phragmen;
-pub mod pallet_asset_rate;
 pub mod pallet_identity;
 pub mod pallet_im_online;
 pub mod pallet_indices;
@@ -35,6 +34,7 @@ pub mod pallet_preimage;
 pub mod pallet_proxy;
 pub mod pallet_scheduler;
 pub mod pallet_session;
+pub mod pallet_sudo;
 pub mod pallet_timestamp;
 pub mod pallet_tips;
 pub mod pallet_treasury;
@@ -46,11 +46,11 @@ pub mod runtime_common_claims;
 pub mod runtime_common_crowdloan;
 pub mod runtime_common_paras_registrar;
 pub mod runtime_common_slots;
+pub mod runtime_parachains_assigner_on_demand;
 pub mod runtime_parachains_configuration;
 pub mod runtime_parachains_disputes;
 pub mod runtime_parachains_hrmp;
+pub mod runtime_parachains_inclusion;
 pub mod runtime_parachains_initializer;
 pub mod runtime_parachains_paras;
-pub mod runtime_parachains_inclusion;
 pub mod runtime_parachains_paras_inherent;
-pub mod runtime_parachains_assigner_on_demand;

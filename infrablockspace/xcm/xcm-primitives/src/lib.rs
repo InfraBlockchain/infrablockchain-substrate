@@ -5,8 +5,8 @@ use frame_support::{
 	traits::{fungibles::Inspect, Currency},
 	weights::Weight,
 };
-use sp_runtime::{types::AssetId as IbsAssetId, traits::MaybeEquivalence};
-use sp_std::{borrow::Borrow, marker::PhantomData, vec::Vec, prelude::*};
+use sp_runtime::{traits::MaybeEquivalence, types::AssetId as IbsAssetId};
+use sp_std::{borrow::Borrow, marker::PhantomData, prelude::*, vec::Vec};
 use xcm::{
 	latest::{AssetId::Concrete, Fungibility::Fungible, MultiAsset, MultiLocation},
 	v3::{
@@ -15,19 +15,21 @@ use xcm::{
 	},
 };
 use xcm_executor::{
-	traits::{ DropAssets, Error as MatchError, MatchesFungibles },
+	traits::{DropAssets, Error as MatchError, MatchesFungibles},
 	Assets,
 };
 
 pub trait Convert<A: Clone, B: Clone> {
-	/// Convert from `value` (of type `A`) into an equivalent value of type `B`, `Err` if not possible.
+	/// Convert from `value` (of type `A`) into an equivalent value of type `B`, `Err` if not
+	/// possible.
 	fn convert(value: A) -> Result<B, A> {
 		Self::convert_ref(&value).map_err(|_| value)
 	}
 	fn convert_ref(value: impl Borrow<A>) -> Result<B, ()> {
 		Self::convert(value.borrow().clone()).map_err(|_| ())
 	}
-	/// Convert from `value` (of type `B`) into an equivalent value of type `A`, `Err` if not possible.
+	/// Convert from `value` (of type `B`) into an equivalent value of type `A`, `Err` if not
+	/// possible.
 	fn reverse(value: B) -> Result<A, B> {
 		Self::reverse_ref(&value).map_err(|_| value)
 	}

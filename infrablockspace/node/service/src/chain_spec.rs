@@ -25,6 +25,10 @@ use polkadot_primitives::{AccountId, AccountPublic, AssignmentId, ValidatorId};
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_babe::AuthorityId as BabeId;
 
+#[cfg(feature = "infra-relay-native")]
+use infra_relay_runtime as infra_relay;
+#[cfg(feature = "infra-relay-native")]
+use infra_relay_runtime_constants::currency::UNITS as UNIT;
 #[cfg(feature = "rococo-native")]
 use rococo_runtime as rococo;
 #[cfg(feature = "rococo-native")]
@@ -43,11 +47,6 @@ use telemetry::TelemetryEndpoints;
 use westend_runtime as westend;
 #[cfg(feature = "westend-native")]
 use westend_runtime_constants::currency::UNITS as WND;
-#[cfg(feature = "infra-relay-native")]
-use infra_relay_runtime as infra_relay;
-#[cfg(feature = "infra-relay-native")]
-use infra_relay_runtime_constants::currency::UNITS as UNIT;
-
 
 #[cfg(feature = "westend-native")]
 const WESTEND_STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
@@ -343,7 +342,10 @@ fn infra_relay_staging_testnet_config_genesis(
 		},
 		grandpa: Default::default(),
 		im_online: Default::default(),
-		authority_discovery: infra_relay::AuthorityDiscoveryConfig { keys: vec![], ..Default::default() },
+		authority_discovery: infra_relay::AuthorityDiscoveryConfig {
+			keys: vec![],
+			..Default::default()
+		},
 		treasury: Default::default(),
 		hrmp: Default::default(),
 		configuration: infra_relay::ConfigurationConfig {
@@ -892,25 +894,27 @@ fn rococo_staging_testnet_config_genesis(
 
 #[cfg(feature = "infra-relay-native")]
 pub fn infra_relay_staging_testnet_config() -> Result<InfraRelayChainSpec, String> {
-	let wasm_binary = infra_relay::WASM_BINARY.ok_or("Infra Relay development wasm not available")?;
+	let wasm_binary =
+		infra_relay::WASM_BINARY.ok_or("Infra Relay development wasm not available")?;
 	let boot_nodes = vec![];
 
 	Ok(InfraRelayChainSpec::from_genesis(
-		"Infra Relay Staging Testnet", 
-		"infra_relay_staging_testnet", 
-		ChainType::Live, 
+		"Infra Relay Staging Testnet",
+		"infra_relay_staging_testnet",
+		ChainType::Live,
 		move || InfraRelayGenesisExt {
 			runtime_genesis_config: infra_relay_staging_testnet_config_genesis(wasm_binary),
-			session_length_in_blocks: None
-		}, 
-		boot_nodes, 
+			session_length_in_blocks: None,
+		},
+		boot_nodes,
 		Some(
 			TelemetryEndpoints::new(vec![(WESTEND_STAGING_TELEMETRY_URL.to_string(), 0)])
 				.expect("Westend Staging telemetry url is valid; qed"),
-		), 
-		Some(DEFAULT_PROTOCOL_ID), 
-		None, 
-		None, Default::default()
+		),
+		Some(DEFAULT_PROTOCOL_ID),
+		None,
+		None,
+		Default::default(),
 	))
 }
 
@@ -1147,7 +1151,10 @@ pub fn infra_relay_testnet_genesis(
 		},
 		grandpa: Default::default(),
 		im_online: Default::default(),
-		authority_discovery: infra_relay::AuthorityDiscoveryConfig { keys: vec![], ..Default::default() },
+		authority_discovery: infra_relay::AuthorityDiscoveryConfig {
+			keys: vec![],
+			..Default::default()
+		},
 		treasury: Default::default(),
 		hrmp: Default::default(),
 		configuration: infra_relay::ConfigurationConfig {
@@ -1350,9 +1357,7 @@ pub fn rococo_testnet_genesis(
 }
 
 #[cfg(feature = "infra-relay-native")]
-fn infra_relay_development_config_genesis(
-	wasm_binary: &[u8],
-) -> infra_relay::RuntimeGenesisConfig {
+fn infra_relay_development_config_genesis(wasm_binary: &[u8]) -> infra_relay::RuntimeGenesisConfig {
 	infra_relay_testnet_genesis(
 		wasm_binary,
 		vec![get_authority_keys_from_seed_no_beefy("Alice")],
@@ -1381,7 +1386,7 @@ pub fn infra_relay_chain_spec_properties() -> serde_json::map::Map<String, serde
 	.clone()
 }
 
-/// Infra Relay development config 
+/// Infra Relay development config
 #[cfg(feature = "infra-relay-native")]
 pub fn infra_relay_development_config() -> Result<InfraRelayChainSpec, String> {
 	let wasm_binary =

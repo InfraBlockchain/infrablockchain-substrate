@@ -29,7 +29,10 @@ use sp_std::{
 use application_crypto::KeyTypeId;
 use inherents::InherentIdentifier;
 use primitives::RuntimeDebug;
-use runtime_primitives::{traits::{AppVerify, Header as HeaderT}, types::PotVotesResult};
+use runtime_primitives::{
+	traits::{AppVerify, Header as HeaderT},
+	types::PotVotesResult,
+};
 use sp_arithmetic::traits::{BaseArithmetic, Saturating};
 
 pub use runtime_primitives::traits::{BlakeTwo256, Hash as HashT};
@@ -73,7 +76,8 @@ pub use metrics::{
 /// The key type ID for a collator key.
 pub const COLLATOR_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"coll");
 
-/// The number of blocks per year. i.e) 10 blocks/min * 60 min/hours* 24 hours/day * 365 days/year = 5_256_000
+/// The number of blocks per year. i.e) 10 blocks/min * 60 min/hours* 24 hours/day * 365 days/year =
+/// 5_256_000
 pub const BLOCKS_PER_YEAR: f32 = 5_256_000.0;
 
 /// The block time weight that doubles every year. Decimal is 3.

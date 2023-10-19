@@ -53,4 +53,3 @@ impl<SystemTokenId, Balance> FeeDetail<SystemTokenId, Balance> {
 		Self { system_token_id, amount }
 	}
 }
-

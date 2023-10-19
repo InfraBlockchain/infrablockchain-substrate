@@ -33,11 +33,13 @@ use runtime_parachains::{
 	configuration as parachains_configuration, disputes as parachains_disputes,
 	disputes::slashing as parachains_slashing,
 	dmp as parachains_dmp, hrmp as parachains_hrmp, inclusion as parachains_inclusion,
-	inclusion::{AggregateMessageOrigin, UmpQueueId}, initializer as parachains_initializer, origin as parachains_origin, paras as parachains_paras,
+	inclusion::{AggregateMessageOrigin, UmpQueueId},
+	initializer as parachains_initializer, origin as parachains_origin, paras as parachains_paras,
 	paras_inherent as parachains_paras_inherent,
-	runtime_api_impl::v7 as parachains_runtime_api_impl, scheduler as parachains_scheduler,
-	session_info as parachains_session_info, shared as parachains_shared, system_token_aggregator,
-	system_token_manager, validator_reward_manager,
+	runtime_api_impl::v7 as parachains_runtime_api_impl,
+	scheduler as parachains_scheduler, session_info as parachains_session_info,
+	shared as parachains_shared, system_token_aggregator, system_token_manager,
+	validator_reward_manager,
 };
 
 use authority_discovery_primitives::AuthorityId as AuthorityDiscoveryId;
@@ -45,9 +47,12 @@ use beefy_primitives::ecdsa_crypto::{AuthorityId as BeefyId, Signature as BeefyS
 use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{
-		tokens::{fungibles::{Balanced, Credit}, pay::PayAssetFromAccount},
+		tokens::{
+			fungibles::{Balanced, Credit},
+			pay::PayAssetFromAccount,
+		},
 		AsEnsureOriginWithArg, ConstU128, ConstU32, EitherOfDiverse, InstanceFilter,
-		KeyOwnerProofSystem, LockIdentifier, PrivilegeCmp, ProcessMessage, ProcessMessageError
+		KeyOwnerProofSystem, LockIdentifier, PrivilegeCmp, ProcessMessage, ProcessMessageError,
 	},
 	weights::{ConstantMultiplier, WeightMeter},
 	PalletId,
@@ -61,10 +66,11 @@ use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
 use pallet_validator_election::SessionIndex;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use primitives::{
-	AccountId, AccountIndex, Balance, BlockNumber, CandidateEvent, CommittedCandidateReceipt, CandidateHash,
-	CoreState, GroupRotationInfo, Hash, Id as ParaId, InboundDownwardMessage, InboundHrmpMessage,
-	Moment, Nonce, OccupiedCoreAssumption, PersistedValidationData, ScrapedOnChainVotes, ExecutorParams,
-	SessionInfo, Signature, ValidationCode, ValidationCodeHash, ValidatorId, ValidatorIndex, DisputeState, slashing, PARACHAIN_KEY_TYPE_ID
+	slashing, AccountId, AccountIndex, Balance, BlockNumber, CandidateEvent, CandidateHash,
+	CommittedCandidateReceipt, CoreState, DisputeState, ExecutorParams, GroupRotationInfo, Hash,
+	Id as ParaId, InboundDownwardMessage, InboundHrmpMessage, Moment, Nonce,
+	OccupiedCoreAssumption, PersistedValidationData, ScrapedOnChainVotes, SessionInfo, Signature,
+	ValidationCode, ValidationCodeHash, ValidatorId, ValidatorIndex, PARACHAIN_KEY_TYPE_ID,
 };
 use sp_core::OpaqueMetadata;
 use sp_mmr_primitives as mmr;
@@ -76,15 +82,15 @@ use sp_runtime::{
 	},
 	transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
 	types::{VoteAccountId, VoteWeight},
-	ApplyExtrinsicResult, KeyTypeId, Perbill, Percent, Permill, FixedU128
+	ApplyExtrinsicResult, FixedU128, KeyTypeId, Perbill, Percent, Permill,
 };
 
 use sp_std::{cmp::Ordering, collections::btree_map::BTreeMap, prelude::*};
 #[cfg(any(feature = "std", test))]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
-use xcm::latest::Junction;
 use static_assertions::const_assert;
+use xcm::latest::Junction;
 
 pub use frame_system::Call as SystemCall;
 pub use pallet_balances::Call as BalancesCall;
@@ -244,7 +250,11 @@ impl pallet_preimage::Config for Runtime {
 		AccountId,
 		Balances,
 		PreimageHoldReason,
-		frame_support::traits::LinearStoragePrice<PreimageBaseDeposit, PreimageByteDeposit, Balance>,
+		frame_support::traits::LinearStoragePrice<
+			PreimageBaseDeposit,
+			PreimageByteDeposit,
+			Balance,
+		>,
 	>;
 }
 
@@ -471,7 +481,8 @@ impl pallet_democracy::Config for Runtime {
 		pallet_collective::EnsureProportionAtLeast<AccountId, ValidatorCollective, 1, 2>,
 		frame_system::EnsureRoot<AccountId>,
 	>;
-	/// A 60% super-majority can have the next scheduled referendum be a straight majority-carries vote.
+	/// A 60% super-majority can have the next scheduled referendum be a straight majority-carries
+	/// vote.
 	type ExternalMajorityOrigin = EitherOfDiverse<
 		pallet_collective::EnsureProportionAtLeast<AccountId, ValidatorCollective, 3, 5>,
 		frame_system::EnsureRoot<AccountId>,
@@ -904,7 +915,9 @@ pub enum ProxyType {
 mod proxy_type_tests {
 	use super::*;
 
-	#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Encode, Decode, sp_runtime::RuntimeDebug)]
+	#[derive(
+		Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Encode, Decode, sp_runtime::RuntimeDebug,
+	)]
 	pub enum OldProxyType {
 		Any,
 		NonTransfer,

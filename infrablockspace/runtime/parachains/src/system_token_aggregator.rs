@@ -29,7 +29,6 @@
 //! * `set_name` - Set the associated name of an account; a small deposit is reserved if not already
 //!   taken.
 //! *
-//!
 
 pub use crate::system_token_helper;
 use frame_support::{pallet_prelude::*, traits::OriginTrait};
@@ -48,7 +47,7 @@ type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
 #[frame_support::pallet(dev_mode)]
 pub mod pallet {
 	use super::*;
-	
+
 	#[pallet::config]
 	pub trait Config:
 		frame_system::Config

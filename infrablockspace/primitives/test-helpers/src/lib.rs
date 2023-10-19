@@ -182,7 +182,7 @@ pub fn make_candidate(
 		new_validation_code: None,
 		processed_downward_messages: 0,
 		hrmp_watermark: relay_parent_number,
-		vote_result: None
+		vote_result: None,
 	};
 
 	let mut candidate =

@@ -39,12 +39,16 @@ pub fn sovereign_account<T: frame_system::Config>() -> T::AccountId {
 pub fn inspect_account_and_check_is_owner<T: pallet_assets::Config>(asset_id: &T::AssetId) -> bool {
 	let default_acc: T::AccountId = frame_support::PalletId(*b"infrapid").into_account_truncating();
 	let root_acc = root_account::<T>();
-	root_acc == pallet_assets::Pallet::<T>::owner(asset_id.clone()).map_or(default_acc.clone(), |a| a) &&
+	root_acc ==
+		pallet_assets::Pallet::<T>::owner(asset_id.clone()).map_or(default_acc.clone(), |a| a) &&
 		root_acc ==
-			pallet_assets::Pallet::<T>::issuer(asset_id.clone()).map_or(default_acc.clone(), |a| a) &&
+			pallet_assets::Pallet::<T>::issuer(asset_id.clone())
+				.map_or(default_acc.clone(), |a| a) &&
 		root_acc ==
-			pallet_assets::Pallet::<T>::admin(asset_id.clone()).map_or(default_acc.clone(), |a| a) &&
-		root_acc == pallet_assets::Pallet::<T>::freezer(asset_id.clone()).map_or(default_acc, |a| a)
+			pallet_assets::Pallet::<T>::admin(asset_id.clone())
+				.map_or(default_acc.clone(), |a| a) &&
+		root_acc ==
+			pallet_assets::Pallet::<T>::freezer(asset_id.clone()).map_or(default_acc, |a| a)
 }
 
 fn encode_pallet_call(pallet_id: PalletId, mut encoded_call: Vec<u8>) -> Vec<u8> {

@@ -127,8 +127,7 @@ where
 		<Runtime as pallet_assets::Config<AssetInstance>>::AssetId,
 		<Runtime as pallet_assets::Config<AssetInstance>>::Balance,
 	>,
-	AccountIdOf<Runtime>:
-		From<primitives::AccountId> + Into<primitives::AccountId>,
+	AccountIdOf<Runtime>: From<primitives::AccountId> + Into<primitives::AccountId>,
 	CurrencyBalance: Debug,
 {
 	fn charge_weight_in_fungibles(
@@ -222,7 +221,8 @@ pub type MultiLocationConvertedConcreteId<MultiLocationFilter, AssetConverter, B
 		JustTry,
 	>;
 
-/// [`MatchedConvertedConcreteId`] converter dedicated for storing `ForeignAssets` with `AssetId` as `MultiLocation`.
+/// [`MatchedConvertedConcreteId`] converter dedicated for storing `ForeignAssets` with `AssetId` as
+/// `MultiLocation`.
 ///
 /// Excludes by default:
 /// - parent as relay chain
@@ -238,9 +238,9 @@ pub type ForeignAssetsConvertedConcreteId<
 		// Excludes relay/parent chain currency
 		Equals<ParentLocation>,
 		// Here we rely on fact that something like this works:
-		// assert!(MultiLocation::new(1, X1(Parachain(100))).starts_with(&MultiLocation::parent()));
-		// assert!(X1(Parachain(100)).starts_with(&Here));
-		// StartsWith<LocalMultiLocationPattern>,
+		// assert!(MultiLocation::new(1,
+		// X1(Parachain(100))).starts_with(&MultiLocation::parent())); assert!(X1(Parachain(100)).
+		// starts_with(&Here)); StartsWith<LocalMultiLocationPattern>,
 		// Here we can exclude more stuff or leave it as `()`
 		AdditionalMultiLocationExclusionFilter,
 	)>,

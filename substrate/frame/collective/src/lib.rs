@@ -297,10 +297,9 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
-
 		/// Collective members have been changed due to new Session
 		MembersChanged { old: Vec<T::AccountId>, new: Vec<T::AccountId> },
-		
+
 		/// A motion (given hash) has been proposed (by given account) with a threshold (given
 		/// `MemberCount`).
 		Proposed {
@@ -1060,7 +1059,9 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	}
 }
 
-impl<T: Config<I>, I: 'static> pallet_validator_election::CollectiveInterface<T::AccountId> for Pallet<T, I> {
+impl<T: Config<I>, I: 'static> pallet_validator_election::CollectiveInterface<T::AccountId>
+	for Pallet<T, I>
+{
 	fn set_new_members(new: Vec<T::AccountId>) {
 		let old = Members::<T, I>::get();
 		Members::<T, I>::put(&new);

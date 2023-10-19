@@ -275,8 +275,10 @@ where
 			match initial_payment {
 				// Ibs only pay with some asset
 				InitialPayment::Asset(already_withdrawn) => {
-					let metadata =
-						ExtrinsicMetadata::new(call_metadata.pallet_name, call_metadata.function_name);
+					let metadata = ExtrinsicMetadata::new(
+						call_metadata.pallet_name,
+						call_metadata.function_name,
+					);
 					// Actual fee will be based on 'fee table' or default calculation
 					let actual_fee: BalanceOf<T> =
 						if let Some(fee) = T::FeeTableProvider::get_fee_from_fee_table(metadata) {
@@ -303,11 +305,10 @@ where
 						(Some(vote_candidate), Some(system_token_id)) => {
 							Pallet::<T>::deposit_event(Event::<T>::AssetTxFeePaid {
 								fee_payer: who,
-								fee_detail:
-									FeeDetail::<SystemTokenId, AssetBalanceOf<T>>::new(
-										system_token_id.clone(),
-										converted_fee,
-									),
+								fee_detail: FeeDetail::<SystemTokenId, AssetBalanceOf<T>>::new(
+									system_token_id.clone(),
+									converted_fee,
+								),
 								tip,
 								vote_candidate: Some(vote_candidate.clone()),
 							});
@@ -322,11 +323,10 @@ where
 						(None, Some(system_token_id)) =>
 							Pallet::<T>::deposit_event(Event::<T>::AssetTxFeePaid {
 								fee_payer: who,
-								fee_detail:
-									FeeDetail::<SystemTokenId, AssetBalanceOf<T>>::new(
-										system_token_id.clone(),
-										converted_fee,
-									),
+								fee_detail: FeeDetail::<SystemTokenId, AssetBalanceOf<T>>::new(
+									system_token_id.clone(),
+									converted_fee,
+								),
 								tip,
 								vote_candidate: None,
 							}),

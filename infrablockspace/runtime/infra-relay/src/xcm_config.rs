@@ -21,11 +21,14 @@ use super::{
 	Balances, ParaId, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, ValidatorCollective,
 	WeightToFee, XcmPallet,
 };
-use infra_asset_common::{matching::{StartsWith, StartsWithExplicitGlobalConsensus}, AssetFeeAsExistentialDepositMultiplier};
 use frame_support::{
 	match_types, parameter_types,
 	traits::{Contains, Everything, Nothing, PalletInfoAccess},
 	weights::Weight,
+};
+use infra_asset_common::{
+	matching::{StartsWith, StartsWithExplicitGlobalConsensus},
+	AssetFeeAsExistentialDepositMultiplier,
 };
 use parachain_primitives::primitives::Sibling;
 use runtime_common::{paras_registrar, xcm_sender};
@@ -68,8 +71,10 @@ pub type ForeignAssetsConvertedConcreteId = infra_asset_common::ForeignAssetsCon
 		// Ignore `TrustBackedAssets` explicitly
 		StartsWith<TrustBackedAssetsPalletLocation>,
 		// Ignore asset which starts explicitly with our `GlobalConsensus(NetworkId)`, means:
-		// - foreign assets from our consensus should be: `MultiLocation {parent: 1, X*(Parachain(xyz))}
-		// - foreign assets outside our consensus with the same `GlobalConsensus(NetworkId)` wont be accepted here
+		// - foreign assets from our consensus should be: `MultiLocation {parent: 1,
+		//   X*(Parachain(xyz))}
+		// - foreign assets outside our consensus with the same `GlobalConsensus(NetworkId)` wont
+		//   be accepted here
 		StartsWithExplicitGlobalConsensus<UniversalLocationNetworkId>,
 	),
 	AssetLink,
@@ -94,7 +99,10 @@ pub type ForeignFungiblesTransactor = FungiblesAdapter<
 
 /// `AssetId/Balancer` converter for `TrustBackedAssets``
 pub type TrustBackedAssetsConvertedConcreteId =
-	infra_asset_common::TrustBackedAssetsConvertedConcreteId<TrustBackedAssetsPalletLocation, Balance>;
+	infra_asset_common::TrustBackedAssetsConvertedConcreteId<
+		TrustBackedAssetsPalletLocation,
+		Balance,
+	>;
 
 /// Means for transacting assets besides the native currency on this chain.
 pub type LocalIssuedFungiblesTransactor = FungiblesAdapter<
@@ -130,8 +138,8 @@ parameter_types! {
 	pub XcmAssetFeesReceiver: Option<AccountId> = Authorship::author();
 }
 
-/// The canonical means of converting a `MultiLocation` into an `AccountId`, used when we want to determine
-/// the sovereign account controlled by a location.
+/// The canonical means of converting a `MultiLocation` into an `AccountId`, used when we want to
+/// determine the sovereign account controlled by a location.
 pub type SovereignAccountOf = (
 	// We can convert a child parachain using the standard `AccountId` conversion.
 	ChildParachainConvertsVia<ParaId, AccountId>,
@@ -352,11 +360,11 @@ pub type CouncilToPlurality = BackingToPlurality<
 	ValidatorCouncilBodyId,
 >;
 
-/// Type to convert an `Origin` type value into a `MultiLocation` value which represents an interior location
-/// of this chain.
+/// Type to convert an `Origin` type value into a `MultiLocation` value which represents an interior
+/// location of this chain.
 pub type LocalOriginToLocation = (
-	// We allow an origin from the Collective pallet to be used in XCM as a corresponding Plurality of the
-	// `Unit` body.
+	// We allow an origin from the Collective pallet to be used in XCM as a corresponding Plurality
+	// of the `Unit` body.
 	CouncilToPlurality,
 	// And a usual Signed origin to be used in XCM as a corresponding AccountId32
 	SignedToAccountId32<RuntimeOrigin, AccountId, ThisNetwork>,
