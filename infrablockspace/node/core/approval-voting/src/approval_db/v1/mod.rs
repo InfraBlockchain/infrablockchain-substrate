@@ -23,10 +23,10 @@
 //! require a db migration (check `node/service/src/parachains_db/upgrade.rs`).
 
 use parity_scale_codec::{Decode, Encode};
-use polkadot_node_primitives::approval::{AssignmentCert, DelayTranche};
-use polkadot_node_subsystem::{SubsystemError, SubsystemResult};
-use polkadot_node_subsystem_util::database::{DBTransaction, Database};
-use polkadot_primitives::{
+use node_primitives::approval::{AssignmentCert, DelayTranche};
+use node_subsystem::{SubsystemError, SubsystemResult};
+use node_subsystem_util::database::{DBTransaction, Database};
+use primitives::{
 	BlockNumber, CandidateHash, CandidateReceipt, CoreIndex, GroupIndex, Hash, SessionIndex,
 	ValidatorIndex, ValidatorSignature,
 };

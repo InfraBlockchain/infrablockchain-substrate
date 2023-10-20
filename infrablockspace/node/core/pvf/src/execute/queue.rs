@@ -30,8 +30,8 @@ use futures::{
 	stream::{FuturesUnordered, StreamExt as _},
 	Future, FutureExt,
 };
-use polkadot_node_core_pvf_common::SecurityStatus;
-use polkadot_primitives::{ExecutorParams, ExecutorParamsHash};
+use node_core_pvf_common::SecurityStatus;
+use primitives::{ExecutorParams, ExecutorParamsHash};
 use slotmap::HopSlotMap;
 use std::{
 	collections::VecDeque,

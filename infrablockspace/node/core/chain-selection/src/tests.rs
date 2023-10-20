@@ -35,9 +35,9 @@ use parity_scale_codec::Encode;
 use parking_lot::Mutex;
 use sp_core::testing::TaskExecutor;
 
-use polkadot_node_subsystem::{messages::AllMessages, ActiveLeavesUpdate};
-use polkadot_node_subsystem_test_helpers as test_helpers;
-use polkadot_primitives::{BlakeTwo256, ConsensusLog, HashT};
+use node_subsystem::{messages::AllMessages, ActiveLeavesUpdate};
+use node_subsystem_test_helpers as test_helpers;
+use primitives::{BlakeTwo256, ConsensusLog, HashT};
 use test_helpers::mock::new_leaf;
 
 #[derive(Default)]

@@ -1,5 +1,5 @@
 [package]
-name = "polkadot-node-core-chain-api"
+name = "node-core-chain-api"
 version = "1.0.0"
 authors.workspace = true
 edition.workspace = true
@@ -9,9 +9,9 @@ license.workspace = true
 futures = "0.3.21"
 gum = { package = "tracing-gum", path = "../../gum" }
 sp-blockchain = { path = "../../../../substrate/primitives/blockchain" }
-polkadot-primitives = { path = "../../../primitives" }
-polkadot-node-metrics = { path = "../../metrics" }
-polkadot-node-subsystem = { path = "../../subsystem" }
+primitives = { path = "../../../primitives" }
+node-metrics = { path = "../../metrics" }
+node-subsystem = { path = "../../subsystem" }
 sc-client-api = { path = "../../../../substrate/client/api" }
 sc-consensus-babe = { path = "../../../../substrate/client/consensus/babe" }
 
@@ -19,6 +19,6 @@ sc-consensus-babe = { path = "../../../../substrate/client/consensus/babe" }
 futures = { version = "0.3.21", features = ["thread-pool"] }
 maplit = "1.0.2"
 parity-scale-codec = "3.6.1"
-polkadot-node-primitives = { path = "../../primitives" }
-polkadot-node-subsystem-test-helpers = { path = "../../subsystem-test-helpers" }
+node-primitives = { path = "../../primitives" }
+node-subsystem-test-helpers = { path = "../../subsystem-test-helpers" }
 sp-core = { path = "../../../../substrate/primitives/core" }

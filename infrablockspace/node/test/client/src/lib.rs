@@ -20,7 +20,7 @@
 
 mod block_builder;
 
-use polkadot_primitives::Block;
+use primitives::Block;
 use sp_runtime::BuildStorage;
 use std::sync::Arc;
 

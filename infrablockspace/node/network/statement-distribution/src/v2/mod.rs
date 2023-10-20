@@ -17,7 +17,7 @@
 //! Implementation of the v2 statement distribution protocol,
 //! designed for asynchronous backing.
 
-use polkadot_node_network_protocol::{
+use node_network_protocol::{
 	self as net_protocol,
 	grid_topology::SessionGridTopology,
 	peer_set::ValidationVersion,
@@ -30,22 +30,22 @@ use polkadot_node_network_protocol::{
 	v2::{self as protocol_v2, StatementFilter},
 	IfDisconnected, PeerId, UnifiedReputationChange as Rep, Versioned, View,
 };
-use polkadot_node_primitives::{
+use node_primitives::{
 	SignedFullStatementWithPVD, StatementWithPVD as FullStatementWithPVD,
 };
-use polkadot_node_subsystem::{
+use node_subsystem::{
 	messages::{
 		CandidateBackingMessage, HypotheticalCandidate, HypotheticalFrontierRequest,
 		NetworkBridgeEvent, NetworkBridgeTxMessage, ProspectiveParachainsMessage,
 	},
 	overseer, ActivatedLeaf,
 };
-use polkadot_node_subsystem_util::{
+use node_subsystem_util::{
 	backing_implicit_view::View as ImplicitView,
 	reputation::ReputationAggregator,
 	runtime::{request_min_backing_votes, ProspectiveParachainsMode},
 };
-use polkadot_primitives::{
+use primitives::{
 	AuthorityDiscoveryId, CandidateHash, CompactStatement, CoreIndex, CoreState, GroupIndex,
 	GroupRotationInfo, Hash, Id as ParaId, IndexedVec, SessionIndex, SessionInfo, SignedStatement,
 	SigningContext, UncheckedSignedStatement, ValidatorId, ValidatorIndex,
@@ -171,7 +171,7 @@ impl PerSessionState {
 			authority_lookup.insert(ad, ValidatorIndex(i as _));
 		}
 
-		let local_validator = polkadot_node_subsystem_util::signing_key_and_index(
+		let local_validator = node_subsystem_util::signing_key_and_index(
 			session_info.validators.iter(),
 			keystore,
 		);
@@ -455,7 +455,7 @@ pub(crate) async fn handle_active_leaves_update<Context>(
 		// New leaf: fetch info from runtime API and initialize
 		// `per_relay_parent`.
 
-		let session_index = polkadot_node_subsystem_util::request_session_index_for_child(
+		let session_index = node_subsystem_util::request_session_index_for_child(
 			new_relay_parent,
 			ctx.sender(),
 		)
@@ -464,7 +464,7 @@ pub(crate) async fn handle_active_leaves_update<Context>(
 		.map_err(JfyiError::RuntimeApiUnavailable)?
 		.map_err(JfyiError::FetchSessionIndex)?;
 
-		let availability_cores = polkadot_node_subsystem_util::request_availability_cores(
+		let availability_cores = node_subsystem_util::request_availability_cores(
 			new_relay_parent,
 			ctx.sender(),
 		)
@@ -474,7 +474,7 @@ pub(crate) async fn handle_active_leaves_update<Context>(
 		.map_err(JfyiError::FetchAvailabilityCores)?;
 
 		let group_rotation_info =
-			polkadot_node_subsystem_util::request_validator_groups(new_relay_parent, ctx.sender())
+			node_subsystem_util::request_validator_groups(new_relay_parent, ctx.sender())
 				.await
 				.await
 				.map_err(JfyiError::RuntimeApiUnavailable)?
@@ -482,7 +482,7 @@ pub(crate) async fn handle_active_leaves_update<Context>(
 				.1;
 
 		if !state.per_session.contains_key(&session_index) {
-			let session_info = polkadot_node_subsystem_util::request_session_info(
+			let session_info = node_subsystem_util::request_session_info(
 				new_relay_parent,
 				session_index,
 				ctx.sender(),

@@ -22,15 +22,15 @@ use futures::{channel::oneshot, executor, future, Future};
 use self::test_helpers::mock::new_leaf;
 use ::test_helpers::TestCandidateBuilder;
 use parking_lot::Mutex;
-use polkadot_node_primitives::{AvailableData, BlockData, PoV, Proof};
-use polkadot_node_subsystem::{
+use node_primitives::{AvailableData, BlockData, PoV, Proof};
+use node_subsystem::{
 	errors::RuntimeApiError,
 	messages::{AllMessages, RuntimeApiMessage, RuntimeApiRequest},
 	ActiveLeavesUpdate,
 };
-use polkadot_node_subsystem_test_helpers as test_helpers;
-use polkadot_node_subsystem_util::{database::Database, TimeoutExt};
-use polkadot_primitives::{
+use node_subsystem_test_helpers as test_helpers;
+use node_subsystem_util::{database::Database, TimeoutExt};
+use primitives::{
 	CandidateHash, CandidateReceipt, CoreIndex, GroupIndex, HeadData, Header,
 	PersistedValidationData, ValidatorId,
 };
@@ -122,7 +122,7 @@ fn test_harness<T: Future<Output = VirtualOverseer>>(
 ) {
 	let _ = env_logger::builder()
 		.is_test(true)
-		.filter(Some("polkadot_node_core_av_store"), log::LevelFilter::Trace)
+		.filter(Some("node_core_av_store"), log::LevelFilter::Trace)
 		.filter(Some(LOG_TARGET), log::LevelFilter::Trace)
 		.try_init();
 
@@ -210,7 +210,7 @@ fn candidate_included(receipt: CandidateReceipt) -> CandidateEvent {
 fn test_store() -> Arc<dyn Database> {
 	let db = kvdb_memorydb::create(columns::NUM_COLUMNS);
 	let db =
-		polkadot_node_subsystem_util::database::kvdb_impl::DbAdapter::new(db, &[columns::META]);
+		node_subsystem_util::database::kvdb_impl::DbAdapter::new(db, &[columns::META]);
 	Arc::new(db)
 }
 

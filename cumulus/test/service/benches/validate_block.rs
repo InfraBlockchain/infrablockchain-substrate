@@ -26,7 +26,7 @@ use cumulus_test_client::{
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 use cumulus_test_runtime::{BalancesCall, Block, Header, UncheckedExtrinsic};
 use cumulus_test_service::bench_utils as utils;
-use polkadot_primitives::HeadData;
+use primitives::HeadData;
 use sc_block_builder::BlockBuilderProvider;
 use sc_client_api::UsageProvider;
 use sc_executor_common::wasm_runtime::WasmModule;

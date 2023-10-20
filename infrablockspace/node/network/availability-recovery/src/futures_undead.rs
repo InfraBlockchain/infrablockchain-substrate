@@ -31,7 +31,7 @@ use std::{
 };
 
 use futures::{future::BoxFuture, stream::FuturesUnordered, Future, Stream, StreamExt};
-use polkadot_node_subsystem_util::TimeoutExt;
+use node_subsystem_util::TimeoutExt;
 
 /// FuturesUndead - `FuturesUnordered` with semi canceled (undead) futures.
 ///

@@ -20,7 +20,7 @@ use super::pool::{self, Worker};
 use crate::{artifacts::ArtifactId, metrics::Metrics, Priority, LOG_TARGET};
 use always_assert::{always, never};
 use futures::{channel::mpsc, stream::StreamExt as _, Future, SinkExt};
-use polkadot_node_core_pvf_common::{error::PrepareResult, pvf::PvfPrepData};
+use node_core_pvf_common::{error::PrepareResult, pvf::PvfPrepData};
 use std::{
 	collections::{HashMap, VecDeque},
 	path::PathBuf,
@@ -491,7 +491,7 @@ mod tests {
 	use crate::host::tests::TEST_PREPARATION_TIMEOUT;
 	use assert_matches::assert_matches;
 	use futures::{future::BoxFuture, FutureExt};
-	use polkadot_node_core_pvf_common::{error::PrepareError, prepare::PrepareStats};
+	use node_core_pvf_common::{error::PrepareError, prepare::PrepareStats};
 	use slotmap::SlotMap;
 	use std::task::Poll;
 

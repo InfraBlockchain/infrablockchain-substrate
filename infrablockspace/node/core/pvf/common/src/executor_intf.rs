@@ -16,7 +16,7 @@
 
 //! Interface to the Substrate Executor
 
-use polkadot_primitives::{ExecutorParam, ExecutorParams};
+use primitives::{ExecutorParam, ExecutorParams};
 use sc_executor_common::{
 	error::WasmError,
 	runtime_blob::RuntimeBlob,

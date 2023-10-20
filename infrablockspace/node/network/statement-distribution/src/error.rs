@@ -17,12 +17,12 @@
 
 //! Error handling related code and Error/Result definitions.
 
-use polkadot_node_network_protocol::PeerId;
-use polkadot_node_subsystem::{RuntimeApiError, SubsystemError};
-use polkadot_node_subsystem_util::{
+use node_network_protocol::PeerId;
+use node_subsystem::{RuntimeApiError, SubsystemError};
+use node_subsystem_util::{
 	backing_implicit_view::FetchError as ImplicitViewFetchError, runtime,
 };
-use polkadot_primitives::{CandidateHash, Hash, Id as ParaId};
+use primitives::{CandidateHash, Hash, Id as ParaId};
 
 use futures::channel::oneshot;
 

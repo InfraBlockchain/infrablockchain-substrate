@@ -21,7 +21,7 @@ sp-api = { path = "../../../substrate/primitives/api", default-features = false 
 sp-std = { path = "../../../substrate/primitives/std", default-features = false }
 
 # Polkadot Dependencies
-polkadot-primitives = { path = "../../../infrablockspace/primitives", default-features = false }
+primitives = { path = "../../../infrablockspace/primitives", default-features = false }
 
 [features]
 default = [ "std" ]
@@ -31,7 +31,7 @@ std = [
 	"bp-runtime/std",
 	"frame-support/std",
 	"frame-system/std",
-	"polkadot-primitives/std",
+	"primitives/std",
 	"sp-api/std",
 	"sp-std/std",
 ]

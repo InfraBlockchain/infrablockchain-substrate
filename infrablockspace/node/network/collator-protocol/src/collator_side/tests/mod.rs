@@ -29,26 +29,26 @@ use sp_core::crypto::Pair;
 use sp_keyring::Sr25519Keyring;
 use sp_runtime::traits::AppVerify;
 
-use polkadot_node_network_protocol::{
+use node_network_protocol::{
 	our_view,
 	peer_set::CollationVersion,
 	request_response::{IncomingRequest, ReqProtocolNames},
 	view,
 };
-use polkadot_node_primitives::BlockData;
-use polkadot_node_subsystem::{
+use node_primitives::BlockData;
+use node_subsystem::{
 	errors::RuntimeApiError,
 	jaeger,
 	messages::{AllMessages, ReportPeerMessage, RuntimeApiMessage, RuntimeApiRequest},
 	ActiveLeavesUpdate,
 };
-use polkadot_node_subsystem_test_helpers as test_helpers;
-use polkadot_node_subsystem_util::{reputation::add_reputation, TimeoutExt};
-use polkadot_primitives::{
+use node_subsystem_test_helpers as test_helpers;
+use node_subsystem_util::{reputation::add_reputation, TimeoutExt};
+use primitives::{
 	AuthorityDiscoveryId, CollatorPair, ExecutorParams, GroupIndex, GroupRotationInfo, IndexedVec,
 	ScheduledCore, SessionIndex, SessionInfo, ValidatorId, ValidatorIndex,
 };
-use polkadot_primitives_test_helpers::TestCandidateBuilder;
+use primitives_test_helpers::TestCandidateBuilder;
 use test_helpers::mock::new_leaf;
 
 mod prospective_parachains;
@@ -223,7 +223,7 @@ fn test_harness<T: Future<Output = TestHarness>>(
 ) {
 	let _ = env_logger::builder()
 		.is_test(true)
-		.filter(Some("polkadot_collator_protocol"), log::LevelFilter::Trace)
+		.filter(Some("collator_protocol"), log::LevelFilter::Trace)
 		.filter(Some(LOG_TARGET), log::LevelFilter::Trace)
 		.try_init();
 
@@ -483,7 +483,7 @@ async fn connect_peer(
 		virtual_overseer,
 		CollatorProtocolMessage::NetworkBridgeUpdate(NetworkBridgeEvent::PeerConnected(
 			peer,
-			polkadot_node_network_protocol::ObservedRole::Authority,
+			node_network_protocol::ObservedRole::Authority,
 			version.into(),
 			authority_id.map(|v| HashSet::from([v])),
 		)),

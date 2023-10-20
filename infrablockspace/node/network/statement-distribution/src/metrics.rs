@@ -14,7 +14,7 @@
 
 //! Metrics for the statement distribution module
 
-use polkadot_node_subsystem_util::metrics::{self, prometheus};
+use node_subsystem_util::metrics::{self, prometheus};
 
 /// Buckets more suitable for checking the typical latency values
 const HISTOGRAM_LATENCY_BUCKETS: &[f64] = &[

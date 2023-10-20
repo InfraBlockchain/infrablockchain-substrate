@@ -31,12 +31,12 @@ use polkadot_cli::{
 	},
 	Cli,
 };
-use polkadot_node_core_candidate_validation::find_validation_data;
-use polkadot_node_primitives::{AvailableData, BlockData, PoV};
-use polkadot_node_subsystem_types::DefaultSubsystemClient;
-use polkadot_primitives::{CandidateDescriptor, CandidateReceipt};
+use node_core_candidate_validation::find_validation_data;
+use node_primitives::{AvailableData, BlockData, PoV};
+use node_subsystem_types::DefaultSubsystemClient;
+use primitives::{CandidateDescriptor, CandidateReceipt};
 
-use polkadot_node_subsystem_util::request_validators;
+use node_subsystem_util::request_validators;
 use sp_core::traits::SpawnNamed;
 
 use rand::distributions::{Bernoulli, Distribution};
@@ -53,7 +53,7 @@ use crate::{
 
 // Import extra types relevant to the particular
 // subsystem.
-use polkadot_node_subsystem::{messages::CandidateBackingMessage, SpawnGlue};
+use node_subsystem::{messages::CandidateBackingMessage, SpawnGlue};
 
 use std::sync::Arc;
 
@@ -180,11 +180,11 @@ where
 					};
 
 					let (collator_id, collator_signature) = {
-						use polkadot_primitives::CollatorPair;
+						use primitives::CollatorPair;
 						use sp_core::crypto::Pair;
 
 						let collator_pair = CollatorPair::generate().0;
-						let signature_payload = polkadot_primitives::collator_signature_payload(
+						let signature_payload = primitives::collator_signature_payload(
 							&relay_parent,
 							&candidate.descriptor().para_id,
 							&validation_data_hash,

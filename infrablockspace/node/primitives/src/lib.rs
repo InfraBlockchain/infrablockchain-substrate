@@ -29,10 +29,10 @@ use futures::Future;
 use parity_scale_codec::{Decode, Encode, Error as CodecError, Input};
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 
-pub use polkadot_parachain_primitives::primitives::{
+pub use parachain_primitives::primitives::{
 	BlockData, HorizontalMessages, UpwardMessages,
 };
-use polkadot_primitives::{
+use primitives::{
 	BlakeTwo256, BlockNumber, CandidateCommitments, CandidateHash, CollatorPair,
 	CommittedCandidateReceipt, CompactStatement, EncodeAs, Hash, HashT, HeadData, Id as ParaId,
 	PersistedValidationData, SessionIndex, Signed, UncheckedSigned, ValidationCode,
@@ -409,7 +409,7 @@ impl MaybeCompressedPoV {
 /// - contains a proof of validity.
 #[derive(Debug, Clone, Encode, Decode)]
 #[cfg(not(target_os = "unknown"))]
-pub struct Collation<BlockNumber = polkadot_primitives::BlockNumber> {
+pub struct Collation<BlockNumber = primitives::BlockNumber> {
 	/// Messages destined to be interpreted by the Relay chain itself.
 	pub upward_messages: UpwardMessages,
 	/// The horizontal messages sent by the parachain.

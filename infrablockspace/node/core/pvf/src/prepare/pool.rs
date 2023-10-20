@@ -24,7 +24,7 @@ use always_assert::never;
 use futures::{
 	channel::mpsc, future::BoxFuture, stream::FuturesUnordered, Future, FutureExt, StreamExt,
 };
-use polkadot_node_core_pvf_common::{
+use node_core_pvf_common::{
 	error::{PrepareError, PrepareResult},
 	pvf::PvfPrepData,
 	SecurityStatus,

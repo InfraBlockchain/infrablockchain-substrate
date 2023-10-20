@@ -1,18 +1,18 @@
 [package]
-name = "polkadot-approval-distribution"
+name = "approval-distribution"
 version = "1.0.0"
 authors.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [dependencies]
-polkadot-node-metrics = { path = "../../metrics" }
-polkadot-node-network-protocol = { path = "../protocol" }
-polkadot-node-primitives = { path = "../../primitives" }
-polkadot-node-subsystem = { path = "../../subsystem" }
-polkadot-node-subsystem-util = { path = "../../subsystem-util" }
-polkadot-primitives = { path = "../../../primitives" }
-polkadot-node-jaeger = { path = "../../jaeger" }
+node-metrics = { path = "../../metrics" }
+node-network-protocol = { path = "../protocol" }
+node-primitives = { path = "../../primitives" }
+node-subsystem = { path = "../../subsystem" }
+node-subsystem-util = { path = "../../subsystem-util" }
+primitives = { path = "../../../primitives" }
+node-jaeger = { path = "../../jaeger" }
 rand = "0.8"
 
 futures = "0.3.21"
@@ -23,7 +23,7 @@ gum = { package = "tracing-gum", path = "../../gum" }
 sp-authority-discovery = { path = "../../../../substrate/primitives/authority-discovery" }
 sp-core = { path = "../../../../substrate/primitives/core", features = ["std"] }
 
-polkadot-node-subsystem-test-helpers = { path = "../../subsystem-test-helpers" }
+node-subsystem-test-helpers = { path = "../../subsystem-test-helpers" }
 polkadot-primitives-test-helpers = { path = "../../../primitives/test-helpers" }
 
 assert_matches = "1.4.0"

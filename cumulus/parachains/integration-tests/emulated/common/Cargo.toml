@@ -26,10 +26,10 @@ beefy-primitives = { package = "sp-consensus-beefy", path = "../../../../../subs
 
 # Polkadot
 polkadot-core-primitives = { path = "../../../../../infrablockspace/core-primitives", default-features = false}
-polkadot-parachain-primitives = { path = "../../../../../infrablockspace/parachain", default-features = false}
+parachain-primitives = { path = "../../../../../infrablockspace/parachain", default-features = false}
 polkadot-service = { path = "../../../../../infrablockspace/node/service", default-features = false, features = ["full-node"] }
-polkadot-primitives = { path = "../../../../../infrablockspace/primitives", default-features = false}
-polkadot-runtime-parachains = { path = "../../../../../infrablockspace/runtime/parachains" }
+primitives = { path = "../../../../../infrablockspace/primitives", default-features = false}
+runtime-parachains = { path = "../../../../../infrablockspace/runtime/parachains" }
 rococo-runtime = { path = "../../../../../infrablockspace/runtime/rococo" }
 rococo-runtime-constants = { path = "../../../../../infrablockspace/runtime/rococo/constants" }
 westend-runtime = { path = "../../../../../infrablockspace/runtime/westend" }
@@ -77,9 +77,9 @@ runtime-benchmarks = [
 	"pallet-xcm/runtime-benchmarks",
 	"parachains-common/runtime-benchmarks",
 	"penpal-runtime/runtime-benchmarks",
-	"polkadot-parachain-primitives/runtime-benchmarks",
-	"polkadot-primitives/runtime-benchmarks",
-	"polkadot-runtime-parachains/runtime-benchmarks",
+	"parachain-primitives/runtime-benchmarks",
+	"primitives/runtime-benchmarks",
+	"runtime-parachains/runtime-benchmarks",
 	"polkadot-service/runtime-benchmarks",
 	"rococo-runtime/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",

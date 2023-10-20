@@ -20,14 +20,14 @@ use std::collections::{HashSet, VecDeque};
 
 use futures::{future::BoxFuture, stream::FuturesUnordered};
 
-use polkadot_node_network_protocol::{
+use node_network_protocol::{
 	request_response::{
 		incoming::OutgoingResponse, v1 as protocol_v1, v2 as protocol_v2, IncomingRequest,
 	},
 	PeerId,
 };
-use polkadot_node_primitives::PoV;
-use polkadot_primitives::{CandidateHash, CandidateReceipt, Hash, Id as ParaId};
+use node_primitives::PoV;
+use primitives::{CandidateHash, CandidateReceipt, Hash, Id as ParaId};
 
 /// The status of a collation as seen from the collator.
 pub enum CollationStatus {

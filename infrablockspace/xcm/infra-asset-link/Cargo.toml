@@ -38,8 +38,8 @@ xcm-executor = { package = "staging-xcm-executor", path = "../xcm-executor" }
 xcm-builder = { package = "staging-xcm-builder", path = "../xcm-builder" }
 pallet-xcm = { path = "../pallet-xcm" }
 polkadot-core-primitives = { path = "../../core-primitives", default-features = false }
-polkadot-runtime-parachains = { path = "../../runtime/parachains", default-features = false }
-polkadot-parachain-primitives = { path = "../../parachain", default-features = false }
+runtime-parachains = { path = "../../runtime/parachains", default-features = false }
+parachain-primitives = { path = "../../parachain", default-features = false }
 
 [features]
 default = ["std"]
@@ -59,8 +59,8 @@ std = [
 	"xcm-builder/std",
 	"pallet-xcm/std",
 	"polkadot-core-primitives/std",
-	"polkadot-runtime-parachains/std",
-	"polkadot-parachain-primitives/std",
+	"runtime-parachains/std",
+	"parachain-primitives/std",
 ]
 runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
 try-runtime = ["frame-support/try-runtime"]

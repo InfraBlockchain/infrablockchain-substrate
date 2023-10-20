@@ -21,7 +21,7 @@ use futures::{executor, future};
 use futures_timer::Delay;
 
 use parity_scale_codec::Encode;
-use polkadot_node_network_protocol::request_response::{
+use node_network_protocol::request_response::{
 	self as req_res, IncomingRequest, Recipient, ReqProtocolNames, Requests,
 };
 
@@ -29,19 +29,19 @@ use super::*;
 
 use sc_network::{config::RequestResponseConfig, IfDisconnected, OutboundFailure, RequestFailure};
 
-use polkadot_erasure_coding::{branches, obtain_chunks_v1 as obtain_chunks};
-use polkadot_node_primitives::{BlockData, PoV, Proof};
-use polkadot_node_subsystem::messages::{
+use erasure_coding::{branches, obtain_chunks_v1 as obtain_chunks};
+use node_primitives::{BlockData, PoV, Proof};
+use node_subsystem::messages::{
 	AllMessages, NetworkBridgeTxMessage, RuntimeApiMessage, RuntimeApiRequest,
 };
-use polkadot_node_subsystem_test_helpers::{
+use node_subsystem_test_helpers::{
 	make_subsystem_context, mock::new_leaf, TestSubsystemContextHandle,
 };
-use polkadot_node_subsystem_util::TimeoutExt;
-use polkadot_primitives::{
+use node_subsystem_util::TimeoutExt;
+use primitives::{
 	AuthorityDiscoveryId, Hash, HeadData, IndexedVec, PersistedValidationData, ValidatorId,
 };
-use polkadot_primitives_test_helpers::{dummy_candidate_receipt, dummy_hash};
+use primitives_test_helpers::{dummy_candidate_receipt, dummy_hash};
 
 type VirtualOverseer = TestSubsystemContextHandle<AvailabilityRecoveryMessage>;
 
@@ -53,7 +53,7 @@ fn test_harness_fast_path<T: Future<Output = (VirtualOverseer, RequestResponseCo
 ) {
 	let _ = env_logger::builder()
 		.is_test(true)
-		.filter(Some("polkadot_availability_recovery"), log::LevelFilter::Trace)
+		.filter(Some("availability_recovery"), log::LevelFilter::Trace)
 		.try_init();
 
 	let pool = sp_core::testing::TaskExecutor::new();
@@ -88,7 +88,7 @@ fn test_harness_chunks_only<T: Future<Output = (VirtualOverseer, RequestResponse
 ) {
 	let _ = env_logger::builder()
 		.is_test(true)
-		.filter(Some("polkadot_availability_recovery"), log::LevelFilter::Trace)
+		.filter(Some("availability_recovery"), log::LevelFilter::Trace)
 		.try_init();
 
 	let pool = sp_core::testing::TaskExecutor::new();
@@ -126,7 +126,7 @@ fn test_harness_chunks_if_pov_large<
 ) {
 	let _ = env_logger::builder()
 		.is_test(true)
-		.filter(Some("polkadot_availability_recovery"), log::LevelFilter::Trace)
+		.filter(Some("availability_recovery"), log::LevelFilter::Trace)
 		.try_init();
 
 	let pool = sp_core::testing::TaskExecutor::new();

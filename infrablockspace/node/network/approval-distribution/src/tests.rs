@@ -17,22 +17,22 @@
 use super::*;
 use assert_matches::assert_matches;
 use futures::{executor, future, Future};
-use polkadot_node_network_protocol::{
+use node_network_protocol::{
 	grid_topology::{SessionGridTopology, TopologyPeerInfo},
 	our_view,
 	peer_set::ValidationVersion,
 	view, ObservedRole,
 };
-use polkadot_node_primitives::approval::{
+use node_primitives::approval::{
 	AssignmentCertKind, VrfOutput, VrfProof, VrfSignature, RELAY_VRF_MODULO_CONTEXT,
 };
-use polkadot_node_subsystem::messages::{
+use node_subsystem::messages::{
 	network_bridge_event, AllMessages, ApprovalCheckError, ReportPeerMessage,
 };
-use polkadot_node_subsystem_test_helpers as test_helpers;
-use polkadot_node_subsystem_util::{reputation::add_reputation, TimeoutExt as _};
-use polkadot_primitives::{AuthorityDiscoveryId, BlakeTwo256, HashT};
-use polkadot_primitives_test_helpers::dummy_signature;
+use node_subsystem_test_helpers as test_helpers;
+use node_subsystem_util::{reputation::add_reputation, TimeoutExt as _};
+use primitives::{AuthorityDiscoveryId, BlakeTwo256, HashT};
+use primitives_test_helpers::dummy_signature;
 use rand::SeedableRng;
 use sp_authority_discovery::AuthorityPair as AuthorityDiscoveryPair;
 use sp_core::crypto::Pair as PairT;
@@ -2496,7 +2496,7 @@ fn import_versioned_approval() {
 }
 
 fn batch_test_round(message_count: usize) {
-	use polkadot_node_subsystem::SubsystemContext;
+	use node_subsystem::SubsystemContext;
 	let pool = sp_core::testing::TaskExecutor::new();
 	let mut state = State::default();
 

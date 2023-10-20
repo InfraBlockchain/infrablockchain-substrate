@@ -32,7 +32,7 @@ sp-std = { path = "../../../substrate/primitives/std", default-features = false 
 rococo-runtime-constants = { path = "../../../infrablockspace/runtime/rococo/constants", default-features = false}
 westend-runtime-constants = { path = "../../../infrablockspace/runtime/westend/constants", default-features = false}
 polkadot-core-primitives = { path = "../../../infrablockspace/core-primitives", default-features = false}
-polkadot-primitives = { path = "../../../infrablockspace/primitives", default-features = false}
+primitives = { path = "../../../infrablockspace/primitives", default-features = false}
 xcm = { package = "staging-xcm", path = "../../../infrablockspace/xcm", default-features = false}
 xcm-builder = { package = "staging-xcm-builder", path = "../../../infrablockspace/xcm/xcm-builder", default-features = false}
 xcm-executor = { package = "staging-xcm-executor", path = "../../../infrablockspace/xcm/xcm-executor", default-features = false}
@@ -63,7 +63,7 @@ std = [
 	"pallet-balances/std",
 	"pallet-collator-selection/std",
 	"polkadot-core-primitives/std",
-	"polkadot-primitives/std",
+	"primitives/std",
 	"rococo-runtime-constants/std",
 	"sp-consensus-aura/std",
 	"sp-core/std",
@@ -84,7 +84,7 @@ runtime-benchmarks = [
 	"pallet-assets/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
-	"polkadot-primitives/runtime-benchmarks",
+	"primitives/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 	"xcm-builder/runtime-benchmarks",
 	"xcm-executor/runtime-benchmarks",

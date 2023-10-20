@@ -1,5 +1,5 @@
 [package]
-name = "polkadot-node-metrics"
+name = "node-metrics"
 description = "Subsystem metric helpers"
 version = "1.0.0"
 authors.workspace = true
@@ -19,7 +19,7 @@ sc-cli = { path = "../../../substrate/client/cli" }
 substrate-prometheus-endpoint = { path = "../../../substrate/utils/prometheus" }
 sc-tracing = { path = "../../../substrate/client/tracing" }
 codec = { package = "parity-scale-codec", version = "3.6.1" }
-primitives = { package = "polkadot-primitives", path = "../../primitives" }
+primitives = { path = "../../primitives" }
 bs58 = { version = "0.5.0", features = ["alloc"] }
 log = "0.4.17"
 

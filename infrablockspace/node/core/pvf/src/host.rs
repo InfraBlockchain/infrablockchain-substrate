@@ -31,12 +31,12 @@ use futures::{
 	channel::{mpsc, oneshot},
 	Future, FutureExt, SinkExt, StreamExt,
 };
-use polkadot_node_core_pvf_common::{
+use node_core_pvf_common::{
 	error::{PrepareError, PrepareResult},
 	pvf::PvfPrepData,
 	SecurityStatus,
 };
-use polkadot_parachain_primitives::primitives::ValidationResult;
+use parachain_primitives::primitives::ValidationResult;
 use std::{
 	collections::HashMap,
 	path::{Path, PathBuf},
@@ -951,7 +951,7 @@ fn check_landlock(
 				Ok(status) if status.success() => true,
 				Ok(status) => {
 					let abi =
-						polkadot_node_core_pvf_common::worker::security::landlock::LANDLOCK_ABI as u8;
+						node_core_pvf_common::worker::security::landlock::LANDLOCK_ABI as u8;
 					gum::warn!(
 						target: LOG_TARGET,
 						?prepare_worker_program_path,
@@ -987,7 +987,7 @@ pub(crate) mod tests {
 	use crate::InvalidCandidate;
 	use assert_matches::assert_matches;
 	use futures::future::BoxFuture;
-	use polkadot_node_core_pvf_common::{error::PrepareError, prepare::PrepareStats};
+	use node_core_pvf_common::{error::PrepareError, prepare::PrepareStats};
 
 	const TEST_EXECUTION_TIMEOUT: Duration = Duration::from_secs(3);
 	pub(crate) const TEST_PREPARATION_TIMEOUT: Duration = Duration::from_secs(30);

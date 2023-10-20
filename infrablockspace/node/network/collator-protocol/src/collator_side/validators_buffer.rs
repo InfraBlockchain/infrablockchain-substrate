@@ -42,8 +42,8 @@ use std::{
 use bitvec::{bitvec, vec::BitVec};
 use futures::FutureExt;
 
-use polkadot_node_network_protocol::PeerId;
-use polkadot_primitives::{AuthorityDiscoveryId, CandidateHash, GroupIndex, SessionIndex};
+use node_network_protocol::PeerId;
+use primitives::{AuthorityDiscoveryId, CandidateHash, GroupIndex, SessionIndex};
 
 /// The ring buffer stores at most this many unique validator groups.
 ///
@@ -251,7 +251,7 @@ impl Future for ResetInterestTimeout {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use polkadot_primitives::Hash;
+	use primitives::Hash;
 	use sp_keyring::Sr25519Keyring;
 
 	#[test]

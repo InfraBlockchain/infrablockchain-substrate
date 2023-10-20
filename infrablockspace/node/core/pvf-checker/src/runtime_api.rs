@@ -16,12 +16,12 @@
 
 use crate::LOG_TARGET;
 use futures::channel::oneshot;
-use polkadot_node_subsystem::{
+use node_subsystem::{
 	errors::RuntimeApiError as RuntimeApiSubsystemError,
 	messages::{RuntimeApiMessage, RuntimeApiRequest},
 	SubsystemSender,
 };
-use polkadot_primitives::{
+use primitives::{
 	Hash, PvfCheckStatement, SessionIndex, ValidationCodeHash, ValidatorId, ValidatorSignature,
 };
 

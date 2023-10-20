@@ -20,7 +20,7 @@ use crate::LOG_TARGET;
 use futures::FutureExt as _;
 use futures_timer::Delay;
 use pin_project::pin_project;
-use polkadot_node_core_pvf_common::SecurityStatus;
+use node_core_pvf_common::SecurityStatus;
 use rand::Rng;
 use std::{
 	fmt, mem,

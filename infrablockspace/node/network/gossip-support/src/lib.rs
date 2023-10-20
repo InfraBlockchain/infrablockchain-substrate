@@ -39,19 +39,19 @@ use sc_network::{config::parse_addr, Multiaddr};
 use sp_application_crypto::{AppCrypto, ByteArray};
 use sp_keystore::{Keystore, KeystorePtr};
 
-use polkadot_node_network_protocol::{
+use node_network_protocol::{
 	authority_discovery::AuthorityDiscovery, peer_set::PeerSet, GossipSupportNetworkMessage,
 	PeerId, Versioned,
 };
-use polkadot_node_subsystem::{
+use node_subsystem::{
 	messages::{
 		GossipSupportMessage, NetworkBridgeEvent, NetworkBridgeRxMessage, NetworkBridgeTxMessage,
 		RuntimeApiMessage, RuntimeApiRequest,
 	},
 	overseer, ActiveLeavesUpdate, FromOrchestra, OverseerSignal, SpawnedSubsystem, SubsystemError,
 };
-use polkadot_node_subsystem_util as util;
-use polkadot_primitives::{AuthorityDiscoveryId, Hash, SessionIndex, SessionInfo, ValidatorIndex};
+use node_subsystem_util as util;
+use primitives::{AuthorityDiscoveryId, Hash, SessionIndex, SessionInfo, ValidatorIndex};
 
 #[cfg(test)]
 mod tests;
@@ -278,8 +278,8 @@ where
 		Ok(())
 	}
 
-	// Checks if the node is an authority and also updates `polkadot_node_is_authority` and
-	// `polkadot_node_is_parachain_validator` metrics accordingly.
+	// Checks if the node is an authority and also updates `node_is_authority` and
+	// `node_is_parachain_validator` metrics accordingly.
 	// On success, returns the index of our keys in `session_info.discovery_keys`.
 	fn get_key_index_and_update_metrics(
 		&mut self,

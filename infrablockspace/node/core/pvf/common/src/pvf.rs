@@ -16,8 +16,8 @@
 
 use crate::prepare::PrepareJobKind;
 use parity_scale_codec::{Decode, Encode};
-use polkadot_parachain_primitives::primitives::ValidationCodeHash;
-use polkadot_primitives::ExecutorParams;
+use parachain_primitives::primitives::ValidationCodeHash;
+use primitives::ExecutorParams;
 use sp_core::blake2_256;
 use std::{
 	cmp::{Eq, PartialEq},

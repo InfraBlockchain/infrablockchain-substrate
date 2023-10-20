@@ -30,9 +30,9 @@ sp-tracing = { path = "../../../substrate/primitives/tracing" }
 xcm = { package = "staging-xcm", path = ".." }
 # temp
 pallet-xcm = { path = "../pallet-xcm" }
-polkadot-runtime-common = { path = "../../runtime/common" }
+runtime-common = { path = "../../runtime/common" }
 # westend-runtime = { path = "../../runtime/westend", features = ["runtime-benchmarks"] }
-polkadot-primitives = { path = "../../primitives" }
+primitives = { path = "../../primitives" }
 
 [features]
 default = [ "std" ]
@@ -54,8 +54,8 @@ runtime-benchmarks = [
 	"pallet-assets/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
 	"pallet-xcm/runtime-benchmarks",
-	"polkadot-primitives/runtime-benchmarks",
-	"polkadot-runtime-common/runtime-benchmarks",
+	"primitives/runtime-benchmarks",
+	"runtime-common/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 	"xcm-builder/runtime-benchmarks",
 	"xcm-executor/runtime-benchmarks",

@@ -17,10 +17,10 @@
 //! Middleware interface that leverages low-level database operations
 //! to provide a clean API for processing block and candidate imports.
 
-use polkadot_node_subsystem::{SubsystemError, SubsystemResult};
+use node_subsystem::{SubsystemError, SubsystemResult};
 
 use bitvec::order::Lsb0 as BitOrderLsb0;
-use polkadot_primitives::{BlockNumber, CandidateHash, CandidateReceipt, GroupIndex, Hash};
+use primitives::{BlockNumber, CandidateHash, CandidateReceipt, GroupIndex, Hash};
 
 use std::collections::{hash_map::Entry, BTreeMap, HashMap};
 

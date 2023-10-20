@@ -25,24 +25,24 @@
 
 #![warn(missing_docs)]
 
-use polkadot_node_subsystem::{
+use node_subsystem::{
 	errors::{RuntimeApiError, SubsystemError},
 	messages::{RuntimeApiMessage, RuntimeApiRequest, RuntimeApiSender},
 	overseer, SubsystemSender,
 };
-use polkadot_primitives::{slashing, ExecutorParams};
+use primitives::{slashing, ExecutorParams};
 
-pub use overseer::{
+pub use infrablockspace_overseer::{
 	gen::{OrchestraError as OverseerError, Timeout},
 	Subsystem, TimeoutExt,
 };
 
-pub use polkadot_node_metrics::{metrics, Metronome};
+pub use node_metrics::{metrics, Metronome};
 
 use futures::channel::{mpsc, oneshot};
 use parity_scale_codec::Encode;
 
-use polkadot_primitives::{
+use primitives::{
 	AsyncBackingParams, AuthorityDiscoveryId, CandidateEvent, CandidateHash,
 	CommittedCandidateReceipt, CoreState, EncodeAs, GroupIndex, GroupRotationInfo, Hash,
 	Id as ParaId, OccupiedCoreAssumption, PersistedValidationData, ScrapedOnChainVotes,
@@ -57,14 +57,14 @@ use std::time::Duration;
 use thiserror::Error;
 
 pub use metered;
-pub use polkadot_node_network_protocol::MIN_GOSSIP_PEERS;
+pub use node_network_protocol::MIN_GOSSIP_PEERS;
 
 pub use determine_new_blocks::determine_new_blocks;
 
 /// These reexports are required so that external crates can use the `delegated_subsystem` macro
 /// properly.
 pub mod reexports {
-	pub use polkadot_overseer::gen::{SpawnedSubsystem, Spawner, Subsystem, SubsystemContext};
+	pub use infrablockspace_overseer::gen::{SpawnedSubsystem, Spawner, Subsystem, SubsystemContext};
 }
 
 /// A utility for managing the implicit view of the relay-chain derived from active

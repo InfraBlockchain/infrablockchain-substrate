@@ -18,20 +18,20 @@
 
 use super::*;
 use crate::*;
-use polkadot_node_network_protocol::{
+use node_network_protocol::{
 	grid_topology::TopologyPeerInfo,
 	request_response::{outgoing::Recipient, ReqProtocolNames},
 	view, ObservedRole,
 };
-use polkadot_node_primitives::Statement;
-use polkadot_node_subsystem::messages::{
+use node_primitives::Statement;
+use node_subsystem::messages::{
 	network_bridge_event::NewGossipTopology, AllMessages, ChainApiMessage, FragmentTreeMembership,
 	HypotheticalCandidate, NetworkBridgeEvent, ProspectiveParachainsMessage, ReportPeerMessage,
 	RuntimeApiMessage, RuntimeApiRequest,
 };
-use polkadot_node_subsystem_test_helpers as test_helpers;
-use polkadot_node_subsystem_util::TimeoutExt;
-use polkadot_primitives::{
+use node_subsystem_test_helpers as test_helpers;
+use node_subsystem_util::TimeoutExt;
+use primitives::{
 	AssignmentPair, AsyncBackingParams, BlockNumber, CommittedCandidateReceipt, CoreState,
 	GroupRotationInfo, HeadData, Header, IndexedVec, PersistedValidationData, ScheduledCore,
 	SessionIndex, SessionInfo, ValidatorPair,

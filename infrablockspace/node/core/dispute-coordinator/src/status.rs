@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
-use polkadot_node_primitives::{dispute_is_inactive, DisputeStatus, Timestamp};
-use polkadot_primitives::{CandidateHash, SessionIndex};
+use node_primitives::{dispute_is_inactive, DisputeStatus, Timestamp};
+use primitives::{CandidateHash, SessionIndex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::LOG_TARGET;

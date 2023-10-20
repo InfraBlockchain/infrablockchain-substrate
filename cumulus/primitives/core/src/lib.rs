@@ -19,17 +19,17 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use polkadot_parachain_primitives::primitives::HeadData;
+use parachain_primitives::primitives::HeadData;
 use scale_info::TypeInfo;
 use sp_runtime::{types::PotVotesResult, RuntimeDebug};
 use sp_std::prelude::*;
 
 pub use polkadot_core_primitives::InboundDownwardMessage;
-pub use polkadot_parachain_primitives::primitives::{
+pub use parachain_primitives::primitives::{
 	DmpMessageHandler, Id as ParaId, IsSystem, UpwardMessage, ValidationParams, XcmpMessageFormat,
 	XcmpMessageHandler,
 };
-pub use polkadot_primitives::{
+pub use primitives::{
 	AbridgedHostConfiguration, AbridgedHrmpChannel, PersistedValidationData,
 };
 
@@ -44,14 +44,14 @@ pub use xcm::latest::prelude::*;
 /// A module that re-exports relevant relay chain definitions.
 pub mod relay_chain {
 	pub use polkadot_core_primitives::*;
-	pub use polkadot_primitives::*;
+	pub use primitives::*;
 }
 
 /// An inbound HRMP message.
-pub type InboundHrmpMessage = polkadot_primitives::InboundHrmpMessage<relay_chain::BlockNumber>;
+pub type InboundHrmpMessage = primitives::InboundHrmpMessage<relay_chain::BlockNumber>;
 
 /// And outbound HRMP message
-pub type OutboundHrmpMessage = polkadot_primitives::OutboundHrmpMessage<ParaId>;
+pub type OutboundHrmpMessage = primitives::OutboundHrmpMessage<ParaId>;
 
 /// Error description of a message send failure.
 #[derive(Eq, PartialEq, Copy, Clone, RuntimeDebug, Encode, Decode)]

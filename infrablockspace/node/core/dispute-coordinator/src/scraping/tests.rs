@@ -23,20 +23,20 @@ use parity_scale_codec::Encode;
 use sp_core::testing::TaskExecutor;
 
 use ::test_helpers::{dummy_collator, dummy_collator_signature, dummy_hash};
-use polkadot_node_primitives::DISPUTE_CANDIDATE_LIFETIME_AFTER_FINALIZATION;
-use polkadot_node_subsystem::{
+use node_primitives::DISPUTE_CANDIDATE_LIFETIME_AFTER_FINALIZATION;
+use node_subsystem::{
 	messages::{
 		AllMessages, ChainApiMessage, DisputeCoordinatorMessage, RuntimeApiMessage,
 		RuntimeApiRequest,
 	},
 	ActivatedLeaf, ActiveLeavesUpdate, SpawnGlue,
 };
-use polkadot_node_subsystem_test_helpers::{
+use node_subsystem_test_helpers::{
 	make_subsystem_context, mock::new_leaf, TestSubsystemContext, TestSubsystemContextHandle,
 	TestSubsystemSender,
 };
-use polkadot_node_subsystem_util::{reexports::SubsystemContext, TimeoutExt};
-use polkadot_primitives::{
+use node_subsystem_util::{reexports::SubsystemContext, TimeoutExt};
+use primitives::{
 	BlakeTwo256, BlockNumber, CandidateDescriptor, CandidateEvent, CandidateReceipt, CoreIndex,
 	GroupIndex, Hash, HashT, HeadData, Id as ParaId,
 };

@@ -27,7 +27,7 @@ use sp_core::traits::SpawnNamed;
 use sp_runtime::traits::{Block as BlockT, HashingFor, Header as HeaderT, Zero};
 
 use cumulus_client_consensus_common::ParachainCandidate;
-use polkadot_node_primitives::{
+use node_primitives::{
 	BlockData, Collation, CollationSecondedSignal, MaybeCompressedPoV, PoV,
 };
 
@@ -247,7 +247,7 @@ where
 
 		let block_data = ParachainBlockData::<Block>::new(header, extrinsics, compact_proof);
 
-		let pov = polkadot_node_primitives::maybe_compress_pov(PoV {
+		let pov = node_primitives::maybe_compress_pov(PoV {
 			block_data: BlockData(block_data.encode()),
 		});
 

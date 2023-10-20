@@ -16,8 +16,8 @@
 
 //! Prepare worker.
 
-polkadot_node_core_pvf_common::decl_worker_main!(
+node_core_pvf_common::decl_worker_main!(
 	"prepare-worker",
-	polkadot_node_core_pvf_prepare_worker::worker_entrypoint,
+	node_core_pvf_prepare_worker::worker_entrypoint,
 	polkadot_cli::NODE_VERSION,
 );

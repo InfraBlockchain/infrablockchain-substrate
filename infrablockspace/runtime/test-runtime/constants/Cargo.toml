@@ -10,8 +10,8 @@ license.workspace = true
 smallvec = "1.8.0"
 
 frame-support = { path = "../../../../substrate/frame/support", default-features = false }
-primitives = { package = "polkadot-primitives", path = "../../../primitives", default-features = false }
-runtime-common = { package = "polkadot-runtime-common", path = "../../common", default-features = false }
+primitives = { path = "../../../primitives", default-features = false }
+runtime-common = { path = "../../common", default-features = false }
 sp-runtime = { path = "../../../../substrate/primitives/runtime", default-features = false }
 sp-weights = { path = "../../../../substrate/primitives/weights", default-features = false }
 sp-core = { path = "../../../../substrate/primitives/core", default-features = false }

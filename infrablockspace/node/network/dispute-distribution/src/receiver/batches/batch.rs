@@ -17,12 +17,12 @@
 use std::{collections::HashMap, time::Instant};
 
 use gum::CandidateHash;
-use polkadot_node_network_protocol::{
+use node_network_protocol::{
 	request_response::{incoming::OutgoingResponseSender, v1::DisputeRequest},
 	PeerId,
 };
-use polkadot_node_primitives::SignedDisputeStatement;
-use polkadot_primitives::{CandidateReceipt, ValidatorIndex};
+use node_primitives::SignedDisputeStatement;
+use primitives::{CandidateReceipt, ValidatorIndex};
 
 use crate::receiver::{BATCH_COLLECTING_INTERVAL, MIN_KEEP_BATCH_ALIVE_VOTES};
 

@@ -15,7 +15,7 @@
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::disputes::prioritized_selection::PartitionedDisputes;
-use polkadot_node_subsystem_util::metrics::{self, prometheus};
+use node_subsystem_util::metrics::{self, prometheus};
 
 #[derive(Clone)]
 struct MetricsInner {

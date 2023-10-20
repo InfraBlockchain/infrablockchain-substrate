@@ -26,10 +26,10 @@
 #![deny(unused_crate_dependencies, unused_results)]
 
 use futures::{select, FutureExt};
-use polkadot_node_subsystem::{
+use node_subsystem::{
 	errors::SubsystemError, messages::ProvisionerMessage, overseer::Handle,
 };
-use polkadot_primitives::{Block, Hash, InherentData as ParachainsInherentData};
+use primitives::{Block, Hash, InherentData as ParachainsInherentData};
 use std::{sync::Arc, time};
 
 pub(crate) const LOG_TARGET: &str = "parachain::parachains-inherent";
@@ -40,13 +40,13 @@ const PROVISIONER_TIMEOUT: time::Duration = core::time::Duration::from_millis(25
 /// Provides the parachains inherent data.
 pub struct ParachainsInherentDataProvider<C: sp_blockchain::HeaderBackend<Block>> {
 	pub client: Arc<C>,
-	pub overseer: polkadot_overseer::Handle,
+	pub overseer: infrablockspace_overseer::Handle,
 	pub parent: Hash,
 }
 
 impl<C: sp_blockchain::HeaderBackend<Block>> ParachainsInherentDataProvider<C> {
 	/// Create a new [`Self`].
-	pub fn new(client: Arc<C>, overseer: polkadot_overseer::Handle, parent: Hash) -> Self {
+	pub fn new(client: Arc<C>, overseer: infrablockspace_overseer::Handle, parent: Hash) -> Self {
 		ParachainsInherentDataProvider { client, overseer, parent }
 	}
 
@@ -141,7 +141,7 @@ impl<C: sp_blockchain::HeaderBackend<Block>> sp_inherents::InherentDataProvider
 		.map_err(|e| sp_inherents::Error::Application(Box::new(e)))?;
 
 		dst_inherent_data
-			.put_data(polkadot_primitives::PARACHAINS_INHERENT_IDENTIFIER, &inherent_data)
+			.put_data(primitives::PARACHAINS_INHERENT_IDENTIFIER, &inherent_data)
 	}
 
 	async fn try_handle_error(

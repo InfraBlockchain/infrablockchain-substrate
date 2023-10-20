@@ -17,7 +17,7 @@
 //! All peersets and protocols used for parachains.
 
 use derive_more::Display;
-use polkadot_primitives::Hash;
+use primitives::Hash;
 use sc_network::{
 	config::{NonDefaultSetConfig, SetConfig},
 	types::ProtocolName,

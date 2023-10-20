@@ -30,7 +30,7 @@ use crate::memory_stats::max_rss_stat::{extract_max_rss_stat, get_max_rss_thread
 #[cfg(any(target_os = "linux", feature = "jemalloc-allocator"))]
 use crate::memory_stats::memory_tracker::{get_memory_tracker_loop_stats, memory_tracker_loop};
 use parity_scale_codec::{Decode, Encode};
-use polkadot_node_core_pvf_common::{
+use node_core_pvf_common::{
 	error::{PrepareError, PrepareResult},
 	executor_intf::Executor,
 	framed_recv_blocking, framed_send_blocking,
@@ -43,7 +43,7 @@ use polkadot_node_core_pvf_common::{
 	},
 	worker_dir, ProcessTime, SecurityStatus,
 };
-use polkadot_primitives::ExecutorParams;
+use primitives::ExecutorParams;
 use std::{
 	os::unix::net::UnixStream,
 	path::PathBuf,

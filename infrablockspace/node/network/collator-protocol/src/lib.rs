@@ -28,16 +28,16 @@ use futures::{
 	FutureExt, TryFutureExt,
 };
 
-use polkadot_node_subsystem_util::reputation::ReputationAggregator;
+use node_subsystem_util::reputation::ReputationAggregator;
 use sp_keystore::KeystorePtr;
 
-use polkadot_node_network_protocol::{
+use node_network_protocol::{
 	request_response::{v1 as request_v1, v2 as protocol_v2, IncomingRequestReceiver},
 	PeerId, UnifiedReputationChange as Rep,
 };
-use polkadot_primitives::CollatorPair;
+use primitives::CollatorPair;
 
-use polkadot_node_subsystem::{errors::SubsystemError, overseer, DummySubsystem, SpawnedSubsystem};
+use node_subsystem::{errors::SubsystemError, overseer, DummySubsystem, SpawnedSubsystem};
 
 mod error;
 

@@ -16,9 +16,9 @@
 
 use super::*;
 
-use polkadot_node_subsystem_test_helpers::*;
+use node_subsystem_test_helpers::*;
 
-use polkadot_node_subsystem::{
+use node_subsystem::{
 	messages::AvailabilityStoreMessage,
 	overseer::{dummy::DummySubsystem, gen::TimeoutExt, Subsystem, AssociateOutgoing},
 	SubsystemError,

@@ -19,7 +19,7 @@ use std::collections::btree_map::BTreeMap;
 use schnellru::{ByLength, LruMap};
 use sp_consensus_babe::Epoch;
 
-use polkadot_primitives::{
+use primitives::{
 	async_backing, slashing, AuthorityDiscoveryId, BlockNumber, CandidateCommitments,
 	CandidateEvent, CandidateHash, CommittedCandidateReceipt, CoreState, DisputeState,
 	ExecutorParams, GroupRotationInfo, Hash, Id as ParaId, InboundDownwardMessage,

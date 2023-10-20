@@ -15,8 +15,8 @@ frame-support = { path = "../../../../../../substrate/frame/support", default-fe
 
 # Polkadot
 polkadot-core-primitives = { path = "../../../../../../infrablockspace/core-primitives", default-features = false}
-polkadot-parachain-primitives = { path = "../../../../../../infrablockspace/parachain", default-features = false}
-polkadot-runtime-parachains = { path = "../../../../../../infrablockspace/runtime/parachains" }
+parachain-primitives = { path = "../../../../../../infrablockspace/parachain", default-features = false}
+runtime-parachains = { path = "../../../../../../infrablockspace/runtime/parachains" }
 xcm = { package = "staging-xcm", path = "../../../../../../infrablockspace/xcm", default-features = false}
 pallet-xcm = { path = "../../../../../../infrablockspace/xcm/pallet-xcm", default-features = false}
 

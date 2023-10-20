@@ -19,9 +19,9 @@ use std::collections::HashSet;
 use rand::{seq::SliceRandom, thread_rng};
 use schnellru::{ByLength, LruMap};
 
-use polkadot_node_subsystem::overseer;
-use polkadot_node_subsystem_util::runtime::RuntimeInfo;
-use polkadot_primitives::{AuthorityDiscoveryId, GroupIndex, Hash, SessionIndex, ValidatorIndex};
+use node_subsystem::overseer;
+use node_subsystem_util::runtime::RuntimeInfo;
+use primitives::{AuthorityDiscoveryId, GroupIndex, Hash, SessionIndex, ValidatorIndex};
 
 use crate::{
 	error::{Error, Result},

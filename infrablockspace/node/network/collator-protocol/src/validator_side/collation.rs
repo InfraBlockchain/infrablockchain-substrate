@@ -30,16 +30,16 @@
 use std::{collections::VecDeque, future::Future, pin::Pin, task::Poll};
 
 use futures::{future::BoxFuture, FutureExt};
-use polkadot_node_network_protocol::{
+use node_network_protocol::{
 	request_response::{outgoing::RequestError, v1 as request_v1, OutgoingResult},
 	PeerId,
 };
-use polkadot_node_primitives::PoV;
-use polkadot_node_subsystem::jaeger;
-use polkadot_node_subsystem_util::{
+use node_primitives::PoV;
+use node_subsystem::jaeger;
+use node_subsystem_util::{
 	metrics::prometheus::prometheus::HistogramTimer, runtime::ProspectiveParachainsMode,
 };
-use polkadot_primitives::{
+use primitives::{
 	CandidateHash, CandidateReceipt, CollatorId, Hash, Id as ParaId, PersistedValidationData,
 };
 use tokio_util::sync::CancellationToken;

@@ -16,7 +16,7 @@
 
 use super::*;
 
-use polkadot_primitives_test_helpers::make_candidate;
+use primitives_test_helpers::make_candidate;
 
 #[test]
 fn share_seconded_circulated_to_cluster() {

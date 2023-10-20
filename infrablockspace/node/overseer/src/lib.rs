@@ -71,10 +71,10 @@ use futures::{channel::oneshot, future::BoxFuture, select, Future, FutureExt, St
 use schnellru::LruMap;
 
 use client::{BlockImportNotification, BlockchainEvents, FinalityNotification};
-use polkadot_primitives::{Block, BlockNumber, Hash};
+use primitives::{Block, BlockNumber, Hash};
 
 use self::messages::{BitfieldSigningMessage, PvfCheckerMessage};
-use polkadot_node_subsystem_types::messages::{
+use node_subsystem_types::messages::{
 	ApprovalDistributionMessage, ApprovalVotingMessage, AvailabilityDistributionMessage,
 	AvailabilityRecoveryMessage, AvailabilityStoreMessage, BitfieldDistributionMessage,
 	CandidateBackingMessage, CandidateValidationMessage, ChainApiMessage, ChainSelectionMessage,
@@ -84,7 +84,7 @@ use polkadot_node_subsystem_types::messages::{
 	StatementDistributionMessage,
 };
 
-pub use polkadot_node_subsystem_types::{
+pub use node_subsystem_types::{
 	errors::{SubsystemError, SubsystemResult},
 	jaeger, ActivatedLeaf, ActiveLeavesUpdate, LeafStatus, OverseerSignal,
 	RuntimeApiSubsystemClient, UnpinHandle,
@@ -97,7 +97,7 @@ pub use self::metrics::Metrics as OverseerMetrics;
 pub mod dummy;
 pub use self::dummy::DummySubsystem;
 
-pub use polkadot_node_metrics::{
+pub use node_metrics::{
 	metrics::{prometheus, Metrics as MetricsTrait},
 	Metronome,
 };
@@ -377,8 +377,8 @@ pub async fn forward_events<P: BlockchainEvents<Block>>(client: Arc<P>, mut hand
 /// # use std::time::Duration;
 /// # use futures::{executor, pin_mut, select, FutureExt};
 /// # use futures_timer::Delay;
-/// # use polkadot_primitives::Hash;
-/// # use polkadot_overseer::{
+/// # use primitives::Hash;
+/// # use infrablockspace_overseer::{
 /// # 	self as overseer,
 /// #   OverseerSignal,
 /// # 	SubsystemSender as _,
@@ -392,7 +392,7 @@ pub async fn forward_events<P: BlockchainEvents<Block>>(client: Arc<P>, mut hand
 /// # 		SpawnedSubsystem,
 /// # 	},
 /// # };
-/// # use polkadot_node_subsystem_types::messages::{
+/// # use node_subsystem_types::messages::{
 /// # 	CandidateValidationMessage, CandidateBackingMessage,
 /// # 	NetworkBridgeTxMessage,
 /// # };

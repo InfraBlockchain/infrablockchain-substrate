@@ -55,9 +55,9 @@ use cumulus_relay_chain_minimal_node::{
 use cumulus_test_runtime::{Hash, Header, NodeBlock as Block, RuntimeApi};
 
 use frame_system_rpc_runtime_api::AccountNonceApi;
-use polkadot_node_subsystem::{errors::RecoveryError, messages::AvailabilityRecoveryMessage};
-use polkadot_overseer::Handle as OverseerHandle;
-use polkadot_primitives::{CollatorPair, Hash as PHash, PersistedValidationData};
+use node_subsystem::{errors::RecoveryError, messages::AvailabilityRecoveryMessage};
+use infrablockspace_overseer::Handle as OverseerHandle;
+use primitives::{CollatorPair, Hash as PHash, PersistedValidationData};
 use polkadot_service::ProvideRuntimeApi;
 use sc_consensus::ImportQueue;
 use sc_network::{

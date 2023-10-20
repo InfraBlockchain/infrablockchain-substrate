@@ -15,14 +15,14 @@ sp-std = { path = "../../../substrate/primitives/std", default-features = false}
 
 # Polkadot
 polkadot-core-primitives = { path = "../../../infrablockspace/core-primitives", default-features = false}
-polkadot-primitives = { path = "../../../infrablockspace/primitives", default-features = false}
+primitives = { path = "../../../infrablockspace/primitives", default-features = false}
 
 [features]
 default = [ "std" ]
 std = [
 	"codec/std",
 	"polkadot-core-primitives/std",
-	"polkadot-primitives/std",
+	"primitives/std",
 	"sp-api/std",
 	"sp-consensus-aura/std",
 	"sp-runtime/std",

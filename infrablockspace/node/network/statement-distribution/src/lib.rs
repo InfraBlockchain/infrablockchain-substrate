@@ -25,16 +25,16 @@
 use error::{log_error, FatalResult};
 use std::time::Duration;
 
-use polkadot_node_network_protocol::{
+use node_network_protocol::{
 	request_response::{v1 as request_v1, v2::AttestedCandidateRequest, IncomingRequestReceiver},
 	v2 as protocol_v2, Versioned,
 };
-use polkadot_node_primitives::StatementWithPVD;
-use polkadot_node_subsystem::{
+use node_primitives::StatementWithPVD;
+use node_subsystem::{
 	messages::{NetworkBridgeEvent, StatementDistributionMessage},
 	overseer, ActiveLeavesUpdate, FromOrchestra, OverseerSignal, SpawnedSubsystem, SubsystemError,
 };
-use polkadot_node_subsystem_util::{
+use node_subsystem_util::{
 	rand,
 	reputation::{ReputationAggregator, REPUTATION_CHANGE_INTERVAL},
 	runtime::{prospective_parachains_mode, ProspectiveParachainsMode},

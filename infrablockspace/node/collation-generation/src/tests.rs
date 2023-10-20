@@ -21,14 +21,14 @@ use futures::{
 	task::{Context as FuturesContext, Poll},
 	Future,
 };
-use polkadot_node_primitives::{BlockData, Collation, CollationResult, MaybeCompressedPoV, PoV};
-use polkadot_node_subsystem::{
+use node_primitives::{BlockData, Collation, CollationResult, MaybeCompressedPoV, PoV};
+use node_subsystem::{
 	errors::RuntimeApiError,
 	messages::{AllMessages, RuntimeApiMessage, RuntimeApiRequest},
 };
-use polkadot_node_subsystem_test_helpers::{subsystem_test_harness, TestSubsystemContextHandle};
-use polkadot_node_subsystem_util::TimeoutExt;
-use polkadot_primitives::{
+use node_subsystem_test_helpers::{subsystem_test_harness, TestSubsystemContextHandle};
+use node_subsystem_util::TimeoutExt;
+use primitives::{
 	CollatorPair, HeadData, Id as ParaId, PersistedValidationData, ScheduledCore, ValidationCode,
 };
 use sp_keyring::sr25519::Keyring as Sr25519Keyring;
@@ -40,7 +40,7 @@ type VirtualOverseer = TestSubsystemContextHandle<CollationGenerationMessage>;
 fn test_harness<T: Future<Output = VirtualOverseer>>(test: impl FnOnce(VirtualOverseer) -> T) {
 	let pool = sp_core::testing::TaskExecutor::new();
 	let (context, virtual_overseer) =
-		polkadot_node_subsystem_test_helpers::make_subsystem_context(pool);
+		node_subsystem_test_helpers::make_subsystem_context(pool);
 	let subsystem = async move {
 		let subsystem = crate::CollationGenerationSubsystem::new(Metrics::default());
 

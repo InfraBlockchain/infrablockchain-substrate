@@ -40,17 +40,17 @@ mod tests;
 use {
 	grandpa::{self, FinalityProofProvider as GrandpaFinalityProofProvider},
 	gum::info,
-	polkadot_node_core_approval_voting::{
+	node_core_approval_voting::{
 		self as approval_voting_subsystem, Config as ApprovalVotingConfig,
 	},
-	polkadot_node_core_av_store::Config as AvailabilityConfig,
-	polkadot_node_core_av_store::Error as AvailabilityError,
-	polkadot_node_core_candidate_validation::Config as CandidateValidationConfig,
-	polkadot_node_core_chain_selection::{
+	node_core_av_store::Config as AvailabilityConfig,
+	node_core_av_store::Error as AvailabilityError,
+	node_core_candidate_validation::Config as CandidateValidationConfig,
+	node_core_chain_selection::{
 		self as chain_selection_subsystem, Config as ChainSelectionConfig,
 	},
-	polkadot_node_core_dispute_coordinator::Config as DisputeCoordinatorConfig,
-	polkadot_node_network_protocol::{
+	node_core_dispute_coordinator::Config as DisputeCoordinatorConfig,
+	node_network_protocol::{
 		peer_set::PeerSetProtocolNames, request_response::ReqProtocolNames,
 	},
 	sc_client_api::BlockBackend,
@@ -58,12 +58,12 @@ use {
 	sp_core::traits::SpawnNamed,
 };
 
-use polkadot_node_subsystem_util::database::Database;
+use node_subsystem_util::database::Database;
 
 #[cfg(feature = "full-node")]
 pub use {
-	polkadot_overseer::{Handle, Overseer, OverseerConnector, OverseerHandle},
-	polkadot_primitives::runtime_api::ParachainHost,
+	infrablockspace_overseer::{Handle, Overseer, OverseerConnector, OverseerHandle},
+	primitives::runtime_api::ParachainHost,
 	relay_chain_selection::SelectRelayChain,
 	sc_client_api::AuxStore,
 	sp_authority_discovery::AuthorityDiscoveryApi,
@@ -72,7 +72,7 @@ pub use {
 };
 
 #[cfg(feature = "full-node")]
-use polkadot_node_subsystem::jaeger;
+use node_subsystem::jaeger;
 
 use std::{path::PathBuf, sync::Arc, time::Duration};
 
@@ -88,7 +88,7 @@ pub use chain_spec::{GenericChainSpec, RococoChainSpec, WestendChainSpec};
 pub use consensus_common::{Proposal, SelectChain};
 use frame_benchmarking_cli::SUBSTRATE_REFERENCE_HARDWARE;
 use mmr_gadget::MmrGadget;
-pub use polkadot_primitives::{Block, BlockId, BlockNumber, CollatorPair, Hash, Id as ParaId};
+pub use primitives::{Block, BlockId, BlockNumber, CollatorPair, Hash, Id as ParaId};
 pub use sc_client_api::{Backend, CallExecutor};
 pub use sc_consensus::{BlockImport, LongestChain};
 pub use sc_executor::NativeExecutionDispatch;
@@ -207,7 +207,7 @@ pub enum Error {
 	Consensus(#[from] consensus_common::Error),
 
 	#[error("Failed to create an overseer")]
-	Overseer(#[from] polkadot_overseer::SubsystemError),
+	Overseer(#[from] infrablockspace_overseer::SubsystemError),
 
 	#[error(transparent)]
 	Prometheus(#[from] prometheus_endpoint::PrometheusError),
@@ -216,7 +216,7 @@ pub enum Error {
 	Telemetry(#[from] telemetry::Error),
 
 	#[error(transparent)]
-	Jaeger(#[from] polkadot_node_subsystem::jaeger::JaegerError),
+	Jaeger(#[from] node_subsystem::jaeger::JaegerError),
 
 	#[cfg(feature = "full-node")]
 	#[error(transparent)]
@@ -727,7 +727,7 @@ pub fn new_full<OverseerGenerator: OverseerGen>(
 		hwbench,
 	}: NewFullParams<OverseerGenerator>,
 ) -> Result<NewFull, Error> {
-	use polkadot_node_network_protocol::request_response::IncomingRequest;
+	use node_network_protocol::request_response::IncomingRequest;
 	use sc_network_sync::warp::WarpSyncParams;
 
 	let is_offchain_indexing_enabled = config.offchain_worker.indexing_enabled;
@@ -773,7 +773,7 @@ pub fn new_full<OverseerGenerator: OverseerGen>(
 
 	let select_chain = if auth_or_collator {
 		let metrics =
-			polkadot_node_subsystem_util::metrics::Metrics::register(prometheus_registry.as_ref())?;
+			node_subsystem_util::metrics::Metrics::register(prometheus_registry.as_ref())?;
 
 		SelectRelayChain::new_with_overseer(
 			basics.backend.clone(),
@@ -838,7 +838,7 @@ pub fn new_full<OverseerGenerator: OverseerGen>(
 	// Collators and parachain full nodes require the collator and validator networking to send
 	// collations and to be able to recover PoVs.
 	if role.is_authority() || is_parachain_node.is_running_alongside_parachain_node() {
-		use polkadot_network_bridge::{peer_sets_info, IsAuthority};
+		use network_bridge::{peer_sets_info, IsAuthority};
 		let is_authority = if role.is_authority() { IsAuthority::Yes } else { IsAuthority::No };
 		for config in peer_sets_info(is_authority, &peerset_protocol_names) {
 			net_config.add_notification_protocol(config);
@@ -1087,7 +1087,7 @@ pub fn new_full<OverseerGenerator: OverseerGen>(
 				Box::pin(async move {
 					use futures::{pin_mut, select, FutureExt};
 
-					let forward = polkadot_overseer::forward_events(overseer_client, handle);
+					let forward = infrablockspace_overseer::forward_events(overseer_client, handle);
 
 					let forward = forward.fuse();
 					let overseer_fut = overseer.run().fuse();
@@ -1139,7 +1139,7 @@ pub fn new_full<OverseerGenerator: OverseerGen>(
 
 				async move {
 					let parachain =
-						polkadot_node_core_parachains_inherent::ParachainsInherentDataProvider::new(
+						node_core_parachains_inherent::ParachainsInherentDataProvider::new(
 							client_clone,
 							overseer_handle,
 							parent,

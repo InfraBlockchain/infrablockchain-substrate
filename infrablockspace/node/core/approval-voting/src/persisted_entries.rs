@@ -20,8 +20,8 @@
 //! Within that context, things are plain-old-data. Within this module,
 //! data and logic are intertwined.
 
-use polkadot_node_primitives::approval::{AssignmentCert, DelayTranche, RelayVRFStory};
-use polkadot_primitives::{
+use node_primitives::approval::{AssignmentCert, DelayTranche, RelayVRFStory};
+use primitives::{
 	BlockNumber, CandidateHash, CandidateReceipt, CoreIndex, GroupIndex, Hash, SessionIndex,
 	ValidatorIndex, ValidatorSignature,
 };

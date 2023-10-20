@@ -16,7 +16,7 @@
 
 use std::sync::Arc;
 
-use polkadot_node_subsystem::{jaeger, ActivatedLeaf, LeafStatus};
+use node_subsystem::{jaeger, ActivatedLeaf, LeafStatus};
 use sc_client_api::UnpinHandle;
 use sc_keystore::LocalKeystore;
 use sc_utils::mpsc::tracing_unbounded;
@@ -24,7 +24,7 @@ use sp_application_crypto::AppCrypto;
 use sp_keyring::Sr25519Keyring;
 use sp_keystore::{Keystore, KeystorePtr};
 
-use polkadot_primitives::{AuthorityDiscoveryId, Block, BlockNumber, Hash, ValidatorId};
+use primitives::{AuthorityDiscoveryId, Block, BlockNumber, Hash, ValidatorId};
 
 /// Get mock keystore with `Ferdie` key.
 pub fn make_ferdie_keystore() -> KeystorePtr {

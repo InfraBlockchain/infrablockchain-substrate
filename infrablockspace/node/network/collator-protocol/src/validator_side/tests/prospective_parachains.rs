@@ -18,8 +18,8 @@
 
 use super::*;
 
-use polkadot_node_subsystem::messages::ChainApiMessage;
-use polkadot_primitives::{
+use node_subsystem::messages::ChainApiMessage;
+use primitives::{
 	AsyncBackingParams, BlockNumber, CandidateCommitments, CommittedCandidateReceipt, Header,
 	SigningContext, ValidatorId,
 };

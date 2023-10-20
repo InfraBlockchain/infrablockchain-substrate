@@ -22,9 +22,9 @@ sp-runtime = { path = "../../../substrate/primitives/runtime" }
 sp-state-machine = { path = "../../../substrate/primitives/state-machine" }
 
 # Polkadot
-polkadot-node-primitives = { path = "../../../infrablockspace/node/primitives" }
-polkadot-parachain-primitives = { path = "../../../infrablockspace/parachain" }
-polkadot-primitives = { path = "../../../infrablockspace/primitives" }
+node-primitives = { path = "../../../infrablockspace/node/primitives" }
+parachain-primitives = { path = "../../../infrablockspace/parachain" }
+primitives = { path = "../../../infrablockspace/primitives" }
 
 # Cumulus
 cumulus-relay-chain-interface = { path = "../relay-chain-interface" }

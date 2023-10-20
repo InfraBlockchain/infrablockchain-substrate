@@ -15,7 +15,7 @@
 
 #[cfg(feature = "full-node")]
 use {
-	polkadot_node_subsystem_util::database::Database, std::io, std::path::PathBuf, std::sync::Arc,
+	node_subsystem_util::database::Database, std::io, std::path::PathBuf, std::sync::Arc,
 };
 
 #[cfg(feature = "full-node")]
@@ -144,7 +144,7 @@ pub fn open_creating_rocksdb(
 	std::fs::create_dir_all(&path_str)?;
 	upgrade::try_upgrade_db(&path, DatabaseKind::RocksDB)?;
 	let db = Database::open(&db_config, &path_str)?;
-	let db = polkadot_node_subsystem_util::database::kvdb_impl::DbAdapter::new(
+	let db = node_subsystem_util::database::kvdb_impl::DbAdapter::new(
 		db,
 		columns::v3::ORDERED_COL,
 	);
@@ -169,7 +169,7 @@ pub fn open_creating_paritydb(
 	let db = parity_db::Db::open_or_create(&upgrade::paritydb_version_3_config(&path))
 		.map_err(|err| io::Error::new(io::ErrorKind::Other, format!("{:?}", err)))?;
 
-	let db = polkadot_node_subsystem_util::database::paritydb_impl::DbAdapter::new(
+	let db = node_subsystem_util::database::paritydb_impl::DbAdapter::new(
 		db,
 		columns::v3::ORDERED_COL,
 	);

@@ -1,5 +1,5 @@
 [package]
-name = "polkadot-node-core-prospective-parachains"
+name = "node-core-prospective-parachains"
 version = "1.0.0"
 authors.workspace = true
 edition.workspace = true
@@ -13,15 +13,15 @@ thiserror = "1.0.48"
 fatality = "0.0.6"
 bitvec = "1"
 
-polkadot-primitives = { path = "../../../primitives" }
-polkadot-node-primitives = { path = "../../primitives" }
-polkadot-node-subsystem = { path = "../../subsystem" }
-polkadot-node-subsystem-util = { path = "../../subsystem-util" }
+primitives = { path = "../../../primitives" }
+node-primitives = { path = "../../primitives" }
+node-subsystem = { path = "../../subsystem" }
+node-subsystem-util = { path = "../../subsystem-util" }
 
 [dev-dependencies]
 assert_matches = "1"
-polkadot-node-subsystem-test-helpers = { path = "../../subsystem-test-helpers" }
-polkadot-node-subsystem-types = { path = "../../subsystem-types" }
+node-subsystem-test-helpers = { path = "../../subsystem-test-helpers" }
+node-subsystem-types = { path = "../../subsystem-types" }
 polkadot-primitives-test-helpers = { path = "../../../primitives/test-helpers" }
 sp-core = { path = "../../../../substrate/primitives/core" }
 sc-keystore = { path = "../../../../substrate/client/keystore" }

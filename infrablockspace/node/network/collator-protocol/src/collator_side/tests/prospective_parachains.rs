@@ -18,8 +18,8 @@
 
 use super::*;
 
-use polkadot_node_subsystem::messages::{ChainApiMessage, ProspectiveParachainsMessage};
-use polkadot_primitives::{AsyncBackingParams, Header, OccupiedCore};
+use node_subsystem::messages::{ChainApiMessage, ProspectiveParachainsMessage};
+use primitives::{AsyncBackingParams, Header, OccupiedCore};
 
 const ASYNC_BACKING_PARAMETERS: AsyncBackingParams =
 	AsyncBackingParams { max_candidate_depth: 4, allowed_ancestry_len: 3 };

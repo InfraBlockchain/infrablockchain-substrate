@@ -1,5 +1,5 @@
 [package]
-name = "polkadot-node-primitives"
+name = "node-primitives"
 description = "Primitives types for the Node-side"
 version = "1.0.0"
 authors.workspace = true
@@ -9,7 +9,7 @@ license.workspace = true
 [dependencies]
 bounded-vec = "0.7"
 futures = "0.3.21"
-polkadot-primitives = { path = "../../primitives" }
+primitives = { path = "../../primitives" }
 parity-scale-codec = { version = "3.6.1", default-features = false, features = ["derive"] }
 sp-core = { path = "../../../substrate/primitives/core" }
 sp-application-crypto = { path = "../../../substrate/primitives/application-crypto" }
@@ -17,7 +17,7 @@ sp-consensus-babe = { path = "../../../substrate/primitives/consensus/babe" }
 sp-keystore = { path = "../../../substrate/primitives/keystore" }
 sp-maybe-compressed-blob = { path = "../../../substrate/primitives/maybe-compressed-blob" }
 sp-runtime = { path = "../../../substrate/primitives/runtime" }
-polkadot-parachain-primitives = { path = "../../parachain", default-features = false }
+parachain-primitives = { path = "../../parachain", default-features = false }
 schnorrkel = "0.9.1"
 thiserror = "1.0.48"
 serde = { version = "1.0.188", features = ["derive"] }
@@ -26,4 +26,4 @@ serde = { version = "1.0.188", features = ["derive"] }
 zstd = { version = "0.12.4", default-features = false }
 
 [dev-dependencies]
-polkadot-erasure-coding = { path = "../../erasure-coding" }
+erasure-coding = { package = "infrablockspace-erasure-coding", path = "../../erasure-coding" }

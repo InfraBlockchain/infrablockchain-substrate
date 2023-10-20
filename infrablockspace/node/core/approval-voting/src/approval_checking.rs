@@ -17,8 +17,8 @@
 //! Utilities for checking whether a candidate has been approved under a given block.
 
 use bitvec::{order::Lsb0 as BitOrderLsb0, slice::BitSlice};
-use polkadot_node_primitives::approval::DelayTranche;
-use polkadot_primitives::ValidatorIndex;
+use node_primitives::approval::DelayTranche;
+use primitives::ValidatorIndex;
 
 use crate::{
 	persisted_entries::{ApprovalEntry, CandidateEntry, TrancheEntry},
@@ -460,7 +460,7 @@ mod tests {
 	use crate::{approval_db, BTreeMap};
 	use ::test_helpers::{dummy_candidate_receipt, dummy_hash};
 	use bitvec::{bitvec, order::Lsb0 as BitOrderLsb0, vec::BitVec};
-	use polkadot_primitives::GroupIndex;
+	use primitives::GroupIndex;
 
 	#[test]
 	fn pending_is_not_approved() {

@@ -96,10 +96,10 @@ use std::{
 
 use super::LOG_TARGET;
 use bitvec::prelude::*;
-use polkadot_node_subsystem_util::inclusion_emulator::{
+use node_subsystem_util::inclusion_emulator::{
 	ConstraintModifications, Constraints, Fragment, ProspectiveCandidate, RelayChainBlockInfo,
 };
-use polkadot_primitives::{
+use primitives::{
 	BlockNumber, CandidateHash, CommittedCandidateReceipt, Hash, HeadData, Id as ParaId,
 	PersistedValidationData,
 };
@@ -981,9 +981,9 @@ impl FragmentNode {
 mod tests {
 	use super::*;
 	use assert_matches::assert_matches;
-	use polkadot_node_subsystem_util::inclusion_emulator::InboundHrmpLimitations;
-	use polkadot_primitives::{BlockNumber, CandidateCommitments, CandidateDescriptor, HeadData};
-	use polkadot_primitives_test_helpers as test_helpers;
+	use node_subsystem_util::inclusion_emulator::InboundHrmpLimitations;
+	use primitives::{BlockNumber, CandidateCommitments, CandidateDescriptor, HeadData};
+	use primitives_test_helpers as test_helpers;
 
 	fn make_constraints(
 		min_relay_parent_number: BlockNumber,

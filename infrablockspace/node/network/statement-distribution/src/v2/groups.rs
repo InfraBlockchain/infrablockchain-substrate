@@ -16,7 +16,7 @@
 
 //! A utility for tracking groups and their members within a session.
 
-use polkadot_primitives::{
+use primitives::{
 	effective_minimum_backing_votes, GroupIndex, IndexedVec, ValidatorIndex,
 };
 

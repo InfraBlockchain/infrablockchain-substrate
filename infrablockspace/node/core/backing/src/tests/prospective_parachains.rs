@@ -16,11 +16,11 @@
 
 //! Tests for the backing subsystem with enabled prospective parachains.
 
-use polkadot_node_subsystem::{
+use node_subsystem::{
 	messages::{ChainApiMessage, FragmentTreeMembership},
 	ActivatedLeaf, TimeoutExt,
 };
-use polkadot_primitives::{AsyncBackingParams, BlockNumber, Header, OccupiedCore};
+use primitives::{AsyncBackingParams, BlockNumber, Header, OccupiedCore};
 
 use super::*;
 

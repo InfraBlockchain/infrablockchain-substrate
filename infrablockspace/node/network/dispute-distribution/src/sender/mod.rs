@@ -25,13 +25,13 @@ use futures::{channel::oneshot, future::poll_fn, Future};
 
 use futures_timer::Delay;
 use indexmap::{map::Entry, IndexMap};
-use polkadot_node_network_protocol::request_response::v1::DisputeRequest;
-use polkadot_node_primitives::{DisputeMessage, DisputeStatus};
-use polkadot_node_subsystem::{
+use node_network_protocol::request_response::v1::DisputeRequest;
+use node_primitives::{DisputeMessage, DisputeStatus};
+use node_subsystem::{
 	messages::DisputeCoordinatorMessage, overseer, ActiveLeavesUpdate, SubsystemSender,
 };
-use polkadot_node_subsystem_util::{nesting_sender::NestingSender, runtime::RuntimeInfo};
-use polkadot_primitives::{CandidateHash, Hash, SessionIndex};
+use node_subsystem_util::{nesting_sender::NestingSender, runtime::RuntimeInfo};
+use primitives::{CandidateHash, Hash, SessionIndex};
 
 /// For each ongoing dispute we have a `SendTask` which takes care of it.
 ///

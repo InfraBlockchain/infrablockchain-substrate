@@ -15,12 +15,12 @@
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
 use futures::channel::oneshot;
-use polkadot_node_subsystem::{
+use node_subsystem::{
 	errors::ChainApiError,
 	messages::{ChainApiMessage, ProspectiveParachainsMessage},
 	SubsystemSender,
 };
-use polkadot_primitives::{BlockNumber, Hash, Id as ParaId};
+use primitives::{BlockNumber, Hash, Id as ParaId};
 
 use std::collections::HashMap;
 
@@ -408,12 +408,12 @@ mod tests {
 	use crate::TimeoutExt;
 	use assert_matches::assert_matches;
 	use futures::future::{join, FutureExt};
-	use polkadot_node_subsystem::AllMessages;
-	use polkadot_node_subsystem_test_helpers::{
+	use node_subsystem::AllMessages;
+	use node_subsystem_test_helpers::{
 		make_subsystem_context, TestSubsystemContextHandle,
 	};
-	use polkadot_overseer::SubsystemContext;
-	use polkadot_primitives::Header;
+	use infrablockspace_overseer::SubsystemContext;
+	use primitives::Header;
 	use sp_core::testing::TaskExecutor;
 	use std::time::Duration;
 

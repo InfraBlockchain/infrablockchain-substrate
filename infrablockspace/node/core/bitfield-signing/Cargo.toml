@@ -1,5 +1,5 @@
 [package]
-name = "polkadot-node-core-bitfield-signing"
+name = "node-core-bitfield-signing"
 version = "1.0.0"
 authors.workspace = true
 edition.workspace = true
@@ -8,13 +8,13 @@ license.workspace = true
 [dependencies]
 futures = "0.3.21"
 gum = { package = "tracing-gum", path = "../../gum" }
-polkadot-primitives = { path = "../../../primitives" }
-polkadot-node-subsystem = { path = "../../subsystem" }
-polkadot-node-subsystem-util = { path = "../../subsystem-util" }
+primitives = { path = "../../../primitives" }
+node-subsystem = { path = "../../subsystem" }
+node-subsystem-util = { path = "../../subsystem-util" }
 sp-keystore = { path = "../../../../substrate/primitives/keystore" }
 wasm-timer = "0.2.5"
 thiserror = "1.0.48"
 
 [dev-dependencies]
-polkadot-node-subsystem-test-helpers = { path = "../../subsystem-test-helpers" }
+node-subsystem-test-helpers = { path = "../../subsystem-test-helpers" }
 test-helpers = { package = "polkadot-primitives-test-helpers", path = "../../../primitives/test-helpers" }

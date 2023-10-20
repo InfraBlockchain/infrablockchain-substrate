@@ -16,8 +16,8 @@
 
 //! A utility abstraction to collect and send reputation changes.
 
-use polkadot_node_network_protocol::{PeerId, UnifiedReputationChange};
-use polkadot_node_subsystem::{
+use node_network_protocol::{PeerId, UnifiedReputationChange};
+use node_subsystem::{
 	messages::{NetworkBridgeTxMessage, ReportPeerMessage},
 	overseer,
 };

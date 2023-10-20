@@ -25,7 +25,7 @@ use futures::{
 };
 use futures_timer::Delay;
 
-use polkadot_node_subsystem::{
+use node_subsystem::{
 	jaeger,
 	messages::{
 		CandidateBackingMessage, ChainApiMessage, ProspectiveParachainsMessage, ProvisionableData,
@@ -34,12 +34,12 @@ use polkadot_node_subsystem::{
 	overseer, ActivatedLeaf, ActiveLeavesUpdate, FromOrchestra, LeafStatus, OverseerSignal,
 	PerLeafSpan, RuntimeApiError, SpawnedSubsystem, SubsystemError,
 };
-use polkadot_node_subsystem_util::{
+use node_subsystem_util::{
 	request_availability_cores, request_persisted_validation_data,
 	runtime::{prospective_parachains_mode, ProspectiveParachainsMode},
 	TimeoutExt,
 };
-use polkadot_primitives::{
+use primitives::{
 	BackedCandidate, BlockNumber, CandidateHash, CandidateReceipt, CoreState, Hash, Id as ParaId,
 	OccupiedCoreAssumption, SignedAvailabilityBitfield, ValidatorIndex,
 };

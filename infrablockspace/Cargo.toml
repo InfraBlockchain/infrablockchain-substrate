@@ -27,13 +27,13 @@ tikv-jemallocator = { version = "0.5.0", optional = true }
 
 # Crates in our workspace, defined as dependencies so we can pass them feature flags.
 polkadot-cli = { path = "cli", features = [ "westend-native", "rococo-native", "infra-relay-native" ]  }
-polkadot-node-core-pvf = { path = "node/core/pvf" }
-polkadot-node-core-pvf-prepare-worker = { path = "node/core/pvf/prepare-worker" }
-polkadot-overseer = { path = "node/overseer" }
+node-core-pvf = { path = "node/core/pvf" }
+node-core-pvf-prepare-worker = { path = "node/core/pvf/prepare-worker" }
+infrablockspace-overseer = { path = "node/overseer" }
 
 # Needed for worker binaries.
-polkadot-node-core-pvf-common = { path = "node/core/pvf/common" }
-polkadot-node-core-pvf-execute-worker = { path = "node/core/pvf/execute-worker" }
+node-core-pvf-common = { path = "node/core/pvf/common" }
+node-core-pvf-execute-worker = { path = "node/core/pvf/execute-worker" }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 tikv-jemallocator = "0.5.0"
@@ -60,14 +60,14 @@ runtime-metrics = [ "polkadot-cli/runtime-metrics" ]
 pyroscope = [ "polkadot-cli/pyroscope" ]
 jemalloc-allocator = [
 	"dep:tikv-jemallocator",
-	"polkadot-node-core-pvf-prepare-worker/jemalloc-allocator",
-	"polkadot-node-core-pvf/jemalloc-allocator",
-	"polkadot-overseer/jemalloc-allocator",
+	"node-core-pvf-prepare-worker/jemalloc-allocator",
+	"node-core-pvf/jemalloc-allocator",
+	"infrablockspace-overseer/jemalloc-allocator",
 ]
 
 # Enables timeout-based tests supposed to be run only in CI environment as they may be flaky
 # when run locally depending on system load
-ci-only-tests = [ "polkadot-node-core-pvf/ci-only-tests" ]
+ci-only-tests = [ "node-core-pvf/ci-only-tests" ]
 
 # Configuration for building a .deb package - for use with `cargo-deb`
 [package.metadata.deb]

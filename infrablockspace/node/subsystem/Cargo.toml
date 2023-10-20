@@ -1,5 +1,5 @@
 [package]
-name = "polkadot-node-subsystem"
+name = "node-subsystem"
 description = "Subsystem traits and message definitions and the generated overseer"
 version = "1.0.0"
 authors.workspace = true
@@ -7,6 +7,6 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
-polkadot-overseer = { path = "../overseer" }
-polkadot-node-subsystem-types = { path = "../subsystem-types" }
-polkadot-node-jaeger = { path = "../jaeger" }
+infrablockspace-overseer = { path = "../overseer" }
+node-subsystem-types = { path = "../subsystem-types" }
+node-jaeger = { path = "../jaeger" }

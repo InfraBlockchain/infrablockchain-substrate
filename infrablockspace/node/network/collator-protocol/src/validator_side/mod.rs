@@ -29,7 +29,7 @@ use tokio_util::sync::CancellationToken;
 
 use sp_keystore::KeystorePtr;
 
-use polkadot_node_network_protocol::{
+use node_network_protocol::{
 	self as net_protocol,
 	peer_set::{CollationVersion, PeerSet},
 	request_response::{
@@ -39,8 +39,8 @@ use polkadot_node_network_protocol::{
 	v1 as protocol_v1, v2 as protocol_v2, OurView, PeerId, UnifiedReputationChange as Rep,
 	Versioned, View,
 };
-use polkadot_node_primitives::{SignedFullStatement, Statement};
-use polkadot_node_subsystem::{
+use node_primitives::{SignedFullStatement, Statement};
+use node_subsystem::{
 	jaeger,
 	messages::{
 		CanSecondRequest, CandidateBackingMessage, CollatorProtocolMessage, IfDisconnected,
@@ -49,12 +49,12 @@ use polkadot_node_subsystem::{
 	},
 	overseer, CollatorProtocolSenderTrait, FromOrchestra, OverseerSignal, PerLeafSpan,
 };
-use polkadot_node_subsystem_util::{
+use node_subsystem_util::{
 	backing_implicit_view::View as ImplicitView,
 	reputation::{ReputationAggregator, REPUTATION_CHANGE_INTERVAL},
 	runtime::{prospective_parachains_mode, ProspectiveParachainsMode},
 };
-use polkadot_primitives::{
+use primitives::{
 	CandidateHash, CollatorId, CoreState, Hash, Id as ParaId, OccupiedCoreAssumption,
 	PersistedValidationData,
 };
@@ -380,7 +380,7 @@ struct State {
 
 	/// All active leaves observed by us, including both that do and do not
 	/// support prospective parachains. This mapping works as a replacement for
-	/// [`polkadot_node_network_protocol::View`] and can be dropped once the transition
+	/// [`node_network_protocol::View`] and can be dropped once the transition
 	/// to asynchronous backing is done.
 	active_leaves: HashMap<Hash, ProspectiveParachainsMode>,
 
@@ -460,24 +460,24 @@ async fn assign_incoming<Sender>(
 where
 	Sender: CollatorProtocolSenderTrait,
 {
-	let validators = polkadot_node_subsystem_util::request_validators(relay_parent, sender)
+	let validators = node_subsystem_util::request_validators(relay_parent, sender)
 		.await
 		.await
 		.map_err(Error::CancelledActiveValidators)??;
 
 	let (groups, rotation_info) =
-		polkadot_node_subsystem_util::request_validator_groups(relay_parent, sender)
+		node_subsystem_util::request_validator_groups(relay_parent, sender)
 			.await
 			.await
 			.map_err(Error::CancelledValidatorGroups)??;
 
-	let cores = polkadot_node_subsystem_util::request_availability_cores(relay_parent, sender)
+	let cores = node_subsystem_util::request_availability_cores(relay_parent, sender)
 		.await
 		.await
 		.map_err(Error::CancelledAvailabilityCores)??;
 
-	let para_now = match polkadot_node_subsystem_util::signing_key_and_index(&validators, keystore)
-		.and_then(|(_, index)| polkadot_node_subsystem_util::find_validator_group(&groups, index))
+	let para_now = match node_subsystem_util::signing_key_and_index(&validators, keystore)
+		.and_then(|(_, index)| node_subsystem_util::find_validator_group(&groups, index))
 	{
 		Some(group) => {
 			let core_now = rotation_info.core_for_group(group, cores.len());
@@ -1727,7 +1727,7 @@ where
 	Sender: CollatorProtocolSenderTrait,
 {
 	// The core is guaranteed to be scheduled since we accepted the advertisement.
-	polkadot_node_subsystem_util::request_persisted_validation_data(
+	node_subsystem_util::request_persisted_validation_data(
 		relay_parent,
 		para_id,
 		OccupiedCoreAssumption::Free,

@@ -35,7 +35,7 @@ cumulus-relay-chain-interface = { path = "../relay-chain-interface" }
 sp-keyring = { path = "../../../substrate/primitives/keyring" }
 
 # Polkadot
-polkadot-primitives = { path = "../../../infrablockspace/primitives" }
+primitives = { path = "../../../infrablockspace/primitives" }
 polkadot-test-client = { path = "../../../infrablockspace/node/test/client" }
 metered = { package = "prioritized-metered-channel", version = "0.5.1", default-features = false, features=["futures_channel"] }
 

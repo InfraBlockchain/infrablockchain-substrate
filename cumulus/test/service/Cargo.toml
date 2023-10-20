@@ -55,12 +55,12 @@ sc-executor-wasmtime = { path = "../../../substrate/client/executor/wasmtime" }
 sc-executor-common = { path = "../../../substrate/client/executor/common" }
 
 # Polkadot
-polkadot-primitives = { path = "../../../infrablockspace/primitives" }
+primitives = { path = "../../../infrablockspace/primitives" }
 polkadot-service = { path = "../../../infrablockspace/node/service" }
 polkadot-test-service = { path = "../../../infrablockspace/node/test/service" }
 polkadot-cli = { path = "../../../infrablockspace/cli" }
-polkadot-node-subsystem = { path = "../../../infrablockspace/node/subsystem" }
-polkadot-overseer = { path = "../../../infrablockspace/node/overseer" }
+node-subsystem = { path = "../../../infrablockspace/node/subsystem" }
+infrablockspace-overseer = { path = "../../../infrablockspace/node/overseer" }
 
 # Cumulus
 cumulus-client-cli = { path = "../../client/cli" }
@@ -103,7 +103,7 @@ runtime-benchmarks = [
 	"pallet-timestamp/runtime-benchmarks",
 	"parachains-common/runtime-benchmarks",
 	"polkadot-cli/runtime-benchmarks",
-	"polkadot-primitives/runtime-benchmarks",
+	"primitives/runtime-benchmarks",
 	"polkadot-service/runtime-benchmarks",
 	"polkadot-test-service/runtime-benchmarks",
 	"rococo-parachain-runtime/runtime-benchmarks",

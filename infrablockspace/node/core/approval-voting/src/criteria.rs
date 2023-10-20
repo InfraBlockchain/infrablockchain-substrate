@@ -17,10 +17,10 @@
 //! Assignment criteria VRF generation and checking.
 
 use parity_scale_codec::{Decode, Encode};
-use polkadot_node_primitives::approval::{
+use node_primitives::approval::{
 	self as approval_types, AssignmentCert, AssignmentCertKind, DelayTranche, RelayVRFStory,
 };
-use polkadot_primitives::{
+use primitives::{
 	AssignmentId, AssignmentPair, CandidateHash, CoreIndex, GroupIndex, IndexedVec, SessionInfo,
 	ValidatorIndex,
 };
@@ -554,7 +554,7 @@ fn is_in_backing_group(
 mod tests {
 	use super::*;
 	use crate::import::tests::garbage_vrf_signature;
-	use polkadot_primitives::{Hash, ASSIGNMENT_KEY_TYPE_ID};
+	use primitives::{Hash, ASSIGNMENT_KEY_TYPE_ID};
 	use sp_application_crypto::sr25519;
 	use sp_core::crypto::Pair as PairT;
 	use sp_keyring::sr25519::Keyring as Sr25519Keyring;

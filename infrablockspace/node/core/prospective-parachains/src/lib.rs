@@ -22,7 +22,7 @@
 //! backing phases of parachain consensus.
 //!
 //! This is primarily an implementation of "Fragment Trees", as described in
-//! [`polkadot_node_subsystem_util::inclusion_emulator`].
+//! [`node_subsystem_util::inclusion_emulator`].
 //!
 //! This subsystem also handles concerns such as the relay-chain being forkful and session changes.
 
@@ -33,7 +33,7 @@ use std::{
 
 use futures::{channel::oneshot, prelude::*};
 
-use polkadot_node_subsystem::{
+use node_subsystem::{
 	messages::{
 		ChainApiMessage, FragmentTreeMembership, HypotheticalCandidate,
 		HypotheticalFrontierRequest, IntroduceCandidateRequest, ProspectiveParachainsMessage,
@@ -41,12 +41,12 @@ use polkadot_node_subsystem::{
 	},
 	overseer, ActiveLeavesUpdate, FromOrchestra, OverseerSignal, SpawnedSubsystem, SubsystemError,
 };
-use polkadot_node_subsystem_util::{
+use node_subsystem_util::{
 	inclusion_emulator::{Constraints, RelayChainBlockInfo},
 	request_session_index_for_child,
 	runtime::{prospective_parachains_mode, ProspectiveParachainsMode},
 };
-use polkadot_primitives::{
+use primitives::{
 	async_backing::CandidatePendingAvailability, BlockNumber, CandidateHash,
 	CommittedCandidateReceipt, CoreState, Hash, HeadData, Header, Id as ParaId,
 	PersistedValidationData,

@@ -19,8 +19,8 @@ use std::{
 	time::Duration,
 };
 
-use polkadot_node_subsystem_test_helpers::TestSubsystemContextHandle;
-use polkadot_node_subsystem_util::TimeoutExt;
+use node_subsystem_test_helpers::TestSubsystemContextHandle;
+use node_subsystem_util::TimeoutExt;
 
 use futures::{
 	channel::{mpsc, oneshot},
@@ -33,19 +33,19 @@ use sc_network::{config as netconfig, config::RequestResponseConfig, IfDisconnec
 use sp_core::{testing::TaskExecutor, traits::SpawnNamed};
 use sp_keystore::KeystorePtr;
 
-use polkadot_node_network_protocol::request_response::{
+use node_network_protocol::request_response::{
 	v1, IncomingRequest, OutgoingRequest, Requests,
 };
-use polkadot_node_primitives::ErasureChunk;
-use polkadot_node_subsystem::{
+use node_primitives::ErasureChunk;
+use node_subsystem::{
 	messages::{
 		AllMessages, AvailabilityDistributionMessage, AvailabilityStoreMessage, ChainApiMessage,
 		NetworkBridgeTxMessage, RuntimeApiMessage, RuntimeApiRequest,
 	},
 	ActiveLeavesUpdate, FromOrchestra, OverseerSignal,
 };
-use polkadot_node_subsystem_test_helpers as test_helpers;
-use polkadot_primitives::{
+use node_subsystem_test_helpers as test_helpers;
+use primitives::{
 	CandidateHash, CoreState, ExecutorParams, GroupIndex, Hash, Id as ParaId, ScheduledCore,
 	SessionInfo, ValidatorIndex,
 };

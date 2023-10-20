@@ -25,13 +25,13 @@ use futures::{
 #[cfg(test)]
 use futures_timer::Delay;
 
-use polkadot_node_primitives::ValidationResult;
-use polkadot_node_subsystem::{
+use node_primitives::ValidationResult;
+use node_subsystem::{
 	messages::{AvailabilityRecoveryMessage, CandidateValidationMessage},
 	overseer, ActiveLeavesUpdate, RecoveryError,
 };
-use polkadot_node_subsystem_util::runtime::get_validation_code_by_hash;
-use polkadot_primitives::{
+use node_subsystem_util::runtime::get_validation_code_by_hash;
+use primitives::{
 	BlockNumber, CandidateHash, CandidateReceipt, Hash, PvfExecTimeoutKind, SessionIndex,
 };
 
@@ -49,7 +49,7 @@ use queues::Queues;
 pub use queues::{ParticipationPriority, ParticipationRequest, QueueError};
 
 use crate::metrics::Metrics;
-use polkadot_node_subsystem_util::metrics::prometheus::prometheus;
+use node_subsystem_util::metrics::prometheus::prometheus;
 
 /// How many participation processes do we want to run in parallel the most.
 ///

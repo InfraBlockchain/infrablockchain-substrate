@@ -26,7 +26,7 @@ use futures::{
 };
 use sp_core::Pair;
 
-use polkadot_node_network_protocol::{
+use node_network_protocol::{
 	self as net_protocol,
 	peer_set::{CollationVersion, PeerSet},
 	request_response::{
@@ -36,15 +36,15 @@ use polkadot_node_network_protocol::{
 	v1 as protocol_v1, v2 as protocol_v2, OurView, PeerId, UnifiedReputationChange as Rep,
 	Versioned, View,
 };
-use polkadot_node_primitives::{CollationSecondedSignal, PoV, Statement};
-use polkadot_node_subsystem::{
+use node_primitives::{CollationSecondedSignal, PoV, Statement};
+use node_subsystem::{
 	jaeger,
 	messages::{
 		CollatorProtocolMessage, NetworkBridgeEvent, NetworkBridgeTxMessage, RuntimeApiMessage,
 	},
 	overseer, CollatorProtocolSenderTrait, FromOrchestra, OverseerSignal, PerLeafSpan,
 };
-use polkadot_node_subsystem_util::{
+use node_subsystem_util::{
 	backing_implicit_view::View as ImplicitView,
 	reputation::{ReputationAggregator, REPUTATION_CHANGE_INTERVAL},
 	runtime::{
@@ -53,7 +53,7 @@ use polkadot_node_subsystem_util::{
 	},
 	TimeoutExt,
 };
-use polkadot_primitives::{
+use primitives::{
 	AuthorityDiscoveryId, CandidateHash, CandidateReceipt, CollatorPair, CoreIndex, CoreState,
 	GroupIndex, Hash, Id as ParaId, SessionIndex,
 };
@@ -234,7 +234,7 @@ struct State {
 
 	/// All active leaves observed by us, including both that do and do not
 	/// support prospective parachains. This mapping works as a replacement for
-	/// [`polkadot_node_network_protocol::View`] and can be dropped once the transition
+	/// [`node_network_protocol::View`] and can be dropped once the transition
 	/// to asynchronous backing is done.
 	active_leaves: HashMap<Hash, ProspectiveParachainsMode>,
 

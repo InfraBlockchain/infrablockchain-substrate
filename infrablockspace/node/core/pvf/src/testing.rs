@@ -21,7 +21,7 @@
 
 pub use crate::worker_intf::{spawn_with_program_path, SpawnErr};
 
-use polkadot_primitives::ExecutorParams;
+use primitives::ExecutorParams;
 
 /// A function that emulates the stitches together behaviors of the preparation and the execution
 /// worker in a single synchronous function.
@@ -29,8 +29,8 @@ pub fn validate_candidate(
 	code: &[u8],
 	params: &[u8],
 ) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
-	use polkadot_node_core_pvf_execute_worker::Executor;
-	use polkadot_node_core_pvf_prepare_worker::{prepare, prevalidate};
+	use node_core_pvf_execute_worker::Executor;
+	use node_core_pvf_prepare_worker::{prepare, prevalidate};
 
 	let code = sp_maybe_compressed_blob::decompress(code, 10 * 1024 * 1024)
 		.expect("Decompressing code failed");

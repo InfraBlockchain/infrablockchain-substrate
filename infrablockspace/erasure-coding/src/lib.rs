@@ -25,8 +25,8 @@
 //! The data is coded so any f+1 chunks can be used to reconstruct the full data.
 
 use parity_scale_codec::{Decode, Encode};
-use polkadot_node_primitives::{AvailableData, Proof};
-use polkadot_primitives::{BlakeTwo256, Hash as H256, HashT};
+use node_primitives::{AvailableData, Proof};
+use primitives::{BlakeTwo256, Hash as H256, HashT};
 use sp_core::Blake2Hasher;
 use sp_trie::{
 	trie_types::{TrieDBBuilder, TrieDBMutBuilderV0 as TrieDBMutBuilder},
@@ -347,7 +347,7 @@ impl<'a, I: Iterator<Item = &'a [u8]>> parity_scale_codec::Input for ShardInput<
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use polkadot_node_primitives::{AvailableData, BlockData, PoV};
+	use node_primitives::{AvailableData, BlockData, PoV};
 
 	// In order to adequately compute the number of entries in the Merkle
 	// trie, we must account for the fixed 16-ary trie structure.

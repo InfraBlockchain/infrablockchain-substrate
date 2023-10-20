@@ -1,5 +1,5 @@
 [package]
-name = "polkadot-node-jaeger"
+name = "node-jaeger"
 version = "1.0.0"
 authors.workspace = true
 edition.workspace = true
@@ -10,8 +10,8 @@ description = "Polkadot Jaeger primitives, but equally useful for Grafana/Tempo"
 mick-jaeger = "0.1.8"
 lazy_static = "1.4"
 parking_lot = "0.12.0"
-polkadot-primitives = { path = "../../primitives" }
-polkadot-node-primitives = { path = "../primitives" }
+primitives = { path = "../../primitives" }
+node-primitives = { path = "../primitives" }
 sc-network = { path = "../../../substrate/client/network" }
 sp-core = { path = "../../../substrate/primitives/core" }
 thiserror = "1.0.48"

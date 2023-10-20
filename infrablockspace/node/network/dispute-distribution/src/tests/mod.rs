@@ -34,29 +34,29 @@ use parity_scale_codec::{Decode, Encode};
 
 use sc_network::config::RequestResponseConfig;
 
-use polkadot_node_network_protocol::{
+use node_network_protocol::{
 	request_response::{v1::DisputeRequest, IncomingRequest, ReqProtocolNames},
 	PeerId,
 };
 use sp_keyring::Sr25519Keyring;
 
-use polkadot_node_network_protocol::{
+use node_network_protocol::{
 	request_response::{v1::DisputeResponse, Recipient, Requests},
 	IfDisconnected,
 };
-use polkadot_node_primitives::DisputeStatus;
-use polkadot_node_subsystem::{
+use node_primitives::DisputeStatus;
+use node_subsystem::{
 	messages::{
 		AllMessages, DisputeCoordinatorMessage, DisputeDistributionMessage, ImportStatementsResult,
 		NetworkBridgeTxMessage, RuntimeApiMessage, RuntimeApiRequest,
 	},
 	ActiveLeavesUpdate, FromOrchestra, OverseerSignal,
 };
-use polkadot_node_subsystem_test_helpers::{
+use node_subsystem_test_helpers::{
 	mock::{make_ferdie_keystore, new_leaf},
 	subsystem_test_harness, TestSubsystemContextHandle,
 };
-use polkadot_primitives::{
+use primitives::{
 	AuthorityDiscoveryId, CandidateHash, CandidateReceipt, ExecutorParams, Hash, SessionIndex,
 	SessionInfo,
 };

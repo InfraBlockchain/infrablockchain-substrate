@@ -54,8 +54,8 @@ sp-weights = { path = "../../../../../substrate/primitives/weights", default-fea
 pallet-xcm = { path = "../../../../../infrablockspace/xcm/pallet-xcm", default-features = false}
 pallet-xcm-benchmarks = { path = "../../../../../infrablockspace/xcm/pallet-xcm-benchmarks", default-features = false, optional = true }
 polkadot-core-primitives = { path = "../../../../../infrablockspace/core-primitives", default-features = false}
-polkadot-parachain-primitives = { path = "../../../../../infrablockspace/parachain", default-features = false}
-polkadot-runtime-common = { path = "../../../../../infrablockspace/runtime/common", default-features = false}
+parachain-primitives = { path = "../../../../../infrablockspace/parachain", default-features = false}
+runtime-common = { path = "../../../../../infrablockspace/runtime/common", default-features = false}
 xcm = { package = "staging-xcm", path = "../../../../../infrablockspace/xcm", default-features = false}
 xcm-builder = { package = "staging-xcm-builder", path = "../../../../../infrablockspace/xcm/xcm-builder", default-features = false}
 xcm-executor = { package = "staging-xcm-executor", path = "../../../../../infrablockspace/xcm/xcm-executor", default-features = false}
@@ -107,8 +107,8 @@ runtime-benchmarks = [
 	"pallet-xcm-benchmarks/runtime-benchmarks",
 	"pallet-xcm/runtime-benchmarks",
 	"parachains-common/runtime-benchmarks",
-	"polkadot-parachain-primitives/runtime-benchmarks",
-	"polkadot-runtime-common/runtime-benchmarks",
+	"parachain-primitives/runtime-benchmarks",
+	"runtime-common/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 	"xcm-builder/runtime-benchmarks",
 	"xcm-executor/runtime-benchmarks",
@@ -139,7 +139,7 @@ try-runtime = [
 	"pallet-utility/try-runtime",
 	"pallet-xcm/try-runtime",
 	"parachain-info/try-runtime",
-	"polkadot-runtime-common/try-runtime",
+	"runtime-common/try-runtime",
 	"sp-runtime/try-runtime",
 ]
 std = [
@@ -182,8 +182,8 @@ std = [
 	"parachain-info/std",
 	"parachains-common/std",
 	"polkadot-core-primitives/std",
-	"polkadot-parachain-primitives/std",
-	"polkadot-runtime-common/std",
+	"parachain-primitives/std",
+	"runtime-common/std",
 	"scale-info/std",
 	"sp-api/std",
 	"sp-block-builder/std",

@@ -20,8 +20,8 @@ use std::{
 };
 
 use futures::channel::oneshot;
-use polkadot_node_subsystem::{messages::ChainApiMessage, overseer};
-use polkadot_primitives::{
+use node_subsystem::{messages::ChainApiMessage, overseer};
+use primitives::{
 	BlockNumber, CandidateHash, CandidateReceipt, ExecutorParams, Hash, SessionIndex,
 };
 
@@ -31,7 +31,7 @@ use crate::{
 };
 
 use crate::metrics::Metrics;
-use polkadot_node_subsystem_util::metrics::prometheus::prometheus;
+use node_subsystem_util::metrics::prometheus::prometheus;
 
 #[cfg(test)]
 mod tests;

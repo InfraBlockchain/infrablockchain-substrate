@@ -18,11 +18,11 @@
 
 use futures::channel::oneshot;
 
-use polkadot_node_subsystem::{
+use node_subsystem::{
 	errors::{ChainApiError, RuntimeApiError},
 	SubsystemError,
 };
-use polkadot_node_subsystem_util::runtime;
+use node_subsystem_util::runtime;
 
 use crate::LOG_TARGET;
 use fatality::Nested;

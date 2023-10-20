@@ -26,8 +26,8 @@ use frame_system::EnsureRoot;
 use sp_core::{ConstU32, H256};
 use sp_runtime::{traits::IdentityLookup, AccountId32};
 
-use polkadot_parachain_primitives::primitives::Id as ParaId;
-use polkadot_runtime_parachains::{
+use parachain_primitives::primitives::Id as ParaId;
+use runtime_parachains::{
 	configuration,
 	inclusion::{AggregateMessageOrigin, UmpQueueId},
 	origin, shared,

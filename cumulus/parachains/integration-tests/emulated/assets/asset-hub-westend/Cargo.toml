@@ -23,9 +23,9 @@ pallet-asset-rate = { path = "../../../../../../substrate/frame/asset-rate", def
 
 # Polkadot
 polkadot-core-primitives = { path = "../../../../../../infrablockspace/core-primitives", default-features = false}
-polkadot-parachain-primitives = { path = "../../../../../../infrablockspace/parachain", default-features = false}
-polkadot-runtime-common = { path = "../../../../../../infrablockspace/runtime/common" }
-polkadot-runtime-parachains = { path = "../../../../../../infrablockspace/runtime/parachains" }
+parachain-primitives = { path = "../../../../../../infrablockspace/parachain", default-features = false}
+runtime-common = { path = "../../../../../../infrablockspace/runtime/common" }
+runtime-parachains = { path = "../../../../../../infrablockspace/runtime/parachains" }
 xcm = { package = "staging-xcm", path = "../../../../../../infrablockspace/xcm", default-features = false}
 xcm-builder = { package = "staging-xcm-builder",  path = "../../../../../../infrablockspace/xcm/xcm-builder", default-features = false}
 xcm-executor = { package = "staging-xcm-executor",  path = "../../../../../../infrablockspace/xcm/xcm-executor", default-features = false}
@@ -55,9 +55,9 @@ runtime-benchmarks = [
 	"pallet-treasury/runtime-benchmarks",
 	"pallet-xcm/runtime-benchmarks",
 	"parachains-common/runtime-benchmarks",
-	"polkadot-parachain-primitives/runtime-benchmarks",
-	"polkadot-runtime-common/runtime-benchmarks",
-	"polkadot-runtime-parachains/runtime-benchmarks",
+	"parachain-primitives/runtime-benchmarks",
+	"runtime-common/runtime-benchmarks",
+	"runtime-parachains/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 	"xcm-builder/runtime-benchmarks",
 	"xcm-executor/runtime-benchmarks",

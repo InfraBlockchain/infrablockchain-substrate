@@ -20,11 +20,11 @@
 #![warn(missing_docs)]
 
 use parity_scale_codec::{Decode, Encode};
-use polkadot_primitives::{BlockNumber, Hash};
+use primitives::{BlockNumber, Hash};
 use std::{collections::HashMap, fmt};
 
 #[doc(hidden)]
-pub use polkadot_node_jaeger as jaeger;
+pub use node_jaeger as jaeger;
 pub use sc_network::{IfDisconnected, PeerId};
 #[doc(hidden)]
 pub use std::sync::Arc;
@@ -140,8 +140,8 @@ impl std::ops::Deref for OurView {
 /// # Example
 ///
 /// ```
-/// # use polkadot_node_network_protocol::our_view;
-/// # use polkadot_primitives::Hash;
+/// # use node_network_protocol::our_view;
+/// # use primitives::Hash;
 /// let our_view = our_view![Hash::repeat_byte(1), Hash::repeat_byte(2)];
 /// ```
 #[macro_export]
@@ -174,8 +174,8 @@ pub struct View {
 /// # Example
 ///
 /// ```
-/// # use polkadot_node_network_protocol::view;
-/// # use polkadot_primitives::Hash;
+/// # use node_network_protocol::view;
+/// # use primitives::Hash;
 /// let view = view![Hash::repeat_byte(1), Hash::repeat_byte(2)];
 /// ```
 #[macro_export]
@@ -433,12 +433,12 @@ impl_versioned_try_from!(
 pub mod v1 {
 	use parity_scale_codec::{Decode, Encode};
 
-	use polkadot_primitives::{
+	use primitives::{
 		CandidateHash, CandidateIndex, CollatorId, CollatorSignature, CompactStatement, Hash,
 		Id as ParaId, UncheckedSignedAvailabilityBitfield, ValidatorIndex, ValidatorSignature,
 	};
 
-	use polkadot_node_primitives::{
+	use node_primitives::{
 		approval::{IndirectAssignmentCert, IndirectSignedApprovalVote},
 		UncheckedSignedFullStatement,
 	};
@@ -592,12 +592,12 @@ pub mod v2 {
 	use bitvec::{order::Lsb0, slice::BitSlice, vec::BitVec};
 	use parity_scale_codec::{Decode, Encode};
 
-	use polkadot_primitives::{
+	use primitives::{
 		CandidateHash, CandidateIndex, CollatorId, CollatorSignature, GroupIndex, Hash,
 		Id as ParaId, UncheckedSignedAvailabilityBitfield, UncheckedSignedStatement,
 	};
 
-	use polkadot_node_primitives::{
+	use node_primitives::{
 		approval::{IndirectAssignmentCert, IndirectSignedApprovalVote},
 		UncheckedSignedFullStatement,
 	};

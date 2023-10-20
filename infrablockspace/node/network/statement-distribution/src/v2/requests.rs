@@ -36,7 +36,7 @@ use super::{
 };
 use crate::LOG_TARGET;
 
-use polkadot_node_network_protocol::{
+use node_network_protocol::{
 	request_response::{
 		outgoing::{Recipient as RequestRecipient, RequestError},
 		v2::{AttestedCandidateRequest, AttestedCandidateResponse},
@@ -45,7 +45,7 @@ use polkadot_node_network_protocol::{
 	v2::StatementFilter,
 	PeerId, UnifiedReputationChange as Rep,
 };
-use polkadot_primitives::{
+use primitives::{
 	CandidateHash, CommittedCandidateReceipt, CompactStatement, GroupIndex, Hash, Id as ParaId,
 	PersistedValidationData, SessionIndex, SignedStatement, SigningContext, ValidatorId,
 	ValidatorIndex,
@@ -836,8 +836,8 @@ fn insert_or_update_priority(
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use polkadot_primitives::HeadData;
-	use polkadot_primitives_test_helpers as test_helpers;
+	use primitives::HeadData;
+	use primitives_test_helpers as test_helpers;
 
 	fn dummy_pvd() -> PersistedValidationData {
 		PersistedValidationData {

@@ -17,15 +17,15 @@
 #[cfg(feature = "ci-only-tests")]
 use assert_matches::assert_matches;
 use parity_scale_codec::Encode as _;
-use polkadot_node_core_pvf::{
+use node_core_pvf::{
 	start, Config, InvalidCandidate, Metrics, PrepareError, PrepareJobKind, PrepareStats,
 	PvfPrepData, ValidationError, ValidationHost, JOB_TIMEOUT_WALL_CLOCK_FACTOR,
 };
-use polkadot_parachain_primitives::primitives::{BlockData, ValidationParams, ValidationResult};
-use polkadot_primitives::ExecutorParams;
+use parachain_primitives::primitives::{BlockData, ValidationParams, ValidationResult};
+use primitives::ExecutorParams;
 
 #[cfg(feature = "ci-only-tests")]
-use polkadot_primitives::ExecutorParam;
+use primitives::ExecutorParam;
 
 use std::time::Duration;
 use tokio::sync::Mutex;
@@ -120,7 +120,7 @@ impl TestHost {
 				),
 				TEST_EXECUTION_TIMEOUT,
 				params.encode(),
-				polkadot_node_core_pvf::Priority::Normal,
+				node_core_pvf::Priority::Normal,
 				result_tx,
 			)
 			.await

@@ -16,8 +16,8 @@
 
 use super::*;
 use futures::{executor::block_on, pin_mut, StreamExt};
-use polkadot_node_subsystem::messages::AllMessages;
-use polkadot_primitives::{CandidateHash, OccupiedCore};
+use node_subsystem::messages::AllMessages;
+use primitives::{CandidateHash, OccupiedCore};
 use test_helpers::dummy_candidate_descriptor;
 
 fn occupied_core(para_id: u32, candidate_hash: CandidateHash) -> CoreState {
@@ -39,7 +39,7 @@ fn construct_availability_bitfield_works() {
 		let relay_parent = Hash::default();
 		let validator_index = ValidatorIndex(1u32);
 
-		let (mut sender, mut receiver) = polkadot_node_subsystem_test_helpers::sender_receiver();
+		let (mut sender, mut receiver) = node_subsystem_test_helpers::sender_receiver();
 		let future = construct_availability_bitfield(
 			relay_parent,
 			&jaeger::Span::Disabled,

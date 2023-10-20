@@ -16,7 +16,7 @@
 
 //! Code related to benchmarking a node.
 
-use polkadot_primitives::AccountId;
+use primitives::AccountId;
 use sc_client_api::UsageProvider;
 use sp_keyring::Sr25519Keyring;
 use sp_runtime::OpaqueExtrinsic;
@@ -294,14 +294,14 @@ pub fn benchmark_inherent_data(
 	let timestamp = sp_timestamp::InherentDataProvider::new(d.into());
 	futures::executor::block_on(timestamp.provide_inherent_data(&mut inherent_data))?;
 
-	let para_data = polkadot_primitives::InherentData {
+	let para_data = primitives::InherentData {
 		bitfields: Vec::new(),
 		backed_candidates: Vec::new(),
 		disputes: Vec::new(),
 		parent_header: header,
 	};
 
-	inherent_data.put_data(polkadot_primitives::PARACHAINS_INHERENT_IDENTIFIER, &para_data)?;
+	inherent_data.put_data(primitives::PARACHAINS_INHERENT_IDENTIFIER, &para_data)?;
 
 	Ok(inherent_data)
 }

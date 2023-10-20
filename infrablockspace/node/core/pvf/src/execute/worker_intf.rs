@@ -27,13 +27,13 @@ use crate::{
 use futures::FutureExt;
 use futures_timer::Delay;
 use parity_scale_codec::{Decode, Encode};
-use polkadot_node_core_pvf_common::{
+use node_core_pvf_common::{
 	error::InternalValidationError,
 	execute::{Handshake, Response},
 	worker_dir, SecurityStatus,
 };
-use polkadot_parachain_primitives::primitives::ValidationResult;
-use polkadot_primitives::ExecutorParams;
+use parachain_primitives::primitives::ValidationResult;
+use primitives::ExecutorParams;
 use std::{path::Path, time::Duration};
 use tokio::{io, net::UnixStream};
 

@@ -24,7 +24,7 @@ frame-system = { path = "../../../substrate/frame/system", default-features = fa
 pallet-assets = { path = "../../../substrate/frame/assets", default-features = false}
 
 # infra
-primitives = { package = "polkadot-primitives", path = "../../primitives", default-features = false }
+primitives = { path = "../../primitives", default-features = false }
 
 # xcm
 xcm = { package = "staging-xcm", path = "..", default-features = false }

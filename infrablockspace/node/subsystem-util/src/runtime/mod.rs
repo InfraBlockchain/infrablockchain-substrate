@@ -23,13 +23,13 @@ use sp_application_crypto::AppCrypto;
 use sp_core::crypto::ByteArray;
 use sp_keystore::{Keystore, KeystorePtr};
 
-use polkadot_node_subsystem::{
+use node_subsystem::{
 	errors::RuntimeApiError,
 	messages::{RuntimeApiMessage, RuntimeApiRequest},
 	overseer, SubsystemSender,
 };
-use polkadot_node_subsystem_types::UnpinHandle;
-use polkadot_primitives::{
+use node_subsystem_types::UnpinHandle;
+use primitives::{
 	slashing, AsyncBackingParams, CandidateEvent, CandidateHash, CoreState, EncodeAs,
 	ExecutorParams, GroupIndex, GroupRotationInfo, Hash, IndexedVec, OccupiedCore,
 	ScrapedOnChainVotes, SessionIndex, SessionInfo, Signed, SigningContext, UncheckedSigned,

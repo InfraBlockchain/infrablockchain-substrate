@@ -15,8 +15,8 @@
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
 use honggfuzz::fuzz;
-use polkadot_erasure_coding::*;
-use primitives::AvailableData;
+use erasure_coding::*;
+use node_primitives::AvailableData;
 
 fn main() {
 	loop {

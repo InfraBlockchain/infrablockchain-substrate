@@ -19,16 +19,16 @@ use collator_overseer::{CollatorOverseerGenArgs, NewMinimalNode};
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
 use cumulus_relay_chain_rpc_interface::{RelayChainRpcClient, RelayChainRpcInterface, Url};
 use network::build_collator_network;
-use polkadot_network_bridge::{peer_sets_info, IsAuthority};
-use polkadot_node_network_protocol::{
+use network_bridge::{peer_sets_info, IsAuthority};
+use node_network_protocol::{
 	peer_set::PeerSetProtocolNames,
 	request_response::{
 		v1, v2, IncomingRequest, IncomingRequestReceiver, Protocol, ReqProtocolNames,
 	},
 };
 
-use polkadot_node_subsystem_util::metrics::prometheus::Registry;
-use polkadot_primitives::CollatorPair;
+use node_subsystem_util::metrics::prometheus::Registry;
+use primitives::CollatorPair;
 
 use sc_authority_discovery::Service as AuthorityDiscoveryService;
 use sc_network::{config::FullNetworkConfiguration, Event, NetworkEventStream, NetworkService};

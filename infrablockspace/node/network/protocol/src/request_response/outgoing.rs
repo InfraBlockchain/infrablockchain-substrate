@@ -21,7 +21,7 @@ use parity_scale_codec::{Decode, Encode, Error as DecodingError};
 use sc_network as network;
 use sc_network::PeerId;
 
-use polkadot_primitives::AuthorityDiscoveryId;
+use primitives::AuthorityDiscoveryId;
 
 use super::{v1, v2, IsRequest, Protocol};
 

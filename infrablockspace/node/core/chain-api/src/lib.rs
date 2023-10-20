@@ -37,11 +37,11 @@ use futures::prelude::*;
 use sc_client_api::AuxStore;
 use sp_blockchain::HeaderBackend;
 
-use polkadot_node_subsystem::{
+use node_subsystem::{
 	messages::ChainApiMessage, overseer, FromOrchestra, OverseerSignal, SpawnedSubsystem,
 	SubsystemError, SubsystemResult,
 };
-use polkadot_primitives::Block;
+use primitives::Block;
 
 mod metrics;
 use self::metrics::Metrics;

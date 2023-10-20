@@ -49,7 +49,7 @@ pub use xcm_emulator::{
 
 // Polkadot
 pub use pallet_xcm;
-pub use polkadot_runtime_parachains::{
+pub use runtime_parachains::{
 	dmp, hrmp,
 	inclusion::{AggregateMessageOrigin, UmpQueueId},
 };

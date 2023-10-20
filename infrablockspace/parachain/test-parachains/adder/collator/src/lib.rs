@@ -19,11 +19,11 @@
 use futures::channel::oneshot;
 use futures_timer::Delay;
 use parity_scale_codec::{Decode, Encode};
-use polkadot_node_primitives::{
+use node_primitives::{
 	Collation, CollationResult, CollationSecondedSignal, CollatorFn, MaybeCompressedPoV, PoV,
 	Statement,
 };
-use polkadot_primitives::{CollatorId, CollatorPair};
+use primitives::{CollatorId, CollatorPair};
 use sp_core::{traits::SpawnNamed, Pair};
 use std::{
 	collections::HashMap,
@@ -182,7 +182,7 @@ impl Collator {
 				hrmp_watermark: validation_data.relay_parent_number,
 			};
 
-			let compressed_pov = polkadot_node_primitives::maybe_compress_pov(pov);
+			let compressed_pov = node_primitives::maybe_compress_pov(pov);
 
 			let (result_sender, recv) = oneshot::channel::<CollationSecondedSignal>();
 			let seconded_collations = seconded_collations.clone();
@@ -249,8 +249,8 @@ mod tests {
 	use super::*;
 
 	use futures::executor::block_on;
-	use polkadot_parachain_primitives::primitives::{ValidationParams, ValidationResult};
-	use polkadot_primitives::PersistedValidationData;
+	use parachain_primitives::primitives::{ValidationParams, ValidationResult};
+	use primitives::PersistedValidationData;
 
 	#[test]
 	fn collator_works() {
@@ -274,7 +274,7 @@ mod tests {
 	}
 
 	fn validate_collation(collator: &Collator, parent_head: HeadData, collation: Collation) {
-		use polkadot_node_core_pvf::testing::validate_candidate;
+		use node_core_pvf::testing::validate_candidate;
 
 		let block_data = match collation.proof_of_validity {
 			MaybeCompressedPoV::Raw(pov) => pov.block_data,

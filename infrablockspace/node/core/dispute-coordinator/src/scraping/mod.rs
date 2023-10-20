@@ -19,15 +19,15 @@ use std::collections::{btree_map::Entry, BTreeMap, HashSet};
 use futures::channel::oneshot;
 use schnellru::{ByLength, LruMap};
 
-use polkadot_node_primitives::{DISPUTE_CANDIDATE_LIFETIME_AFTER_FINALIZATION, MAX_FINALITY_LAG};
-use polkadot_node_subsystem::{
+use node_primitives::{DISPUTE_CANDIDATE_LIFETIME_AFTER_FINALIZATION, MAX_FINALITY_LAG};
+use node_subsystem::{
 	messages::ChainApiMessage, overseer, ActivatedLeaf, ActiveLeavesUpdate, ChainApiError,
 	RuntimeApiError, SubsystemSender,
 };
-use polkadot_node_subsystem_util::runtime::{
+use node_subsystem_util::runtime::{
 	self, get_candidate_events, get_on_chain_votes, get_unapplied_slashes,
 };
-use polkadot_primitives::{
+use primitives::{
 	slashing::PendingSlashes, BlockNumber, CandidateEvent, CandidateHash, CandidateReceipt, Hash,
 	ScrapedOnChainVotes, SessionIndex,
 };

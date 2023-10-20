@@ -33,7 +33,7 @@
 //! compile) in order to pre-check its validity.
 //!
 //! (b) PVF execution. This accepts the PVF
-//! [`params`][`polkadot_parachain_primitives::primitives::ValidationParams`]     and the `Pvf`
+//! [`params`][`parachain_primitives::primitives::ValidationParams`]     and the `Pvf`
 //! code, prepares (verifies and compiles) the code, and then executes PVF     with the `params`.
 //!
 //! (c) Heads up. This request allows to signal that the given PVF may be needed soon and that it
@@ -86,7 +86,7 @@
 //!
 //! The execute workers will be fed by the requests from the execution queue, which is basically a
 //! combination of a path to the compiled artifact and the
-//! [`params`][`polkadot_parachain_primitives::primitives::ValidationParams`].
+//! [`params`][`parachain_primitives::primitives::ValidationParams`].
 
 mod artifacts;
 mod error;
@@ -107,7 +107,7 @@ pub use priority::Priority;
 pub use worker_intf::{framed_recv, framed_send, JOB_TIMEOUT_WALL_CLOCK_FACTOR};
 
 // Re-export some common types.
-pub use polkadot_node_core_pvf_common::{
+pub use node_core_pvf_common::{
 	error::{InternalValidationError, PrepareError},
 	prepare::{PrepareJobKind, PrepareStats},
 	pvf::PvfPrepData,

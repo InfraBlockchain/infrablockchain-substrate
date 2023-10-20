@@ -27,8 +27,8 @@ use sp_runtime::{
 
 // Cumulus
 use parachains_common::{AccountId, AssetHubPolkadotAuraId, AuraId, Balance, BlockNumber};
-use polkadot_primitives::{AssignmentId, ValidatorId};
-use polkadot_runtime_parachains::configuration::HostConfiguration;
+use primitives::{AssignmentId, ValidatorId};
+use runtime_parachains::configuration::HostConfiguration;
 use polkadot_service::chain_spec::get_authority_keys_from_seed_no_beefy;
 use xcm;
 
@@ -332,7 +332,7 @@ pub mod rococo {
 			},
 			configuration: rococo_runtime::ConfigurationConfig { config: get_host_config() },
 			registrar: rococo_runtime::RegistrarConfig {
-				next_free_para_id: polkadot_primitives::LOWEST_PUBLIC_ID,
+				next_free_para_id: primitives::LOWEST_PUBLIC_ID,
 				..Default::default()
 			},
 			..Default::default()

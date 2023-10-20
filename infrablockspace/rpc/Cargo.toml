@@ -7,7 +7,7 @@ license.workspace = true
 
 [dependencies]
 jsonrpsee = { version = "0.16.2", features = ["server"] }
-polkadot-primitives = { path = "../primitives" }
+primitives = { path = "../primitives" }
 sc-client-api = { path = "../../substrate/client/api" }
 sp-blockchain = { path = "../../substrate/primitives/blockchain" }
 sp-keystore = { path = "../../substrate/primitives/keystore" }

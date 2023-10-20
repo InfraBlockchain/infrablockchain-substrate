@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
-use polkadot_node_core_pvf_common::error::{InternalValidationError, PrepareError};
+use node_core_pvf_common::error::{InternalValidationError, PrepareError};
 
 /// A error raised during validation of the candidate.
 #[derive(Debug, Clone)]
@@ -28,7 +28,7 @@ pub enum ValidationError {
 }
 
 /// A description of an error raised during executing a PVF and can be attributed to the combination
-/// of the candidate [`polkadot_parachain_primitives::primitives::ValidationParams`] and the PVF.
+/// of the candidate [`parachain_primitives::primitives::ValidationParams`] and the PVF.
 #[derive(Debug, Clone)]
 pub enum InvalidCandidate {
 	/// PVF preparation ended up with a deterministic error.

@@ -1,5 +1,5 @@
 [package]
-name = "polkadot-availability-bitfield-distribution"
+name = "availability-bitfield-distribution"
 version = "1.0.0"
 authors.workspace = true
 edition.workspace = true
@@ -10,14 +10,14 @@ always-assert = "0.1"
 futures = "0.3.21"
 futures-timer = "3.0.2"
 gum = { package = "tracing-gum", path = "../../gum" }
-polkadot-primitives = { path = "../../../primitives" }
-polkadot-node-subsystem = { path = "../../subsystem" }
-polkadot-node-subsystem-util = { path = "../../subsystem-util" }
-polkadot-node-network-protocol = { path = "../protocol" }
+primitives = { path = "../../../primitives" }
+node-subsystem = { path = "../../subsystem" }
+node-subsystem-util = { path = "../../subsystem-util" }
+node-network-protocol = { path = "../protocol" }
 rand = "0.8"
 
 [dev-dependencies]
-polkadot-node-subsystem-test-helpers = { path = "../../subsystem-test-helpers" }
+node-subsystem-test-helpers = { path = "../../subsystem-test-helpers" }
 bitvec = { version = "1.0.0", default-features = false, features = ["alloc"] }
 sp-core = { path = "../../../../substrate/primitives/core" }
 sp-application-crypto = { path = "../../../../substrate/primitives/application-crypto" }

@@ -21,8 +21,8 @@
 //! [`Backend`], maintaining consistency between queries and temporary writes,
 //! before any commit to the underlying storage is made.
 
-use polkadot_node_subsystem::SubsystemResult;
-use polkadot_primitives::{BlockNumber, CandidateHash, Hash};
+use node_subsystem::SubsystemResult;
+use primitives::{BlockNumber, CandidateHash, Hash};
 
 use std::collections::HashMap;
 

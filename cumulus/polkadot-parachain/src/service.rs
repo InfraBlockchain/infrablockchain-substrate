@@ -65,7 +65,7 @@ use sp_runtime::{
 use std::{marker::PhantomData, sync::Arc, time::Duration};
 use substrate_prometheus_endpoint::Registry;
 
-use polkadot_primitives::CollatorPair;
+use primitives::CollatorPair;
 
 #[cfg(not(feature = "runtime-benchmarks"))]
 type HostFunctions = sp_io::SubstrateHostFunctions;

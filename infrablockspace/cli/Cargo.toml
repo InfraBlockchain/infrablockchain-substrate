@@ -32,7 +32,7 @@ frame-benchmarking-cli = { path = "../../substrate/utils/frame/benchmarking-cli"
 try-runtime-cli = { path = "../../substrate/utils/frame/try-runtime/cli", optional = true }
 sc-cli = { path = "../../substrate/client/cli", optional = true }
 sc-service = { path = "../../substrate/client/service", optional = true }
-polkadot-node-metrics = { path = "../node/metrics" }
+node-metrics = { path = "../node/metrics" }
 sc-tracing = { path = "../../substrate/client/tracing", optional = true }
 sc-sysinfo = { path = "../../substrate/client/sysinfo" }
 sc-executor = { path = "../../substrate/client/executor" }
@@ -55,7 +55,7 @@ cli = [
 ]
 runtime-benchmarks = [
 	"frame-benchmarking-cli?/runtime-benchmarks",
-	"polkadot-node-metrics/runtime-benchmarks",
+	"node-metrics/runtime-benchmarks",
 	"sc-service?/runtime-benchmarks",
 	"service/runtime-benchmarks",
 ]
@@ -71,6 +71,6 @@ infra-relay-native = [ "service/infra-relay-native" ]
 
 malus = [ "full-node", "service/malus" ]
 runtime-metrics = [
-	"polkadot-node-metrics/runtime-metrics",
+	"node-metrics/runtime-metrics",
 	"service/runtime-metrics",
 ]

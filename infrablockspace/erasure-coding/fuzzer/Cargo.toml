@@ -7,10 +7,10 @@ license.workspace = true
 publish = false
 
 [dependencies]
-polkadot-erasure-coding = { path = ".." }
+erasure-coding = { package = "infrablockspace-erasure-coding", path = ".." }
 honggfuzz = "0.5"
-polkadot-primitives = { path = "../../primitives" }
-primitives = { package = "polkadot-node-primitives", path = "../../node/primitives" }
+primitives = { path = "../../primitives" }
+node_primitives = { package = "node-primitives", path = "../../node/primitives" }
 
 [[bin]]
 name = "reconstruct"

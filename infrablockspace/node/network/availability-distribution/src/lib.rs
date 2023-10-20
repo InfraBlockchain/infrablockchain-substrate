@@ -18,19 +18,19 @@ use futures::{future::Either, FutureExt, StreamExt, TryFutureExt};
 
 use sp_keystore::KeystorePtr;
 
-use polkadot_node_network_protocol::request_response::{v1, IncomingRequestReceiver};
-use polkadot_node_subsystem::{
+use node_network_protocol::request_response::{v1, IncomingRequestReceiver};
+use node_subsystem::{
 	jaeger, messages::AvailabilityDistributionMessage, overseer, FromOrchestra, OverseerSignal,
 	SpawnedSubsystem, SubsystemError,
 };
-use polkadot_primitives::Hash;
+use primitives::Hash;
 use std::collections::HashMap;
 
 /// Error and [`Result`] type for this subsystem.
 mod error;
 use error::{log_error, FatalError, Result};
 
-use polkadot_node_subsystem_util::runtime::RuntimeInfo;
+use node_subsystem_util::runtime::RuntimeInfo;
 
 /// `Requester` taking care of requesting chunks for candidates pending availability.
 mod requester;

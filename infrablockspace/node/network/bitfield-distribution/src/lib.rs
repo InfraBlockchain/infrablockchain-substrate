@@ -25,7 +25,7 @@
 use always_assert::never;
 use futures::{channel::oneshot, FutureExt};
 
-use polkadot_node_network_protocol::{
+use node_network_protocol::{
 	self as net_protocol,
 	grid_topology::{
 		GridNeighbors, RandomRouting, RequiredRouting, SessionBoundGridTopologyStorage,
@@ -34,17 +34,17 @@ use polkadot_node_network_protocol::{
 	v1 as protocol_v1, v2 as protocol_v2, OurView, PeerId, UnifiedReputationChange as Rep,
 	Versioned, View,
 };
-use polkadot_node_subsystem::{
+use node_subsystem::{
 	jaeger, messages::*, overseer, ActiveLeavesUpdate, FromOrchestra, OverseerSignal, PerLeafSpan,
 	SpawnedSubsystem, SubsystemError, SubsystemResult,
 };
-use polkadot_node_subsystem_util::{
+use node_subsystem_util::{
 	self as util,
 	reputation::{ReputationAggregator, REPUTATION_CHANGE_INTERVAL},
 };
 
 use futures::select;
-use polkadot_primitives::{Hash, SignedAvailabilityBitfield, SigningContext, ValidatorId};
+use primitives::{Hash, SignedAvailabilityBitfield, SigningContext, ValidatorId};
 use rand::{CryptoRng, Rng, SeedableRng};
 use std::{
 	collections::{HashMap, HashSet},

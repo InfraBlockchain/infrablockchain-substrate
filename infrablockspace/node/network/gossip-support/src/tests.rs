@@ -29,11 +29,11 @@ use sp_consensus_babe::{AllowedSlots, BabeEpochConfiguration, Epoch as BabeEpoch
 use sp_core::crypto::Pair as PairT;
 use sp_keyring::Sr25519Keyring;
 
-use polkadot_node_network_protocol::grid_topology::{SessionGridTopology, TopologyPeerInfo};
-use polkadot_node_subsystem::messages::{AllMessages, RuntimeApiMessage, RuntimeApiRequest};
-use polkadot_node_subsystem_test_helpers as test_helpers;
-use polkadot_node_subsystem_util::TimeoutExt as _;
-use polkadot_primitives::{GroupIndex, IndexedVec};
+use node_network_protocol::grid_topology::{SessionGridTopology, TopologyPeerInfo};
+use node_subsystem::messages::{AllMessages, RuntimeApiMessage, RuntimeApiRequest};
+use node_subsystem_test_helpers as test_helpers;
+use node_subsystem_util::TimeoutExt as _;
+use primitives::{GroupIndex, IndexedVec};
 use test_helpers::mock::{make_ferdie_keystore, new_leaf};
 
 use super::*;
@@ -117,14 +117,14 @@ impl MockAuthorityDiscovery {
 impl AuthorityDiscovery for MockAuthorityDiscovery {
 	async fn get_addresses_by_authority_id(
 		&mut self,
-		authority: polkadot_primitives::AuthorityDiscoveryId,
+		authority: primitives::AuthorityDiscoveryId,
 	) -> Option<HashSet<sc_network::Multiaddr>> {
 		self.addrs.get(&authority).cloned()
 	}
 	async fn get_authority_ids_by_peer_id(
 		&mut self,
-		peer_id: polkadot_node_network_protocol::PeerId,
-	) -> Option<HashSet<polkadot_primitives::AuthorityDiscoveryId>> {
+		peer_id: node_network_protocol::PeerId,
+	) -> Option<HashSet<primitives::AuthorityDiscoveryId>> {
 		self.authorities.get(&peer_id).cloned()
 	}
 }

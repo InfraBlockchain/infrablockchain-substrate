@@ -38,25 +38,25 @@ use schnellru::{ByLength, LruMap};
 use task::{FetchChunks, FetchChunksParams, FetchFull, FetchFullParams};
 
 use fatality::Nested;
-use polkadot_erasure_coding::{
+use erasure_coding::{
 	branch_hash, branches, obtain_chunks_v1, recovery_threshold, Error as ErasureEncodingError,
 };
 use task::{RecoveryParams, RecoveryStrategy, RecoveryTask};
 
-use polkadot_node_network_protocol::{
+use node_network_protocol::{
 	request_response::{v1 as request_v1, IncomingRequestReceiver},
 	UnifiedReputationChange as Rep,
 };
-use polkadot_node_primitives::{AvailableData, ErasureChunk};
-use polkadot_node_subsystem::{
+use node_primitives::{AvailableData, ErasureChunk};
+use node_subsystem::{
 	errors::RecoveryError,
 	jaeger,
 	messages::{AvailabilityRecoveryMessage, AvailabilityStoreMessage},
 	overseer, ActiveLeavesUpdate, FromOrchestra, OverseerSignal, SpawnedSubsystem,
 	SubsystemContext, SubsystemError, SubsystemResult,
 };
-use polkadot_node_subsystem_util::request_session_info;
-use polkadot_primitives::{
+use node_subsystem_util::request_session_info;
+use primitives::{
 	BlakeTwo256, BlockNumber, CandidateHash, CandidateReceipt, GroupIndex, Hash, HashT,
 	SessionIndex, SessionInfo, ValidatorIndex,
 };
@@ -796,7 +796,7 @@ async fn erasure_task_thread(
 	loop {
 		match ingress.next().await {
 			Some(ErasureTask::Reconstruct(n_validators, chunks, sender)) => {
-				let _ = sender.send(polkadot_erasure_coding::reconstruct_v1(
+				let _ = sender.send(erasure_coding::reconstruct_v1(
 					n_validators,
 					chunks.values().map(|c| (&c.chunk[..], c.index.0 as usize)),
 				));

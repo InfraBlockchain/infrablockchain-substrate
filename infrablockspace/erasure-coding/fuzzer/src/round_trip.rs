@@ -15,9 +15,9 @@
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
 use honggfuzz::fuzz;
-use polkadot_erasure_coding::*;
-use polkadot_primitives::PersistedValidationData;
-use primitives::{AvailableData, BlockData, PoV};
+use erasure_coding::*;
+use primitives::PersistedValidationData;
+use node_primitives::{AvailableData, BlockData, PoV};
 use std::sync::Arc;
 
 fn main() {

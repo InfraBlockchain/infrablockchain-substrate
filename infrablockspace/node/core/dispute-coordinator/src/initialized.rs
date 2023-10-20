@@ -28,21 +28,21 @@ use futures::{
 
 use sc_keystore::LocalKeystore;
 
-use polkadot_node_primitives::{
+use node_primitives::{
 	disputes::ValidCandidateVotes, CandidateVotes, DisputeStatus, SignedDisputeStatement,
 	Timestamp, DISPUTE_WINDOW,
 };
-use polkadot_node_subsystem::{
+use node_subsystem::{
 	messages::{
 		ApprovalVotingMessage, BlockDescription, ChainSelectionMessage, DisputeCoordinatorMessage,
 		DisputeDistributionMessage, ImportStatementsResult,
 	},
 	overseer, ActivatedLeaf, ActiveLeavesUpdate, FromOrchestra, OverseerSignal, RuntimeApiError,
 };
-use polkadot_node_subsystem_util::runtime::{
+use node_subsystem_util::runtime::{
 	self, key_ownership_proof, submit_report_dispute_lost, RuntimeInfo,
 };
-use polkadot_primitives::{
+use primitives::{
 	slashing, BlockNumber, CandidateHash, CandidateReceipt, CompactStatement, DisputeStatement,
 	DisputeStatementSet, Hash, ScrapedOnChainVotes, SessionIndex, ValidDisputeStatementKind,
 	ValidatorId, ValidatorIndex,

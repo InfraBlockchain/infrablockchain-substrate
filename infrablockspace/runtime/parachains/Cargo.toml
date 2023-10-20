@@ -1,5 +1,5 @@
 [package]
-name = "polkadot-runtime-parachains"
+name = "runtime-parachains"
 version = "1.0.0"
 authors.workspace = true
 edition.workspace = true
@@ -55,12 +55,12 @@ frame-system = { path = "../../../substrate/frame/system", default-features = fa
 # xcm
 xcm = { package = "staging-xcm", path = "../../xcm", default-features = false }
 xcm-executor = { package = "staging-xcm-executor", path = "../../xcm/xcm-executor", default-features = false }
-primitives = { package = "polkadot-primitives", path = "../../primitives", default-features = false }
+primitives = { path = "../../primitives", default-features = false }
 pallet-xcm = { path = "../../xcm/pallet-xcm", default-features = false }
 pallet-asset-link = { package = "infra-asset-link", path = "../../xcm/infra-asset-link", default-features = false }
 xcm-primitives = { path = "../../xcm/xcm-primitives", default-features = false }
 
-polkadot-parachain-primitives = { path = "../../parachain", default-features = false }
+parachain-primitives = { path = "../../parachain", default-features = false }
 polkadot-runtime-metrics = { path = "../metrics", default-features = false}
 polkadot-core-primitives = { path = "../../core-primitives", default-features = false }
 
@@ -102,7 +102,7 @@ std = [
 	"pallet-vesting/std",
 	"parity-scale-codec/std",
 	"polkadot-core-primitives/std",
-	"polkadot-parachain-primitives/std",
+	"parachain-primitives/std",
 	"polkadot-runtime-metrics/std",
 	"primitives/std",
 	"rustc-hex/std",
@@ -131,7 +131,7 @@ runtime-benchmarks = [
 	"pallet-staking/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-vesting/runtime-benchmarks",
-	"polkadot-parachain-primitives/runtime-benchmarks",
+	"parachain-primitives/runtime-benchmarks",
 	"primitives/runtime-benchmarks",
 	"sp-application-crypto",
 	"sp-runtime/runtime-benchmarks",

@@ -16,8 +16,8 @@
 
 //! Interface to the Substrate Executor
 
-use polkadot_node_core_pvf_common::executor_intf::params_to_wasmtime_semantics;
-use polkadot_primitives::ExecutorParams;
+use node_core_pvf_common::executor_intf::params_to_wasmtime_semantics;
+use primitives::ExecutorParams;
 use sc_executor_common::runtime_blob::RuntimeBlob;
 
 /// Runs the prevalidation on the given code. Returns a [`RuntimeBlob`] if it succeeds.

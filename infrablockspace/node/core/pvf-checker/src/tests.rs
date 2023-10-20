@@ -16,17 +16,17 @@
 
 use ::test_helpers::{dummy_digest, dummy_hash, validator_pubkeys};
 use futures::{channel::oneshot, future::BoxFuture, prelude::*};
-use polkadot_node_subsystem::{
+use node_subsystem::{
 	messages::{
 		AllMessages, CandidateValidationMessage, PreCheckOutcome, PvfCheckerMessage,
 		RuntimeApiMessage, RuntimeApiRequest,
 	},
 	ActiveLeavesUpdate, FromOrchestra, OverseerSignal, RuntimeApiError,
 };
-use polkadot_node_subsystem_test_helpers::{
+use node_subsystem_test_helpers::{
 	make_subsystem_context, mock::new_leaf, TestSubsystemContextHandle,
 };
-use polkadot_primitives::{
+use primitives::{
 	BlockNumber, Hash, Header, PvfCheckStatement, SessionIndex, ValidationCode, ValidationCodeHash,
 	ValidatorId,
 };

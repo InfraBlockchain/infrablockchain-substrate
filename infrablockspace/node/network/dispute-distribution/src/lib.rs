@@ -28,17 +28,17 @@ use std::time::Duration;
 
 use futures::{channel::mpsc, FutureExt, StreamExt, TryFutureExt};
 
-use polkadot_node_network_protocol::authority_discovery::AuthorityDiscovery;
-use polkadot_node_subsystem_util::nesting_sender::NestingSender;
+use node_network_protocol::authority_discovery::AuthorityDiscovery;
+use node_subsystem_util::nesting_sender::NestingSender;
 use sp_keystore::KeystorePtr;
 
-use polkadot_node_network_protocol::request_response::{incoming::IncomingRequestReceiver, v1};
-use polkadot_node_primitives::DISPUTE_WINDOW;
-use polkadot_node_subsystem::{
+use node_network_protocol::request_response::{incoming::IncomingRequestReceiver, v1};
+use node_primitives::DISPUTE_WINDOW;
+use node_subsystem::{
 	messages::DisputeDistributionMessage, overseer, FromOrchestra, OverseerSignal,
 	SpawnedSubsystem, SubsystemError,
 };
-use polkadot_node_subsystem_util::{runtime, runtime::RuntimeInfo};
+use node_subsystem_util::{runtime, runtime::RuntimeInfo};
 
 /// ## The sender [`DisputeSender`]
 ///

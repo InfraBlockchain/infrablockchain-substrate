@@ -16,26 +16,26 @@
 
 use parity_scale_codec::Encode;
 
-use polkadot_node_network_protocol::{
+use node_network_protocol::{
 	self as net_protocol,
 	grid_topology::{GridNeighbors, RequiredRouting, SessionBoundGridTopologyStorage},
 	peer_set::{IsAuthority, PeerSet, ValidationVersion},
 	v1::{self as protocol_v1, StatementMetadata},
 	v2 as protocol_v2, IfDisconnected, PeerId, UnifiedReputationChange as Rep, Versioned, View,
 };
-use polkadot_node_primitives::{
+use node_primitives::{
 	SignedFullStatement, Statement, StatementWithPVD, UncheckedSignedFullStatement,
 };
-use polkadot_node_subsystem_util::{
+use node_subsystem_util::{
 	self as util, rand, reputation::ReputationAggregator, MIN_GOSSIP_PEERS,
 };
 
-use polkadot_node_subsystem::{
+use node_subsystem::{
 	jaeger,
 	messages::{CandidateBackingMessage, NetworkBridgeEvent, NetworkBridgeTxMessage},
 	overseer, ActivatedLeaf, PerLeafSpan, StatementDistributionSenderTrait,
 };
-use polkadot_primitives::{
+use primitives::{
 	AuthorityDiscoveryId, CandidateHash, CommittedCandidateReceipt, CompactStatement, Hash,
 	Id as ParaId, IndexedVec, OccupiedCoreAssumption, PersistedValidationData, SignedStatement,
 	SigningContext, UncheckedSignedStatement, ValidatorId, ValidatorIndex, ValidatorSignature,
@@ -666,7 +666,7 @@ impl ActiveHeadData {
 	{
 		if let Entry::Vacant(entry) = self.cached_validation_data.entry(para_id) {
 			let persisted_validation_data =
-				polkadot_node_subsystem_util::request_persisted_validation_data(
+				node_subsystem_util::request_persisted_validation_data(
 					relay_parent,
 					para_id,
 					OccupiedCoreAssumption::Free,

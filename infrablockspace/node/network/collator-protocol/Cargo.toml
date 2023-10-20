@@ -1,5 +1,5 @@
 [package]
-name = "polkadot-collator-protocol"
+name = "collator-protocol"
 version = "1.0.0"
 authors.workspace = true
 edition.workspace = true
@@ -15,11 +15,11 @@ sp-core = { path = "../../../../substrate/primitives/core" }
 sp-runtime = { path = "../../../../substrate/primitives/runtime" }
 sp-keystore = { path = "../../../../substrate/primitives/keystore" }
 
-polkadot-primitives = { path = "../../../primitives" }
-polkadot-node-network-protocol = { path = "../protocol" }
-polkadot-node-primitives = { path = "../../primitives" }
-polkadot-node-subsystem-util = { path = "../../subsystem-util" }
-polkadot-node-subsystem = { path = "../../subsystem" }
+primitives = { path = "../../../primitives" }
+node-network-protocol = { path = "../protocol" }
+node-primitives = { path = "../../primitives" }
+node-subsystem-util = { path = "../../subsystem-util" }
+node-subsystem = { path = "../../subsystem" }
 fatality = "0.0.6"
 thiserror = "1.0.48"
 tokio-util = "0.7.1"
@@ -35,5 +35,5 @@ sc-keystore = { path = "../../../../substrate/client/keystore" }
 sc-network = { path = "../../../../substrate/client/network" }
 parity-scale-codec = { version = "3.6.1", features = ["std"] }
 
-polkadot-node-subsystem-test-helpers = { path = "../../subsystem-test-helpers" }
+node-subsystem-test-helpers = { path = "../../subsystem-test-helpers" }
 polkadot-primitives-test-helpers = { path = "../../../primitives/test-helpers" }

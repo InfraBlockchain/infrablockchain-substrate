@@ -20,7 +20,7 @@ use crate::{
 	KNOWN_LEAVES_CACHE_SIZE,
 };
 use orchestra::{FromOrchestra, SpawnedSubsystem, Subsystem, SubsystemContext};
-use polkadot_node_subsystem_types::{errors::SubsystemError, messages::*};
+use node_subsystem_types::{errors::SubsystemError, messages::*};
 use schnellru::{ByLength, LruMap};
 // Generated dummy messages
 use crate::messages::*;

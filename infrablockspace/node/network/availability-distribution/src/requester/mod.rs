@@ -32,13 +32,13 @@ use futures::{
 	Stream,
 };
 
-use polkadot_node_subsystem::{
+use node_subsystem::{
 	jaeger,
 	messages::{ChainApiMessage, RuntimeApiMessage},
 	overseer, ActivatedLeaf, ActiveLeavesUpdate, LeafStatus,
 };
-use polkadot_node_subsystem_util::runtime::{get_occupied_cores, RuntimeInfo};
-use polkadot_primitives::{CandidateHash, Hash, OccupiedCore, SessionIndex};
+use node_subsystem_util::runtime::{get_occupied_cores, RuntimeInfo};
+use primitives::{CandidateHash, Hash, OccupiedCore, SessionIndex};
 
 use super::{FatalError, Metrics, Result, LOG_TARGET};
 

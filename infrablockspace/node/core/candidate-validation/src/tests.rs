@@ -18,11 +18,11 @@ use super::*;
 use ::test_helpers::{dummy_hash, make_valid_candidate_descriptor};
 use assert_matches::assert_matches;
 use futures::executor;
-use polkadot_node_core_pvf::PrepareError;
-use polkadot_node_subsystem::messages::AllMessages;
-use polkadot_node_subsystem_test_helpers as test_helpers;
-use polkadot_node_subsystem_util::reexports::SubsystemContext;
-use polkadot_primitives::{HeadData, Id as ParaId, UpwardMessage};
+use node_core_pvf::PrepareError;
+use node_subsystem::messages::AllMessages;
+use node_subsystem_test_helpers as test_helpers;
+use node_subsystem_util::reexports::SubsystemContext;
+use primitives::{HeadData, Id as ParaId, UpwardMessage};
 use sp_core::testing::TaskExecutor;
 use sp_keyring::Sr25519Keyring;
 

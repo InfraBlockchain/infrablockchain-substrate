@@ -21,7 +21,7 @@
 // enabled.
 #[tokio::test(flavor = "multi_thread")]
 async fn collating_using_undying_collator() {
-	use polkadot_primitives::Id as ParaId;
+	use primitives::Id as ParaId;
 	use sp_keyring::AccountKeyring::*;
 
 	let mut builder = sc_cli::LoggerBuilder::new("");

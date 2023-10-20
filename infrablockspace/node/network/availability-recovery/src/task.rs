@@ -24,16 +24,16 @@ use crate::{
 };
 use futures::{channel::oneshot, SinkExt};
 #[cfg(not(test))]
-use polkadot_node_network_protocol::request_response::CHUNK_REQUEST_TIMEOUT;
-use polkadot_node_network_protocol::request_response::{
+use node_network_protocol::request_response::CHUNK_REQUEST_TIMEOUT;
+use node_network_protocol::request_response::{
 	self as req_res, outgoing::RequestError, OutgoingRequest, Recipient, Requests,
 };
-use polkadot_node_primitives::{AvailableData, ErasureChunk};
-use polkadot_node_subsystem::{
+use node_primitives::{AvailableData, ErasureChunk};
+use node_subsystem::{
 	messages::{AvailabilityStoreMessage, NetworkBridgeTxMessage},
 	overseer, RecoveryError,
 };
-use polkadot_primitives::{AuthorityDiscoveryId, CandidateHash, Hash, ValidatorIndex};
+use primitives::{AuthorityDiscoveryId, CandidateHash, Hash, ValidatorIndex};
 use rand::seq::SliceRandom;
 use sc_network::{IfDisconnected, OutboundFailure, RequestFailure};
 use std::{
@@ -799,7 +799,7 @@ impl<Sender: overseer::AvailabilityRecoverySenderTrait> RecoveryStrategy<Sender>
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use polkadot_erasure_coding::recovery_threshold;
+	use erasure_coding::recovery_threshold;
 
 	#[test]
 	fn parallel_request_calculation_works_as_expected() {

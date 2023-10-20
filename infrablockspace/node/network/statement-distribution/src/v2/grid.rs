@@ -17,7 +17,7 @@
 //! Utilities for handling distribution of backed candidates along the grid (outside the group to
 //! the rest of the network).
 //!
-//! The grid uses the gossip topology defined in [`polkadot_node_network_protocol::grid_topology`].
+//! The grid uses the gossip topology defined in [`node_network_protocol::grid_topology`].
 //! It defines how messages and statements are forwarded between validators.
 //!
 //! # Protocol
@@ -60,8 +60,8 @@
 //!         - which has sent a `BackedCandidateAcknowledgement`
 //!   - 1st-hop nodes do the same thing
 
-use polkadot_node_network_protocol::{grid_topology::SessionGridTopology, v2::StatementFilter};
-use polkadot_primitives::{CandidateHash, CompactStatement, GroupIndex, Hash, ValidatorIndex};
+use node_network_protocol::{grid_topology::SessionGridTopology, v2::StatementFilter};
+use primitives::{CandidateHash, CompactStatement, GroupIndex, Hash, ValidatorIndex};
 
 use std::collections::{
 	hash_map::{Entry, HashMap},
@@ -1063,7 +1063,7 @@ impl KnownBackedCandidate {
 mod tests {
 	use super::*;
 	use assert_matches::assert_matches;
-	use polkadot_node_network_protocol::grid_topology::TopologyPeerInfo;
+	use node_network_protocol::grid_topology::TopologyPeerInfo;
 	use sp_authority_discovery::AuthorityPair as AuthorityDiscoveryPair;
 	use sp_core::crypto::Pair as PairT;
 

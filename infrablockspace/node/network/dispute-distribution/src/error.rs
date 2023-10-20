@@ -17,8 +17,8 @@
 
 //! Error handling related code and Error/Result definitions.
 
-use polkadot_node_subsystem::SubsystemError;
-use polkadot_node_subsystem_util::runtime;
+use node_subsystem::SubsystemError;
+use node_subsystem_util::runtime;
 
 use crate::{sender, LOG_TARGET};
 

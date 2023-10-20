@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
-use polkadot_node_subsystem_util::{
+use node_subsystem_util::{
 	metrics,
 	metrics::{
 		prometheus,
@@ -74,12 +74,12 @@ impl metrics::Metrics for Metrics {
 	fn try_register(registry: &Registry) -> Result<Self, PrometheusError> {
 		let metrics = MetricsInner {
 			is_authority: prometheus::register(
-				Gauge::new("polkadot_node_is_active_validator", "Tracks if the validator is in the active set. \
+				Gauge::new("node_is_active_validator", "Tracks if the validator is in the active set. \
 				Updates at session boundary.")?,
 				registry,
 			)?,
 			is_parachain_validator: prometheus::register(
-				Gauge::new("polkadot_node_is_parachain_validator", 
+				Gauge::new("node_is_parachain_validator", 
 				"Tracks if the validator participates in parachain consensus. Parachain validators are a \
 				subset of the active set validators that perform approval checking of all parachain candidates in a session.\
 				Updates at session boundary.")?,

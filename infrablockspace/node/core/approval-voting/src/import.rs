@@ -28,20 +28,20 @@
 //!
 //! We maintain a rolling window of session indices. This starts as empty
 
-use polkadot_node_jaeger as jaeger;
-use polkadot_node_primitives::{
+use node_jaeger as jaeger;
+use node_primitives::{
 	approval::{self as approval_types, BlockApprovalMeta, RelayVRFStory},
 	MAX_FINALITY_LAG,
 };
-use polkadot_node_subsystem::{
+use node_subsystem::{
 	messages::{
 		ApprovalDistributionMessage, ChainApiMessage, ChainSelectionMessage, RuntimeApiMessage,
 		RuntimeApiRequest,
 	},
 	overseer, RuntimeApiError, SubsystemError, SubsystemResult,
 };
-use polkadot_node_subsystem_util::{determine_new_blocks, runtime::RuntimeInfo};
-use polkadot_primitives::{
+use node_subsystem_util::{determine_new_blocks, runtime::RuntimeInfo};
+use primitives::{
 	BlockNumber, CandidateEvent, CandidateHash, CandidateReceipt, ConsensusLog, CoreIndex,
 	GroupIndex, Hash, Header, SessionIndex,
 };
@@ -591,14 +591,14 @@ pub(crate) mod tests {
 	use crate::{approval_db::v1::DbBackend, RuntimeInfo, RuntimeInfoConfig};
 	use ::test_helpers::{dummy_candidate_receipt, dummy_hash};
 	use assert_matches::assert_matches;
-	use polkadot_node_primitives::{
+	use node_primitives::{
 		approval::{VrfSignature, VrfTranscript},
 		DISPUTE_WINDOW,
 	};
-	use polkadot_node_subsystem::messages::{AllMessages, ApprovalVotingMessage};
-	use polkadot_node_subsystem_test_helpers::make_subsystem_context;
-	use polkadot_node_subsystem_util::database::Database;
-	use polkadot_primitives::{
+	use node_subsystem::messages::{AllMessages, ApprovalVotingMessage};
+	use node_subsystem_test_helpers::make_subsystem_context;
+	use node_subsystem_util::database::Database;
+	use primitives::{
 		ExecutorParams, Id as ParaId, IndexedVec, SessionInfo, ValidatorId, ValidatorIndex,
 	};
 	pub(crate) use sp_consensus_babe::{
@@ -656,26 +656,26 @@ pub(crate) mod tests {
 		fn compute_assignments(
 			&self,
 			_keystore: &LocalKeystore,
-			_relay_vrf_story: polkadot_node_primitives::approval::RelayVRFStory,
+			_relay_vrf_story: node_primitives::approval::RelayVRFStory,
 			_config: &criteria::Config,
 			_leaving_cores: Vec<(
 				CandidateHash,
-				polkadot_primitives::CoreIndex,
-				polkadot_primitives::GroupIndex,
+				primitives::CoreIndex,
+				primitives::GroupIndex,
 			)>,
-		) -> HashMap<polkadot_primitives::CoreIndex, criteria::OurAssignment> {
+		) -> HashMap<primitives::CoreIndex, criteria::OurAssignment> {
 			HashMap::new()
 		}
 
 		fn check_assignment_cert(
 			&self,
-			_claimed_core_index: polkadot_primitives::CoreIndex,
-			_validator_index: polkadot_primitives::ValidatorIndex,
+			_claimed_core_index: primitives::CoreIndex,
+			_validator_index: primitives::ValidatorIndex,
 			_config: &criteria::Config,
-			_relay_vrf_story: polkadot_node_primitives::approval::RelayVRFStory,
-			_assignment: &polkadot_node_primitives::approval::AssignmentCert,
-			_backing_group: polkadot_primitives::GroupIndex,
-		) -> Result<polkadot_node_primitives::approval::DelayTranche, criteria::InvalidAssignment> {
+			_relay_vrf_story: node_primitives::approval::RelayVRFStory,
+			_assignment: &node_primitives::approval::AssignmentCert,
+			_backing_group: primitives::GroupIndex,
+		) -> Result<node_primitives::approval::DelayTranche, criteria::InvalidAssignment> {
 			Ok(0)
 		}
 	}
@@ -1224,7 +1224,7 @@ pub(crate) mod tests {
 	#[test]
 	fn insta_approval_works() {
 		let db = kvdb_memorydb::create(NUM_COLUMNS);
-		let db = polkadot_node_subsystem_util::database::kvdb_impl::DbAdapter::new(db, &[]);
+		let db = node_subsystem_util::database::kvdb_impl::DbAdapter::new(db, &[]);
 		let db_writer: Arc<dyn Database> = Arc::new(db);
 		let mut db = DbBackend::new(db_writer.clone(), TEST_CONFIG);
 		let mut overlay_db = OverlayedBackend::new(&db);

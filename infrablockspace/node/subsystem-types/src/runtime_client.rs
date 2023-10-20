@@ -15,7 +15,7 @@
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
 use async_trait::async_trait;
-use polkadot_primitives::{
+use primitives::{
 	async_backing, runtime_api::ParachainHost, slashing, Block, BlockNumber, CandidateCommitments,
 	CandidateEvent, CandidateHash, CommittedCandidateReceipt, CoreState, DisputeState,
 	ExecutorParams, GroupRotationInfo, Hash, Id, InboundDownwardMessage, InboundHrmpMessage,
@@ -246,7 +246,7 @@ pub trait RuntimeApiSubsystemClient {
 	async fn async_backing_params(
 		&self,
 		at: Hash,
-	) -> Result<polkadot_primitives::AsyncBackingParams, ApiError>;
+	) -> Result<primitives::AsyncBackingParams, ApiError>;
 
 	/// Returns the state of parachain backing for a given para.
 	/// This is a staging method! Do not use on production runtimes!

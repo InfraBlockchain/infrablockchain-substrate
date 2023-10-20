@@ -1,5 +1,5 @@
 [package]
-name = "polkadot-node-core-backing"
+name = "node-core-backing"
 version = "1.0.0"
 authors.workspace = true
 edition.workspace = true
@@ -8,11 +8,11 @@ license.workspace = true
 [dependencies]
 futures = "0.3.21"
 sp-keystore = { path = "../../../../substrate/primitives/keystore" }
-polkadot-primitives = { path = "../../../primitives" }
-polkadot-node-primitives = { path = "../../primitives" }
-polkadot-node-subsystem = { path = "../../subsystem" }
-polkadot-node-subsystem-util = { path = "../../subsystem-util" }
-erasure-coding = { package = "polkadot-erasure-coding", path = "../../../erasure-coding" }
+primitives = { path = "../../../primitives" }
+node-primitives = { path = "../../primitives" }
+node-subsystem = { path = "../../subsystem" }
+node-subsystem-util = { path = "../../subsystem-util" }
+erasure-coding = { package = "infrablockspace-erasure-coding", path = "../../../erasure-coding" }
 statement-table = { package = "polkadot-statement-table", path = "../../../statement-table" }
 bitvec = { version = "1.0.0", default-features = false, features = ["alloc"] }
 gum = { package = "tracing-gum", path = "../../gum" }
@@ -27,5 +27,5 @@ sc-keystore = { path = "../../../../substrate/client/keystore" }
 sp-tracing = { path = "../../../../substrate/primitives/tracing" }
 futures = { version = "0.3.21", features = ["thread-pool"] }
 assert_matches = "1.4.0"
-polkadot-node-subsystem-test-helpers = { path = "../../subsystem-test-helpers" }
+node-subsystem-test-helpers = { path = "../../subsystem-test-helpers" }
 test-helpers = { package = "polkadot-primitives-test-helpers", path = "../../../primitives/test-helpers" }

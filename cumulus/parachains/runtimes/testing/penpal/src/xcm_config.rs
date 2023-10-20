@@ -39,7 +39,7 @@ use frame_support::{
 use frame_system::EnsureRoot;
 use pallet_asset_tx_payment::HandleCredit;
 use pallet_xcm::XcmPassthrough;
-use polkadot_parachain_primitives::primitives::Sibling;
+use parachain_primitives::primitives::Sibling;
 use polkadot_runtime_common::impls::ToAuthor;
 use sp_runtime::traits::Zero;
 use xcm::latest::prelude::*;
@@ -211,7 +211,7 @@ pub struct AssetsToBlockAuthor<R>(PhantomData<R>);
 impl<R> HandleCredit<AccountIdOf<R>, pallet_assets::Pallet<R>> for AssetsToBlockAuthor<R>
 where
 	R: pallet_authorship::Config + pallet_assets::Config,
-	AccountIdOf<R>: From<polkadot_primitives::AccountId> + Into<polkadot_primitives::AccountId>,
+	AccountIdOf<R>: From<primitives::AccountId> + Into<primitives::AccountId>,
 {
 	fn handle_credit(credit: Credit<AccountIdOf<R>, pallet_assets::Pallet<R>>) {
 		if let Some(author) = pallet_authorship::Pallet::<R>::author() {

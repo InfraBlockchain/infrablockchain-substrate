@@ -16,8 +16,8 @@
 
 use crate::error::InternalValidationError;
 use parity_scale_codec::{Decode, Encode};
-use polkadot_parachain_primitives::primitives::ValidationResult;
-use polkadot_primitives::ExecutorParams;
+use parachain_primitives::primitives::ValidationResult;
+use primitives::ExecutorParams;
 use std::time::Duration;
 
 /// The payload of the one-time handshake that is done when a worker process is created. Carries

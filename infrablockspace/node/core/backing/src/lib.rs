@@ -79,11 +79,11 @@ use futures::{
 };
 
 use error::{Error, FatalResult};
-use polkadot_node_primitives::{
+use node_primitives::{
 	AvailableData, InvalidCandidate, PoV, SignedFullStatementWithPVD, StatementWithPVD,
 	ValidationResult,
 };
-use polkadot_node_subsystem::{
+use node_subsystem::{
 	messages::{
 		AvailabilityDistributionMessage, AvailabilityStoreMessage, CanSecondRequest,
 		CandidateBackingMessage, CandidateValidationMessage, CollatorProtocolMessage,
@@ -93,7 +93,7 @@ use polkadot_node_subsystem::{
 	},
 	overseer, ActiveLeavesUpdate, FromOrchestra, OverseerSignal, SpawnedSubsystem, SubsystemError,
 };
-use polkadot_node_subsystem_util::{
+use node_subsystem_util::{
 	self as util,
 	backing_implicit_view::{FetchError as ImplicitViewFetchError, View as ImplicitView},
 	executor_params_at_relay_parent, request_from_runtime, request_session_index_for_child,
@@ -103,7 +103,7 @@ use polkadot_node_subsystem_util::{
 	},
 	Validator,
 };
-use polkadot_primitives::{
+use primitives::{
 	BackedCandidate, CandidateCommitments, CandidateHash, CandidateReceipt,
 	CommittedCandidateReceipt, CoreIndex, CoreState, ExecutorParams, Hash, Id as ParaId,
 	PersistedValidationData, PvfExecTimeoutKind, SigningContext, ValidationCode, ValidatorId,

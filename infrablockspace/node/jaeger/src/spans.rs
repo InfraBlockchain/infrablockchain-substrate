@@ -17,9 +17,9 @@
 //! Polkadot Jaeger span definitions.
 //!
 //! ```rust
-//! # use polkadot_primitives::{CandidateHash, Hash};
+//! # use primitives::{CandidateHash, Hash};
 //! # fn main() {
-//! use polkadot_node_jaeger as jaeger;
+//! use node_jaeger as jaeger;
 //!
 //! let relay_parent = Hash::default();
 //! let candidate = CandidateHash::default();
@@ -51,9 +51,9 @@
 //! over the course of a function, for this purpose use the non-consuming
 //! `fn` variants, i.e.
 //! ```rust
-//! # use polkadot_primitives::{CandidateHash, Hash};
+//! # use primitives::{CandidateHash, Hash};
 //! # fn main() {
-//! # use polkadot_node_jaeger as jaeger;
+//! # use node_jaeger as jaeger;
 //!
 //! # let relay_parent = Hash::default();
 //! # let candidate = CandidateHash::default();
@@ -84,8 +84,8 @@
 //! ```
 
 use parity_scale_codec::Encode;
-use polkadot_node_primitives::PoV;
-use polkadot_primitives::{BlakeTwo256, CandidateHash, Hash, HashT, Id as ParaId, ValidatorIndex};
+use node_primitives::PoV;
+use primitives::{BlakeTwo256, CandidateHash, Hash, HashT, Id as ParaId, ValidatorIndex};
 use sc_network::PeerId;
 
 use std::{fmt, sync::Arc};

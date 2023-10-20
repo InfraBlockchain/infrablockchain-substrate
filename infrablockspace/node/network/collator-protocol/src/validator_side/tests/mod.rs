@@ -22,24 +22,24 @@ use sp_keyring::Sr25519Keyring;
 use sp_keystore::Keystore;
 use std::{iter, sync::Arc, time::Duration};
 
-use polkadot_node_network_protocol::{
+use node_network_protocol::{
 	our_view,
 	peer_set::CollationVersion,
 	request_response::{Requests, ResponseSender},
 	ObservedRole,
 };
-use polkadot_node_primitives::{BlockData, PoV};
-use polkadot_node_subsystem::{
+use node_primitives::{BlockData, PoV};
+use node_subsystem::{
 	errors::RuntimeApiError,
 	messages::{AllMessages, ReportPeerMessage, RuntimeApiMessage, RuntimeApiRequest},
 };
-use polkadot_node_subsystem_test_helpers as test_helpers;
-use polkadot_node_subsystem_util::{reputation::add_reputation, TimeoutExt};
-use polkadot_primitives::{
+use node_subsystem_test_helpers as test_helpers;
+use node_subsystem_util::{reputation::add_reputation, TimeoutExt};
+use primitives::{
 	CandidateReceipt, CollatorPair, CoreState, GroupIndex, GroupRotationInfo, HeadData,
 	OccupiedCore, PersistedValidationData, ScheduledCore, ValidatorId, ValidatorIndex,
 };
-use polkadot_primitives_test_helpers::{
+use primitives_test_helpers::{
 	dummy_candidate_descriptor, dummy_candidate_receipt_bad_sig, dummy_hash,
 };
 
@@ -144,7 +144,7 @@ fn test_harness<T: Future<Output = VirtualOverseer>>(
 ) {
 	let _ = env_logger::builder()
 		.is_test(true)
-		.filter(Some("polkadot_collator_protocol"), log::LevelFilter::Trace)
+		.filter(Some("collator_protocol"), log::LevelFilter::Trace)
 		.filter(Some(LOG_TARGET), log::LevelFilter::Trace)
 		.try_init();
 
@@ -155,7 +155,7 @@ fn test_harness<T: Future<Output = VirtualOverseer>>(
 	let keystore = Arc::new(sc_keystore::LocalKeystore::in_memory());
 	Keystore::sr25519_generate_new(
 		&*keystore,
-		polkadot_primitives::PARACHAIN_KEY_TYPE_ID,
+		primitives::PARACHAIN_KEY_TYPE_ID,
 		Some(&Sr25519Keyring::Alice.to_seed()),
 	)
 	.expect("Insert key into keystore");

@@ -104,10 +104,10 @@ pallet-offences-benchmarking = { path = "../../../substrate/frame/offences/bench
 pallet-session-benchmarking = { path = "../../../substrate/frame/session/benchmarking", default-features = false, optional = true }
 hex-literal = { version = "0.4.1", optional = true }
 
-runtime-common = { package = "polkadot-runtime-common", path = "../common", default-features = false }
-primitives = { package = "polkadot-primitives", path = "../../primitives", default-features = false }
-polkadot-parachain-primitives = { path = "../../parachain", default-features = false }
-runtime-parachains = { package = "polkadot-runtime-parachains", path = "../parachains", default-features = false }
+runtime-common = { path = "../common", default-features = false }
+primitives = { path = "../../primitives", default-features = false }
+parachain-primitives = { path = "../../parachain", default-features = false }
+runtime-parachains = { path = "../parachains", default-features = false }
 
 xcm = { package = "staging-xcm", path = "../../xcm", default-features = false }
 xcm-executor = { package = "staging-xcm-executor", path = "../../xcm/xcm-executor", default-features = false }
@@ -198,7 +198,7 @@ std = [
 	"pallet-xcm-benchmarks?/std",
 	"pallet-xcm/std",
 	"parity-scale-codec/std",
-	"polkadot-parachain-primitives/std",
+	"parachain-primitives/std",
 	"primitives/std",
 	"runtime-common/std",
 	"runtime-parachains/std",
@@ -274,7 +274,7 @@ runtime-benchmarks = [
 	"pallet-whitelist/runtime-benchmarks",
 	"pallet-xcm-benchmarks/runtime-benchmarks",
 	"pallet-xcm/runtime-benchmarks",
-	"polkadot-parachain-primitives/runtime-benchmarks",
+	"parachain-primitives/runtime-benchmarks",
 	"primitives/runtime-benchmarks",
 	"runtime-common/runtime-benchmarks",
 	"runtime-parachains/runtime-benchmarks",

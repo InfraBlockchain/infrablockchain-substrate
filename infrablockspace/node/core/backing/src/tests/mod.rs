@@ -22,8 +22,8 @@ use ::test_helpers::{
 };
 use assert_matches::assert_matches;
 use futures::{future, Future};
-use polkadot_node_primitives::{BlockData, InvalidCandidate, SignedFullStatement, Statement};
-use polkadot_node_subsystem::{
+use node_primitives::{BlockData, InvalidCandidate, SignedFullStatement, Statement};
+use node_subsystem::{
 	errors::RuntimeApiError,
 	messages::{
 		AllMessages, CollatorProtocolMessage, RuntimeApiMessage, RuntimeApiRequest,
@@ -31,8 +31,8 @@ use polkadot_node_subsystem::{
 	},
 	ActiveLeavesUpdate, FromOrchestra, OverseerSignal, TimeoutExt,
 };
-use polkadot_node_subsystem_test_helpers as test_helpers;
-use polkadot_primitives::{
+use node_subsystem_test_helpers as test_helpers;
+use primitives::{
 	CandidateDescriptor, GroupRotationInfo, HeadData, PersistedValidationData, PvfExecTimeoutKind,
 	ScheduledCore, SessionIndex, LEGACY_MIN_BACKING_VOTES,
 };

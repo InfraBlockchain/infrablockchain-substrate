@@ -17,7 +17,7 @@
 use super::*;
 use ::test_helpers::{dummy_candidate_descriptor, dummy_hash};
 use bitvec::bitvec;
-use polkadot_primitives::{OccupiedCore, ScheduledCore};
+use primitives::{OccupiedCore, ScheduledCore};
 
 const MOCK_GROUP_SIZE: usize = 5;
 
@@ -58,7 +58,7 @@ pub fn scheduled_core(id: u32) -> ScheduledCore {
 
 mod select_availability_bitfields {
 	use super::{super::*, default_bitvec, occupied_core};
-	use polkadot_primitives::{ScheduledCore, SigningContext, ValidatorId, ValidatorIndex};
+	use primitives::{ScheduledCore, SigningContext, ValidatorId, ValidatorIndex};
 	use sp_application_crypto::AppCrypto;
 	use sp_keystore::{testing::MemoryKeystore, Keystore, KeystorePtr};
 	use std::sync::Arc;
@@ -214,8 +214,8 @@ mod select_availability_bitfields {
 pub(crate) mod common {
 	use super::super::*;
 	use futures::channel::mpsc;
-	use polkadot_node_subsystem::messages::AllMessages;
-	use polkadot_node_subsystem_test_helpers::TestSubsystemSender;
+	use node_subsystem::messages::AllMessages;
+	use node_subsystem_test_helpers::TestSubsystemSender;
 
 	pub fn test_harness<OverseerFactory, Overseer, TestFactory, Test>(
 		overseer_factory: OverseerFactory,
@@ -226,7 +226,7 @@ pub(crate) mod common {
 		TestFactory: FnOnce(TestSubsystemSender) -> Test,
 		Test: Future<Output = ()>,
 	{
-		let (tx, rx) = polkadot_node_subsystem_test_helpers::sender_receiver();
+		let (tx, rx) = node_subsystem_test_helpers::sender_receiver();
 		let overseer = overseer_factory(rx);
 		let test = test_factory(tx);
 
@@ -243,15 +243,15 @@ mod select_candidates {
 	};
 	use ::test_helpers::{dummy_candidate_descriptor, dummy_hash};
 	use futures::channel::mpsc;
-	use polkadot_node_subsystem::messages::{
+	use node_subsystem::messages::{
 		AllMessages, RuntimeApiMessage,
 		RuntimeApiRequest::{
 			AvailabilityCores, PersistedValidationData as PersistedValidationDataReq,
 		},
 	};
-	use polkadot_node_subsystem_test_helpers::TestSubsystemSender;
-	use polkadot_node_subsystem_util::runtime::ProspectiveParachainsMode;
-	use polkadot_primitives::{
+	use node_subsystem_test_helpers::TestSubsystemSender;
+	use node_subsystem_util::runtime::ProspectiveParachainsMode;
+	use primitives::{
 		BlockNumber, CandidateCommitments, CommittedCandidateReceipt, PersistedValidationData,
 	};
 

@@ -21,7 +21,7 @@ use futures::{
 };
 
 use fatality::Nested;
-use polkadot_node_network_protocol::{
+use node_network_protocol::{
 	request_response::{
 		incoming::OutgoingResponse,
 		v1::{StatementFetchingRequest, StatementFetchingResponse},
@@ -29,7 +29,7 @@ use polkadot_node_network_protocol::{
 	},
 	PeerId, UnifiedReputationChange as Rep,
 };
-use polkadot_primitives::{CandidateHash, CommittedCandidateReceipt, Hash};
+use primitives::{CandidateHash, CommittedCandidateReceipt, Hash};
 
 use crate::LOG_TARGET;
 

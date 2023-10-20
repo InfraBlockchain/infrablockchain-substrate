@@ -27,14 +27,14 @@ doc = false
 
 [dependencies]
 polkadot-cli = { path = "../../cli", features = [ "malus", "rococo-native", "westend-native", "infra-relay-native" ] }
-polkadot-node-subsystem = { path = "../subsystem" }
-polkadot-node-subsystem-util = { path = "../subsystem-util" }
-polkadot-node-subsystem-types = { path = "../subsystem-types" }
-polkadot-node-core-dispute-coordinator = { path = "../core/dispute-coordinator" }
-polkadot-node-core-candidate-validation = { path = "../core/candidate-validation" }
-polkadot-node-core-backing = { path = "../core/backing" }
-polkadot-node-primitives = { path = "../primitives" }
-polkadot-primitives = { path = "../../primitives" }
+node-subsystem = { path = "../subsystem" }
+node-subsystem-util = { path = "../subsystem-util" }
+node-subsystem-types = { path = "../subsystem-types" }
+node-core-dispute-coordinator = { path = "../core/dispute-coordinator" }
+node-core-candidate-validation = { path = "../core/candidate-validation" }
+node-core-backing = { path = "../core/backing" }
+node-primitives = { path = "../primitives" }
+primitives = { path = "../../primitives" }
 color-eyre = { version = "0.6.1", default-features = false }
 assert_matches = "1.5"
 async-trait = "0.1.57"
@@ -44,16 +44,16 @@ clap = { version = "4.4.6", features = ["derive"] }
 futures = "0.3.21"
 futures-timer = "3.0.2"
 gum = { package = "tracing-gum", path = "../gum" }
-erasure = { package = "polkadot-erasure-coding", path = "../../erasure-coding" }
+erasure_coding = { package = "infrablockspace-erasure-coding", path = "../../erasure-coding" }
 rand = "0.8.5"
 
 # Required for worker binaries to build.
-polkadot-node-core-pvf-common = { path = "../core/pvf/common", features = ["test-utils"] }
-polkadot-node-core-pvf-execute-worker = { path = "../core/pvf/execute-worker" }
-polkadot-node-core-pvf-prepare-worker = { path = "../core/pvf/prepare-worker" }
+node-core-pvf-common = { path = "../core/pvf/common", features = ["test-utils"] }
+node-core-pvf-execute-worker = { path = "../core/pvf/execute-worker" }
+node-core-pvf-prepare-worker = { path = "../core/pvf/prepare-worker" }
 
 [dev-dependencies]
-polkadot-node-subsystem-test-helpers = { path = "../subsystem-test-helpers" }
+node-subsystem-test-helpers = { path = "../subsystem-test-helpers" }
 sp-core = { path = "../../../substrate/primitives/core" }
 futures = { version = "0.3.21", features = ["thread-pool"] }
 

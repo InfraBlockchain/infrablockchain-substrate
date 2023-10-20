@@ -111,7 +111,7 @@
 ///
 /// That means a few blocks of execution time lost, which is not a big deal for code upgrades
 /// in practice at most once every few weeks.
-use polkadot_primitives::{
+use primitives::{
 	async_backing::Constraints as PrimitiveConstraints, BlockNumber, CandidateCommitments,
 	CollatorId, CollatorSignature, Hash, HeadData, Id as ParaId, PersistedValidationData,
 	UpgradeRestriction, ValidationCodeHash,
@@ -823,7 +823,7 @@ fn validate_against_constraints(
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use polkadot_primitives::{
+	use primitives::{
 		CollatorPair, HorizontalMessages, OutboundHrmpMessage, ValidationCode,
 	};
 	use sp_application_crypto::Pair;

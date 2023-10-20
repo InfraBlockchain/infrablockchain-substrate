@@ -16,20 +16,20 @@
 
 use super::*;
 use assert_matches::assert_matches;
-use polkadot_node_subsystem::{
+use node_subsystem::{
 	errors::RuntimeApiError,
 	messages::{
 		AllMessages, HypotheticalFrontierRequest, ProspectiveParachainsMessage,
 		ProspectiveValidationDataRequest,
 	},
 };
-use polkadot_node_subsystem_test_helpers as test_helpers;
-use polkadot_primitives::{
+use node_subsystem_test_helpers as test_helpers;
+use primitives::{
 	async_backing::{AsyncBackingParams, BackingState, Constraints, InboundHrmpLimitations},
 	CommittedCandidateReceipt, HeadData, Header, PersistedValidationData, ScheduledCore,
 	ValidationCodeHash,
 };
-use polkadot_primitives_test_helpers::make_candidate;
+use primitives_test_helpers::make_candidate;
 use std::sync::Arc;
 use test_helpers::mock::new_leaf;
 

@@ -21,7 +21,7 @@
 use std::sync::Arc;
 
 use jsonrpsee::RpcModule;
-use polkadot_primitives::{AccountId, Balance, Block, BlockNumber, Hash, Nonce};
+use primitives::{AccountId, Balance, Block, BlockNumber, Hash, Nonce};
 use sc_client_api::AuxStore;
 use sc_consensus_beefy::communication::notification::{
 	BeefyBestBlockStream, BeefyVersionedFinalityProofStream,

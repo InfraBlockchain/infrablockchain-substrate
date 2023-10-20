@@ -318,7 +318,7 @@ pub fn run() -> Result<()> {
 			cli,
 			service::RealOverseerGen,
 			None,
-			polkadot_node_metrics::logger_hook(),
+			node_metrics::logger_hook(),
 		),
 		Some(Subcommand::BuildSpec(cmd)) => {
 			let runner = cli.create_runner(cmd)?;

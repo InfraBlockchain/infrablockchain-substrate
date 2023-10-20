@@ -16,7 +16,7 @@
 
 //! Contains the logic for executing PVFs. Used by the polkadot-execute-worker binary.
 
-pub use polkadot_node_core_pvf_common::{executor_intf::Executor, worker_dir, SecurityStatus};
+pub use node_core_pvf_common::{executor_intf::Executor, worker_dir, SecurityStatus};
 
 // NOTE: Initializing logging in e.g. tests will not have an effect in the workers, as they are
 //       separate spawned processes. Run with e.g. `RUST_LOG=parachain::pvf-execute-worker=trace`.
@@ -24,7 +24,7 @@ const LOG_TARGET: &str = "parachain::pvf-execute-worker";
 
 use cpu_time::ProcessTime;
 use parity_scale_codec::{Decode, Encode};
-use polkadot_node_core_pvf_common::{
+use node_core_pvf_common::{
 	error::InternalValidationError,
 	execute::{Handshake, Response},
 	executor_intf::NATIVE_STACK_MAX,
@@ -35,7 +35,7 @@ use polkadot_node_core_pvf_common::{
 		worker_event_loop, WorkerKind,
 	},
 };
-use polkadot_parachain_primitives::primitives::ValidationResult;
+use parachain_primitives::primitives::ValidationResult;
 use std::{
 	os::unix::net::UnixStream,
 	path::PathBuf,

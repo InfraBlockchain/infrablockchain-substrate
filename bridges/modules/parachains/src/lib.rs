@@ -287,7 +287,7 @@ pub mod pallet {
 		/// Submit proof of one or several parachain heads.
 		///
 		/// The proof is supposed to be proof of some `Heads` entries from the
-		/// `polkadot-runtime-parachains::paras` pallet instance, deployed at the bridged chain.
+		/// `runtime-parachains::paras` pallet instance, deployed at the bridged chain.
 		/// The proof is supposed to be crafted at the `relay_header_hash` that must already be
 		/// imported by corresponding GRANDPA pallet at this chain.
 		///

@@ -57,9 +57,9 @@
 
 use crate::host::PrepareResultSender;
 use always_assert::always;
-use polkadot_node_core_pvf_common::{error::PrepareError, prepare::PrepareStats, pvf::PvfPrepData};
-use polkadot_parachain_primitives::primitives::ValidationCodeHash;
-use polkadot_primitives::ExecutorParamsHash;
+use node_core_pvf_common::{error::PrepareError, prepare::PrepareStats, pvf::PvfPrepData};
+use parachain_primitives::primitives::ValidationCodeHash;
+use primitives::ExecutorParamsHash;
 use std::{
 	collections::HashMap,
 	path::{Path, PathBuf},
@@ -254,7 +254,7 @@ impl Artifacts {
 #[cfg(test)]
 mod tests {
 	use super::{ArtifactId, Artifacts};
-	use polkadot_primitives::ExecutorParamsHash;
+	use primitives::ExecutorParamsHash;
 	use sp_core::H256;
 	use std::{path::Path, str::FromStr};
 

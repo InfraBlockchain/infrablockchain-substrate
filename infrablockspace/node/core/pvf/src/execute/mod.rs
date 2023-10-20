@@ -18,7 +18,7 @@
 //!
 //! The validation host [runs the queue][`start`] communicating with it by sending [`ToQueue`]
 //! messages. The queue will spawn workers in new processes. Those processes should jump to
-//! `polkadot_node_core_pvf_worker::execute_worker_entrypoint`.
+//! `node_core_pvf_worker::execute_worker_entrypoint`.
 
 mod queue;
 mod worker_intf;

@@ -96,7 +96,7 @@ use futures::{channel::mpsc, SinkExt};
 /// Example:
 ///
 /// ```rust
-///     # use polkadot_node_subsystem_util::nesting_sender::NestingSender;
+///     # use node_subsystem_util::nesting_sender::NestingSender;
 ///
 ///     enum RootMessage {
 ///         Child1Message(ChildMessage),

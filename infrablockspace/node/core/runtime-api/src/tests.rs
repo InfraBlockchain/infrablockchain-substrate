@@ -16,10 +16,10 @@
 
 use super::*;
 
-use polkadot_node_primitives::{BabeAllowedSlots, BabeEpoch, BabeEpochConfiguration};
-use polkadot_node_subsystem::SpawnGlue;
-use polkadot_node_subsystem_test_helpers::make_subsystem_context;
-use polkadot_primitives::{
+use node_primitives::{BabeAllowedSlots, BabeEpoch, BabeEpochConfiguration};
+use node_subsystem::SpawnGlue;
+use node_subsystem_test_helpers::make_subsystem_context;
+use primitives::{
 	async_backing, slashing, AuthorityDiscoveryId, BlockNumber, CandidateCommitments,
 	CandidateEvent, CandidateHash, CommittedCandidateReceipt, CoreState, DisputeState,
 	ExecutorParams, GroupRotationInfo, Id as ParaId, InboundDownwardMessage, InboundHrmpMessage,
@@ -485,7 +485,7 @@ fn requests_check_validation_outputs() {
 	let relay_parent = [1; 32].into();
 	let para_a = ParaId::from(5_u32);
 	let para_b = ParaId::from(6_u32);
-	let commitments = polkadot_primitives::CandidateCommitments::default();
+	let commitments = primitives::CandidateCommitments::default();
 	let spawner = sp_core::testing::TaskExecutor::new();
 
 	subsystem_client.validation_outputs_results.insert(para_a, false);

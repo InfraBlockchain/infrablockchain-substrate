@@ -35,19 +35,19 @@ use futures::{
 };
 use futures_timer::Delay;
 use parity_scale_codec::{Decode, Encode, Error as CodecError, Input};
-use polkadot_node_subsystem_util::database::{DBTransaction, Database};
+use node_subsystem_util::database::{DBTransaction, Database};
 use sp_consensus::SyncOracle;
 
 use bitvec::{order::Lsb0 as BitOrderLsb0, vec::BitVec};
-use polkadot_node_jaeger as jaeger;
-use polkadot_node_primitives::{AvailableData, ErasureChunk};
-use polkadot_node_subsystem::{
+use node_jaeger as jaeger;
+use node_primitives::{AvailableData, ErasureChunk};
+use node_subsystem::{
 	errors::{ChainApiError, RuntimeApiError},
 	messages::{AvailabilityStoreMessage, ChainApiMessage, StoreAvailableDataError},
 	overseer, ActiveLeavesUpdate, FromOrchestra, OverseerSignal, SpawnedSubsystem, SubsystemError,
 };
-use polkadot_node_subsystem_util as util;
-use polkadot_primitives::{
+use node_subsystem_util as util;
+use primitives::{
 	BlockNumber, CandidateEvent, CandidateHash, CandidateReceipt, Hash, Header, ValidatorIndex,
 };
 
@@ -352,7 +352,7 @@ pub enum Error {
 	ChainApi(#[from] ChainApiError),
 
 	#[error(transparent)]
-	Erasure(#[from] erasure::Error),
+	Erasure(#[from] erasure_coding::Error),
 
 	#[error(transparent)]
 	Io(#[from] io::Error),
@@ -1303,8 +1303,8 @@ fn store_available_data(
 
 	// Important note: This check below is critical for consensus and the `backing` subsystem relies
 	// on it to ensure candidate validity.
-	let chunks = erasure::obtain_chunks_v1(n_validators, &available_data)?;
-	let branches = erasure::branches(chunks.as_ref());
+	let chunks = erasure_coding::obtain_chunks_v1(n_validators, &available_data)?;
+	let branches = erasure_coding::branches(chunks.as_ref());
 
 	if branches.root() != expected_erasure_root {
 		return Err(Error::InvalidErasureRoot)

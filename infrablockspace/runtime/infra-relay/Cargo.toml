@@ -80,10 +80,10 @@ frame-support = { path = "../../../substrate/frame/support", default-features = 
 frame-system = { path = "../../../substrate/frame/system", default-features = false }
 frame-system-rpc-runtime-api = { path = "../../../substrate/frame/system/rpc/runtime-api", default-features = false }
 infra-relay-runtime-constants = { package = "infra-relay-runtime-constants", path = "constants", default-features = false }
-runtime-common = { package = "polkadot-runtime-common", path = "../common", default-features = false }
-runtime-parachains = { package = "polkadot-runtime-parachains", path = "../parachains", default-features = false }
-primitives = { package = "polkadot-primitives", path = "../../primitives", default-features = false }
-parachain-primitives = { package = "polkadot-parachain-primitives", path = "../../parachain", default-features = false }
+runtime-common = { path = "../common", default-features = false }
+runtime-parachains = { package = "runtime-parachains", path = "../parachains", default-features = false }
+primitives = { path = "../../primitives", default-features = false }
+parachain-primitives = { path = "../../parachain", default-features = false }
 
 # Xcm
 xcm = { package = "staging-xcm", path = "../../xcm", default-features = false }

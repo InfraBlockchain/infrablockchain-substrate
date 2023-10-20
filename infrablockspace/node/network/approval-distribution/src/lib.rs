@@ -21,26 +21,26 @@
 #![warn(missing_docs)]
 
 use futures::{channel::oneshot, select, FutureExt as _};
-use polkadot_node_jaeger as jaeger;
-use polkadot_node_network_protocol::{
+use node_jaeger as jaeger;
+use node_network_protocol::{
 	self as net_protocol,
 	grid_topology::{RandomRouting, RequiredRouting, SessionGridTopologies, SessionGridTopology},
 	peer_set::{ValidationVersion, MAX_NOTIFICATION_SIZE},
 	v1 as protocol_v1, v2 as protocol_v2, PeerId, UnifiedReputationChange as Rep, Versioned,
 	VersionedValidationProtocol, View,
 };
-use polkadot_node_primitives::approval::{
+use node_primitives::approval::{
 	AssignmentCert, BlockApprovalMeta, IndirectAssignmentCert, IndirectSignedApprovalVote,
 };
-use polkadot_node_subsystem::{
+use node_subsystem::{
 	messages::{
 		ApprovalCheckResult, ApprovalDistributionMessage, ApprovalVotingMessage,
 		AssignmentCheckResult, NetworkBridgeEvent, NetworkBridgeTxMessage,
 	},
 	overseer, FromOrchestra, OverseerSignal, SpawnedSubsystem, SubsystemError,
 };
-use polkadot_node_subsystem_util::reputation::{ReputationAggregator, REPUTATION_CHANGE_INTERVAL};
-use polkadot_primitives::{
+use node_subsystem_util::reputation::{ReputationAggregator, REPUTATION_CHANGE_INTERVAL};
+use primitives::{
 	BlockNumber, CandidateIndex, Hash, SessionIndex, ValidatorIndex, ValidatorSignature,
 };
 use rand::{CryptoRng, Rng, SeedableRng};

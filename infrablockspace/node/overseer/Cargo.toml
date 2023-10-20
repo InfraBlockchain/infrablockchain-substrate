@@ -1,5 +1,5 @@
 [package]
-name = "polkadot-overseer"
+name = "infrablockspace-overseer"
 version = "1.0.0"
 authors.workspace = true
 edition.workspace = true
@@ -11,11 +11,11 @@ sp-api = { path = "../../../substrate/primitives/api" }
 futures = "0.3.21"
 futures-timer = "3.0.2"
 parking_lot = "0.12.0"
-polkadot-node-network-protocol = { path = "../network/protocol" }
-polkadot-node-primitives = { path = "../primitives" }
-polkadot-node-subsystem-types = { path = "../subsystem-types" }
-polkadot-node-metrics = { path = "../metrics" }
-polkadot-primitives = { path = "../../primitives" }
+node-network-protocol = { path = "../network/protocol" }
+node-primitives = { path = "../primitives" }
+node-subsystem-types = { path = "../subsystem-types" }
+node-metrics = { path = "../metrics" }
+primitives = { path = "../../primitives" }
 orchestra = { version = "0.3.3", default-features = false, features=["futures_channel"] }
 gum = { package = "tracing-gum", path = "../gum" }
 schnellru = "0.2.1"
@@ -30,7 +30,7 @@ futures = { version = "0.3.21", features = ["thread-pool"] }
 femme = "2.2.1"
 assert_matches = "1.4.0"
 test-helpers = { package = "polkadot-primitives-test-helpers", path = "../../primitives/test-helpers" }
-node-test-helpers = { package = "polkadot-node-subsystem-test-helpers", path = "../subsystem-test-helpers" }
+node-test-helpers = { package = "node-subsystem-test-helpers", path = "../subsystem-test-helpers" }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 tikv-jemalloc-ctl = "0.5.0"

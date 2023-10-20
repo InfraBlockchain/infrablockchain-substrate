@@ -50,11 +50,11 @@ pub use cumulus_primitives_parachain_inherent::ParachainInherentData;
 pub use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 pub use pallet_message_queue::{Config as MessageQueueConfig, Pallet as MessageQueuePallet};
 pub use parachains_common::{AccountId, Balance, BlockNumber};
-pub use polkadot_primitives;
-pub use polkadot_runtime_parachains::inclusion::{AggregateMessageOrigin, UmpQueueId};
+pub use primitives;
+pub use runtime_parachains::inclusion::{AggregateMessageOrigin, UmpQueueId};
 
 // Polkadot
-pub use polkadot_parachain_primitives::primitives::RelayChainBlockNumber;
+pub use parachain_primitives::primitives::RelayChainBlockNumber;
 pub use xcm::v3::prelude::{
 	Ancestor, MultiAssets, MultiLocation, Parachain as ParachainJunction, Parent, WeightLimit,
 	XcmHash, X1,
@@ -515,7 +515,7 @@ macro_rules! __impl_test_ext_for_relay_chain {
 				// Send messages if needed
 				$local_ext.with(|v| {
 					v.borrow_mut().execute_with(|| {
-						use $crate::polkadot_primitives::runtime_api::runtime_decl_for_parachain_host::$api_version;
+						use $crate::primitives::runtime_api::runtime_decl_for_parachain_host::$api_version;
 
 						//TODO: mark sent count & filter out sent msg
 						for para_id in<$name as NetworkComponent>::Network::para_ids() {

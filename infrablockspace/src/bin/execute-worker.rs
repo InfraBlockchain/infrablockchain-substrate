@@ -16,8 +16,8 @@
 
 //! Execute worker.
 
-polkadot_node_core_pvf_common::decl_worker_main!(
+node_core_pvf_common::decl_worker_main!(
 	"execute-worker",
-	polkadot_node_core_pvf_execute_worker::worker_entrypoint,
+	node_core_pvf_execute_worker::worker_entrypoint,
 	polkadot_cli::NODE_VERSION,
 );

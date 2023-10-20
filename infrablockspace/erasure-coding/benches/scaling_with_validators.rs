@@ -15,16 +15,16 @@
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
-use polkadot_primitives::Hash;
+use primitives::Hash;
 use std::time::Duration;
 
 fn chunks(n_validators: usize, pov: &Vec<u8>) -> Vec<Vec<u8>> {
-	polkadot_erasure_coding::obtain_chunks(n_validators, pov).unwrap()
+	erasure_coding::obtain_chunks(n_validators, pov).unwrap()
 }
 
 fn erasure_root(n_validators: usize, pov: &Vec<u8>) -> Hash {
 	let chunks = chunks(n_validators, pov);
-	polkadot_erasure_coding::branches(&chunks).root()
+	erasure_coding::branches(&chunks).root()
 }
 
 fn construct_and_reconstruct_5mb_pov(c: &mut Criterion) {
@@ -67,7 +67,7 @@ fn construct_and_reconstruct_5mb_pov(c: &mut Criterion) {
 			|b, &n| {
 				b.iter(|| {
 					let _pov: Vec<u8> =
-						polkadot_erasure_coding::reconstruct(n, last_chunks.clone()).unwrap();
+						erasure_coding::reconstruct(n, last_chunks.clone()).unwrap();
 				});
 			},
 		);

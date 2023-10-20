@@ -19,10 +19,10 @@
 
 use futures::channel::oneshot;
 
-use polkadot_node_network_protocol::request_response::incoming;
-use polkadot_node_primitives::UncheckedSignedFullStatement;
-use polkadot_node_subsystem::{errors::SubsystemError, RuntimeApiError};
-use polkadot_node_subsystem_util::{backing_implicit_view, runtime};
+use node_network_protocol::request_response::incoming;
+use node_primitives::UncheckedSignedFullStatement;
+use node_subsystem::{errors::SubsystemError, RuntimeApiError};
+use node_subsystem_util::{backing_implicit_view, runtime};
 
 use crate::LOG_TARGET;
 

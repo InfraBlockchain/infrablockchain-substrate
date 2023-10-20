@@ -19,20 +19,20 @@ use assert_matches::assert_matches;
 use bitvec::bitvec;
 use futures::executor;
 use maplit::hashmap;
-use polkadot_node_network_protocol::{
+use node_network_protocol::{
 	grid_topology::{SessionBoundGridTopologyStorage, SessionGridTopology, TopologyPeerInfo},
 	our_view,
 	peer_set::ValidationVersion,
 	view, ObservedRole,
 };
-use polkadot_node_subsystem::{
+use node_subsystem::{
 	jaeger,
 	jaeger::{PerLeafSpan, Span},
 	messages::ReportPeerMessage,
 };
-use polkadot_node_subsystem_test_helpers::make_subsystem_context;
-use polkadot_node_subsystem_util::TimeoutExt;
-use polkadot_primitives::{AvailabilityBitfield, Signed, ValidatorIndex};
+use node_subsystem_test_helpers::make_subsystem_context;
+use node_subsystem_util::TimeoutExt;
+use primitives::{AvailabilityBitfield, Signed, ValidatorIndex};
 use rand_chacha::ChaCha12Rng;
 use sp_application_crypto::AppCrypto;
 use sp_authority_discovery::AuthorityPair as AuthorityDiscoveryPair;
@@ -440,7 +440,7 @@ fn receive_duplicate_messages() {
 
 #[test]
 fn delay_reputation_change() {
-	use polkadot_node_subsystem_util::reputation::add_reputation;
+	use node_subsystem_util::reputation::add_reputation;
 
 	let _ = env_logger::builder()
 		.filter(None, log::LevelFilter::Trace)

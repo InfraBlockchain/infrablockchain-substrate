@@ -22,7 +22,7 @@
 use beefy_primitives::ecdsa_crypto::{AuthorityId as BeefyId, Signature as BeefySignature};
 use grandpa_primitives::AuthorityId as GrandpaId;
 use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
-use polkadot_primitives::{
+use primitives::{
 	runtime_api, slashing, AccountId, AuthorityDiscoveryId, Balance, Block, BlockNumber,
 	CandidateCommitments, CandidateEvent, CandidateHash, CommittedCandidateReceipt, CoreState,
 	DisputeState, ExecutorParams, GroupRotationInfo, Hash, Id as ParaId, InboundDownwardMessage,

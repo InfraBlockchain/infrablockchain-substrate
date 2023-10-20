@@ -1,6 +1,7 @@
 [workspace.package]
 authors = ["blockchain labs"]
 edition = "2021"
+homepage = "infrablockchain.net"
 repository = "https://github.com/paritytech/infrablockspace-sdk.git"
 license = "GPL-3.0-only"
 
@@ -477,6 +478,7 @@ inherits = "release"
 debug = 1               # debug symbols are useful for profilers
 debug-assertions = true
 overflow-checks = true
+
 
 # The list of dependencies below (which can be both direct and indirect dependencies) are crates
 # that are suspected to be CPU-intensive, and that are unlikely to require debugging (as some of

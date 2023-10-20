@@ -32,19 +32,19 @@ use futures::FutureExt;
 use gum::CandidateHash;
 use sc_keystore::LocalKeystore;
 
-use polkadot_node_primitives::{
+use node_primitives::{
 	CandidateVotes, DisputeMessage, DisputeMessageCheckError, SignedDisputeStatement,
 	DISPUTE_WINDOW,
 };
-use polkadot_node_subsystem::{
+use node_subsystem::{
 	messages::DisputeDistributionMessage, overseer, ActivatedLeaf, FromOrchestra, OverseerSignal,
 	SpawnedSubsystem, SubsystemError,
 };
-use polkadot_node_subsystem_util::{
+use node_subsystem_util::{
 	database::Database,
 	runtime::{Config as RuntimeInfoConfig, RuntimeInfo},
 };
-use polkadot_primitives::{
+use primitives::{
 	DisputeStatement, ScrapedOnChainVotes, SessionIndex, SessionInfo, ValidatorIndex,
 };
 

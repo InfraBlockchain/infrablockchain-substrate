@@ -11,5 +11,5 @@ sp-keyring = { path = "../../../substrate/primitives/keyring" }
 sp-application-crypto = { package = "sp-application-crypto", path = "../../../substrate/primitives/application-crypto", default-features = false }
 sp-runtime = { path = "../../../substrate/primitives/runtime" }
 sp-core = { path = "../../../substrate/primitives/core", features = ["std"] }
-polkadot-primitives = { path = ".." }
+primitives = { path = ".." }
 rand = "0.8.5"

@@ -35,6 +35,6 @@ parachains-common = { path = "../../parachains/common" }
 # Polkadot
 xcm = { package = "staging-xcm", path = "../../../infrablockspace/xcm" }
 xcm-executor = { package = "staging-xcm-executor", path = "../../../infrablockspace/xcm/xcm-executor" }
-polkadot-primitives = { path = "../../../infrablockspace/primitives" }
-polkadot-parachain-primitives = { path = "../../../infrablockspace/parachain" }
-polkadot-runtime-parachains = { path = "../../../infrablockspace/runtime/parachains" }
+primitives = { path = "../../../infrablockspace/primitives" }
+parachain-primitives = { path = "../../../infrablockspace/parachain" }
+runtime-parachains = { path = "../../../infrablockspace/runtime/parachains" }

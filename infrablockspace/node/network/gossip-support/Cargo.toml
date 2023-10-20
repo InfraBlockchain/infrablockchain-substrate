@@ -1,5 +1,5 @@
 [package]
-name = "polkadot-gossip-support"
+name = "gossip-support"
 version = "1.0.0"
 authors.workspace = true
 edition.workspace = true
@@ -12,10 +12,10 @@ sp-core = { path = "../../../../substrate/primitives/core" }
 sc-network = { path = "../../../../substrate/client/network" }
 sc-network-common = { path = "../../../../substrate/client/network/common" }
 
-polkadot-node-network-protocol = { path = "../protocol" }
-polkadot-node-subsystem = { path = "../../subsystem" }
-polkadot-node-subsystem-util = { path = "../../subsystem-util" }
-polkadot-primitives = { path = "../../../primitives" }
+node-network-protocol = { path = "../protocol" }
+node-subsystem = { path = "../../subsystem" }
+node-subsystem-util = { path = "../../subsystem-util" }
+primitives = { path = "../../../primitives" }
 
 futures = "0.3.21"
 futures-timer = "3.0.2"
@@ -29,7 +29,7 @@ sp-consensus-babe = { path = "../../../../substrate/primitives/consensus/babe" }
 sp-tracing = { path = "../../../../substrate/primitives/tracing" }
 sp-authority-discovery = { path = "../../../../substrate/primitives/authority-discovery" }
 
-polkadot-node-subsystem-test-helpers = { path = "../../subsystem-test-helpers" }
+node-subsystem-test-helpers = { path = "../../subsystem-test-helpers" }
 
 assert_matches = "1.4.0"
 async-trait = "0.1.57"

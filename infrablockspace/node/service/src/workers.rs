@@ -193,8 +193,8 @@ fn build_worker_paths(
 	workers_names: Option<(String, String)>,
 ) -> (PathBuf, PathBuf) {
 	let (prep_worker_name, exec_worker_name) = workers_names.unwrap_or((
-		polkadot_node_core_pvf::PREPARE_BINARY_NAME.to_string(),
-		polkadot_node_core_pvf::EXECUTE_BINARY_NAME.to_string(),
+		node_core_pvf::PREPARE_BINARY_NAME.to_string(),
+		node_core_pvf::EXECUTE_BINARY_NAME.to_string(),
 	));
 
 	let mut prep_worker = worker_dir.clone();

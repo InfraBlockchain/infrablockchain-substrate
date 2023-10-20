@@ -22,14 +22,14 @@
 //! been sufficiently approved to finalize.
 
 use jaeger::{hash_to_trace_identifier, PerLeafSpan};
-use polkadot_node_jaeger as jaeger;
-use polkadot_node_primitives::{
+use node_jaeger as jaeger;
+use node_primitives::{
 	approval::{
 		BlockApprovalMeta, DelayTranche, IndirectAssignmentCert, IndirectSignedApprovalVote,
 	},
 	ValidationResult, DISPUTE_WINDOW,
 };
-use polkadot_node_subsystem::{
+use node_subsystem::{
 	errors::RecoveryError,
 	messages::{
 		ApprovalCheckError, ApprovalCheckResult, ApprovalDistributionMessage,
@@ -41,14 +41,14 @@ use polkadot_node_subsystem::{
 	overseer, FromOrchestra, OverseerSignal, SpawnedSubsystem, SubsystemError, SubsystemResult,
 	SubsystemSender,
 };
-use polkadot_node_subsystem_util::{
+use node_subsystem_util::{
 	self,
 	database::Database,
 	metrics::{self, prometheus},
 	runtime::{Config as RuntimeInfoConfig, ExtendedSessionInfo, RuntimeInfo},
 	TimeoutExt,
 };
-use polkadot_primitives::{
+use primitives::{
 	ApprovalVote, BlockNumber, CandidateHash, CandidateIndex, CandidateReceipt, DisputeStatement,
 	ExecutorParams, GroupIndex, Hash, PvfExecTimeoutKind, SessionIndex, SessionInfo,
 	ValidDisputeStatementKind, ValidatorId, ValidatorIndex, ValidatorPair, ValidatorSignature,

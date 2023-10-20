@@ -18,11 +18,11 @@ use std::collections::HashSet;
 
 use futures::{executor, future, Future};
 
-use polkadot_node_network_protocol::request_response::{IncomingRequest, ReqProtocolNames};
-use polkadot_primitives::{CoreState, Hash};
+use node_network_protocol::request_response::{IncomingRequest, ReqProtocolNames};
+use primitives::{CoreState, Hash};
 use sp_keystore::KeystorePtr;
 
-use polkadot_node_subsystem_test_helpers as test_helpers;
+use node_subsystem_test_helpers as test_helpers;
 
 use super::*;
 

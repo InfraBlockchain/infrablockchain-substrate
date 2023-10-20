@@ -1,5 +1,5 @@
 [package]
-name = "polkadot-node-subsystem-types"
+name = "node-subsystem-types"
 description = "Subsystem traits and message definitions"
 version = "1.0.0"
 authors.workspace = true
@@ -9,11 +9,11 @@ license.workspace = true
 [dependencies]
 derive_more = "0.99.17"
 futures = "0.3.21"
-polkadot-primitives = { path = "../../primitives" }
-polkadot-node-primitives = { path = "../primitives" }
-polkadot-node-network-protocol = { path = "../network/protocol" }
+primitives = { path = "../../primitives" }
+node-primitives = { path = "../primitives" }
+node-network-protocol = { path = "../network/protocol" }
 polkadot-statement-table = { path = "../../statement-table" }
-polkadot-node-jaeger = { path = "../jaeger" }
+node-jaeger = { path = "../jaeger" }
 orchestra = { version = "0.3.3", default-features = false, features=["futures_channel"] }
 sc-network = { path = "../../../substrate/client/network" }
 sp-api = { path = "../../../substrate/primitives/api" }

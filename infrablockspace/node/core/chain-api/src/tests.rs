@@ -20,9 +20,9 @@ use futures::{channel::oneshot, future::BoxFuture};
 use parity_scale_codec::Encode;
 use std::collections::BTreeMap;
 
-use polkadot_node_primitives::BlockWeight;
-use polkadot_node_subsystem_test_helpers::{make_subsystem_context, TestSubsystemContextHandle};
-use polkadot_primitives::{BlockNumber, Hash, Header};
+use node_primitives::BlockWeight;
+use node_subsystem_test_helpers::{make_subsystem_context, TestSubsystemContextHandle};
+use primitives::{BlockNumber, Hash, Header};
 use sp_blockchain::Info as BlockInfo;
 use sp_core::testing::TaskExecutor;
 

@@ -17,12 +17,12 @@
 use fatality::Nested;
 use futures::channel::{mpsc, oneshot};
 
-use polkadot_node_subsystem::{
+use node_subsystem::{
 	messages::{StoreAvailableDataError, ValidationFailed},
 	RuntimeApiError, SubsystemError,
 };
-use polkadot_node_subsystem_util::{runtime, Error as UtilError};
-use polkadot_primitives::{BackedCandidate, ValidationCodeHash};
+use node_subsystem_util::{runtime, Error as UtilError};
+use primitives::{BackedCandidate, ValidationCodeHash};
 
 use crate::LOG_TARGET;
 

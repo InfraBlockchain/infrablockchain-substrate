@@ -24,7 +24,7 @@ use parity_scale_codec::{Decode, Encode};
 use sp_application_crypto::AppCrypto;
 use sp_keystore::{Error as KeystoreError, KeystorePtr};
 
-use polkadot_primitives::{
+use primitives::{
 	CandidateHash, CandidateReceipt, CompactStatement, DisputeStatement, EncodeAs,
 	InvalidDisputeStatementKind, SessionIndex, SigningContext, UncheckedSigned,
 	ValidDisputeStatementKind, ValidatorId, ValidatorIndex, ValidatorSignature,

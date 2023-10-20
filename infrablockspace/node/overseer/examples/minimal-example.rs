@@ -24,15 +24,15 @@ use orchestra::async_trait;
 use std::time::Duration;
 
 use ::test_helpers::{dummy_candidate_descriptor, dummy_hash};
-use polkadot_node_primitives::{BlockData, PoV};
-use polkadot_node_subsystem_types::messages::CandidateValidationMessage;
-use polkadot_overseer::{
+use node_primitives::{BlockData, PoV};
+use node_subsystem_types::messages::CandidateValidationMessage;
+use infrablockspace_overseer::{
 	self as overseer,
 	dummy::dummy_overseer_builder,
 	gen::{FromOrchestra, SpawnedSubsystem},
 	HeadSupportsParachains, SubsystemError,
 };
-use polkadot_primitives::{CandidateReceipt, Hash, PvfExecTimeoutKind};
+use primitives::{CandidateReceipt, Hash, PvfExecTimeoutKind};
 
 struct AlwaysSupportsParachains;
 

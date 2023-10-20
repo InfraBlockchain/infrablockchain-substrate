@@ -25,7 +25,7 @@
 use smallvec::SmallVec;
 use std::{fmt, sync::Arc};
 
-pub use polkadot_primitives::{Block, BlockNumber, Hash};
+pub use primitives::{Block, BlockNumber, Hash};
 
 /// Keeps the state of a specific block pinned in memory while the handle is alive.
 ///
@@ -43,7 +43,7 @@ mod runtime_client;
 pub use runtime_client::{DefaultSubsystemClient, RuntimeApiSubsystemClient};
 
 pub use jaeger::*;
-pub use polkadot_node_jaeger as jaeger;
+pub use node_jaeger as jaeger;
 
 /// How many slots are stack-reserved for active leaves updates
 ///

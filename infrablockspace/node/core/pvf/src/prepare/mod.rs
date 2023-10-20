@@ -20,7 +20,7 @@
 //! (by running [`start_pool`]).
 //!
 //! The pool will spawn workers in new processes and those should execute pass control to
-//! `polkadot_node_core_pvf_worker::prepare_worker_entrypoint`.
+//! `node_core_pvf_worker::prepare_worker_entrypoint`.
 
 mod pool;
 mod queue;

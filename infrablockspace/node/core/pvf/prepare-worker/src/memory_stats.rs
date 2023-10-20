@@ -34,7 +34,7 @@
 #[cfg(any(target_os = "linux", feature = "jemalloc-allocator"))]
 pub mod memory_tracker {
 	use crate::LOG_TARGET;
-	use polkadot_node_core_pvf_common::{
+	use node_core_pvf_common::{
 		prepare::MemoryAllocationStats,
 		worker::{stringify_panic_payload, thread},
 	};

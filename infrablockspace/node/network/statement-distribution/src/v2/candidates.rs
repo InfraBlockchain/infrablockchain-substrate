@@ -25,9 +25,9 @@
 //! gives us the ability to detect mis-advertisements after the fact
 //! and punish them accordingly.
 
-use polkadot_node_network_protocol::PeerId;
-use polkadot_node_subsystem::messages::HypotheticalCandidate;
-use polkadot_primitives::{
+use node_network_protocol::PeerId;
+use node_subsystem::messages::HypotheticalCandidate;
+use primitives::{
 	CandidateHash, CommittedCandidateReceipt, GroupIndex, Hash, Id as ParaId,
 	PersistedValidationData,
 };
@@ -573,8 +573,8 @@ impl ConfirmedCandidate {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use polkadot_primitives::HeadData;
-	use polkadot_primitives_test_helpers::make_candidate;
+	use primitives::HeadData;
+	use primitives_test_helpers::make_candidate;
 
 	#[test]
 	fn inserting_unconfirmed_rejects_on_incompatible_claims() {

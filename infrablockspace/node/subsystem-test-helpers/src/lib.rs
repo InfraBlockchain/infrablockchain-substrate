@@ -18,11 +18,11 @@
 
 #![warn(missing_docs)]
 
-use polkadot_node_subsystem::{
+use node_subsystem::{
 	messages::AllMessages, overseer, FromOrchestra, OverseerSignal, SpawnGlue, SpawnedSubsystem,
 	SubsystemError, SubsystemResult, TrySendError,
 };
-use polkadot_node_subsystem_util::TimeoutExt;
+use node_subsystem_util::TimeoutExt;
 
 use futures::{channel::mpsc, poll, prelude::*};
 use parking_lot::Mutex;

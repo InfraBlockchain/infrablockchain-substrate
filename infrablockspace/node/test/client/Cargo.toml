@@ -12,8 +12,8 @@ parity-scale-codec = { version = "3.6.1", default-features = false, features = [
 # Polkadot dependencies
 polkadot-test-runtime = { path = "../../../runtime/test-runtime" }
 polkadot-test-service = { path = "../service" }
-polkadot-primitives = { path = "../../../primitives" }
-polkadot-node-subsystem = { path = "../../subsystem" }
+primitives = { path = "../../../primitives" }
+node-subsystem = { path = "../../subsystem" }
 
 # Substrate dependencies
 substrate-test-client = { path = "../../../../substrate/test-utils/client" }
@@ -40,7 +40,7 @@ futures = "0.3.21"
 [features]
 runtime-benchmarks= [
 	"frame-benchmarking/runtime-benchmarks",
-	"polkadot-primitives/runtime-benchmarks",
+	"primitives/runtime-benchmarks",
 	"polkadot-test-runtime/runtime-benchmarks",
 	"polkadot-test-service/runtime-benchmarks",
 	"sc-service/runtime-benchmarks",

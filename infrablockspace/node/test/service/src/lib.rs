@@ -22,12 +22,12 @@ pub mod chain_spec;
 
 pub use chain_spec::*;
 use futures::{future::Future, stream::StreamExt};
-use polkadot_node_primitives::{CollationGenerationConfig, CollatorFn};
-use polkadot_node_subsystem::messages::{CollationGenerationMessage, CollatorProtocolMessage};
-use polkadot_overseer::Handle;
-use polkadot_primitives::{Balance, CollatorPair, HeadData, Id as ParaId, ValidationCode};
+use node_primitives::{CollationGenerationConfig, CollatorFn};
+use node_subsystem::messages::{CollationGenerationMessage, CollatorProtocolMessage};
+use infrablockspace_overseer::Handle;
+use primitives::{Balance, CollatorPair, HeadData, Id as ParaId, ValidationCode};
 use polkadot_runtime_common::BlockHashCount;
-use polkadot_runtime_parachains::paras::{ParaGenesisArgs, ParaKind};
+use runtime_parachains::paras::{ParaGenesisArgs, ParaKind};
 use polkadot_service::{Error, FullClient, IsParachainNode, NewFull, PrometheusConfig};
 use polkadot_test_runtime::{
 	ParasCall, ParasSudoWrapperCall, Runtime, SignedExtra, SignedPayload, SudoCall,
@@ -395,7 +395,7 @@ pub fn construct_extrinsic(
 	UncheckedExtrinsic::new_signed(
 		function.clone(),
 		polkadot_test_runtime::Address::Id(caller.public().into()),
-		polkadot_primitives::Signature::Sr25519(signature.clone()),
+		primitives::Signature::Sr25519(signature.clone()),
 		extra.clone(),
 	)
 }

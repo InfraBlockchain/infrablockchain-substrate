@@ -29,13 +29,13 @@ use futures::{
 	future::{self, BoxFuture},
 };
 
-use polkadot_node_subsystem_util::database::Database;
+use node_subsystem_util::database::Database;
 
-use polkadot_node_primitives::{
+use node_primitives::{
 	DisputeMessage, DisputeStatus, SignedDisputeStatement, SignedFullStatement, Statement,
 	DISPUTE_WINDOW,
 };
-use polkadot_node_subsystem::{
+use node_subsystem::{
 	messages::{
 		ApprovalVotingMessage, ChainApiMessage, ChainSelectionMessage, DisputeCoordinatorMessage,
 		DisputeDistributionMessage, ImportStatementsResult,
@@ -44,7 +44,7 @@ use polkadot_node_subsystem::{
 	OverseerSignal,
 };
 
-use polkadot_node_subsystem_util::TimeoutExt;
+use node_subsystem_util::TimeoutExt;
 use sc_keystore::LocalKeystore;
 use sp_application_crypto::AppCrypto;
 use sp_core::{sr25519::Pair, testing::TaskExecutor, Pair as PairT};
@@ -52,15 +52,15 @@ use sp_keyring::Sr25519Keyring;
 use sp_keystore::{Keystore, KeystorePtr};
 
 use ::test_helpers::{dummy_candidate_receipt_bad_sig, dummy_digest, dummy_hash};
-use polkadot_node_primitives::{Timestamp, ACTIVE_DURATION_SECS};
-use polkadot_node_subsystem::{
+use node_primitives::{Timestamp, ACTIVE_DURATION_SECS};
+use node_subsystem::{
 	messages::{AllMessages, BlockDescription, RuntimeApiMessage, RuntimeApiRequest},
 	ActiveLeavesUpdate,
 };
-use polkadot_node_subsystem_test_helpers::{
+use node_subsystem_test_helpers::{
 	make_buffered_subsystem_context, mock::new_leaf, TestSubsystemContextHandle,
 };
-use polkadot_primitives::{
+use primitives::{
 	ApprovalVote, BlockNumber, CandidateCommitments, CandidateEvent, CandidateHash,
 	CandidateReceipt, CoreIndex, DisputeStatement, ExecutorParams, GroupIndex, Hash, HeadData,
 	Header, IndexedVec, MultiDisputeStatementSet, ScrapedOnChainVotes, SessionIndex, SessionInfo,
@@ -85,7 +85,7 @@ fn make_keystore(seeds: impl Iterator<Item = String>) -> LocalKeystore {
 
 	for s in seeds {
 		store
-			.sr25519_generate_new(polkadot_primitives::PARACHAIN_KEY_TYPE_ID, Some(&s))
+			.sr25519_generate_new(primitives::PARACHAIN_KEY_TYPE_ID, Some(&s))
 			.unwrap();
 	}
 
@@ -214,7 +214,7 @@ impl Default for TestState {
 			make_keystore(vec![Sr25519Keyring::Alice.to_seed()].into_iter()).into();
 
 		let db = kvdb_memorydb::create(1);
-		let db = polkadot_node_subsystem_util::database::kvdb_impl::DbAdapter::new(db, &[0]);
+		let db = node_subsystem_util::database::kvdb_impl::DbAdapter::new(db, &[0]);
 		let db = Arc::new(db);
 		let config = Config { col_dispute_data: 0 };
 
@@ -1767,7 +1767,7 @@ fn supermajority_valid_dispute_may_be_finalized() {
 				.await;
 
 			let supermajority_threshold =
-				polkadot_primitives::supermajority_threshold(test_state.validators.len());
+				primitives::supermajority_threshold(test_state.validators.len());
 
 			let (valid_vote, invalid_vote) = generate_opposing_votes_pair(
 				&test_state,
@@ -1904,7 +1904,7 @@ fn concluded_supermajority_for_non_active_after_time() {
 				.await;
 
 			let supermajority_threshold =
-				polkadot_primitives::supermajority_threshold(test_state.validators.len());
+				primitives::supermajority_threshold(test_state.validators.len());
 
 			let (valid_vote, invalid_vote) = generate_opposing_votes_pair(
 				&test_state,
@@ -2019,7 +2019,7 @@ fn concluded_supermajority_against_non_active_after_time() {
 				.await;
 
 			let supermajority_threshold =
-				polkadot_primitives::supermajority_threshold(test_state.validators.len());
+				primitives::supermajority_threshold(test_state.validators.len());
 
 			let (valid_vote, invalid_vote) = generate_opposing_votes_pair(
 				&test_state,
@@ -3304,7 +3304,7 @@ fn informs_chain_selection_when_dispute_concluded_against() {
 				.await;
 
 			let byzantine_threshold =
-				polkadot_primitives::byzantine_threshold(test_state.validators.len());
+				primitives::byzantine_threshold(test_state.validators.len());
 
 			let (valid_vote, invalid_vote) = generate_opposing_votes_pair(
 				&test_state,

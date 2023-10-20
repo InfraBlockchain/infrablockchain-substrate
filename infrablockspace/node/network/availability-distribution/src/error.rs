@@ -18,13 +18,13 @@
 //! Error handling related code and Error/Result definitions.
 
 use fatality::Nested;
-use polkadot_node_network_protocol::request_response::outgoing::RequestError;
-use polkadot_primitives::SessionIndex;
+use node_network_protocol::request_response::outgoing::RequestError;
+use primitives::SessionIndex;
 
 use futures::channel::oneshot;
 
-use polkadot_node_subsystem::{ChainApiError, SubsystemError};
-use polkadot_node_subsystem_util::runtime;
+use node_subsystem::{ChainApiError, SubsystemError};
+use node_subsystem_util::runtime;
 
 use crate::LOG_TARGET;
 

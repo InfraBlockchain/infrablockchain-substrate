@@ -21,7 +21,7 @@
 //! [`Backend`], maintaining consistency between queries and temporary writes,
 //! before any commit to the underlying storage is made.
 
-use polkadot_primitives::{CandidateHash, SessionIndex};
+use primitives::{CandidateHash, SessionIndex};
 
 use std::collections::HashMap;
 

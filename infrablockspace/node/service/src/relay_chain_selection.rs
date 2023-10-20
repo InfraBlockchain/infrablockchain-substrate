@@ -38,14 +38,14 @@
 use super::{HeaderProvider, HeaderProviderProvider};
 use consensus_common::{Error as ConsensusError, SelectChain};
 use futures::channel::oneshot;
-use polkadot_node_primitives::MAX_FINALITY_LAG as PRIMITIVES_MAX_FINALITY_LAG;
-use polkadot_node_subsystem::messages::{
+use node_primitives::MAX_FINALITY_LAG as PRIMITIVES_MAX_FINALITY_LAG;
+use node_subsystem::messages::{
 	ApprovalDistributionMessage, ApprovalVotingMessage, ChainSelectionMessage,
 	DisputeCoordinatorMessage, HighestApprovedAncestorBlock,
 };
-use polkadot_node_subsystem_util::metrics::{self, prometheus};
-use polkadot_overseer::{AllMessages, Handle};
-use polkadot_primitives::{Block as PolkadotBlock, BlockNumber, Hash, Header as PolkadotHeader};
+use node_subsystem_util::metrics::{self, prometheus};
+use infrablockspace_overseer::{AllMessages, Handle};
+use primitives::{Block as PolkadotBlock, BlockNumber, Hash, Header as PolkadotHeader};
 use std::sync::Arc;
 
 pub use service::SpawnTaskHandle;
@@ -56,7 +56,7 @@ pub use service::SpawnTaskHandle;
 /// This is a safety net that should be removed at some point in the future.
 // In sync with `MAX_HEADS_LOOK_BACK` in `approval-voting`
 // and `MAX_BATCH_SCRAPE_ANCESTORS` in `dispute-coordinator`.
-const MAX_FINALITY_LAG: polkadot_primitives::BlockNumber = PRIMITIVES_MAX_FINALITY_LAG;
+const MAX_FINALITY_LAG: primitives::BlockNumber = PRIMITIVES_MAX_FINALITY_LAG;
 
 const LOG_TARGET: &str = "parachain::chain-selection";
 

@@ -33,20 +33,20 @@
 
 use futures::{channel::oneshot, future::FutureExt, join, select};
 use parity_scale_codec::Encode;
-use polkadot_node_primitives::{
+use node_primitives::{
 	AvailableData, Collation, CollationGenerationConfig, CollationSecondedSignal, PoV,
 	SubmitCollationParams,
 };
-use polkadot_node_subsystem::{
+use node_subsystem::{
 	messages::{CollationGenerationMessage, CollatorProtocolMessage},
 	overseer, ActiveLeavesUpdate, FromOrchestra, OverseerSignal, RuntimeApiError, SpawnedSubsystem,
 	SubsystemContext, SubsystemError, SubsystemResult,
 };
-use polkadot_node_subsystem_util::{
+use node_subsystem_util::{
 	request_async_backing_params, request_availability_cores, request_persisted_validation_data,
 	request_validation_code, request_validation_code_hash, request_validators,
 };
-use polkadot_primitives::{
+use primitives::{
 	collator_signature_payload, CandidateCommitments, CandidateDescriptor, CandidateReceipt,
 	CollatorPair, CoreState, Hash, Id as ParaId, OccupiedCoreAssumption, PersistedValidationData,
 	ValidationCodeHash,
@@ -586,6 +586,6 @@ fn erasure_root(
 	let available_data =
 		AvailableData { validation_data: persisted_validation, pov: Arc::new(pov) };
 
-	let chunks = polkadot_erasure_coding::obtain_chunks_v1(n_validators, &available_data)?;
-	Ok(polkadot_erasure_coding::branches(&chunks).root())
+	let chunks = erasure_coding::obtain_chunks_v1(n_validators, &available_data)?;
+	Ok(erasure_coding::branches(&chunks).root())
 }

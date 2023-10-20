@@ -21,7 +21,7 @@ use grandpa::AuthorityId as GrandpaId;
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 #[cfg(feature = "westend-native")]
 use pallet_staking::Forcing;
-use polkadot_primitives::{AccountId, AccountPublic, AssignmentId, ValidatorId};
+use primitives::{AccountId, AccountPublic, AssignmentId, ValidatorId};
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_babe::AuthorityId as BabeId;
 
@@ -65,9 +65,9 @@ const DEFAULT_PROTOCOL_ID: &str = "dot";
 #[serde(rename_all = "camelCase")]
 pub struct Extensions {
 	/// Block numbers with known hashes.
-	pub fork_blocks: sc_client_api::ForkBlocks<polkadot_primitives::Block>,
+	pub fork_blocks: sc_client_api::ForkBlocks<primitives::Block>,
 	/// Known bad block hashes.
-	pub bad_blocks: sc_client_api::BadBlocks<polkadot_primitives::Block>,
+	pub bad_blocks: sc_client_api::BadBlocks<primitives::Block>,
 	/// The light sync state.
 	///
 	/// This value will be set by the `sync-state rpc` implementation.
@@ -161,11 +161,11 @@ pub fn wococo_config() -> Result<RococoChainSpec, String> {
 /// The default parachains host configuration.
 #[cfg(any(feature = "rococo-native", feature = "westend-native",))]
 fn default_parachains_host_configuration(
-) -> polkadot_runtime_parachains::configuration::HostConfiguration<polkadot_primitives::BlockNumber>
+) -> runtime_parachains::configuration::HostConfiguration<primitives::BlockNumber>
 {
-	use polkadot_primitives::{MAX_CODE_SIZE, MAX_POV_SIZE};
+	use primitives::{MAX_CODE_SIZE, MAX_POV_SIZE};
 
-	polkadot_runtime_parachains::configuration::HostConfiguration {
+	runtime_parachains::configuration::HostConfiguration {
 		validation_upgrade_cooldown: 2u32,
 		validation_upgrade_delay: 2,
 		code_retention_period: 1200,
@@ -564,7 +564,7 @@ fn westend_staging_testnet_config_genesis(wasm_binary: &[u8]) -> westend::Runtim
 		},
 		paras: Default::default(),
 		registrar: westend_runtime::RegistrarConfig {
-			next_free_para_id: polkadot_primitives::LOWEST_PUBLIC_ID,
+			next_free_para_id: primitives::LOWEST_PUBLIC_ID,
 			..Default::default()
 		},
 		xcm_pallet: Default::default(),
@@ -877,7 +877,7 @@ fn rococo_staging_testnet_config_genesis(
 			config: default_parachains_host_configuration(),
 		},
 		registrar: rococo_runtime::RegistrarConfig {
-			next_free_para_id: polkadot_primitives::LOWEST_PUBLIC_ID,
+			next_free_para_id: primitives::LOWEST_PUBLIC_ID,
 			..Default::default()
 		},
 		xcm_pallet: Default::default(),
@@ -1253,7 +1253,7 @@ pub fn westend_testnet_genesis(
 		},
 		paras: Default::default(),
 		registrar: westend_runtime::RegistrarConfig {
-			next_free_para_id: polkadot_primitives::LOWEST_PUBLIC_ID,
+			next_free_para_id: primitives::LOWEST_PUBLIC_ID,
 			..Default::default()
 		},
 		xcm_pallet: Default::default(),
@@ -1334,14 +1334,14 @@ pub fn rococo_testnet_genesis(
 		sudo: rococo_runtime::SudoConfig { key: Some(root_key.clone()) },
 		hrmp: Default::default(),
 		configuration: rococo_runtime::ConfigurationConfig {
-			config: polkadot_runtime_parachains::configuration::HostConfiguration {
+			config: runtime_parachains::configuration::HostConfiguration {
 				max_validators_per_core: Some(1),
 				..default_parachains_host_configuration()
 			},
 		},
 		paras: rococo_runtime::ParasConfig { paras: vec![], ..Default::default() },
 		registrar: rococo_runtime::RegistrarConfig {
-			next_free_para_id: polkadot_primitives::LOWEST_PUBLIC_ID,
+			next_free_para_id: primitives::LOWEST_PUBLIC_ID,
 			..Default::default()
 		},
 		xcm_pallet: Default::default(),
