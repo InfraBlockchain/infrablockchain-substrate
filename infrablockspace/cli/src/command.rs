@@ -91,6 +91,13 @@ impl SubstrateCli for Cli {
 			"polkadot" => Box::new(service::chain_spec::polkadot_config()?),
 			name if name.starts_with("polkadot-") && !name.ends_with(".json") =>
 				Err(format!("`{name}` is not supported anymore as the polkadot native runtime no longer part of the node."))?,
+			"infra-relay" => Box::new(service::chain_spec::infra_relay_config()?),
+			#[cfg(feature = "infra-relay-native")]
+			"infra-relay-dev" => Box::new(service::chain_spec::infra_relay_development_config()?),
+			#[cfg(feature = "infra-relay-native")]
+			"infra-relay-local" => Box::new(service::chain_spec::infra_relay_development_config()?),
+			#[cfg(feature = "infra-relay-native")]
+			"infra-relay-staging" => Box::new(service::chain_spec::infra_relay_staging_testnet_config()?), 
 			"rococo" => Box::new(service::chain_spec::rococo_config()?),
 			#[cfg(feature = "rococo-native")]
 			"dev" | "rococo-dev" => Box::new(service::chain_spec::rococo_development_config()?),

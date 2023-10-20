@@ -65,7 +65,7 @@ use bp_runtime::HeaderId;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
-use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
+use runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
