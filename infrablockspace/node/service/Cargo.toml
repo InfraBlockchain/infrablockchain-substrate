@@ -53,6 +53,7 @@ sp-session = { path = "../../../substrate/primitives/session" }
 sp-storage = { path = "../../../substrate/primitives/storage" }
 sp-transaction-pool = { path = "../../../substrate/primitives/transaction-pool" }
 pallet-transaction-payment = { path = "../../../substrate/frame/transaction-payment" }
+pallet-system-token-tx-payment = { path = "../../../substrate/frame/transaction-payment/system-token-tx-payment" }
 sp-timestamp = { path = "../../../substrate/primitives/timestamp" }
 sp-consensus-babe = { path = "../../../substrate/primitives/consensus/babe" }
 sp-state-machine = { path = "../../../substrate/primitives/state-machine" }

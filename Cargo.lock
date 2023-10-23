@@ -6681,6 +6681,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "infrablockspace"
+version = "1.1.0"
+dependencies = [
+ "assert_cmd",
+ "color-eyre",
+ "infrablockspace-overseer",
+ "nix 0.26.2",
+ "node-core-pvf",
+ "node-core-pvf-common",
+ "node-core-pvf-execute-worker",
+ "node-core-pvf-prepare-worker",
+ "polkadot-cli",
+ "polkadot-core-primitives",
+ "substrate-build-script-utils",
+ "substrate-rpc-client",
+ "tempfile",
+ "tikv-jemallocator",
+ "tokio",
+]
+
+[[package]]
 name = "infrablockspace-erasure-coding"
 version = "1.0.0"
 dependencies = [
@@ -12599,27 +12620,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "polkadot"
-version = "1.1.0"
-dependencies = [
- "assert_cmd",
- "color-eyre",
- "infrablockspace-overseer",
- "nix 0.26.2",
- "node-core-pvf",
- "node-core-pvf-common",
- "node-core-pvf-execute-worker",
- "node-core-pvf-prepare-worker",
- "polkadot-cli",
- "polkadot-core-primitives",
- "substrate-build-script-utils",
- "substrate-rpc-client",
- "tempfile",
- "tikv-jemallocator",
- "tokio",
-]
-
-[[package]]
 name = "polkadot-cli"
 version = "1.1.0"
 dependencies = [
@@ -12850,6 +12850,7 @@ dependencies = [
  "pallet-babe",
  "pallet-im-online",
  "pallet-staking",
+ "pallet-system-token-tx-payment",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "parachain-primitives",

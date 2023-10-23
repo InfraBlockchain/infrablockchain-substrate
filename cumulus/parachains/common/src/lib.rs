@@ -16,6 +16,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub mod impls;
+pub mod infra_relay;
 pub mod kusama;
 pub mod rococo;
 pub mod westend;

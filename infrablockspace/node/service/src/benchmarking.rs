@@ -34,6 +34,21 @@ macro_rules! identify_chain {
 		$generic_code:expr $(,)*
 	) => {
 		match $chain {
+			Chain::InfraRelay => {
+				#[cfg(feature = "infra-relay-native")]
+				{
+					use infra_relay_runtime as runtime;
+
+					let call = $generic_code;
+
+					Ok(infra_relay_sign_call(call, $nonce, $current_block, $period, $genesis, $signer))
+				}
+
+				#[cfg(not(feature = "infra-relay-native"))]
+				{
+					Err("`infra-relay-native` feature not enabled")
+				}
+			}
 			Chain::Polkadot => Err("Polkadot runtimes are currently not supported"),
 			Chain::Kusama => Err("Kusama runtimes are currently not supported"),
 			Chain::Rococo => {
@@ -174,6 +189,58 @@ impl frame_benchmarking_cli::ExtrinsicBuilder for TransferKeepAliveBuilder {
 			},
 		}
 	}
+}
+
+#[cfg(feature = "infra-relay-native")]
+fn infra_relay_sign_call(
+	call: infra_relay_runtime::RuntimeCall,
+	nonce: u32,
+	current_block: u64,
+	period: u64,
+	genesis: sp_core::H256,
+	acc: sp_core::sr25519::Pair,
+) -> OpaqueExtrinsic {
+	use codec::Encode;
+	use sp_core::Pair;
+	use infra_relay_runtime as runtime;
+
+	let extra: runtime::SignedExtra = (
+		frame_system::CheckNonZeroSender::<runtime::Runtime>::new(),
+		frame_system::CheckSpecVersion::<runtime::Runtime>::new(),
+		frame_system::CheckTxVersion::<runtime::Runtime>::new(),
+		frame_system::CheckGenesis::<runtime::Runtime>::new(),
+		frame_system::CheckMortality::<runtime::Runtime>::from(sp_runtime::generic::Era::mortal(
+			period,
+			current_block,
+		)),
+		frame_system::CheckNonce::<runtime::Runtime>::from(nonce),
+		frame_system::CheckWeight::<runtime::Runtime>::new(),
+		pallet_system_token_tx_payment::ChargeSystemToken::<runtime::Runtime>::new(),
+	);
+
+	let payload = runtime::SignedPayload::from_raw(
+		call.clone(),
+		extra.clone(),
+		(
+			(),
+			runtime::VERSION.spec_version,
+			runtime::VERSION.transaction_version,
+			genesis,
+			genesis,
+			(),
+			(),
+			(),
+		),
+	);
+
+	let signature = payload.using_encoded(|p| acc.sign(p));
+	runtime::UncheckedExtrinsic::new_signed(
+		call,
+		sp_runtime::AccountId32::from(acc.public()).into(),
+		polkadot_core_primitives::Signature::Sr25519(signature.clone()),
+		extra,
+	)
+	.into()
 }
 
 #[cfg(feature = "westend-native")]

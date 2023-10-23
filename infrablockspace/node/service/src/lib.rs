@@ -257,6 +257,8 @@ pub enum Error {
 /// Identifies the variant of the chain.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Chain {
+	/// InfraRelayChain
+	InfraRelay,
 	/// Polkadot.
 	Polkadot,
 	/// Kusama.
@@ -271,6 +273,10 @@ pub enum Chain {
 
 /// Can be called for a `Configuration` to identify which network the configuration targets.
 pub trait IdentifyVariant {
+
+	/// Returns if this is a configuration for the `Infra Relay` network.
+	fn is_infra_relay(&self) -> bool;
+
 	/// Returns if this is a configuration for the `Polkadot` network.
 	fn is_polkadot(&self) -> bool;
 
@@ -297,6 +303,9 @@ pub trait IdentifyVariant {
 }
 
 impl IdentifyVariant for Box<dyn ChainSpec> {
+	fn is_infra_relay(&self) -> bool {
+		self.id().starts_with("infra-relay") || self.id().starts_with("")
+	}
 	fn is_polkadot(&self) -> bool {
 		self.id().starts_with("polkadot") || self.id().starts_with("dot")
 	}
@@ -319,7 +328,9 @@ impl IdentifyVariant for Box<dyn ChainSpec> {
 		self.id().ends_with("dev")
 	}
 	fn identify_chain(&self) -> Chain {
-		if self.is_polkadot() {
+		if self.is_infra_relay() {
+			Chain::InfraRelay
+		} else if self.is_polkadot() {
 			Chain::Polkadot
 		} else if self.is_kusama() {
 			Chain::Kusama

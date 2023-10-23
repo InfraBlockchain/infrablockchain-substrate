@@ -11,7 +11,7 @@ name = "infrablockspace-prepare-worker"
 path = "src/bin/prepare-worker.rs"
 
 [package]
-name = "polkadot"
+name = "infrablockspace"
 description = "Implementation of a `https://polkadot.network` node in Rust based on the Substrate framework."
 license = "GPL-3.0-only"
 rust-version = "1.64.0"
@@ -80,17 +80,17 @@ license-file = ["LICENSE", "0"]
 maintainer-scripts = "scripts/packaging/deb-maintainer-scripts"
 assets = [
 	[
-		"target/release/polkadot",
+		"target/release/infrablockspace",
 		"/usr/bin/",
 		"755",
 	],
 	[
-		"target/release/polkadot-prepare-worker",
+		"target/release/infrablockspace-prepare-worker",
 		"/usr/lib/polkadot/",
 		"755"
 	],
 	[
-		"target/release/polkadot-execute-worker",
+		"target/release/infrablockspace-execute-worker",
 		"/usr/lib/polkadot/",
 		"755"
 	],

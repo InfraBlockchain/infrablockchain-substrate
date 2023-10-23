@@ -76,11 +76,11 @@ impl SubstrateCli for Cli {
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 		let id = if id == "" {
 			let n = get_exec_name().unwrap_or_default();
-			["polkadot", "kusama", "westend", "rococo", "versi"]
+			["infrablockspace", "westend", "rococo"]
 				.iter()
 				.cloned()
 				.find(|&chain| n.starts_with(chain))
-				.unwrap_or("polkadot")
+				.unwrap_or("infrablockspace")
 		} else {
 			id
 		};
@@ -93,14 +93,14 @@ impl SubstrateCli for Cli {
 				Err(format!("`{name}` is not supported anymore as the polkadot native runtime no longer part of the node."))?,
 			"infra-relay" => Box::new(service::chain_spec::infra_relay_config()?),
 			#[cfg(feature = "infra-relay-native")]
-			"infra-relay-dev" => Box::new(service::chain_spec::infra_relay_development_config()?),
+			"dev" | "infra-relay-dev" => Box::new(service::chain_spec::infra_relay_development_config()?),
 			#[cfg(feature = "infra-relay-native")]
 			"infra-relay-local" => Box::new(service::chain_spec::infra_relay_development_config()?),
 			#[cfg(feature = "infra-relay-native")]
 			"infra-relay-staging" => Box::new(service::chain_spec::infra_relay_staging_testnet_config()?), 
 			"rococo" => Box::new(service::chain_spec::rococo_config()?),
 			#[cfg(feature = "rococo-native")]
-			"dev" | "rococo-dev" => Box::new(service::chain_spec::rococo_development_config()?),
+			"rococo-dev" => Box::new(service::chain_spec::rococo_development_config()?),
 			#[cfg(feature = "rococo-native")]
 			"rococo-local" => Box::new(service::chain_spec::rococo_local_testnet_config()?),
 			#[cfg(feature = "rococo-native")]

@@ -456,7 +456,7 @@ members = [
 	"substrate/utils/prometheus",
 	"substrate/utils/wasm-builder",
 ]
-default-members = [ "infrablockspace" ]
+default-members = [ "infrablockspace", "substrate/bin/node-template/node", "cumulus/parachain-template/node" ]
 
 [profile.release]
 # Polkadot runtime requires unwinding.
