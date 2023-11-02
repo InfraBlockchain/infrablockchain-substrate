@@ -76,7 +76,7 @@ impl SubstrateCli for Cli {
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 		let id = if id == "" {
 			let n = get_exec_name().unwrap_or_default();
-			["infrablockspace", "westend", "rococo"]
+			["infrablockspace", "rococo"]
 				.iter()
 				.cloned()
 				.find(|&chain| n.starts_with(chain))
@@ -85,12 +85,6 @@ impl SubstrateCli for Cli {
 			id
 		};
 		Ok(match id {
-			"kusama" => Box::new(service::chain_spec::kusama_config()?),
-			name if name.starts_with("kusama-") && !name.ends_with(".json") =>
-				Err(format!("`{name}` is not supported anymore as the kusama native runtime no longer part of the node."))?,
-			"polkadot" => Box::new(service::chain_spec::polkadot_config()?),
-			name if name.starts_with("polkadot-") && !name.ends_with(".json") =>
-				Err(format!("`{name}` is not supported anymore as the polkadot native runtime no longer part of the node."))?,
 			"infra-relay" => Box::new(service::chain_spec::infra_relay_config()?),
 			#[cfg(feature = "infra-relay-native")]
 			"dev" | "infra-relay-dev" => Box::new(service::chain_spec::infra_relay_development_config()?),
@@ -108,51 +102,16 @@ impl SubstrateCli for Cli {
 			#[cfg(not(feature = "rococo-native"))]
 			name if name.starts_with("rococo-") && !name.ends_with(".json") || name == "dev" =>
 				Err(format!("`{}` only supported with `rococo-native` feature enabled.", name))?,
-			"westend" => Box::new(service::chain_spec::westend_config()?),
-			#[cfg(feature = "westend-native")]
-			"westend-dev" => Box::new(service::chain_spec::westend_development_config()?),
-			#[cfg(feature = "westend-native")]
-			"westend-local" => Box::new(service::chain_spec::westend_local_testnet_config()?),
-			#[cfg(feature = "westend-native")]
-			"westend-staging" => Box::new(service::chain_spec::westend_staging_testnet_config()?),
-			#[cfg(not(feature = "westend-native"))]
-			name if name.starts_with("westend-") && !name.ends_with(".json") =>
-				Err(format!("`{}` only supported with `westend-native` feature enabled.", name))?,
-			"wococo" => Box::new(service::chain_spec::wococo_config()?),
-			#[cfg(feature = "rococo-native")]
-			"wococo-dev" => Box::new(service::chain_spec::wococo_development_config()?),
-			#[cfg(feature = "rococo-native")]
-			"wococo-local" => Box::new(service::chain_spec::wococo_local_testnet_config()?),
-			#[cfg(not(feature = "rococo-native"))]
-			name if name.starts_with("wococo-") =>
-				Err(format!("`{}` only supported with `rococo-native` feature enabled.", name))?,
-			#[cfg(feature = "rococo-native")]
-			"versi-dev" => Box::new(service::chain_spec::versi_development_config()?),
-			#[cfg(feature = "rococo-native")]
-			"versi-local" => Box::new(service::chain_spec::versi_local_testnet_config()?),
-			#[cfg(feature = "rococo-native")]
-			"versi-staging" => Box::new(service::chain_spec::versi_staging_testnet_config()?),
-			#[cfg(not(feature = "rococo-native"))]
-			name if name.starts_with("versi-") =>
-				Err(format!("`{}` only supported with `rococo-native` feature enabled.", name))?,
 			path => {
 				let path = std::path::PathBuf::from(path);
-
+				println!("{:?}", path);
 				let chain_spec = Box::new(service::GenericChainSpec::from_json_file(path.clone())?)
 					as Box<dyn service::ChainSpec>;
 
 				// When `force_*` is given or the file name starts with the name of one of the known
 				// chains, we use the chain spec for the specific chain.
-				if self.run.force_rococo ||
-					chain_spec.is_rococo() ||
-					chain_spec.is_wococo() ||
-					chain_spec.is_versi()
-				{
-					Box::new(service::RococoChainSpec::from_json_file(path)?)
-				} else if self.run.force_kusama || chain_spec.is_kusama() {
-					Box::new(service::GenericChainSpec::from_json_file(path)?)
-				} else if self.run.force_westend || chain_spec.is_westend() {
-					Box::new(service::WestendChainSpec::from_json_file(path)?)
+				if chain_spec.is_infra_relay() {
+					Box::new(service::InfraRelayChainSpec::from_json_file(path)?)
 				} else {
 					chain_spec
 				}
@@ -162,14 +121,7 @@ impl SubstrateCli for Cli {
 }
 
 fn set_default_ss58_version(spec: &Box<dyn service::ChainSpec>) {
-	let ss58_version = if spec.is_kusama() {
-		Ss58AddressFormatRegistry::KusamaAccount
-	} else if spec.is_westend() {
-		Ss58AddressFormatRegistry::SubstrateAccount
-	} else {
-		Ss58AddressFormatRegistry::PolkadotAccount
-	}
-	.into();
+	let ss58_version = Ss58AddressFormatRegistry::PolkadotAccount.into();
 
 	sp_core::crypto::set_default_ss58_version(ss58_version);
 }
@@ -204,7 +156,7 @@ where
 
 	// By default, enable BEEFY on all networks except Polkadot (for now), unless
 	// explicitly disabled through CLI.
-	let mut enable_beefy = !chain_spec.is_polkadot() && !cli.run.no_beefy;
+	let mut enable_beefy = !cli.run.no_beefy;
 	// BEEFY doesn't (yet) support warp sync:
 	// Until we implement https://github.com/paritytech/substrate/issues/14756
 	// - disallow warp sync for validators,
@@ -228,14 +180,6 @@ where
 	} else {
 		Some((cli.run.grandpa_pause[0], cli.run.grandpa_pause[1]))
 	};
-
-	if chain_spec.is_kusama() {
-		info!("----------------------------");
-		info!("This chain is not in any way");
-		info!("      endorsed by the       ");
-		info!("     KUSAMA FOUNDATION      ");
-		info!("----------------------------");
-	}
 
 	let jaeger_agent = if let Some(ref jaeger_agent) = cli.run.jaeger_agent {
 		Some(

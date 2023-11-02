@@ -33,7 +33,6 @@ pallet-xcm = { path = "../../../../../../infrablockspace/xcm/pallet-xcm", defaul
 
 # Cumulus
 parachains-common = { path = "../../../../common" }
-asset-hub-westend-runtime = { path = "../../../../runtimes/assets/asset-hub-westend" }
 cumulus-pallet-dmp-queue = { default-features = false, path = "../../../../../pallets/dmp-queue" }
 cumulus-pallet-parachain-system = { default-features = false, path = "../../../../../pallets/parachain-system" }
 
@@ -43,7 +42,6 @@ integration-tests-common = { path = "../../common", default-features = false}
 
 [features]
 runtime-benchmarks = [
-	"asset-hub-westend-runtime/runtime-benchmarks",
 	"cumulus-pallet-parachain-system/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",

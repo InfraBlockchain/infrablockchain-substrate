@@ -31,7 +31,6 @@ xcm = { package = "staging-xcm", path = ".." }
 # temp
 pallet-xcm = { path = "../pallet-xcm" }
 runtime-common = { path = "../../runtime/common" }
-# westend-runtime = { path = "../../runtime/westend", features = ["runtime-benchmarks"] }
 primitives = { path = "../../primitives" }
 
 [features]

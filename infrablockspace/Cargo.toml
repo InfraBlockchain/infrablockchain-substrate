@@ -26,7 +26,7 @@ color-eyre = { version = "0.6.1", default-features = false }
 tikv-jemallocator = { version = "0.5.0", optional = true }
 
 # Crates in our workspace, defined as dependencies so we can pass them feature flags.
-polkadot-cli = { path = "cli", features = [ "westend-native", "rococo-native", "infra-relay-native" ]  }
+polkadot-cli = { path = "cli", features = ["rococo-native", "infra-relay-native" ]  }
 node-core-pvf = { path = "node/core/pvf" }
 node-core-pvf-prepare-worker = { path = "node/core/pvf/prepare-worker" }
 infrablockspace-overseer = { path = "node/overseer" }

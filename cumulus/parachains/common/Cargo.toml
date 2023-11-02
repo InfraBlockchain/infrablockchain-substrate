@@ -30,7 +30,6 @@ sp-std = { path = "../../../substrate/primitives/std", default-features = false 
 
 # Polkadot
 rococo-runtime-constants = { path = "../../../infrablockspace/runtime/rococo/constants", default-features = false}
-westend-runtime-constants = { path = "../../../infrablockspace/runtime/westend/constants", default-features = false}
 polkadot-core-primitives = { path = "../../../infrablockspace/core-primitives", default-features = false}
 primitives = { path = "../../../infrablockspace/primitives", default-features = false}
 xcm = { package = "staging-xcm", path = "../../../infrablockspace/xcm", default-features = false}
@@ -70,7 +69,6 @@ std = [
 	"sp-io/std",
 	"sp-runtime/std",
 	"sp-std/std",
-	"westend-runtime-constants/std",
 	"xcm-builder/std",
 	"xcm-executor/std",
 	"xcm/std",
