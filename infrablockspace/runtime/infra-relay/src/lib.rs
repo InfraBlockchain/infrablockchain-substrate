@@ -259,11 +259,7 @@ impl pallet_preimage::Config for Runtime {
 }
 
 parameter_types! {
-	pub EpochDuration: u64 = prod_or_fast!(
-		EpochDurationInSlots::get() as u64,
-		2 * MINUTES as u64,
-		"IBS_EPOCH_DURATION"
-	);
+	pub EpochDuration: u64 = EpochDurationInSlots::get() as u64;
 	pub const ExpectedBlockTime: Moment = MILLISECS_PER_BLOCK;
 	pub const MaxNominatorRewardedPerValidator: u32 = 512;
 	pub ReportLongevity: u64 =

@@ -34,20 +34,23 @@ use rococo_runtime as rococo;
 #[cfg(feature = "rococo-native")]
 use rococo_runtime_constants::currency::UNITS as ROC;
 use sc_chain_spec::ChainSpecExtension;
-#[cfg(any(feature = "westend-native", feature = "rococo-native"))]
+#[cfg(any(feature = "westend-native", feature = "rococo-native", feature = "infra-relay-native"))]
 use sc_chain_spec::ChainType;
 use serde::{Deserialize, Serialize};
 use sp_core::{sr25519, Pair, Public};
 use sp_runtime::traits::IdentifyAccount;
 #[cfg(feature = "westend-native")]
 use sp_runtime::Perbill;
-#[cfg(any(feature = "westend-native", feature = "rococo-native"))]
+#[cfg(any(feature = "westend-native", feature = "rococo-native", feature = "infra-relay-native"))]
 use telemetry::TelemetryEndpoints;
 #[cfg(feature = "westend-native")]
 use westend_runtime as westend;
 #[cfg(feature = "westend-native")]
 use westend_runtime_constants::currency::UNITS as WND;
 
+// ToDo: Should change
+#[cfg(feature = "infra-relay-native")]
+const INFRA_RELAY_STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 #[cfg(feature = "westend-native")]
 const WESTEND_STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 #[cfg(feature = "rococo-native")]
@@ -56,6 +59,8 @@ const ROCOCO_STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/"
 const VERSI_STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 #[cfg(any(feature = "westend-native", feature = "rococo-native"))]
 const DEFAULT_PROTOCOL_ID: &str = "dot";
+#[cfg(feature = "infra-relay-native")]
+const DEFAULT_INFRA_PROTOCOL_ID: &str = "infra";
 
 /// Node `ChainSpec` extensions.
 ///
@@ -79,7 +84,7 @@ pub type GenericChainSpec = service::GenericChainSpec<(), Extensions>;
 
 /// The 'ChainSpec' parameterized for the infra-relay runtime
 #[cfg(feature = "infra-relay-native")]
-pub type InfraRelayChainSpec = service::GenericChainSpec<InfraRelayGenesisExt, Extensions>;
+pub type InfraRelayChainSpec = service::GenericChainSpec<infra_relay::RuntimeGenesisConfig, Extensions>;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 #[cfg(feature = "infra-relay-native")]
@@ -159,7 +164,7 @@ pub fn wococo_config() -> Result<RococoChainSpec, String> {
 }
 
 /// The default parachains host configuration.
-#[cfg(any(feature = "rococo-native", feature = "westend-native",))]
+#[cfg(any(feature = "rococo-native", feature = "westend-native", feature = "infra-relay-native"))]
 fn default_parachains_host_configuration(
 ) -> runtime_parachains::configuration::HostConfiguration<primitives::BlockNumber>
 {
@@ -902,16 +907,13 @@ pub fn infra_relay_staging_testnet_config() -> Result<InfraRelayChainSpec, Strin
 		"Infra Relay Staging Testnet",
 		"infra_relay_staging_testnet",
 		ChainType::Live,
-		move || InfraRelayGenesisExt {
-			runtime_genesis_config: infra_relay_staging_testnet_config_genesis(wasm_binary),
-			session_length_in_blocks: None,
-		},
+		move || infra_relay_staging_testnet_config_genesis(wasm_binary),
 		boot_nodes,
 		Some(
-			TelemetryEndpoints::new(vec![(WESTEND_STAGING_TELEMETRY_URL.to_string(), 0)])
+			TelemetryEndpoints::new(vec![(INFRA_RELAY_STAGING_TELEMETRY_URL.to_string(), 0)])
 				.expect("Westend Staging telemetry url is valid; qed"),
 		),
-		Some(DEFAULT_PROTOCOL_ID),
+		Some(DEFAULT_INFRA_PROTOCOL_ID),
 		None,
 		None,
 		Default::default(),
@@ -1396,16 +1398,12 @@ pub fn infra_relay_development_config() -> Result<InfraRelayChainSpec, String> {
 		"Infra Relay Devnet",
 		"infra_relay_devnet",
 		ChainType::Development,
-		move || InfraRelayGenesisExt {
-			runtime_genesis_config: infra_relay_development_config_genesis(wasm_binary),
-			// Use 1 minute session length.
-			session_length_in_blocks: Some(10),
-		},
+		move || infra_relay_development_config_genesis(wasm_binary),
 		vec![],
 		None,
-		Some(DEFAULT_PROTOCOL_ID),
+		Some(DEFAULT_INFRA_PROTOCOL_ID),
 		None,
-		Some(infra_relay_chain_spec_properties()),
+		None,
 		Default::default(),
 	))
 }

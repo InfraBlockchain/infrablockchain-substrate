@@ -43,7 +43,7 @@ pub mod time {
 	use runtime_common::prod_or_fast;
 	pub const MILLISECS_PER_BLOCK: Moment = 6000;
 	pub const SLOT_DURATION: Moment = MILLISECS_PER_BLOCK;
-	// DBG TBD EPOCH_DURATION_IN_SLOTS
+
 	pub const EPOCH_DURATION_IN_SLOTS: BlockNumber = prod_or_fast!(4 * HOURS, 1 * MINUTES);
 	frame_support::parameter_types! {
 		pub storage EpochDurationInSlots: BlockNumber = EPOCH_DURATION_IN_SLOTS;

@@ -1,8 +1,8 @@
 [workspace.package]
 authors = ["blockchain labs"]
 edition = "2021"
-homepage = "infrablockchain.net"
-repository = "https://github.com/paritytech/infrablockspace-sdk.git"
+homepage = "https://infrablockchain.net"
+repository = "https://github.com/InfraBlockchain/infrablockspace-sdk"
 license = "GPL-3.0-only"
 
 [workspace]

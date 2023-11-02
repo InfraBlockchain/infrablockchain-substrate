@@ -1,0 +1,56 @@
+[relaychain]
+default_command = "../target/release/infrablockspace"
+default_args = ["-lparachain=debug", "-l=xcm=trace"]
+chain = "infra-relay-local"
+
+[[relaychain.nodes]]
+name = "alice"
+validator = true
+args = ["-lparachain=debug", "-l=xcm=trace"]
+
+rpc_port = 7100
+ws_port = 7101
+
+[[relaychain.nodes]]
+name = "bob"
+validator = true
+args = ["-lparachain=debug", "-l=xcm=trace"]
+rpc_port = 7200
+ws_port = 7201
+
+[[relaychain.nodes]]
+name = "charlie"
+validator = true
+args = ["-lparachain=debug", "-l=xcm=trace"]
+rpc_port = 7300
+ws_port = 7301
+
+[[relaychain.nodes]]
+name = "dave"
+validator = true
+args = ["-lparachain=debug", "-l=xcm=trace"]
+rpc_port = 7400
+ws_port = 7401
+
+[[parachains]]
+id = 2000
+chain = "local"
+cumulus_based = true
+
+# run alice as parachain collator
+[[parachains.collators]]
+name = "alice"
+validator = true
+args = ["-lparachain=debug", "-l=xcm=trace"]
+command = "../target/release/parachain-template-node"
+rpc_port = 10400
+ws_port = 10401
+
+# run alice as parachain collator
+[[parachains.collators]]
+name = "bob"
+validator = true
+args = ["-lparachain=debug", "-l=xcm=trace"]
+command = "../target/release/parachain-template-node"
+rpc_port = 10500
+ws_port = 10501
