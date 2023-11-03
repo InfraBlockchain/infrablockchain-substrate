@@ -19,7 +19,7 @@ use std::pin::Pin;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainResult};
 use cumulus_relay_chain_rpc_interface::RelayChainRpcClient;
 use futures::{Stream, StreamExt};
-use polkadot_core_primitives::{Block, BlockNumber, Hash, Header};
+use infrablockspace_core_primitives::{Block, BlockNumber, Hash, Header};
 use infrablockspace_overseer::RuntimeApiSubsystemClient;
 use primitives::{
 	async_backing::{AsyncBackingParams, BackingState},
@@ -68,7 +68,7 @@ impl RuntimeApiSubsystemClient for BlockChainRpcClient {
 	) -> Result<
 		(
 			Vec<Vec<primitives::ValidatorIndex>>,
-			primitives::GroupRotationInfo<polkadot_core_primitives::BlockNumber>,
+			primitives::GroupRotationInfo<infrablockspace_core_primitives::BlockNumber>,
 		),
 		sp_api::ApiError,
 	> {
@@ -79,7 +79,7 @@ impl RuntimeApiSubsystemClient for BlockChainRpcClient {
 		&self,
 		at: Hash,
 	) -> Result<
-		Vec<primitives::CoreState<Hash, polkadot_core_primitives::BlockNumber>>,
+		Vec<primitives::CoreState<Hash, infrablockspace_core_primitives::BlockNumber>>,
 		sp_api::ApiError,
 	> {
 		Ok(self.rpc_client.parachain_host_availability_cores(at).await?)
@@ -94,7 +94,7 @@ impl RuntimeApiSubsystemClient for BlockChainRpcClient {
 		Option<
 			cumulus_primitives_core::PersistedValidationData<
 				Hash,
-				polkadot_core_primitives::BlockNumber,
+				infrablockspace_core_primitives::BlockNumber,
 			>,
 		>,
 		sp_api::ApiError,
@@ -114,7 +114,7 @@ impl RuntimeApiSubsystemClient for BlockChainRpcClient {
 		Option<(
 			cumulus_primitives_core::PersistedValidationData<
 				Hash,
-				polkadot_core_primitives::BlockNumber,
+				infrablockspace_core_primitives::BlockNumber,
 			>,
 			primitives::ValidationCodeHash,
 		)>,
@@ -181,7 +181,7 @@ impl RuntimeApiSubsystemClient for BlockChainRpcClient {
 		at: Hash,
 		recipient: cumulus_primitives_core::ParaId,
 	) -> Result<
-		Vec<cumulus_primitives_core::InboundDownwardMessage<polkadot_core_primitives::BlockNumber>>,
+		Vec<cumulus_primitives_core::InboundDownwardMessage<infrablockspace_core_primitives::BlockNumber>>,
 		sp_api::ApiError,
 	> {
 		Ok(self.rpc_client.parachain_host_dmq_contents(recipient, at).await?)
@@ -195,7 +195,7 @@ impl RuntimeApiSubsystemClient for BlockChainRpcClient {
 		std::collections::BTreeMap<
 			cumulus_primitives_core::ParaId,
 			Vec<
-				polkadot_core_primitives::InboundHrmpMessage<polkadot_core_primitives::BlockNumber>,
+				infrablockspace_core_primitives::InboundHrmpMessage<infrablockspace_core_primitives::BlockNumber>,
 			>,
 		>,
 		sp_api::ApiError,

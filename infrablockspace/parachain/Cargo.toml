@@ -16,7 +16,7 @@ sp-std = { path = "../../substrate/primitives/std", default-features = false }
 sp-runtime = { path = "../../substrate/primitives/runtime", default-features = false, features = ["serde"] }
 sp-core = { path = "../../substrate/primitives/core", default-features = false, features = ["serde"] }
 frame-support = { path = "../../substrate/frame/support", default-features = false }
-polkadot-core-primitives = { path = "../core-primitives", default-features = false }
+infrablockspace-core-primitives = { path = "../core-primitives", default-features = false }
 derive_more = "0.99.11"
 bounded-collections = { version = "0.1.8", default-features = false, features = ["serde"] }
 
@@ -30,7 +30,7 @@ std = [
 	"bounded-collections/std",
 	"frame-support/std",
 	"parity-scale-codec/std",
-	"polkadot-core-primitives/std",
+	"infrablockspace-core-primitives/std",
 	"scale-info/std",
 	"serde/std",
 	"sp-core/std",

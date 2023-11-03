@@ -23,7 +23,7 @@
 
 use crate::{BlakeTwo256, HashT as _, PvfExecTimeoutKind, PvfPrepTimeoutKind};
 use parity_scale_codec::{Decode, Encode};
-use polkadot_core_primitives::Hash;
+use infrablockspace_core_primitives::Hash;
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_std::{ops::Deref, time::Duration, vec, vec::Vec};

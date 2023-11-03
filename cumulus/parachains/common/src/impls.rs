@@ -107,6 +107,18 @@ where
 	}
 }
 
+/// Allow not checking in assets that have issuance > 0.
+pub struct AnyIssuance<AccountId, Assets>(PhantomData<(AccountId, Assets)>);
+impl<AccountId, Assets> Contains<<Assets as fungibles::Inspect<AccountId>>::AssetId>
+	for AnyIssuance<AccountId, Assets>
+where
+	Assets: fungibles::Inspect<AccountId>,
+{
+	fn contains(_id: &<Assets as fungibles::Inspect<AccountId>>::AssetId) -> bool {
+		true
+	}
+}
+
 /// Asset filter that allows all assets from a certain location.
 pub struct AssetsFrom<T>(PhantomData<T>);
 impl<T: Get<MultiLocation>> ContainsPair<MultiAsset, MultiLocation> for AssetsFrom<T> {

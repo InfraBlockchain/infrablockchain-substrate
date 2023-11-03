@@ -220,7 +220,7 @@ fn infra_relay_sign_call(
 	runtime::UncheckedExtrinsic::new_signed(
 		call,
 		sp_runtime::AccountId32::from(acc.public()).into(),
-		polkadot_core_primitives::Signature::Sr25519(signature.clone()),
+		infrablockspace_core_primitives::Signature::Sr25519(signature.clone()),
 		extra,
 	)
 	.into()
@@ -272,7 +272,7 @@ fn rococo_sign_call(
 	runtime::UncheckedExtrinsic::new_signed(
 		call,
 		sp_runtime::AccountId32::from(acc.public()).into(),
-		polkadot_core_primitives::Signature::Sr25519(signature.clone()),
+		infrablockspace_core_primitives::Signature::Sr25519(signature.clone()),
 		extra,
 	)
 	.into()
@@ -282,7 +282,7 @@ fn rococo_sign_call(
 ///
 /// Not to be used outside of benchmarking since it returns mocked values.
 pub fn benchmark_inherent_data(
-	header: polkadot_core_primitives::Header,
+	header: infrablockspace_core_primitives::Header,
 ) -> std::result::Result<sp_inherents::InherentData, sp_inherents::Error> {
 	use sp_inherents::InherentDataProvider;
 	let mut inherent_data = sp_inherents::InherentData::new();

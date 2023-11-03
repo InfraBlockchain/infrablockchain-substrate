@@ -47,7 +47,7 @@ pub mod consensus {
 
 /// Constants relating to DOT.
 pub mod currency {
-	use polkadot_core_primitives::Balance;
+	use infrablockspace_core_primitives::Balance;
 
 	/// The existential deposit. Set to 1/10 of its parent Relay Chain.
 	pub const EXISTENTIAL_DEPOSIT: Balance = 100 * CENTS / 10;
@@ -73,7 +73,7 @@ pub mod fee {
 			WeightToFeeCoefficients, WeightToFeePolynomial,
 		},
 	};
-	use polkadot_core_primitives::Balance;
+	use infrablockspace_core_primitives::Balance;
 	use smallvec::smallvec;
 	pub use sp_runtime::Perbill;
 

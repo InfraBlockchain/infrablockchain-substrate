@@ -121,7 +121,7 @@ use crate::{
 	ValidatorSignature,
 };
 use parity_scale_codec::{Decode, Encode};
-use polkadot_core_primitives as pcp;
+use infrablockspace_core_primitives as pcp;
 use parachain_primitives::primitives as ppp;
 use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 

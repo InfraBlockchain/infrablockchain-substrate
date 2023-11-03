@@ -62,7 +62,7 @@ xcm-primitives = { path = "../../xcm/xcm-primitives", default-features = false }
 
 parachain-primitives = { path = "../../parachain", default-features = false }
 polkadot-runtime-metrics = { path = "../metrics", default-features = false}
-polkadot-core-primitives = { path = "../../core-primitives", default-features = false }
+infrablockspace-core-primitives = { path = "../../core-primitives", default-features = false }
 
 [dev-dependencies]
 futures = "0.3.21"
@@ -101,7 +101,7 @@ std = [
 	"pallet-timestamp/std",
 	"pallet-vesting/std",
 	"parity-scale-codec/std",
-	"polkadot-core-primitives/std",
+	"infrablockspace-core-primitives/std",
 	"parachain-primitives/std",
 	"polkadot-runtime-metrics/std",
 	"primitives/std",

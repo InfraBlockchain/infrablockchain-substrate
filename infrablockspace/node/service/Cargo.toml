@@ -92,7 +92,7 @@ log = "0.4.17"
 is_executable = "1.0.1"
 
 # Polkadot
-polkadot-core-primitives = { path = "../../core-primitives" }
+infrablockspace-core-primitives = { path = "../../core-primitives" }
 node-core-parachains-inherent = { path = "../core/parachains-inherent" }
 infrablockspace-overseer = { path = "../overseer" }
 parachain-primitives = { path = "../../parachain" }

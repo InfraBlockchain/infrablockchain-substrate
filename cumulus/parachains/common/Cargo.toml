@@ -30,7 +30,7 @@ sp-std = { path = "../../../substrate/primitives/std", default-features = false 
 
 # Polkadot
 rococo-runtime-constants = { path = "../../../infrablockspace/runtime/rococo/constants", default-features = false}
-polkadot-core-primitives = { path = "../../../infrablockspace/core-primitives", default-features = false}
+infrablockspace-core-primitives = { path = "../../../infrablockspace/core-primitives", default-features = false}
 primitives = { path = "../../../infrablockspace/primitives", default-features = false}
 xcm = { package = "staging-xcm", path = "../../../infrablockspace/xcm", default-features = false}
 xcm-builder = { package = "staging-xcm-builder", path = "../../../infrablockspace/xcm/xcm-builder", default-features = false}
@@ -61,7 +61,7 @@ std = [
 	"pallet-authorship/std",
 	"pallet-balances/std",
 	"pallet-collator-selection/std",
-	"polkadot-core-primitives/std",
+	"infrablockspace-core-primitives/std",
 	"primitives/std",
 	"rococo-runtime-constants/std",
 	"sp-consensus-aura/std",

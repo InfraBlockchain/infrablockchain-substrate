@@ -114,7 +114,7 @@ digraph {
         </table>
     >]
 
-    TransientValidationData:balance -> "polkadot_core_primitives::v2::Balance":w
+    TransientValidationData:balance -> "infrablockspace_core_primitives::v2::Balance":w
 
     CandidateCommitments [label = <
         <table>
@@ -129,7 +129,7 @@ digraph {
     >]
 
     CandidateCommitments:upward_messages -> "parachain_primitives::primitives::UpwardMessage":w
-    CandidateCommitments:horizontal_messages -> "polkadot_core_primitives::v2::OutboundHrmpMessage":w
+    CandidateCommitments:horizontal_messages -> "infrablockspace_core_primitives::v2::OutboundHrmpMessage":w
     CandidateCommitments:head_data -> HeadData:w
     CandidateCommitments:horizontal_messages -> "parachain_primitives::primitives::Id":w
     CandidateCommitments:new_validation_code -> "parachain_primitives::primitives::ValidationCode":w
@@ -405,7 +405,7 @@ digraph {
     ValidationParams:block_data -> BlockData:name
     ValidationParams:relay_parent_number -> RelayChainBlockNumber:w
 
-    RelayChainBlockNumber [label = "polkadot_core_primitives::BlockNumber"]
+    RelayChainBlockNumber [label = "infrablockspace_core_primitives::BlockNumber"]
 
     ValidationResult [label = <
         <table>
@@ -427,6 +427,6 @@ digraph {
     ValidationResult:hrmp_watermark -> RelayChainBlockNumber:w
 
     UpwardMessage [label = "Vec<u8>"]
-    OutboundHrmpMessage [label = "polkadot_core_primitives::OutboundHrmpMessage"]
+    OutboundHrmpMessage [label = "infrablockspace_core_primitives::OutboundHrmpMessage"]
 }
 ```

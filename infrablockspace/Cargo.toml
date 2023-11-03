@@ -44,7 +44,7 @@ nix = { version = "0.26.1", features = ["signal"] }
 tempfile = "3.2.0"
 tokio = "1.24.2"
 substrate-rpc-client = { path = "../substrate/utils/frame/rpc/client/" }
-polkadot-core-primitives = { path = "core-primitives" }
+infrablockspace-core-primitives = { path = "core-primitives" }
 
 [build-dependencies]
 substrate-build-script-utils = { path = "../substrate/utils/build-script-utils" }

@@ -59,6 +59,7 @@ use sp_runtime::{
 	RuntimeDebug,
 };
 use sp_std::prelude::*;
+use sp_std::vec;
 
 pub use pallet::*;
 pub use types::*;

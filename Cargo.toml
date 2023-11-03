@@ -61,27 +61,11 @@ members = [
 	"cumulus/parachain-template/pallets/template",
 	"cumulus/parachain-template/runtime",
 	"cumulus/parachains/common",
-	"cumulus/parachains/integration-tests/emulated/assets/asset-hub-westend",
-	"cumulus/parachains/integration-tests/emulated/bridges/bridge-hub-rococo",
-	"cumulus/parachains/integration-tests/emulated/common",
 	"cumulus/parachains/pallets/parachain-info",
 	"cumulus/parachains/pallets/ping",
-	"cumulus/parachains/runtimes/assets/asset-hub-kusama",
-	"cumulus/parachains/runtimes/assets/asset-hub-polkadot",
+	"cumulus/parachains/runtimes/assets/asset-hub-infra",
 	"cumulus/parachains/runtimes/assets/common",
 	"cumulus/parachains/runtimes/assets/test-utils",
-	"cumulus/parachains/runtimes/bridge-hubs/bridge-hub-kusama",
-	"cumulus/parachains/runtimes/bridge-hubs/bridge-hub-polkadot",
-	"cumulus/parachains/runtimes/bridge-hubs/bridge-hub-rococo",
-	"cumulus/parachains/runtimes/bridge-hubs/test-utils",
-	"cumulus/parachains/runtimes/collectives/collectives-polkadot",
-	"cumulus/parachains/runtimes/contracts/contracts-rococo",
-	"cumulus/parachains/runtimes/glutton/glutton-kusama",
-	"cumulus/parachains/runtimes/starters/seedling",
-	"cumulus/parachains/runtimes/starters/shell",
-	"cumulus/parachains/runtimes/test-utils",
-	"cumulus/parachains/runtimes/testing/penpal",
-	"cumulus/parachains/runtimes/testing/rococo-parachain",
 	"cumulus/polkadot-parachain",
 	"cumulus/primitives/aura",
 	"cumulus/primitives/core",
@@ -453,7 +437,7 @@ members = [
 	"substrate/utils/prometheus",
 	"substrate/utils/wasm-builder",
 ]
-default-members = [ "infrablockspace", "substrate/bin/node-template/node", "cumulus/parachain-template/node" ]
+default-members = [ "infrablockspace", "substrate/bin/node-template/node", "cumulus/parachain-template/node", "cumulus/parachains/runtimes/assets/asset-hub-infra"]
 
 [profile.release]
 # Polkadot runtime requires unwinding.

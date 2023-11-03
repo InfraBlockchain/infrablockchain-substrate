@@ -46,12 +46,12 @@ pub type TrustBackedAssetsConvertedConcreteId<TrustBackedAssetsPalletLocation, B
 pub type MultiLocationForAssetId = MultiLocation;
 
 /// [`MatchedConvertedConcreteId`] converter dedicated for storing `AssetId` as `MultiLocation`.
-pub type MultiLocationConvertedConcreteId<MultiLocationFilter, Balance> =
+pub type MultiLocationConvertedConcreteId<MultiLocationFilter, AssetConverter, Balance> =
 	MatchedConvertedConcreteId<
-		MultiLocationForAssetId,
+		AssetIdForTrustBackedAssets,
 		Balance,
 		MultiLocationFilter,
-		Identity,
+		xcm_primitives::AsAssetMultiLocation<AssetIdForTrustBackedAssets, AssetConverter>,
 		JustTry,
 	>;
 
@@ -63,7 +63,7 @@ pub type MultiLocationConvertedConcreteId<MultiLocationFilter, Balance> =
 /// - all local MultiLocations
 ///
 /// `AdditionalMultiLocationExclusionFilter` can customize additional excluded MultiLocations
-pub type ForeignAssetsConvertedConcreteId<AdditionalMultiLocationExclusionFilter, Balance> =
+pub type ForeignAssetsConvertedConcreteId<AdditionalMultiLocationExclusionFilter, AssetConverter, Balance> =
 	MultiLocationConvertedConcreteId<
 		EverythingBut<(
 			// Excludes relay/parent chain currency
@@ -76,6 +76,7 @@ pub type ForeignAssetsConvertedConcreteId<AdditionalMultiLocationExclusionFilter
 			// Here we can exclude more stuff or leave it as `()`
 			AdditionalMultiLocationExclusionFilter,
 		)>,
+		AssetConverter,
 		Balance,
 	>;
 

@@ -25,7 +25,7 @@ sp-keystore = { path = "../../substrate/primitives/keystore", optional = true }
 sp-staking = { path = "../../substrate/primitives/staking", default-features = false, features = ["serde"] }
 sp-std = { package = "sp-std", path = "../../substrate/primitives/std", default-features = false }
 
-polkadot-core-primitives = { path = "../core-primitives", default-features = false }
+infrablockspace-core-primitives = { path = "../core-primitives", default-features = false }
 parachain-primitives = { path = "../parachain", default-features = false }
 
 [features]
@@ -35,7 +35,7 @@ std = [
 	"bitvec/std",
 	"inherents/std",
 	"parity-scale-codec/std",
-	"polkadot-core-primitives/std",
+	"infrablockspace-core-primitives/std",
 	"parachain-primitives/std",
 	"primitives/std",
 	"runtime_primitives/std",

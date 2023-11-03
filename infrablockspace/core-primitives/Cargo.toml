@@ -1,5 +1,5 @@
 [package]
-name = "polkadot-core-primitives"
+name = "infrablockspace-core-primitives"
 version = "1.0.0"
 authors.workspace = true
 edition.workspace = true

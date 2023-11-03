@@ -17,6 +17,6 @@ sp-std = { path = "../../../substrate/primitives/std" }
 xcm = { package = "staging-xcm", path = ".." }
 xcm-executor = { package = "staging-xcm-executor", path = "../xcm-executor" }
 xcm-builder = { package = "staging-xcm-builder", path = "../xcm-builder" }
-polkadot-core-primitives = { path = "../../core-primitives" }
+infrablockspace-core-primitives = { path = "../../core-primitives" }
 parachain-primitives = { path = "../../parachain" }
 runtime-parachains = { path = "../../runtime/parachains" }
