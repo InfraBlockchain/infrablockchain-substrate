@@ -58,7 +58,7 @@ use frame_system_rpc_runtime_api::AccountNonceApi;
 use node_subsystem::{errors::RecoveryError, messages::AvailabilityRecoveryMessage};
 use infrablockspace_overseer::Handle as OverseerHandle;
 use primitives::{CollatorPair, Hash as PHash, PersistedValidationData};
-use polkadot_service::ProvideRuntimeApi;
+use infrablockspace_service::ProvideRuntimeApi;
 use sc_consensus::ImportQueue;
 use sc_network::{
 	config::{FullNetworkConfiguration, TransportConfig},
@@ -255,9 +255,9 @@ async fn build_relay_chain_interface(
 		cumulus_client_cli::RelayChainMode::Embedded => polkadot_test_service::new_full(
 			relay_chain_config,
 			if let Some(ref key) = collator_key {
-				polkadot_service::IsParachainNode::Collator(key.clone())
+				infrablockspace_service::IsParachainNode::Collator(key.clone())
 			} else {
-				polkadot_service::IsParachainNode::Collator(CollatorPair::generate().0)
+				infrablockspace_service::IsParachainNode::Collator(CollatorPair::generate().0)
 			},
 			None,
 		)

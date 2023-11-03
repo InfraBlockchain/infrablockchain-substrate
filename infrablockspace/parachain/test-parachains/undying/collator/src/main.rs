@@ -56,10 +56,10 @@ fn main() -> Result<()> {
 			runner.run_node_until_exit(|config| async move {
 				let collator = Collator::new(cli.run.pov_size, cli.run.pvf_complexity);
 
-				let full_node = polkadot_service::build_full(
+				let full_node = infrablockspace_service::build_full(
 					config,
-					polkadot_service::NewFullParams {
-						is_parachain_node: polkadot_service::IsParachainNode::Collator(
+					infrablockspace_service::NewFullParams {
+						is_parachain_node: infrablockspace_service::IsParachainNode::Collator(
 							collator.collator_key(),
 						),
 						grandpa_pause: None,
@@ -72,7 +72,7 @@ fn main() -> Result<()> {
 						workers_path: None,
 						workers_names: None,
 
-						overseer_gen: polkadot_service::RealOverseerGen,
+						overseer_gen: infrablockspace_service::RealOverseerGen,
 						overseer_message_channel_capacity_override: None,
 						malus_finality_delay: None,
 						hwbench: None,

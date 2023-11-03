@@ -17,9 +17,7 @@
 
 pub mod impls;
 pub mod infra_relay;
-pub mod kusama;
 pub mod rococo;
-pub mod westend;
 pub mod xcm_config;
 pub use constants::*;
 pub use opaque::*;

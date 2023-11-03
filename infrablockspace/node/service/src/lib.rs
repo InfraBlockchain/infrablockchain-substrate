@@ -104,6 +104,9 @@ pub use sp_runtime::{
 	traits::{self as runtime_traits, BlakeTwo256, Block as BlockT, Header as HeaderT, NumberFor},
 };
 
+#[cfg(feature = "infra-relay-native")]
+pub use {infra_relay_runtime, infra_relay_runtime_constants};
+
 #[cfg(feature = "rococo-native")]
 pub use {rococo_runtime, rococo_runtime_constants};
 

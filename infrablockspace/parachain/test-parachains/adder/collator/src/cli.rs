@@ -95,13 +95,13 @@ impl SubstrateCli for Cli {
 		let id = if id.is_empty() { "rococo" } else { id };
 		Ok(match id {
 			"rococo-staging" =>
-				Box::new(polkadot_service::chain_spec::rococo_staging_testnet_config()?),
+				Box::new(infrablockspace_service::chain_spec::rococo_staging_testnet_config()?),
 			"rococo-local" =>
-				Box::new(polkadot_service::chain_spec::rococo_local_testnet_config()?),
-			"rococo" => Box::new(polkadot_service::chain_spec::rococo_config()?),
+				Box::new(infrablockspace_service::chain_spec::rococo_local_testnet_config()?),
+			"rococo" => Box::new(infrablockspace_service::chain_spec::rococo_config()?),
 			path => {
 				let path = std::path::PathBuf::from(path);
-				Box::new(polkadot_service::RococoChainSpec::from_json_file(path)?)
+				Box::new(infrablockspace_service::RococoChainSpec::from_json_file(path)?)
 			},
 		})
 	}

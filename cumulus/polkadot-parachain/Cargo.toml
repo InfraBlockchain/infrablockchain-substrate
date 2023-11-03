@@ -73,9 +73,9 @@ substrate-state-trie-migration-rpc = { path = "../../substrate/utils/frame/rpc/s
 
 # Polkadot
 # Use rococo-native as this is currently the default "local" relay chain
-polkadot-cli = { path = "../../infrablockspace/cli", features = ["rococo-native"] }
+polkadot-cli = { path = "../../infrablockspace/cli", features = ["rococo-native", "infra-relay-native"] }
 primitives = { path = "../../infrablockspace/primitives" }
-polkadot-service = { path = "../../infrablockspace/node/service" }
+infrablockspace-service = { path = "../../infrablockspace/node/service" }
 xcm = { package = "staging-xcm", path = "../../infrablockspace/xcm" }
 
 # Cumulus
@@ -119,7 +119,7 @@ runtime-benchmarks = [
 	"penpal-runtime/runtime-benchmarks",
 	"polkadot-cli/runtime-benchmarks",
 	"primitives/runtime-benchmarks",
-	"polkadot-service/runtime-benchmarks",
+	"infrablockspace-service/runtime-benchmarks",
 	"rococo-parachain-runtime/runtime-benchmarks",
 	"sc-service/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
@@ -135,7 +135,7 @@ try-runtime = [
 	"glutton-runtime/try-runtime",
 	"penpal-runtime/try-runtime",
 	"polkadot-cli/try-runtime",
-	"polkadot-service/try-runtime",
+	"infrablockspace-service/try-runtime",
 	"shell-runtime/try-runtime",
 	"sp-runtime/try-runtime",
 ]

@@ -21,7 +21,7 @@ primitives = { path = "../../../primitives" }
 parachain-primitives = { path = "../../../parachain" }
 polkadot-rpc = { path = "../../../rpc" }
 runtime-common = { path = "../../../runtime/common" }
-polkadot-service = { path = "../../service" }
+infrablockspace-service = { path = "../../service" }
 node-subsystem = { path = "../../subsystem" }
 node-primitives = { path = "../../primitives" }
 polkadot-test-runtime = { path = "../../../runtime/test-runtime" }
@@ -73,7 +73,7 @@ runtime-benchmarks= [
 	"primitives/runtime-benchmarks",
 	"runtime-common/runtime-benchmarks",
 	"runtime-parachains/runtime-benchmarks",
-	"polkadot-service/runtime-benchmarks",
+	"infrablockspace-service/runtime-benchmarks",
 	"polkadot-test-runtime/runtime-benchmarks",
 	"sc-service/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",

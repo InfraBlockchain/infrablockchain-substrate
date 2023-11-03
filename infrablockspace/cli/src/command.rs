@@ -76,11 +76,11 @@ impl SubstrateCli for Cli {
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 		let id = if id == "" {
 			let n = get_exec_name().unwrap_or_default();
-			["infrablockspace", "rococo"]
+			["infra-relay", "rococo"]
 				.iter()
 				.cloned()
 				.find(|&chain| n.starts_with(chain))
-				.unwrap_or("infrablockspace")
+				.unwrap_or("infra-relay")
 		} else {
 			id
 		};
@@ -104,7 +104,7 @@ impl SubstrateCli for Cli {
 				Err(format!("`{}` only supported with `rococo-native` feature enabled.", name))?,
 			path => {
 				let path = std::path::PathBuf::from(path);
-				println!("{:?}", path);
+
 				let chain_spec = Box::new(service::GenericChainSpec::from_json_file(path.clone())?)
 					as Box<dyn service::ChainSpec>;
 

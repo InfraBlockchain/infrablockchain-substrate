@@ -115,7 +115,7 @@ where
 /// w3f validators and randomly selected validators from the latest session (at
 /// #1500988).
 #[cfg(feature = "full-node")]
-pub(crate) fn kusama_hard_forks() -> Vec<grandpa::AuthoritySetHardFork<Block>> {
+pub(crate) fn _kusama_hard_forks() -> Vec<grandpa::AuthoritySetHardFork<Block>> {
 	use sp_core::crypto::Ss58Codec;
 	use std::str::FromStr;
 

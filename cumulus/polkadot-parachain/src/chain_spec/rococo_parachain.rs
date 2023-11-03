@@ -20,7 +20,7 @@ use crate::chain_spec::{get_from_seed, Extensions, SAFE_XCM_VERSION};
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
 use parachains_common::AccountId;
-use polkadot_service::chain_spec::get_account_id_from_seed;
+use infrablockspace_service::chain_spec::get_account_id_from_seed;
 use rococo_parachain_runtime::AuraId;
 use sc_chain_spec::ChainType;
 use sp_core::{crypto::UncheckedInto, sr25519};

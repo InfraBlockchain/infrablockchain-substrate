@@ -23,7 +23,7 @@ sp-state-machine = { path = "../../../substrate/primitives/state-machine" }
 
 # Polkadot
 polkadot-cli = { path = "../../../infrablockspace/cli", default-features = false, features = ["cli"] }
-polkadot-service = { path = "../../../infrablockspace/node/service" }
+infrablockspace-service = { path = "../../../infrablockspace/node/service" }
 
 # Cumulus
 cumulus-primitives-core = { path = "../../primitives/core" }

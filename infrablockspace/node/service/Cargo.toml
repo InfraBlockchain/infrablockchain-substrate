@@ -1,5 +1,5 @@
 [package]
-name = "polkadot-service"
+name = "infrablockspace-service"
 rust-version = "1.60"
 version = "1.0.0"
 authors.workspace = true
@@ -105,14 +105,14 @@ node-subsystem-types = { path = "../subsystem-types" }
 runtime-parachains = { path = "../../runtime/parachains" }
 node-network-protocol = { path = "../network/protocol" }
 
+# Runtimes
+infra-relay-runtime = { path = "../../runtime/infra-relay", optional = true }
+rococo-runtime = { path = "../../runtime/rococo", optional = true }
+
 # Runtime Constants
 infra-relay-runtime-constants = { path = "../../runtime/infra-relay/constants", optional = true }
 rococo-runtime-constants = { path = "../../runtime/rococo/constants", optional = true }
 
-
-# Runtimes
-infra-relay-runtime = { path = "../../runtime/infra-relay", optional = true }
-rococo-runtime = { path = "../../runtime/rococo", optional = true }
 
 # Subsystems
 approval-distribution = { path = "../network/approval-distribution", optional = true }

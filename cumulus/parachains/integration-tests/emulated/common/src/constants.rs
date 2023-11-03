@@ -29,7 +29,7 @@ use sp_runtime::{
 use parachains_common::{AccountId, AssetHubPolkadotAuraId, AuraId, Balance, BlockNumber};
 use primitives::{AssignmentId, ValidatorId};
 use runtime_parachains::configuration::HostConfiguration;
-use polkadot_service::chain_spec::get_authority_keys_from_seed_no_beefy;
+use infrablockspace_service::chain_spec::get_authority_keys_from_seed_no_beefy;
 use xcm;
 
 pub const XCM_V2: u32 = 3;

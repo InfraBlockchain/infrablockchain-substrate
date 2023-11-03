@@ -27,7 +27,7 @@ beefy-primitives = { package = "sp-consensus-beefy", path = "../../../../../subs
 # Polkadot
 polkadot-core-primitives = { path = "../../../../../infrablockspace/core-primitives", default-features = false}
 parachain-primitives = { path = "../../../../../infrablockspace/parachain", default-features = false}
-polkadot-service = { path = "../../../../../infrablockspace/node/service", default-features = false, features = ["full-node"] }
+infrablockspace-service = { path = "../../../../../infrablockspace/node/service", default-features = false, features = ["full-node"] }
 primitives = { path = "../../../../../infrablockspace/primitives", default-features = false}
 runtime-parachains = { path = "../../../../../infrablockspace/runtime/parachains" }
 rococo-runtime = { path = "../../../../../infrablockspace/runtime/rococo" }
@@ -76,7 +76,7 @@ runtime-benchmarks = [
 	"parachain-primitives/runtime-benchmarks",
 	"primitives/runtime-benchmarks",
 	"runtime-parachains/runtime-benchmarks",
-	"polkadot-service/runtime-benchmarks",
+	"infrablockspace-service/runtime-benchmarks",
 	"rococo-runtime/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 ]

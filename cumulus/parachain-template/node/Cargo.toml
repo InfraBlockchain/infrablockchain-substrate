@@ -54,7 +54,7 @@ substrate-frame-rpc-system = { path = "../../../substrate/utils/frame/rpc/system
 substrate-prometheus-endpoint = { path = "../../../substrate/utils/prometheus" }
 
 # Polkadot
-polkadot-cli = { path = "../../../infrablockspace/cli", features = ["rococo-native"] }
+polkadot-cli = { path = "../../../infrablockspace/cli", features = ["rococo-native", "infra-relay-native"] }
 primitives = { path = "../../../infrablockspace/primitives" }
 xcm = { package = "staging-xcm", path = "../../../infrablockspace/xcm", default-features = false}
 

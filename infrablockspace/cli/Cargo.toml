@@ -22,7 +22,7 @@ futures = "0.3.21"
 pyro = { package = "pyroscope", version = "0.5.3", optional = true }
 pyroscope_pprofrs = { version = "0.2", optional = true }
 
-service = { package = "polkadot-service", path = "../node/service", default-features = false, optional = true }
+service = { package = "infrablockspace-service", path = "../node/service", default-features = false, optional = true }
 
 sp-core = { path = "../../substrate/primitives/core" }
 sp-io = { path = "../../substrate/primitives/io" }

@@ -28,7 +28,7 @@ use infrablockspace_overseer::Handle;
 use primitives::{Balance, CollatorPair, HeadData, Id as ParaId, ValidationCode};
 use polkadot_runtime_common::BlockHashCount;
 use runtime_parachains::paras::{ParaGenesisArgs, ParaKind};
-use polkadot_service::{Error, FullClient, IsParachainNode, NewFull, PrometheusConfig};
+use infrablockspace_service::{Error, FullClient, IsParachainNode, NewFull, PrometheusConfig};
 use polkadot_test_runtime::{
 	ParasCall, ParasSudoWrapperCall, Runtime, SignedExtra, SignedPayload, SudoCall,
 	UncheckedExtrinsic, VERSION,
@@ -65,7 +65,7 @@ use substrate_test_client::{
 /// The client type being used by the test service.
 pub type Client = FullClient;
 
-pub use polkadot_service::{FullBackend, GetLastTimestamp};
+pub use infrablockspace_service::{FullBackend, GetLastTimestamp};
 
 /// Create a new full node.
 #[sc_tracing::logging::prefix_logs_with(config.network.node_name.as_str())]
@@ -76,9 +76,9 @@ pub fn new_full(
 ) -> Result<NewFull, Error> {
 	let workers_path = Some(workers_path.unwrap_or_else(get_relative_workers_path_for_test));
 
-	polkadot_service::new_full(
+	infrablockspace_service::new_full(
 		config,
-		polkadot_service::NewFullParams {
+		infrablockspace_service::NewFullParams {
 			is_parachain_node,
 			grandpa_pause: None,
 			enable_beefy: true,
@@ -87,7 +87,7 @@ pub fn new_full(
 			node_version: None,
 			workers_path,
 			workers_names: None,
-			overseer_gen: polkadot_service::RealOverseerGen,
+			overseer_gen: infrablockspace_service::RealOverseerGen,
 			overseer_message_channel_capacity_override: None,
 			malus_finality_delay: None,
 			hwbench: None,
