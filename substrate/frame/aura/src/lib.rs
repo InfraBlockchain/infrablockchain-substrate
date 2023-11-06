@@ -120,6 +120,7 @@ pub mod pallet {
 		///
 		/// This associated type is only present when compiled with the `experimental`
 		/// feature.
+		#[cfg(feature = "experimental")]
 		type SlotDuration: Get<<Self as pallet_timestamp::Config>::Moment>;
 	}
 
@@ -244,7 +245,17 @@ impl<T: Config> Pallet<T> {
 
 	/// Determine the Aura slot-duration based on the Timestamp module configuration.
 	pub fn slot_duration() -> T::Moment {
-		T::SlotDuration::get()
+		#[cfg(feature = "experimental")]
+		{
+			T::SlotDuration::get()
+		}
+
+		#[cfg(not(feature = "experimental"))]
+		{
+			// we double the minimum block-period so each author can always propose within
+			// the majority of its slot.
+			<T as pallet_timestamp::Config>::MinimumPeriod::get().saturating_mul(2u32.into())
+		}
 	}
 
 	/// Ensure the correctness of the state of this pallet.

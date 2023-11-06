@@ -447,14 +447,14 @@ pub fn run() -> Result<()> {
 				info!("Is collating: {}", if config.role.is_authority() { "yes" } else { "no" });
 
 				match config.chain_spec.runtime() {
-					Runtime::AssetHubInfra => crate::service::start_asset_hub_node::<
+					Runtime::AssetHubInfra => crate::service::start_generic_aura_node::<
 						asset_hub_runtime::RuntimeApi,
 						AuraId,
 					>(config, infra_relay_config, collator_options, id, hwbench)
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into),
-					Runtime::Default => crate::service::start_asset_hub_node::<
+					Runtime::Default => crate::service::start_generic_aura_node::<
 						asset_hub_runtime::RuntimeApi,
 						AuraId,
 					>(config, infra_relay_config, collator_options, id, hwbench)

@@ -929,7 +929,12 @@ pub fn rococo_testnet_genesis(
 fn infra_relay_development_config_genesis(wasm_binary: &[u8]) -> infra_relay::RuntimeGenesisConfig {
 	infra_relay_testnet_genesis(
 		wasm_binary,
-		vec![get_authority_keys_from_seed_no_beefy("Alice")],
+		vec![
+			get_authority_keys_from_seed_no_beefy("Alice"), 
+			get_authority_keys_from_seed_no_beefy("Bob"),
+			get_authority_keys_from_seed_no_beefy("Charlie"),
+			get_authority_keys_from_seed_no_beefy("Dave")
+		],
 		get_account_id_from_seed::<sr25519::Public>("Alice"),
 		None,
 	)

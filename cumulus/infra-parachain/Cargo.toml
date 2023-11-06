@@ -4,7 +4,7 @@ version = "1.1.0"
 authors.workspace = true
 build = "build.rs"
 edition.workspace = true
-description = "Runs a polkadot parachain node which could be a collator."
+description = "Runs a infra-relay parachain node which could be a collator."
 
 [[bin]]
 name = "infra-parachain"
@@ -60,8 +60,7 @@ frame-rpc-system = { package = "substrate-frame-rpc-system", path = "../../subst
 pallet-transaction-payment-rpc = { path = "../../substrate/frame/transaction-payment/rpc" }
 substrate-state-trie-migration-rpc = { path = "../../substrate/utils/frame/rpc/state-trie-migration-rpc" }
 
-# Polkadot
-# Use rococo-native as this is currently the default "local" relay chain
+# Infr Relay
 polkadot-cli = { path = "../../infrablockspace/cli", features = ["rococo-native", "infra-relay-native"] }
 primitives = { path = "../../infrablockspace/primitives" }
 infrablockspace-service = { path = "../../infrablockspace/node/service" }
