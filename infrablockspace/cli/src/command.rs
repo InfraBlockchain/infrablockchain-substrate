@@ -17,7 +17,7 @@
 use crate::cli::{Cli, Subcommand, NODE_VERSION};
 use frame_benchmarking_cli::{BenchmarkCmd, ExtrinsicFactory, SUBSTRATE_REFERENCE_HARDWARE};
 use futures::future::TryFutureExt;
-use log::{info, warn};
+use log::warn;
 use sc_cli::SubstrateCli;
 use service::{
 	self,
@@ -120,7 +120,7 @@ impl SubstrateCli for Cli {
 	}
 }
 
-fn set_default_ss58_version(spec: &Box<dyn service::ChainSpec>) {
+fn set_default_ss58_version(_spec: &Box<dyn service::ChainSpec>) {
 	let ss58_version = Ss58AddressFormatRegistry::PolkadotAccount.into();
 
 	sp_core::crypto::set_default_ss58_version(ss58_version);

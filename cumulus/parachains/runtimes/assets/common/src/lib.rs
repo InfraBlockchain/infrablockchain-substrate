@@ -26,7 +26,7 @@ use frame_support::traits::EverythingBut;
 use parachains_common::AssetIdForTrustBackedAssets;
 use xcm::prelude::MultiLocation;
 use xcm_builder::{AsPrefixedGeneralIndex, MatchedConvertedConcreteId};
-use xcm_executor::traits::{Identity, JustTry};
+use xcm_executor::traits::JustTry;
 
 /// `MultiLocation` vs `AssetIdForTrustBackedAssets` converter for `TrustBackedAssets`
 pub type AssetIdForTrustBackedAssetsConvert<TrustBackedAssetsPalletLocation> =

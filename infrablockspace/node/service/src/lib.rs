@@ -727,8 +727,6 @@ pub fn new_full<OverseerGenerator: OverseerGen>(
 	let overseer_connector = OverseerConnector::default();
 	let overseer_handle = Handle::new(overseer_connector.handle());
 
-	let chain_spec = config.chain_spec.cloned_box();
-
 	let keystore = basics.keystore_container.local_keystore();
 	let auth_or_collator = role.is_authority() || is_parachain_node.is_collator();
 	// We only need to enable the pvf checker when this is a validator.

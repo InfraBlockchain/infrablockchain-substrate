@@ -22,7 +22,7 @@ use crate::{
 use cumulus_primitives_core::ParaId;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use log::info;
-use parachains_common::{AssetHubPolkadotAuraId, AuraId};
+use parachains_common::AuraId;
 use sc_cli::{
 	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
 	NetworkParams, Result, SharedParams, SubstrateCli,
@@ -81,25 +81,26 @@ fn runtime(id: &str) -> Runtime {
 }
 
 fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
-	let (id, _, para_id) = extract_parachain_id(id);
+	let (id, _, _) = extract_parachain_id(id);
 	Ok(match id {
-		// - Defaul-like
+		// - Defaul-like(ToDo: should cange)
 		"staging" =>
-			Box::new(chain_spec::rococo_parachain::staging_rococo_parachain_local_config()),
-
+			Box::new(chain_spec::asset_hubs::asset_hub_local_config()),
 		"asset-hub-infra-dev" => 
-			Box::new(chain_spec::asset_hubs::asset_hub_polkadot_development_config()),	
+			Box::new(chain_spec::asset_hubs::asset_hub_development_config()),	
 		"asset-hub-infra-local" => 
-			Box::new(chain_spec::asset_hubs::asset_hub_polkadot_local_config()),
+			Box::new(chain_spec::asset_hubs::asset_hub_local_config()),
+		"asset-hub-genesis" => 
+			Box::new(chain_spec::asset_hubs::asset_hub_config()),
 		"asset-hub-infra" =>
-			Box::new(chain_spec::asset_hubs::AssetHubPolkadotChainSpec::from_json_bytes(
+			Box::new(chain_spec::asset_hubs::AssetHubChainSpec::from_json_bytes(
 				&include_bytes!("../chain-specs/asset-hub-polkadot.json")[..],
 			)?),
 
 		// -- Fallback (generic chainspec)
 		"" => {
 			log::warn!("No ChainSpec.id specified, so using default one, based on rococo-parachain runtime");
-			Box::new(chain_spec::rococo_parachain::rococo_parachain_local_config())
+			Box::new(chain_spec::asset_hubs::asset_hub_local_config())
 		},
 
 		// -- Loading a specific spec from disk
@@ -107,10 +108,10 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 			let path: PathBuf = path.into();
 			match path.runtime() {
 				Runtime::AssetHubInfra => Box::new(
-					chain_spec::asset_hubs::AssetHubPolkadotChainSpec::from_json_file(path)?,
+					chain_spec::asset_hubs::AssetHubChainSpec::from_json_file(path)?,
 				),
 				Runtime::Default => Box::new(
-					chain_spec::rococo_parachain::RococoParachainChainSpec::from_json_file(path)?,
+					chain_spec::asset_hubs::AssetHubChainSpec::from_json_file(path)?,
 				),
 			}
 		},
@@ -227,16 +228,16 @@ macro_rules! construct_partials {
 	($config:expr, |$partials:ident| $code:expr) => {
 		match $config.chain_spec.runtime() {
 			Runtime::AssetHubInfra => {
-				let $partials = new_partial::<asset_hub_polkadot_runtime::RuntimeApi, _>(
+				let $partials = new_partial::<asset_hub_runtime::RuntimeApi, _>(
 					&$config,
-					crate::service::aura_build_import_queue::<_, AssetHubPolkadotAuraId>,
+					crate::service::aura_build_import_queue::<_, AuraId>,
 				)?;
 				$code
 			},
 			Runtime::Default => {
-				let $partials = new_partial::<rococo_parachain_runtime::RuntimeApi, _>(
+				let $partials = new_partial::<asset_hub_runtime::RuntimeApi, _>(
 					&$config,
-					crate::service::rococo_parachain_build_import_queue,
+					crate::service::aura_build_import_queue::<_, AuraId>,
 				)?;
 				$code
 			},
@@ -250,9 +251,9 @@ macro_rules! construct_async_run {
 		match runner.config().chain_spec.runtime() {
 			Runtime::AssetHubInfra => {
 				runner.async_run(|$config| {
-					let $components = new_partial::<asset_hub_polkadot_runtime::RuntimeApi, _>(
+					let $components = new_partial::<asset_hub_runtime::RuntimeApi, _>(
 						&$config,
-						crate::service::aura_build_import_queue::<_, AssetHubPolkadotAuraId>,
+						crate::service::aura_build_import_queue::<_, AuraId>,
 					)?;
 					let task_manager = $components.task_manager;
 					{ $( $code )* }.map(|v| (v, task_manager))
@@ -260,12 +261,9 @@ macro_rules! construct_async_run {
 			},
 			Runtime::Default => {
 				runner.async_run(|$config| {
-					let $components = new_partial::<
-						rococo_parachain_runtime::RuntimeApi,
-						_,
-					>(
+					let $components = new_partial::<asset_hub_runtime::RuntimeApi, _>(
 						&$config,
-						crate::service::rococo_parachain_build_import_queue,
+						crate::service::aura_build_import_queue::<_, AuraId>,
 					)?;
 					let task_manager = $components.task_manager;
 					{ $( $code )* }.map(|v| (v, task_manager))
@@ -311,19 +309,19 @@ pub fn run() -> Result<()> {
 			let runner = cli.create_runner(cmd)?;
 
 			runner.sync_run(|config| {
-				let polkadot_cli = RelayChainCli::new(
+				let infra_relay_cli = RelayChainCli::new(
 					&config,
 					[RelayChainCli::executable_name()].iter().chain(cli.relaychain_args.iter()),
 				);
 
-				let polkadot_config = SubstrateCli::create_configuration(
-					&polkadot_cli,
-					&polkadot_cli,
+				let infra_relay_config = SubstrateCli::create_configuration(
+					&infra_relay_cli,
+					&infra_relay_cli,
 					config.tokio_handle.clone(),
 				)
 				.map_err(|err| format!("Relay chain argument error: {}", err))?;
 
-				cmd.run(config, polkadot_config)
+				cmd.run(config, infra_relay_config)
 			})
 		},
 		Some(Subcommand::ExportGenesisState(cmd)) => {
@@ -429,7 +427,7 @@ pub fn run() -> Result<()> {
 					.map(|e| e.para_id)
 					.ok_or("Could not find parachain extension in chain-spec.")?;
 
-				let polkadot_cli = RelayChainCli::new(
+				let infra_relay_cli = RelayChainCli::new(
 					&config,
 					[RelayChainCli::executable_name()].iter().chain(cli.relaychain_args.iter()),
 				);
@@ -440,8 +438,8 @@ pub fn run() -> Result<()> {
 					AccountIdConversion::<primitives::AccountId>::into_account_truncating(&id);
 
 				let tokio_handle = config.tokio_handle.clone();
-				let polkadot_config =
-					SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, tokio_handle)
+				let infra_relay_config =
+					SubstrateCli::create_configuration(&infra_relay_cli, &infra_relay_cli, tokio_handle)
 						.map_err(|err| format!("Relay chain argument error: {}", err))?;
 
 				info!("Parachain id: {:?}", id);
@@ -450,23 +448,19 @@ pub fn run() -> Result<()> {
 
 				match config.chain_spec.runtime() {
 					Runtime::AssetHubInfra => crate::service::start_asset_hub_node::<
-						asset_hub_polkadot_runtime::RuntimeApi,
-						AssetHubPolkadotAuraId,
-					>(config, polkadot_config, collator_options, id, hwbench)
+						asset_hub_runtime::RuntimeApi,
+						AuraId,
+					>(config, infra_relay_config, collator_options, id, hwbench)
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into),
-					Runtime::Default =>
-						crate::service::start_rococo_parachain_node(
-							config,
-							polkadot_config,
-							collator_options,
-							id,
-							hwbench,
-						)
-						.await
-						.map(|r| r.0)
-						.map_err(Into::into),
+					Runtime::Default => crate::service::start_asset_hub_node::<
+						asset_hub_runtime::RuntimeApi,
+						AuraId,
+					>(config, infra_relay_config, collator_options, id, hwbench)
+					.await
+					.map(|r| r.0)
+					.map_err(Into::into),
 				}
 			})
 		},

@@ -1,5 +1,5 @@
 [package]
-name = "asset-hub"
+name = "asset-hub-runtime"
 version = "1.0.0"
 authors.workspace = true
 edition.workspace = true

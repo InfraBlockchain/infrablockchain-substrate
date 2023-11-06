@@ -21,14 +21,6 @@ use sp_core::{Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
 pub mod asset_hubs;
-pub mod bridge_hubs;
-pub mod collectives;
-pub mod contracts;
-pub mod glutton;
-pub mod penpal;
-pub mod rococo_parachain;
-pub mod seedling;
-pub mod shell;
 
 /// The default XCM version to set in genesis config.
 const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;

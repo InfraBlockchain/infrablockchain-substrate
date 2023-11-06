@@ -66,7 +66,7 @@ members = [
 	"cumulus/parachains/runtimes/assets/asset-hub-infra",
 	"cumulus/parachains/runtimes/assets/common",
 	"cumulus/parachains/runtimes/assets/test-utils",
-	"cumulus/polkadot-parachain",
+	"cumulus/infra-parachain",
 	"cumulus/primitives/aura",
 	"cumulus/primitives/core",
 	"cumulus/primitives/parachain-inherent",
@@ -437,7 +437,7 @@ members = [
 	"substrate/utils/prometheus",
 	"substrate/utils/wasm-builder",
 ]
-default-members = [ "infrablockspace", "substrate/bin/node-template/node", "cumulus/parachain-template/node", "cumulus/parachains/runtimes/assets/asset-hub-infra"]
+default-members = [ "infrablockspace", "substrate/bin/node-template/node", "cumulus/parachain-template/node", "cumulus/infra-parachain"]
 
 [profile.release]
 # Polkadot runtime requires unwinding.
