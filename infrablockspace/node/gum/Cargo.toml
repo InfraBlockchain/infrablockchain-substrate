@@ -7,7 +7,7 @@ license.workspace = true
 description = "Stick logs together with the TraceID as provided by tempo"
 
 [dependencies]
-coarsetime = "0.1.22"
+coarsetime = "0.1.33"
 tracing = "0.1.35"
 jaeger = { package = "node-jaeger" , path = "../jaeger" }
 gum-proc-macro = { package = "tracing-gum-proc-macro" , path = "proc-macro" }
