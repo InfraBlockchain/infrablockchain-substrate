@@ -55,25 +55,25 @@ command = "../target/release/infra-parachain"
 rpc_port = 9600
 ws_port = 9601
 
-[[parachains]]
-id = 2000
-chain = "parachain-template-local"
-cumulus_based = true
+# [[parachains]]
+# id = 2000
+# chain = "parachain-template-local"
+# cumulus_based = true
 
-# run alice as parachain collator
-[[parachains.collators]]
-name = "template-alice"
-validator = true
-args = ["-lparachain=debug", "-l=xcm=trace"]
-command = "../target/release/parachain-template-node"
-rpc_port = 9700
-ws_port = 9701
+# # run alice as parachain collator
+# [[parachains.collators]]
+# name = "template-alice"
+# validator = true
+# args = ["-lparachain=debug", "-l=xcm=trace"]
+# command = "../target/release/parachain-template-node"
+# rpc_port = 9700
+# ws_port = 9701
 
-# run alice as parachain collator
-[[parachains.collators]]
-name = "template-bob"
-validator = true
-args = ["-lparachain=debug", "-l=xcm=trace"]
-command = "../target/release/parachain-template-node"
-rpc_port = 9800
-ws_port = 9801
+# # run alice as parachain collator
+# [[parachains.collators]]
+# name = "template-bob"
+# validator = true
+# args = ["-lparachain=debug", "-l=xcm=trace"]
+# command = "../target/release/parachain-template-node"
+# rpc_port = 9800
+# ws_port = 9801

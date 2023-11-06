@@ -71,7 +71,7 @@ pub type GenericChainSpec = service::GenericChainSpec<(), Extensions>;
 
 /// The 'ChainSpec' parameterized for the infra-relay runtime
 #[cfg(feature = "infra-relay-native")]
-pub type InfraRelayChainSpec = service::GenericChainSpec<infra_relay::RuntimeGenesisConfig, Extensions>;
+pub type InfraRelayChainSpec = service::GenericChainSpec<InfraRelayGenesisExt, Extensions>;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 #[cfg(feature = "infra-relay-native")]
@@ -625,7 +625,10 @@ pub fn infra_relay_staging_testnet_config() -> Result<InfraRelayChainSpec, Strin
 		"Infra Relay Staging Testnet",
 		"infra_relay_staging_testnet",
 		ChainType::Live,
-		move || infra_relay_staging_testnet_config_genesis(wasm_binary),
+		move || InfraRelayGenesisExt { 
+			runtime_genesis_config: infra_relay_staging_testnet_config_genesis(wasm_binary), 
+			session_length_in_blocks: None 
+		},
 		boot_nodes,
 		Some(
 			TelemetryEndpoints::new(vec![(INFRA_RELAY_STAGING_TELEMETRY_URL.to_string(), 0)])
@@ -952,7 +955,10 @@ pub fn infra_relay_development_config() -> Result<InfraRelayChainSpec, String> {
 		"Infra Relay Devnet",
 		"infra_relay_devnet",
 		ChainType::Development,
-		move || infra_relay_development_config_genesis(wasm_binary),
+		move || InfraRelayGenesisExt { 
+			runtime_genesis_config: infra_relay_development_config_genesis(wasm_binary), 
+			session_length_in_blocks: Some(10) 
+		},
 		vec![],
 		None,
 		Some(DEFAULT_INFRA_PROTOCOL_ID),

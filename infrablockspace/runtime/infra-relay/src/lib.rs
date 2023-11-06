@@ -258,9 +258,9 @@ impl pallet_preimage::Config for Runtime {
 parameter_types! {
 	pub EpochDuration: u64 = EpochDurationInSlots::get() as u64;
 	pub const ExpectedBlockTime: Moment = MILLISECS_PER_BLOCK;
-	pub const MaxNominatorRewardedPerValidator: u32 = 512;
 	pub ReportLongevity: u64 =
 		BondingDuration::get() as u64 * SessionsPerEra::get() as u64 * EpochDuration::get();
+	pub const MaxNominatorRewardedPerValidator: u32 = 512;
 }
 
 impl pallet_babe::Config for Runtime {
