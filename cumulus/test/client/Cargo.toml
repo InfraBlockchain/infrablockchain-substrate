@@ -28,8 +28,8 @@ pallet-transaction-payment = { path = "../../../substrate/frame/transaction-paym
 pallet-balances = { path = "../../../substrate/frame/balances" }
 
 # Polkadot
-polkadot-primitives = { path = "../../../polkadot/primitives" }
-polkadot-parachain-primitives = { path = "../../../polkadot/parachain" }
+primitives = { path = "../../../infrablockspace/primitives" }
+parachain-primitives = { path = "../../../infrablockspace/parachain" }
 
 # Cumulus
 cumulus-test-runtime = { path = "../runtime" }

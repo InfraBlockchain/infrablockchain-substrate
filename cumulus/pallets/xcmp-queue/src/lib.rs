@@ -47,7 +47,7 @@ use frame_support::{
 	traits::{EnsureOrigin, Get},
 	weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, Weight},
 };
-use polkadot_runtime_common::xcm_sender::PriceForParachainDelivery;
+use runtime_common::xcm_sender::PriceForParachainDelivery;
 use rand_chacha::{
 	rand_core::{RngCore, SeedableRng},
 	ChaChaRng,

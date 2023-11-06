@@ -18,27 +18,27 @@ use futures::{select, StreamExt};
 use schnellru::{ByLength, LruMap};
 use std::sync::Arc;
 
-use polkadot_availability_recovery::AvailabilityRecoverySubsystem;
-use polkadot_collator_protocol::{CollatorProtocolSubsystem, ProtocolSide};
-use polkadot_network_bridge::{
+use availability_recovery::AvailabilityRecoverySubsystem;
+use collator_protocol::{CollatorProtocolSubsystem, ProtocolSide};
+use network_bridge::{
 	Metrics as NetworkBridgeMetrics, NetworkBridgeRx as NetworkBridgeRxSubsystem,
 	NetworkBridgeTx as NetworkBridgeTxSubsystem,
 };
-use polkadot_node_collation_generation::CollationGenerationSubsystem;
-use polkadot_node_core_runtime_api::RuntimeApiSubsystem;
-use polkadot_node_network_protocol::{
+use node_collation_generation::CollationGenerationSubsystem;
+use node_core_runtime_api::RuntimeApiSubsystem;
+use node_network_protocol::{
 	peer_set::PeerSetProtocolNames,
 	request_response::{
 		v1::{self, AvailableDataFetchingRequest},
 		v2, IncomingRequestReceiver, ReqProtocolNames,
 	},
 };
-use polkadot_node_subsystem_util::metrics::{prometheus::Registry, Metrics};
-use polkadot_overseer::{
+use node_subsystem_util::metrics::{prometheus::Registry, Metrics};
+use infrablockspace_overseer::{
 	BlockInfo, DummySubsystem, Handle, Overseer, OverseerConnector, OverseerHandle, SpawnGlue,
 	UnpinHandle, KNOWN_LEAVES_CACHE_SIZE,
 };
-use polkadot_primitives::CollatorPair;
+use primitives::CollatorPair;
 
 use sc_authority_discovery::Service as AuthorityDiscoveryService;
 use sc_network::NetworkStateInfo;
@@ -170,7 +170,7 @@ pub(crate) fn spawn_overseer(
 	overseer_args: CollatorOverseerGenArgs,
 	task_manager: &TaskManager,
 	relay_chain_rpc_client: Arc<BlockChainRpcClient>,
-) -> Result<polkadot_overseer::Handle, RelayChainError> {
+) -> Result<infrablockspace_overseer::Handle, RelayChainError> {
 	let (overseer, overseer_handle) = build_overseer(OverseerConnector::default(), overseer_args)
 		.map_err(|e| {
 		tracing::error!("Failed to initialize overseer: {}", e);

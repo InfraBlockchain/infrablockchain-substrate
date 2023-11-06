@@ -19,17 +19,17 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use polkadot_parachain_primitives::primitives::HeadData;
+use parachain_primitives::primitives::HeadData;
 use scale_info::TypeInfo;
-use sp_runtime::RuntimeDebug;
+use sp_runtime::{types::PotVotesResult, RuntimeDebug};
 use sp_std::prelude::*;
 
-pub use polkadot_core_primitives::InboundDownwardMessage;
-pub use polkadot_parachain_primitives::primitives::{
+pub use infrablockspace_core_primitives::InboundDownwardMessage;
+pub use parachain_primitives::primitives::{
 	DmpMessageHandler, Id as ParaId, IsSystem, UpwardMessage, ValidationParams, XcmpMessageFormat,
 	XcmpMessageHandler,
 };
-pub use polkadot_primitives::{
+pub use primitives::{
 	AbridgedHostConfiguration, AbridgedHrmpChannel, PersistedValidationData,
 };
 
@@ -43,15 +43,15 @@ pub use xcm::latest::prelude::*;
 
 /// A module that re-exports relevant relay chain definitions.
 pub mod relay_chain {
-	pub use polkadot_core_primitives::*;
-	pub use polkadot_primitives::*;
+	pub use infrablockspace_core_primitives::*;
+	pub use primitives::*;
 }
 
 /// An inbound HRMP message.
-pub type InboundHrmpMessage = polkadot_primitives::InboundHrmpMessage<relay_chain::BlockNumber>;
+pub type InboundHrmpMessage = primitives::InboundHrmpMessage<relay_chain::BlockNumber>;
 
 /// And outbound HRMP message
-pub type OutboundHrmpMessage = polkadot_primitives::OutboundHrmpMessage<ParaId>;
+pub type OutboundHrmpMessage = primitives::OutboundHrmpMessage<ParaId>;
 
 /// Error description of a message send failure.
 #[derive(Eq, PartialEq, Copy, Clone, RuntimeDebug, Encode, Decode)]
@@ -302,6 +302,8 @@ pub struct CollationInfoV1 {
 	/// The mark which specifies the block number up to which all inbound HRMP messages are
 	/// processed.
 	pub hrmp_watermark: relay_chain::BlockNumber,
+	/// The vote result sent by the parachain.
+	pub vote_result: Option<PotVotesResult>,
 }
 
 impl CollationInfoV1 {
@@ -314,6 +316,7 @@ impl CollationInfoV1 {
 			processed_downward_messages: self.processed_downward_messages,
 			hrmp_watermark: self.hrmp_watermark,
 			head_data,
+			vote_result: self.vote_result,
 		}
 	}
 }
@@ -334,6 +337,8 @@ pub struct CollationInfo {
 	pub hrmp_watermark: relay_chain::BlockNumber,
 	/// The head data, aka encoded header, of the block that corresponds to the collation.
 	pub head_data: HeadData,
+	/// The vote result sent by the parachain.
+	pub vote_result: Option<PotVotesResult>,
 }
 
 sp_api::decl_runtime_apis! {

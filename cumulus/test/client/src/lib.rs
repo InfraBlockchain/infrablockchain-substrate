@@ -31,7 +31,7 @@ use sp_runtime::{generic::Era, BuildStorage, SaturatedConversion};
 
 pub use block_builder::*;
 pub use cumulus_test_runtime as runtime;
-pub use polkadot_parachain_primitives::primitives::{
+pub use parachain_primitives::primitives::{
 	BlockData, HeadData, ValidationParams, ValidationResult,
 };
 pub use sc_executor::error::Result as ExecutorResult;

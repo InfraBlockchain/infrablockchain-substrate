@@ -31,13 +31,13 @@ cumulus-primitives-core = { path = "../../../../primitives/core", default-featur
 cumulus-primitives-parachain-inherent = { path = "../../../../primitives/parachain-inherent", default-features = false }
 cumulus-test-relay-sproof-builder = { path = "../../../../test/relay-sproof-builder", default-features = false }
 parachain-info = { path = "../../../pallets/parachain-info", default-features = false }
-parachains-runtimes-test-utils = { path = "../../test-utils", default-features = false }
+parachains-runtimes-test-utils = { path = "../../test-utils", default-features = false}
 
 # Polkadot
-xcm = { package = "staging-xcm", path = "../../../../../polkadot/xcm", default-features = false}
-xcm-executor = { package = "staging-xcm-executor", path = "../../../../../polkadot/xcm/xcm-executor", default-features = false}
-pallet-xcm = { path = "../../../../../polkadot/xcm/pallet-xcm", default-features = false}
-polkadot-parachain-primitives = { path = "../../../../../polkadot/parachain", default-features = false}
+xcm = { package = "staging-xcm", path = "../../../../../infrablockspace/xcm", default-features = false}
+xcm-executor = { package = "staging-xcm-executor", path = "../../../../../infrablockspace/xcm/xcm-executor", default-features = false}
+pallet-xcm = { path = "../../../../../infrablockspace/xcm/pallet-xcm", default-features = false}
+parachain-primitives = { path = "../../../../../infrablockspace/parachain", default-features = false}
 
 [dev-dependencies]
 hex-literal = "0.4.1"
@@ -63,9 +63,9 @@ std = [
 	"pallet-session/std",
 	"pallet-xcm/std",
 	"parachain-info/std",
-	"parachains-common/std",
 	"parachains-runtimes-test-utils/std",
-	"polkadot-parachain-primitives/std",
+	"parachains-common/std",
+	"parachain-primitives/std",
 	"sp-consensus-aura/std",
 	"sp-core/std",
 	"sp-io/std",

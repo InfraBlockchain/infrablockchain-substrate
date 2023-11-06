@@ -30,6 +30,8 @@ pub use tokens::{
 	nonfungible, nonfungibles, BalanceStatus, ExistenceRequirement, Locker, WithdrawReasons,
 };
 
+pub mod ibs_support;
+
 mod members;
 #[allow(deprecated)]
 pub use members::{AllowAll, DenyAll, Filter};

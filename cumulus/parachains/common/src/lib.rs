@@ -16,10 +16,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub mod impls;
-pub mod kusama;
-pub mod polkadot;
+pub mod infra_relay;
 pub mod rococo;
-pub mod westend;
 pub mod xcm_config;
 pub use constants::*;
 pub use opaque::*;
@@ -43,6 +41,9 @@ mod types {
 	/// never know...
 	pub type AccountIndex = u32;
 
+	/// General type for asset id
+	pub type AssetId = u32;
+
 	/// Balance of an account.
 	pub type Balance = u128;
 
@@ -57,13 +58,6 @@ mod types {
 
 	// Aura consensus authority.
 	pub type AuraId = sp_consensus_aura::sr25519::AuthorityId;
-
-	// Aura consensus authority used by Asset Hub Polkadot.
-	//
-	// Because of registering the authorities with an ed25519 key before switching from Shell
-	// to Asset Hub Polkadot, we were required to deploy a hotfix that changed Asset Hub Polkadot's
-	// Aura keys to ed22519. In the future that may change again.
-	pub type AssetHubPolkadotAuraId = sp_consensus_aura::ed25519::AuthorityId;
 
 	// Id used for identifying assets.
 	pub type AssetIdForTrustBackedAssets = u32;
@@ -98,7 +92,7 @@ mod constants {
 	/// We allow for 0.5 seconds of compute with a 6 second average block time.
 	pub const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(
 		WEIGHT_REF_TIME_PER_SECOND.saturating_div(2),
-		polkadot_primitives::MAX_POV_SIZE as u64,
+		primitives::MAX_POV_SIZE as u64,
 	);
 }
 

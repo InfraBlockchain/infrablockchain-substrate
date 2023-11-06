@@ -54,9 +54,9 @@ substrate-frame-rpc-system = { path = "../../../substrate/utils/frame/rpc/system
 substrate-prometheus-endpoint = { path = "../../../substrate/utils/prometheus" }
 
 # Polkadot
-polkadot-cli = { path = "../../../polkadot/cli", features = ["rococo-native"] }
-polkadot-primitives = { path = "../../../polkadot/primitives" }
-xcm = { package = "staging-xcm", path = "../../../polkadot/xcm", default-features = false}
+polkadot-cli = { path = "../../../infrablockspace/cli", features = ["rococo-native", "infra-relay-native"] }
+primitives = { path = "../../../infrablockspace/primitives" }
+xcm = { package = "staging-xcm", path = "../../../infrablockspace/xcm", default-features = false}
 
 # Cumulus
 cumulus-client-cli = { path = "../../client/cli" }
@@ -80,7 +80,7 @@ runtime-benchmarks = [
 	"frame-benchmarking/runtime-benchmarks",
 	"parachain-template-runtime/runtime-benchmarks",
 	"polkadot-cli/runtime-benchmarks",
-	"polkadot-primitives/runtime-benchmarks",
+	"primitives/runtime-benchmarks",
 	"sc-service/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 ]

@@ -14,7 +14,7 @@
 // limitations under the License.
 
 pub mod currency {
-	use polkadot_core_primitives::Balance;
+	use infrablockspace_core_primitives::Balance;
 	use rococo_runtime_constants as constants;
 
 	/// The existential deposit. Set to 1/10 of its parent Relay Chain (v9010).
@@ -38,7 +38,7 @@ pub mod fee {
 			WeightToFeeCoefficients, WeightToFeePolynomial,
 		},
 	};
-	use polkadot_core_primitives::Balance;
+	use infrablockspace_core_primitives::Balance;
 	use smallvec::smallvec;
 	pub use sp_runtime::Perbill;
 

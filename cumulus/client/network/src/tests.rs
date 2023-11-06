@@ -24,8 +24,8 @@ use cumulus_relay_chain_interface::{
 use cumulus_test_service::runtime::{Block, Hash, Header};
 use futures::{executor::block_on, poll, task::Poll, FutureExt, Stream, StreamExt};
 use parking_lot::Mutex;
-use polkadot_node_primitives::{SignedFullStatement, Statement};
-use polkadot_primitives::{
+use node_primitives::{SignedFullStatement, Statement};
+use primitives::{
 	CandidateCommitments, CandidateDescriptor, CollatorPair, CommittedCandidateReceipt,
 	Hash as PHash, HeadData, InboundDownwardMessage, InboundHrmpMessage, OccupiedCoreAssumption,
 	PersistedValidationData, SessionIndex, SigningContext, ValidationCodeHash, ValidatorId,
@@ -125,7 +125,7 @@ impl RelayChainInterface for DummyRelayChainInterface {
 		if self.data.lock().has_pending_availability {
 			Ok(Some(CommittedCandidateReceipt {
 				descriptor: CandidateDescriptor {
-					para_head: polkadot_parachain_primitives::primitives::HeadData(
+					para_head: parachain_primitives::primitives::HeadData(
 						default_header().encode(),
 					)
 					.hash(),
@@ -317,7 +317,7 @@ async fn make_gossip_message_and_header(
 			pov_hash: PHash::random(),
 			erasure_root: PHash::random(),
 			signature: sp_core::sr25519::Signature([0u8; 64]).into(),
-			para_head: polkadot_parachain_primitives::primitives::HeadData(header.encode()).hash(),
+			para_head: parachain_primitives::primitives::HeadData(header.encode()).hash(),
 			validation_code_hash: ValidationCodeHash::from(PHash::random()),
 		},
 	};

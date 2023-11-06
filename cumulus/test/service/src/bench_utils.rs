@@ -25,7 +25,7 @@ use cumulus_test_runtime::{
 	BalancesCall, GluttonCall, NodeBlock, SudoCall, UncheckedExtrinsic, WASM_BINARY,
 };
 use frame_system_rpc_runtime_api::AccountNonceApi;
-use polkadot_primitives::HeadData;
+use primitives::HeadData;
 use sc_block_builder::BlockBuilderProvider;
 use sc_client_api::UsageProvider;
 use sc_consensus::{

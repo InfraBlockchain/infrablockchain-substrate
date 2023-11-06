@@ -51,10 +51,10 @@ use sc_consensus::import_queue::{ImportQueueService, IncomingBlock};
 use sp_consensus::{BlockOrigin, BlockStatus, SyncOracle};
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT, NumberFor};
 
-use polkadot_node_primitives::{AvailableData, POV_BOMB_LIMIT};
-use polkadot_node_subsystem::messages::AvailabilityRecoveryMessage;
-use polkadot_overseer::Handle as OverseerHandle;
-use polkadot_primitives::{
+use node_primitives::{AvailableData, POV_BOMB_LIMIT};
+use node_subsystem::messages::AvailabilityRecoveryMessage;
+use infrablockspace_overseer::Handle as OverseerHandle;
+use primitives::{
 	CandidateReceipt, CommittedCandidateReceipt, Id as ParaId, SessionIndex,
 };
 

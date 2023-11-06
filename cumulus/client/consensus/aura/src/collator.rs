@@ -36,8 +36,8 @@ use cumulus_primitives_core::{
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
 use cumulus_relay_chain_interface::RelayChainInterface;
 
-use polkadot_node_primitives::{Collation, MaybeCompressedPoV};
-use polkadot_primitives::{Header as PHeader, Id as ParaId};
+use node_primitives::{Collation, MaybeCompressedPoV};
+use primitives::{Header as PHeader, Id as ParaId};
 
 use futures::prelude::*;
 use sc_consensus::{BlockImport, BlockImportParams, ForkChoiceStrategy, StateAction};

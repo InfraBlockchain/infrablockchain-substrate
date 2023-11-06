@@ -15,18 +15,18 @@ sp-std = { path = "../../../substrate/primitives/std", default-features = false}
 sp-trie = { path = "../../../substrate/primitives/trie", default-features = false}
 
 # Polkadot
-polkadot-core-primitives = { path = "../../../polkadot/core-primitives", default-features = false}
-polkadot-parachain-primitives = { path = "../../../polkadot/parachain", default-features = false}
-polkadot-primitives = { path = "../../../polkadot/primitives", default-features = false}
-xcm = { package = "staging-xcm", path = "../../../polkadot/xcm", default-features = false}
+infrablockspace-core-primitives = { path = "../../../infrablockspace/core-primitives", default-features = false}
+parachain-primitives = { path = "../../../infrablockspace/parachain", default-features = false}
+primitives = { path = "../../../infrablockspace/primitives", default-features = false}
+xcm = { package = "staging-xcm", path = "../../../infrablockspace/xcm", default-features = false}
 
 [features]
 default = [ "std" ]
 std = [
 	"codec/std",
-	"polkadot-core-primitives/std",
-	"polkadot-parachain-primitives/std",
-	"polkadot-primitives/std",
+	"infrablockspace-core-primitives/std",
+	"parachain-primitives/std",
+	"primitives/std",
 	"scale-info/std",
 	"sp-api/std",
 	"sp-runtime/std",

@@ -16,7 +16,7 @@
 
 use std::{net::SocketAddr, path::PathBuf};
 
-use polkadot_service::{ChainSpec, ParaId, PrometheusConfig};
+use infrablockspace_service::{ChainSpec, ParaId, PrometheusConfig};
 use sc_cli::{
 	CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams, NetworkParams,
 	Result as CliResult, SharedParams, SubstrateCli,

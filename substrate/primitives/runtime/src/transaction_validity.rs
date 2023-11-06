@@ -82,6 +82,8 @@ pub enum InvalidTransaction {
 	MandatoryValidation,
 	/// The sending address is disabled or known to be invalid.
 	BadSigner,
+	/// System Token is not registered yet
+	SystemTokenMissing,
 }
 
 impl InvalidTransaction {
@@ -113,6 +115,7 @@ impl From<InvalidTransaction> for &'static str {
 				"Transaction dispatch is mandatory; transactions must not be validated.",
 			InvalidTransaction::Custom(_) => "InvalidTransaction custom error",
 			InvalidTransaction::BadSigner => "Invalid signing address",
+			InvalidTransaction::SystemTokenMissing => "System Token is not existed",
 		}
 	}
 }

@@ -20,10 +20,11 @@ pallet-asset-conversion = { path = "../../../../../substrate/frame/asset-convers
 pallet-asset-tx-payment = { path = "../../../../../substrate/frame/transaction-payment/asset-tx-payment", default-features = false }
 
 # Polkadot
-pallet-xcm = { path = "../../../../../polkadot/xcm/pallet-xcm", default-features = false}
-xcm = { package = "staging-xcm", path = "../../../../../polkadot/xcm", default-features = false}
-xcm-builder = { package = "staging-xcm-builder", path = "../../../../../polkadot/xcm/xcm-builder", default-features = false}
-xcm-executor = { package = "staging-xcm-executor", path = "../../../../../polkadot/xcm/xcm-executor", default-features = false}
+pallet-xcm = { path = "../../../../../infrablockspace/xcm/pallet-xcm", default-features = false}
+xcm = { package = "staging-xcm", path = "../../../../../infrablockspace/xcm", default-features = false}
+xcm-builder = { package = "staging-xcm-builder", path = "../../../../../infrablockspace/xcm/xcm-builder", default-features = false}
+xcm-executor = { package = "staging-xcm-executor", path = "../../../../../infrablockspace/xcm/xcm-executor", default-features = false}
+xcm-primitives = { path = "../../../../../infrablockspace/xcm/xcm-primitives", default-features = false}
 
 # Cumulus
 parachains-common = { path = "../../../common", default-features = false }
@@ -42,6 +43,7 @@ std = [
 	"pallet-asset-conversion/std",
 	"pallet-asset-tx-payment/std",
 	"pallet-xcm/std",
+	"xcm-primitives/std",
 	"parachains-common/std",
 	"sp-api/std",
 	"sp-runtime/std",

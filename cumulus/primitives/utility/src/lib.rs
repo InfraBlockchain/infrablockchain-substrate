@@ -28,7 +28,7 @@ use frame_support::{
 	},
 	weights::Weight,
 };
-use polkadot_runtime_common::xcm_sender::ConstantPrice;
+use runtime_common::xcm_sender::ConstantPrice;
 use sp_runtime::{traits::Saturating, SaturatedConversion};
 use sp_std::{marker::PhantomData, prelude::*};
 use xcm::{latest::prelude::*, WrapVersion};

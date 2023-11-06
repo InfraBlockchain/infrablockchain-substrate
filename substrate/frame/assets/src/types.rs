@@ -35,6 +35,10 @@ pub(super) type AssetAccountOf<T, I> = AssetAccount<
 pub(super) type ExistenceReasonOf<T, I> =
 	ExistenceReason<DepositBalanceOf<T, I>, <T as SystemConfig>::AccountId>;
 
+pub(super) const DEFAULT_SYSTEM_TOKEN_WEIGHT: u128 = 100_000;
+
+const CORRECTION_PARA_FEE_RATE: SystemTokenWeight = 1_000;
+
 /// AssetStatus holds the current state of the asset. It could either be Live and available for use,
 /// or in a Destroying state.
 #[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
@@ -75,6 +79,8 @@ pub struct AssetDetails<Balance, AccountId, DepositBalance> {
 	pub(super) approvals: u32,
 	/// The status of the asset
 	pub(super) status: AssetStatus,
+	/// The system token weight compared with base system token.
+	pub(super) system_token_weight: SystemTokenWeight,
 }
 
 /// Data concerning an approval.
@@ -284,7 +290,7 @@ type AssetBalanceOf<T, I> = <T as Config<I>>::Balance;
 type BalanceOf<F, T> = <F as fungible::Inspect<AccountIdOf<T>>>::Balance;
 
 /// Converts a balance value into an asset balance based on the ratio between the fungible's
-/// minimum balance and the minimum asset balance.
+/// minimum balance and the minimum asset balance.pub struct BalanceToAssetBalance<F, T, CON, I = ()>(PhantomData<(F, T, CON, I)>);
 pub struct BalanceToAssetBalance<F, T, CON, I = ()>(PhantomData<(F, T, CON, I)>);
 impl<F, T, CON, I> ConversionToAssetBalance<BalanceOf<F, T>, AssetIdOf<T, I>, AssetBalanceOf<T, I>>
 	for BalanceToAssetBalance<F, T, CON, I>
@@ -293,6 +299,8 @@ where
 	T: Config<I>,
 	I: 'static,
 	CON: Convert<BalanceOf<F, T>, AssetBalanceOf<T, I>>,
+	BalanceOf<F, T>: sp_runtime::FixedPointOperand + Zero,
+	AssetBalanceOf<T, I>: sp_runtime::FixedPointOperand + Zero,
 {
 	type Error = ConversionError;
 
@@ -308,12 +316,23 @@ where
 		let asset = Asset::<T, I>::get(asset_id).ok_or(ConversionError::AssetMissing)?;
 		// only sufficient assets have a min balance with reliable value
 		ensure!(asset.is_sufficient, ConversionError::AssetNotSufficient);
-		let min_balance = CON::convert(F::minimum_balance());
+		// ToDo
+		// 1. Acutal min ratio should be handled!
+		// 2. CON should be handled. Now it is Balance pallet
+		//
+		// let min_balance = CON::convert(F::minimum_balance());
 		// make sure we don't divide by zero
-		ensure!(!min_balance.is_zero(), ConversionError::MinBalanceZero);
+		// ensure!(!min_balance.is_zero(), ConversionError::MinBalanceZero);
 		let balance = CON::convert(balance);
-		// balance * asset.min_balance / min_balance
-		Ok(FixedU128::saturating_from_rational(asset.min_balance, min_balance)
-			.saturating_mul_int(balance))
+
+		let para_fee_rate = ParaFeeRate::<T, I>::get().ok_or(ConversionError::AssetMissing)?;
+
+		// balance * para_fee_rate / (system_token_weight * correction_para_fee_rate)
+		// ToDo: Divisor should be changed based on the decimals
+		Ok(FixedU128::saturating_from_rational(
+			para_fee_rate,
+			asset.system_token_weight * CORRECTION_PARA_FEE_RATE,
+		)
+		.saturating_mul_int(balance))
 	}
 }

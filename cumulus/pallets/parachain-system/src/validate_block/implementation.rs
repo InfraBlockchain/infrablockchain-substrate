@@ -22,7 +22,7 @@ use cumulus_primitives_core::{
 };
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
 
-use polkadot_parachain_primitives::primitives::{
+use parachain_primitives::primitives::{
 	HeadData, RelayChainBlockNumber, ValidationResult,
 };
 
@@ -212,6 +212,13 @@ where
 				head_data
 			};
 
+		let vote_result = if let Some(res) = crate::CollectedPotVotes::<PSC>::get() {
+			let vote_result = res.votes();
+			Some(vote_result)
+		} else {
+			None
+		};
+
 		ValidationResult {
 			head_data,
 			new_validation_code: new_validation_code.map(Into::into),
@@ -219,6 +226,7 @@ where
 			processed_downward_messages,
 			horizontal_messages,
 			hrmp_watermark,
+			vote_result,
 		}
 	})
 }

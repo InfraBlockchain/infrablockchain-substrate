@@ -18,9 +18,9 @@ sp-runtime = { path = "../../../substrate/primitives/runtime", default-features 
 sp-std = { path = "../../../substrate/primitives/std", default-features = false}
 
 # Polkadot
-polkadot-runtime-common = { path = "../../../polkadot/runtime/common", default-features = false}
-xcm = { package = "staging-xcm", path = "../../../polkadot/xcm", default-features = false}
-xcm-executor = { package = "staging-xcm-executor", path = "../../../polkadot/xcm/xcm-executor", default-features = false}
+runtime-common = { path = "../../../infrablockspace/runtime/common", default-features = false}
+xcm = { package = "staging-xcm", path = "../../../infrablockspace/xcm", default-features = false}
+xcm-executor = { package = "staging-xcm-executor", path = "../../../infrablockspace/xcm/xcm-executor", default-features = false}
 
 # Cumulus
 cumulus-primitives-core = { path = "../../primitives/core", default-features = false }
@@ -35,7 +35,7 @@ sp-core = { path = "../../../substrate/primitives/core" }
 pallet-balances = { path = "../../../substrate/frame/balances" }
 
 # Polkadot
-xcm-builder = { package = "staging-xcm-builder", path = "../../../polkadot/xcm/xcm-builder" }
+xcm-builder = { package = "staging-xcm-builder", path = "../../../infrablockspace/xcm/xcm-builder" }
 
 # Cumulus
 cumulus-pallet-parachain-system = { path = "../parachain-system", features = ["parameterized-consensus-hook"] }
@@ -49,7 +49,7 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"log/std",
-	"polkadot-runtime-common/std",
+	"runtime-common/std",
 	"scale-info/std",
 	"sp-io/std",
 	"sp-runtime/std",
@@ -64,7 +64,7 @@ runtime-benchmarks = [
 	"frame-support/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
-	"polkadot-runtime-common/runtime-benchmarks",
+	"runtime-common/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 	"xcm-builder/runtime-benchmarks",
 	"xcm-executor/runtime-benchmarks",
@@ -74,6 +74,6 @@ try-runtime = [
 	"frame-support/try-runtime",
 	"frame-system/try-runtime",
 	"pallet-balances/try-runtime",
-	"polkadot-runtime-common/try-runtime",
+	"runtime-common/try-runtime",
 	"sp-runtime/try-runtime",
 ]
