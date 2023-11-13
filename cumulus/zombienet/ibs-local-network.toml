@@ -7,7 +7,6 @@ chain = "infra-relay-local"
 name = "alice"
 validator = true
 args = ["-lparachain=debug", "-l=xcm=trace"]
-
 rpc_port = 7100
 ws_port = 7101
 
