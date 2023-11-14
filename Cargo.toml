@@ -48,6 +48,8 @@ members = [
 	"cumulus/client/relay-chain-minimal-node",
 	"cumulus/client/relay-chain-rpc-interface",
 	"cumulus/client/service",
+	"cumulus/did-parachain/node",
+	"cumulus/did-parachain/runtime",
 	"cumulus/pallets/aura-ext",
 	"cumulus/pallets/collator-selection",
 	"cumulus/pallets/dmp-queue",
@@ -439,7 +441,7 @@ members = [
 	"substrate/utils/prometheus",
 	"substrate/utils/wasm-builder",
 ]
-default-members = [ "infrablockspace", "cumulus/parachain-template/node", "cumulus/infra-parachain"]
+default-members = [ "infrablockspace", "cumulus/parachain-template/node", "cumulus/infra-parachain", "cumulus/did-parachain/node",]
 
 [profile.release]
 # Polkadot runtime requires unwinding.
