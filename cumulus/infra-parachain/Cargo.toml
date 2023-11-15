@@ -28,11 +28,12 @@ parachains-common = { path = "../parachains/common" }
 asset-hub-runtime = { path = "../parachains/runtimes/assets/asset-hub-infra" }
 urauth-runtime = { path = "../parachains/runtimes/ur-auth" }
 contracts-infra-runtime = { path = "../parachains/runtimes/contracts/contracts-infra" }
+did-runtime = { path = "../parachains/runtimes/did" }
 
 # Substrate
 frame-benchmarking = { path = "../../substrate/frame/benchmarking" }
 frame-benchmarking-cli = { path = "../../substrate/utils/frame/benchmarking-cli" }
-sp-runtime = { path = "../../substrate/primitives/runtime", default-features = false}
+sp-runtime = { path = "../../substrate/primitives/runtime", default-features = false }
 sp-io = { path = "../../substrate/primitives/io" }
 sp-core = { path = "../../substrate/primitives/core" }
 sp-session = { path = "../../substrate/primitives/session" }
@@ -65,7 +66,10 @@ pallet-transaction-payment-rpc = { path = "../../substrate/frame/transaction-pay
 substrate-state-trie-migration-rpc = { path = "../../substrate/utils/frame/rpc/state-trie-migration-rpc" }
 
 # Infr Relay
-polkadot-cli = { path = "../../infrablockspace/cli", features = ["rococo-native", "infra-relay-native"] }
+polkadot-cli = { path = "../../infrablockspace/cli", features = [
+	"rococo-native",
+	"infra-relay-native",
+] }
 primitives = { path = "../../infrablockspace/primitives" }
 infrablockspace-service = { path = "../../infrablockspace/node/service" }
 xcm = { package = "staging-xcm", path = "../../infrablockspace/xcm" }

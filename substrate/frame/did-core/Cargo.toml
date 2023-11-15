@@ -1,0 +1,174 @@
+[package]
+name = "did-core"
+version = "0.5.0"
+authors = ["Dock.io"]
+edition = "2021"
+license = "Apache-2.0"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+sp-core = { path = "../../primitives/core", default-features = false}
+sp-std = { path = "../../primitives/std", default-features = false}
+sp-runtime = { path = "../../primitives/runtime", default-features = false}
+sp-io = { path = "../../primitives/io", default-features = false}
+frame-system = { path = "../system", default-features = false}
+frame-support = { path = "../support", default-features = false}
+sp-api = { path = "../../primitives/api", default-features = false}
+sp-application-crypto = { path = "../../primitives/application-crypto", default-features = false, features = ["serde"] }
+frame-benchmarking = { path = "../benchmarking", default-features = false, optional = true}
+num-traits = { version = "0.2.14", default-features = false }
+
+[dependencies.bitflags]
+version = "1.3.2"
+
+[dependencies.scale-info]
+version = "2.1.2"
+default-features = false
+features = ["derive", "serde"]
+
+[dependencies.scale-info-derive]
+git = "https://github.com/docknetwork/scale-info.git"
+branch = "master"
+
+[dependencies.serde-hex]
+package = "hex"
+default-features = false
+version = "0.4.2"
+features = ["serde"]
+optional = true
+
+[dependencies.serde]
+features = ["derive"]
+optional = true
+version = "1.0.119"
+
+[dependencies.serde-big-array]
+optional = true
+version = "0.3.0"
+
+[dependencies.codec]
+default-features = false
+features = ["derive"]
+package = "parity-scale-codec"
+version = "3.1.5"
+
+[dependencies.hex-literal]
+version = "0.3.1"
+optional = true
+
+[dependencies.libsecp256k1]
+version = "0.7"
+default-features = false
+features = ["static-context", "hmac"]
+
+[dependencies.sha2]
+version = "0.9"
+default-features = false
+
+[dependencies.getrandom]
+default-features = false
+version = "0.2"
+features = ["js"]
+optional = true
+
+[dependencies.rand]
+version = "0.8.3"
+default-features = false
+optional = true
+
+[dependencies.rand_chacha]
+version = "0.2.2"
+default-features = false
+optional = true
+
+[dependencies.schnorrkel]
+version = "0.9.1"
+default-features = false
+optional = true
+
+[dependencies.merlin]
+version = "2.0.1"
+default-features = false
+optional = true
+
+[dev-dependencies]
+rand = "0.8.3"
+# evm = { git = "https://github.com/rust-blockchain/evm", rev = "51b8c2ce3104265e1fd5bb0fe5cdfd2e0938239c", default-features = false, features = ["with-codec"] }
+pallet-balances = { path = "../balances", default-features = false}
+pallet-timestamp = { path = "../timestamp", default-features = false}
+
+# [dev-dependencies.pallet-evm-precompile-storage-reader]
+# default-features = false
+# git = "https://github.com/docknetwork/frontier.git"
+# branch = "master"
+# path = "../../../../frontier/frame/evm/precompile/storage-reader"
+
+
+
+# [dev-dependencies.pallet-evm]
+# default-features = false
+# git = "https://github.com/docknetwork/frontier.git"
+# branch = "master"
+# # path = "../../../../frontier/frame/evm"
+
+# [dev-dependencies.fp-evm]
+# default-features = false
+# git = "https://github.com/docknetwork/frontier.git"
+# branch = "master"
+# # path = "../../../../frontier/frame/evm"
+
+# [dev-dependencies.pallet-ethereum]
+# default-features = false
+# git = "https://github.com/docknetwork/frontier.git"
+# branch = "master"
+# # path = "../../../../frontier/frame/ethereum"
+
+# [dev-dependencies.pallet-evm-test-vector-support]
+# default-features = false
+# git = "https://github.com/docknetwork/frontier.git"
+# branch = "master"
+
+
+
+[features]
+default = ["std"]
+std = [
+    "serde-hex/std",
+    "codec/std",
+    "frame-support/std",
+    "frame-benchmarking/std",
+    "sp-application-crypto/std",
+    "sp-application-crypto/full_crypto",
+    "serde",
+    "serde-big-array",
+    "getrandom/std",
+    "serde-hex",
+    "serde-big-array",
+    "sp-core/std",
+    "sp-core/full_crypto",
+    "sp-io/std",
+    "sp-runtime/std",
+    "sp-std/std",
+    "frame-system/std",
+    "sp-api/std",
+    "num-traits/std",
+    "libsecp256k1/std",
+    # "pallet-evm-precompile-storage-reader/std",
+    # "fp-evm/std",
+    "scale-info/std",
+    # "pallet-evm/std",
+    # "evm/std"
+]
+
+runtime-benchmarks = [
+	"frame-benchmarking/runtime-benchmarks",
+    "hex-literal",
+    "getrandom",
+    "schnorrkel",
+    "schnorrkel/chacha",
+    "rand_chacha",
+    "rand",
+    "merlin"
+]

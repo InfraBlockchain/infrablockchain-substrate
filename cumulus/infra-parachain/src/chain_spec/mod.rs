@@ -24,6 +24,7 @@ use sp_runtime::traits::{IdentifyAccount, Verify};
 pub mod asset_hubs;
 pub mod urauth;
 pub mod contracts;
+pub mod did;
 
 /// The default XCM version to set in genesis config.
 const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
