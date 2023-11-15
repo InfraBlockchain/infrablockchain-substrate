@@ -33,9 +33,7 @@ const URAUTH_INFRA_RELAY_ED: URAuthBalance =
 /// Generate the session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn urauth_session_keys(
-	keys: AuraId,
-) -> urauth_runtime::SessionKeys {
+pub fn urauth_session_keys(keys: AuraId) -> urauth_runtime::SessionKeys {
 	urauth_runtime::SessionKeys { aura: keys }
 }
 
@@ -64,8 +62,8 @@ pub fn urauth_development_config() -> URAuthChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
 				],
-                vec![],
-                Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
+				vec![],
+				Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
 				1000.into(),
 			)
 		},
@@ -117,8 +115,8 @@ pub fn urauth_local_config() -> URAuthChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
-                Default::default(),
-                Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
+				Default::default(),
+				Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
 				1000.into(),
 			)
 		},
@@ -196,8 +194,8 @@ pub fn urauth_config() -> URAuthChainSpec {
 fn urauth_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
-    oracle_members: Vec<AccountId>,
-    root_key: Option<AccountId>,
+	oracle_members: Vec<AccountId>,
+	root_key: Option<AccountId>,
 	id: ParaId,
 ) -> urauth_runtime::RuntimeGenesisConfig {
 	urauth_runtime::RuntimeGenesisConfig {
@@ -243,8 +241,8 @@ fn urauth_genesis(
 				.into_iter()
 				.map(|(acc, aura)| {
 					(
-						acc.clone(),                           // account id
-						acc,                                   // validator id
+						acc.clone(),               // account id
+						acc,                       // validator id
 						urauth_session_keys(aura), // session keys
 					)
 				})
@@ -259,7 +257,7 @@ fn urauth_genesis(
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
 			..Default::default()
 		},
-        ur_auth: urauth_runtime::URAuthConfig { oracle_members },
-        sudo: urauth_runtime::SudoConfig { key: root_key }
+		ur_auth: urauth_runtime::URAuthConfig { oracle_members },
+		sudo: urauth_runtime::SudoConfig { key: root_key },
 	}
 }

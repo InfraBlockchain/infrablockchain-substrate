@@ -30,9 +30,7 @@ use node_network_protocol::{
 	v2::{self as protocol_v2, StatementFilter},
 	IfDisconnected, PeerId, UnifiedReputationChange as Rep, Versioned, View,
 };
-use node_primitives::{
-	SignedFullStatementWithPVD, StatementWithPVD as FullStatementWithPVD,
-};
+use node_primitives::{SignedFullStatementWithPVD, StatementWithPVD as FullStatementWithPVD};
 use node_subsystem::{
 	messages::{
 		CandidateBackingMessage, HypotheticalCandidate, HypotheticalFrontierRequest,
@@ -171,10 +169,8 @@ impl PerSessionState {
 			authority_lookup.insert(ad, ValidatorIndex(i as _));
 		}
 
-		let local_validator = node_subsystem_util::signing_key_and_index(
-			session_info.validators.iter(),
-			keystore,
-		);
+		let local_validator =
+			node_subsystem_util::signing_key_and_index(session_info.validators.iter(), keystore);
 
 		PerSessionState {
 			session_info,
@@ -455,23 +451,19 @@ pub(crate) async fn handle_active_leaves_update<Context>(
 		// New leaf: fetch info from runtime API and initialize
 		// `per_relay_parent`.
 
-		let session_index = node_subsystem_util::request_session_index_for_child(
-			new_relay_parent,
-			ctx.sender(),
-		)
-		.await
-		.await
-		.map_err(JfyiError::RuntimeApiUnavailable)?
-		.map_err(JfyiError::FetchSessionIndex)?;
+		let session_index =
+			node_subsystem_util::request_session_index_for_child(new_relay_parent, ctx.sender())
+				.await
+				.await
+				.map_err(JfyiError::RuntimeApiUnavailable)?
+				.map_err(JfyiError::FetchSessionIndex)?;
 
-		let availability_cores = node_subsystem_util::request_availability_cores(
-			new_relay_parent,
-			ctx.sender(),
-		)
-		.await
-		.await
-		.map_err(JfyiError::RuntimeApiUnavailable)?
-		.map_err(JfyiError::FetchAvailabilityCores)?;
+		let availability_cores =
+			node_subsystem_util::request_availability_cores(new_relay_parent, ctx.sender())
+				.await
+				.await
+				.map_err(JfyiError::RuntimeApiUnavailable)?
+				.map_err(JfyiError::FetchAvailabilityCores)?;
 
 		let group_rotation_info =
 			node_subsystem_util::request_validator_groups(new_relay_parent, ctx.sender())

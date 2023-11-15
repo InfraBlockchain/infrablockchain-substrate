@@ -64,7 +64,9 @@ pub use determine_new_blocks::determine_new_blocks;
 /// These reexports are required so that external crates can use the `delegated_subsystem` macro
 /// properly.
 pub mod reexports {
-	pub use infrablockspace_overseer::gen::{SpawnedSubsystem, Spawner, Subsystem, SubsystemContext};
+	pub use infrablockspace_overseer::gen::{
+		SpawnedSubsystem, Spawner, Subsystem, SubsystemContext,
+	};
 }
 
 /// A utility for managing the implicit view of the relay-chain derived from active

@@ -40,8 +40,8 @@ use crate::{
 use node_primitives::BlockWeight;
 use primitives::{BlockNumber, Hash};
 
-use parity_scale_codec::{Decode, Encode};
 use node_subsystem_util::database::{DBTransaction, Database};
+use parity_scale_codec::{Decode, Encode};
 
 use std::sync::Arc;
 

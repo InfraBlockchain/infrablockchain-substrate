@@ -16,10 +16,10 @@
 
 //! Assignment criteria VRF generation and checking.
 
-use parity_scale_codec::{Decode, Encode};
 use node_primitives::approval::{
 	self as approval_types, AssignmentCert, AssignmentCertKind, DelayTranche, RelayVRFStory,
 };
+use parity_scale_codec::{Decode, Encode};
 use primitives::{
 	AssignmentId, AssignmentPair, CandidateHash, CoreIndex, GroupIndex, IndexedVec, SessionInfo,
 	ValidatorIndex,

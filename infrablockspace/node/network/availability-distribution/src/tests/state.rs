@@ -33,9 +33,7 @@ use sc_network::{config as netconfig, config::RequestResponseConfig, IfDisconnec
 use sp_core::{testing::TaskExecutor, traits::SpawnNamed};
 use sp_keystore::KeystorePtr;
 
-use node_network_protocol::request_response::{
-	v1, IncomingRequest, OutgoingRequest, Requests,
-};
+use node_network_protocol::request_response::{v1, IncomingRequest, OutgoingRequest, Requests};
 use node_primitives::ErasureChunk;
 use node_subsystem::{
 	messages::{

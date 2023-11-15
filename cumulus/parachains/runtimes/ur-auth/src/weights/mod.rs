@@ -19,14 +19,14 @@
 
 pub mod block_weights;
 pub mod extrinsic_weights;
-pub mod paritydb_weights;
-pub mod rocksdb_weights;
-pub mod pallet_assets;
 pub mod frame_system;
+pub mod pallet_assets;
+pub mod pallet_balances;
 pub mod pallet_collator_selection;
 pub mod pallet_preimage;
-pub mod pallet_balances;
 pub mod pallet_xcm;
+pub mod paritydb_weights;
+pub mod rocksdb_weights;
 pub mod xcm;
 
 pub use block_weights::constants::BlockExecutionWeight;

@@ -658,11 +658,7 @@ pub(crate) mod tests {
 			_keystore: &LocalKeystore,
 			_relay_vrf_story: node_primitives::approval::RelayVRFStory,
 			_config: &criteria::Config,
-			_leaving_cores: Vec<(
-				CandidateHash,
-				primitives::CoreIndex,
-				primitives::GroupIndex,
-			)>,
+			_leaving_cores: Vec<(CandidateHash, primitives::CoreIndex, primitives::GroupIndex)>,
 		) -> HashMap<primitives::CoreIndex, criteria::OurAssignment> {
 			HashMap::new()
 		}

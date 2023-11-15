@@ -23,7 +23,6 @@ pub use node_core_pvf_common::{executor_intf::Executor, worker_dir, SecurityStat
 const LOG_TARGET: &str = "parachain::pvf-execute-worker";
 
 use cpu_time::ProcessTime;
-use parity_scale_codec::{Decode, Encode};
 use node_core_pvf_common::{
 	error::InternalValidationError,
 	execute::{Handshake, Response},
@@ -36,6 +35,7 @@ use node_core_pvf_common::{
 	},
 };
 use parachain_primitives::primitives::ValidationResult;
+use parity_scale_codec::{Decode, Encode};
 use std::{
 	os::unix::net::UnixStream,
 	path::PathBuf,

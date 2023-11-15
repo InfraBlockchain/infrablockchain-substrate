@@ -16,12 +16,12 @@
 
 #[cfg(feature = "ci-only-tests")]
 use assert_matches::assert_matches;
-use parity_scale_codec::Encode as _;
 use node_core_pvf::{
 	start, Config, InvalidCandidate, Metrics, PrepareError, PrepareJobKind, PrepareStats,
 	PvfPrepData, ValidationError, ValidationHost, JOB_TIMEOUT_WALL_CLOCK_FACTOR,
 };
 use parachain_primitives::primitives::{BlockData, ValidationParams, ValidationResult};
+use parity_scale_codec::Encode as _;
 use primitives::ExecutorParams;
 
 #[cfg(feature = "ci-only-tests")]

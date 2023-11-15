@@ -76,7 +76,7 @@ fn runtime(id: &str) -> Runtime {
 	if id.starts_with("asset-hub-infra") {
 		Runtime::AssetHubInfra
 	} else if id.starts_with("urauth") {
-		Runtime::URAuth	
+		Runtime::URAuth
 	} else {
 		log::warn!("No specific runtime was recognized for ChainSpec's id: '{}', so Runtime::default() will be used", id);
 		Runtime::default()
@@ -87,24 +87,16 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 	let (id, _, _) = extract_parachain_id(id);
 	Ok(match id {
 		// - Defaul-like(ToDo: should cange)
-		"staging" =>
-			Box::new(chain_spec::asset_hubs::asset_hub_local_config()),
-		"asset-hub-infra-dev" => 
-			Box::new(chain_spec::asset_hubs::asset_hub_development_config()),	
-		"asset-hub-infra-local" => 
-			Box::new(chain_spec::asset_hubs::asset_hub_local_config()),
-		"asset-hub-genesis" => 
-			Box::new(chain_spec::asset_hubs::asset_hub_config()),
-		"asset-hub-infra" =>
-			Box::new(chain_spec::asset_hubs::AssetHubChainSpec::from_json_bytes(
-				&include_bytes!("../chain-specs/asset-hub-polkadot.json")[..],
-			)?),
-		"urauth-dev" => 
-			Box::new(chain_spec::urauth::urauth_development_config()),
-		"urauth-local" =>
-			Box::new(chain_spec::urauth::urauth_local_config()),
-		"urauth" =>
-			Box::new(chain_spec::urauth::urauth_config()),
+		"staging" => Box::new(chain_spec::asset_hubs::asset_hub_local_config()),
+		"asset-hub-infra-dev" => Box::new(chain_spec::asset_hubs::asset_hub_development_config()),
+		"asset-hub-infra-local" => Box::new(chain_spec::asset_hubs::asset_hub_local_config()),
+		"asset-hub-genesis" => Box::new(chain_spec::asset_hubs::asset_hub_config()),
+		"asset-hub-infra" => Box::new(chain_spec::asset_hubs::AssetHubChainSpec::from_json_bytes(
+			&include_bytes!("../chain-specs/asset-hub-polkadot.json")[..],
+		)?),
+		"urauth-dev" => Box::new(chain_spec::urauth::urauth_development_config()),
+		"urauth-local" => Box::new(chain_spec::urauth::urauth_local_config()),
+		"urauth" => Box::new(chain_spec::urauth::urauth_config()),
 		// -- Fallback (generic chainspec)
 		"" => {
 			log::warn!("No ChainSpec.id specified, so using default one, based on rococo-parachain runtime");
@@ -115,15 +107,12 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		path => {
 			let path: PathBuf = path.into();
 			match path.runtime() {
-				Runtime::AssetHubInfra => Box::new(
-					chain_spec::asset_hubs::AssetHubChainSpec::from_json_file(path)?,
-				),
-				Runtime::URAuth => Box::new(
-					chain_spec::urauth::URAuthChainSpec::from_json_file(path)?,
-				),
-				Runtime::Default => Box::new(
-					chain_spec::asset_hubs::AssetHubChainSpec::from_json_file(path)?,
-				),
+				Runtime::AssetHubInfra =>
+					Box::new(chain_spec::asset_hubs::AssetHubChainSpec::from_json_file(path)?),
+				Runtime::URAuth =>
+					Box::new(chain_spec::urauth::URAuthChainSpec::from_json_file(path)?),
+				Runtime::Default =>
+					Box::new(chain_spec::asset_hubs::AssetHubChainSpec::from_json_file(path)?),
 			}
 		},
 	})

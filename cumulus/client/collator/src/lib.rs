@@ -26,9 +26,9 @@ use sp_core::traits::SpawnNamed;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 
 use cumulus_client_consensus_common::ParachainConsensus;
+use infrablockspace_overseer::Handle as OverseerHandle;
 use node_primitives::{CollationGenerationConfig, CollationResult, MaybeCompressedPoV};
 use node_subsystem::messages::{CollationGenerationMessage, CollatorProtocolMessage};
-use infrablockspace_overseer::Handle as OverseerHandle;
 use primitives::{CollatorPair, Id as ParaId};
 
 use codec::{Decode, Encode};
@@ -155,9 +155,9 @@ pub mod relay_chain_driven {
 		channel::{mpsc, oneshot},
 		prelude::*,
 	};
+	use infrablockspace_overseer::Handle as OverseerHandle;
 	use node_primitives::{CollationGenerationConfig, CollationResult};
 	use node_subsystem::messages::{CollationGenerationMessage, CollatorProtocolMessage};
-	use infrablockspace_overseer::Handle as OverseerHandle;
 	use primitives::{CollatorPair, Id as ParaId};
 
 	use cumulus_primitives_core::{relay_chain::Hash as PHash, PersistedValidationData};
@@ -343,10 +343,10 @@ mod tests {
 	use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 	use cumulus_test_runtime::{Block, Header};
 	use futures::{channel::mpsc, executor::block_on, StreamExt};
+	use infrablockspace_overseer::{dummy::dummy_overseer_builder, HeadSupportsParachains};
 	use node_primitives::CollationGenerationConfig;
 	use node_subsystem::messages::CollationGenerationMessage;
 	use node_subsystem_test_helpers::ForwardSubsystem;
-	use infrablockspace_overseer::{dummy::dummy_overseer_builder, HeadSupportsParachains};
 	use primitives::HeadData;
 	use sp_consensus::BlockOrigin;
 	use sp_core::{testing::TaskExecutor, Pair};

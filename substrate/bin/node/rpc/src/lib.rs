@@ -34,7 +34,6 @@
 use std::sync::Arc;
 
 use jsonrpsee::RpcModule;
-use substrate_node_primitives::{AccountId, Balance, Block, BlockNumber, Hash, Nonce};
 use sc_client_api::AuxStore;
 use sc_consensus_babe::BabeWorkerHandle;
 use sc_consensus_grandpa::{
@@ -49,6 +48,7 @@ use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_consensus::SelectChain;
 use sp_consensus_babe::BabeApi;
 use sp_keystore::KeystorePtr;
+use substrate_node_primitives::{AccountId, Balance, Block, BlockNumber, Hash, Nonce};
 
 /// Extra dependencies for BABE.
 pub struct BabeDeps {

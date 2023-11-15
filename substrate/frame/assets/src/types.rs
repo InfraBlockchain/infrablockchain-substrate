@@ -290,7 +290,8 @@ type AssetBalanceOf<T, I> = <T as Config<I>>::Balance;
 type BalanceOf<F, T> = <F as fungible::Inspect<AccountIdOf<T>>>::Balance;
 
 /// Converts a balance value into an asset balance based on the ratio between the fungible's
-/// minimum balance and the minimum asset balance.pub struct BalanceToAssetBalance<F, T, CON, I = ()>(PhantomData<(F, T, CON, I)>);
+/// minimum balance and the minimum asset balance.pub struct BalanceToAssetBalance<F, T, CON, I =
+/// ()>(PhantomData<(F, T, CON, I)>);
 pub struct BalanceToAssetBalance<F, T, CON, I = ()>(PhantomData<(F, T, CON, I)>);
 impl<F, T, CON, I> ConversionToAssetBalance<BalanceOf<F, T>, AssetIdOf<T, I>, AssetBalanceOf<T, I>>
 	for BalanceToAssetBalance<F, T, CON, I>

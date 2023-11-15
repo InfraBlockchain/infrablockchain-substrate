@@ -15,8 +15,8 @@
 
 //! # Infra Asset Hub MainNet Runtime
 //!
-//! Infra Asset System is a parachain that provides an interface to create, manage, and use assets. Assets
-//! may be fungible or non-fungible.
+//! Infra Asset System is a parachain that provides an interface to create, manage, and use assets.
+//! Assets may be fungible or non-fungible.
 //!
 //! ## Assets
 //!
@@ -31,14 +31,14 @@
 //!
 //! ### Governance
 //!
-//! As a common good parachain, Infra Asset System defers its governance (namely, its `Root` origin), to its
-//! Relay Chain parent, Polkadot.
+//! As a common good parachain, Infra Asset System defers its governance (namely, its `Root`
+//! origin), to its Relay Chain parent, Polkadot.
 //!
 //! ### Collator Selection
 //!
-//! Infra Asset System uses `pallet-collator-selection`, a simple first-come-first-served registration
-//! system where collators can reserve a small bond to join the block producer set. There is no
-//! slashing.
+//! Infra Asset System uses `pallet-collator-selection`, a simple first-come-first-served
+//! registration system where collators can reserve a small bond to join the block producer set.
+//! There is no slashing.
 //!
 //! ### XCM
 //!
@@ -76,9 +76,12 @@ use frame_support::{
 	construct_runtime,
 	dispatch::DispatchClass,
 	parameter_types,
-	traits::{AsEnsureOriginWithArg, ConstBool, ConstU32, ConstU64, ConstU8, EitherOfDiverse, InstanceFilter},
+	traits::{
+		AsEnsureOriginWithArg, ConstBool, ConstU32, ConstU64, ConstU8, EitherOfDiverse,
+		InstanceFilter,
+	},
 	weights::{ConstantMultiplier, Weight},
-	PalletId, 
+	PalletId,
 };
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
@@ -87,10 +90,11 @@ use frame_system::{
 
 use pallet_system_token_tx_payment::{CreditToBucket, TransactionFeeCharger};
 use parachains_common::{
-	types::*, constants::*,
-	impls::DealWithFees, 
-	infra_relay::{consensus::*, currency::*, fee::WeightToFee },
-	opaque::*, 
+	constants::*,
+	impls::DealWithFees,
+	infra_relay::{consensus::*, currency::*, fee::WeightToFee},
+	opaque::*,
+	types::*,
 };
 use xcm_config::{
 	DotLocation, TrustBackedAssetsConvertedConcreteId, XcmConfig, XcmOriginToTransactDispatchOrigin,
@@ -100,9 +104,9 @@ use xcm_config::{
 pub use sp_runtime::BuildStorage;
 
 // Polkadot imports
+use pallet_xcm::{EnsureXcm, IsMajorityOfBody};
 use runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 use runtime_parachains::system_token_aggregator;
-use pallet_xcm::{EnsureXcm, IsMajorityOfBody};
 use xcm::latest::BodyId;
 use xcm_executor::XcmExecutor;
 

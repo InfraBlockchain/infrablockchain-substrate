@@ -43,8 +43,8 @@ use node_subsystem::messages::{
 };
 use primitives::{Block, BlockNumber, Hash, Header};
 
-use node_subsystem_test_helpers::TestSubsystemSender;
 use infrablockspace_overseer::{SubsystemContext, SubsystemSender};
+use node_subsystem_test_helpers::TestSubsystemSender;
 
 type VirtualOverseer = test_helpers::TestSubsystemContextHandle<ApprovalVotingMessage>;
 

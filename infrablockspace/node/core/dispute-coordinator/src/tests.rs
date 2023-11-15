@@ -84,9 +84,7 @@ fn make_keystore(seeds: impl Iterator<Item = String>) -> LocalKeystore {
 	let store = LocalKeystore::in_memory();
 
 	for s in seeds {
-		store
-			.sr25519_generate_new(primitives::PARACHAIN_KEY_TYPE_ID, Some(&s))
-			.unwrap();
+		store.sr25519_generate_new(primitives::PARACHAIN_KEY_TYPE_ID, Some(&s)).unwrap();
 	}
 
 	store
@@ -3303,8 +3301,7 @@ fn informs_chain_selection_when_dispute_concluded_against() {
 				)
 				.await;
 
-			let byzantine_threshold =
-				primitives::byzantine_threshold(test_state.validators.len());
+			let byzantine_threshold = primitives::byzantine_threshold(test_state.validators.len());
 
 			let (valid_vote, invalid_vote) = generate_opposing_votes_pair(
 				&test_state,

@@ -16,6 +16,7 @@
 
 use self::test_helpers::mock::new_leaf;
 use super::*;
+use infrablockspace_overseer::HeadSupportsParachains;
 use node_primitives::{
 	approval::{
 		AssignmentCert, AssignmentCertKind, DelayTranche, VrfOutput, VrfProof, VrfSignature,
@@ -31,7 +32,6 @@ use node_subsystem::{
 };
 use node_subsystem_test_helpers as test_helpers;
 use node_subsystem_util::TimeoutExt;
-use infrablockspace_overseer::HeadSupportsParachains;
 use primitives::{
 	CandidateCommitments, CandidateEvent, CoreIndex, GroupIndex, Header, Id as ParaId, IndexedVec,
 	ValidationCode, ValidatorSignature,
@@ -234,11 +234,7 @@ where
 		_keystore: &LocalKeystore,
 		_relay_vrf_story: node_primitives::approval::RelayVRFStory,
 		_config: &criteria::Config,
-		_leaving_cores: Vec<(
-			CandidateHash,
-			primitives::CoreIndex,
-			primitives::GroupIndex,
-		)>,
+		_leaving_cores: Vec<(CandidateHash, primitives::CoreIndex, primitives::GroupIndex)>,
 	) -> HashMap<primitives::CoreIndex, criteria::OurAssignment> {
 		self.0()
 	}
@@ -256,9 +252,7 @@ where
 	}
 }
 
-impl<F>
-	MockAssignmentCriteria<fn() -> HashMap<primitives::CoreIndex, criteria::OurAssignment>, F>
-{
+impl<F> MockAssignmentCriteria<fn() -> HashMap<primitives::CoreIndex, criteria::OurAssignment>, F> {
 	fn check_only(f: F) -> Self {
 		MockAssignmentCriteria(Default::default, f)
 	}

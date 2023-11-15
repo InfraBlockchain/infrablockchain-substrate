@@ -122,8 +122,7 @@ pub fn rococo_config() -> Result<RococoChainSpec, String> {
 /// The default parachains host configuration.
 #[cfg(any(feature = "rococo-native", feature = "infra-relay-native"))]
 fn default_parachains_host_configuration(
-) -> runtime_parachains::configuration::HostConfiguration<primitives::BlockNumber>
-{
+) -> runtime_parachains::configuration::HostConfiguration<primitives::BlockNumber> {
 	use primitives::{MAX_CODE_SIZE, MAX_POV_SIZE};
 
 	runtime_parachains::configuration::HostConfiguration {
@@ -625,9 +624,9 @@ pub fn infra_relay_staging_testnet_config() -> Result<InfraRelayChainSpec, Strin
 		"Infra Relay Staging Testnet",
 		"infra_relay_staging_testnet",
 		ChainType::Live,
-		move || InfraRelayGenesisExt { 
-			runtime_genesis_config: infra_relay_staging_testnet_config_genesis(wasm_binary), 
-			session_length_in_blocks: None 
+		move || InfraRelayGenesisExt {
+			runtime_genesis_config: infra_relay_staging_testnet_config_genesis(wasm_binary),
+			session_length_in_blocks: None,
 		},
 		boot_nodes,
 		Some(
@@ -930,10 +929,10 @@ fn infra_relay_development_config_genesis(wasm_binary: &[u8]) -> infra_relay::Ru
 	infra_relay_testnet_genesis(
 		wasm_binary,
 		vec![
-			get_authority_keys_from_seed_no_beefy("Alice"), 
+			get_authority_keys_from_seed_no_beefy("Alice"),
 			get_authority_keys_from_seed_no_beefy("Bob"),
 			get_authority_keys_from_seed_no_beefy("Charlie"),
-			get_authority_keys_from_seed_no_beefy("Dave")
+			get_authority_keys_from_seed_no_beefy("Dave"),
 		],
 		get_account_id_from_seed::<sr25519::Public>("Alice"),
 		None,
@@ -960,9 +959,9 @@ pub fn infra_relay_development_config() -> Result<InfraRelayChainSpec, String> {
 		"Infra Relay Devnet",
 		"infra_relay_devnet",
 		ChainType::Development,
-		move || InfraRelayGenesisExt { 
-			runtime_genesis_config: infra_relay_development_config_genesis(wasm_binary), 
-			session_length_in_blocks: Some(10) 
+		move || InfraRelayGenesisExt {
+			runtime_genesis_config: infra_relay_development_config_genesis(wasm_binary),
+			session_length_in_blocks: Some(10),
 		},
 		vec![],
 		None,
@@ -1030,4 +1029,3 @@ pub fn rococo_local_testnet_config() -> Result<RococoChainSpec, String> {
 		Default::default(),
 	))
 }
-

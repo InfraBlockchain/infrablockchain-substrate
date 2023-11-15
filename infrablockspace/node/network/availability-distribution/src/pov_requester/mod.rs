@@ -30,9 +30,7 @@ use node_subsystem::{
 	overseer,
 };
 use node_subsystem_util::runtime::RuntimeInfo;
-use primitives::{
-	AuthorityDiscoveryId, CandidateHash, Hash, Id as ParaId, ValidatorIndex,
-};
+use primitives::{AuthorityDiscoveryId, CandidateHash, Hash, Id as ParaId, ValidatorIndex};
 
 use crate::{
 	error::{Error, FatalError, JfyiError, Result},

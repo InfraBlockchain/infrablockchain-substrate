@@ -655,7 +655,6 @@ where
 	/// Try deregister for all `original` and `wrapped` system tokens registered on runtime.
 	///
 	/// **Changes:**
-	///
 	fn try_deregister_all(original: SystemTokenId) -> DispatchResult {
 		let wrapped_system_tokens = Self::try_get_wrapped_system_token_list(&original)?;
 		for wrapped_system_token_id in wrapped_system_tokens {
@@ -707,7 +706,6 @@ where
 	/// Try suspend for all `original` and `wrapped` system tokens registered on runtime.
 	///
 	/// **Changes:**
-	///
 	fn try_suspend_all(original: SystemTokenId) -> DispatchResult {
 		let wrapped_system_tokens = Self::try_get_wrapped_system_token_list(&original)?;
 		for wrapped_system_token_id in wrapped_system_tokens {
@@ -758,7 +756,6 @@ where
 	/// Try unsuspend for all `original` and `wrapped` system tokens registered on runtime.
 	///
 	/// **Changes:**
-	///
 	fn try_unsuspend_all(original: SystemTokenId) -> DispatchResult {
 		let wrapped_system_tokens = Self::try_get_wrapped_system_token_list(&original)?;
 		for wrapped_system_token_id in wrapped_system_tokens {

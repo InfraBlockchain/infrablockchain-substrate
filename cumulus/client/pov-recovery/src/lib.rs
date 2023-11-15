@@ -51,12 +51,10 @@ use sc_consensus::import_queue::{ImportQueueService, IncomingBlock};
 use sp_consensus::{BlockOrigin, BlockStatus, SyncOracle};
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT, NumberFor};
 
+use infrablockspace_overseer::Handle as OverseerHandle;
 use node_primitives::{AvailableData, POV_BOMB_LIMIT};
 use node_subsystem::messages::AvailabilityRecoveryMessage;
-use infrablockspace_overseer::Handle as OverseerHandle;
-use primitives::{
-	CandidateReceipt, CommittedCandidateReceipt, Id as ParaId, SessionIndex,
-};
+use primitives::{CandidateReceipt, CommittedCandidateReceipt, Id as ParaId, SessionIndex};
 
 use cumulus_primitives_core::ParachainBlockData;
 use cumulus_relay_chain_interface::{RelayChainInterface, RelayChainResult};

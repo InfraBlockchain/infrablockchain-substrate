@@ -22,8 +22,8 @@
 //! done in `polkadot-node-core-pvf`.
 
 use crate::{BlakeTwo256, HashT as _, PvfExecTimeoutKind, PvfPrepTimeoutKind};
-use parity_scale_codec::{Decode, Encode};
 use infrablockspace_core_primitives::Hash;
+use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_std::{ops::Deref, time::Duration, vec, vec::Vec};

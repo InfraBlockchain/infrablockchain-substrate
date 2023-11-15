@@ -25,9 +25,7 @@
 
 use bitvec::{order::Lsb0 as BitOrderLsb0, vec::BitVec};
 use node_network_protocol::v2::StatementFilter;
-use primitives::{
-	CandidateHash, CompactStatement, GroupIndex, SignedStatement, ValidatorIndex,
-};
+use primitives::{CandidateHash, CompactStatement, GroupIndex, SignedStatement, ValidatorIndex};
 use std::collections::hash_map::{Entry as HEntry, HashMap};
 
 use super::groups::Groups;

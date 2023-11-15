@@ -823,9 +823,7 @@ fn validate_against_constraints(
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use primitives::{
-		CollatorPair, HorizontalMessages, OutboundHrmpMessage, ValidationCode,
-	};
+	use primitives::{CollatorPair, HorizontalMessages, OutboundHrmpMessage, ValidationCode};
 	use sp_application_crypto::Pair;
 
 	#[test]

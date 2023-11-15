@@ -396,7 +396,7 @@ pub mod pallet {
 	#[pallet::genesis_build]
 	impl<T: Config<I>, I: 'static> BuildGenesisConfig for GenesisConfig<T, I> {
 		fn build(&self) {
-			ParaFeeRate::<T,I>::set(Some(CORRECTION_PARA_FEE_RATE));
+			ParaFeeRate::<T, I>::set(Some(CORRECTION_PARA_FEE_RATE));
 			for (id, owner, is_sufficient, min_balance) in &self.assets {
 				assert!(!Asset::<T, I>::contains_key(id), "Asset id already in use");
 				assert!(!min_balance.is_zero(), "Min balance should not be zero");

@@ -29,7 +29,6 @@ const LOG_TARGET: &str = "parachain::pvf-prepare-worker";
 use crate::memory_stats::max_rss_stat::{extract_max_rss_stat, get_max_rss_thread};
 #[cfg(any(target_os = "linux", feature = "jemalloc-allocator"))]
 use crate::memory_stats::memory_tracker::{get_memory_tracker_loop_stats, memory_tracker_loop};
-use parity_scale_codec::{Decode, Encode};
 use node_core_pvf_common::{
 	error::{PrepareError, PrepareResult},
 	executor_intf::Executor,
@@ -43,6 +42,7 @@ use node_core_pvf_common::{
 	},
 	worker_dir, ProcessTime, SecurityStatus,
 };
+use parity_scale_codec::{Decode, Encode};
 use primitives::ExecutorParams;
 use std::{
 	os::unix::net::UnixStream,

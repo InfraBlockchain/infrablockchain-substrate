@@ -408,11 +408,9 @@ mod tests {
 	use crate::TimeoutExt;
 	use assert_matches::assert_matches;
 	use futures::future::{join, FutureExt};
-	use node_subsystem::AllMessages;
-	use node_subsystem_test_helpers::{
-		make_subsystem_context, TestSubsystemContextHandle,
-	};
 	use infrablockspace_overseer::SubsystemContext;
+	use node_subsystem::AllMessages;
+	use node_subsystem_test_helpers::{make_subsystem_context, TestSubsystemContextHandle};
 	use primitives::Header;
 	use sp_core::testing::TaskExecutor;
 	use std::time::Duration;

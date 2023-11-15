@@ -37,10 +37,10 @@ use futures::{
 use schnellru::{ByLength, LruMap};
 use task::{FetchChunks, FetchChunksParams, FetchFull, FetchFullParams};
 
-use fatality::Nested;
 use erasure_coding::{
 	branch_hash, branches, obtain_chunks_v1, recovery_threshold, Error as ErasureEncodingError,
 };
+use fatality::Nested;
 use task::{RecoveryParams, RecoveryStrategy, RecoveryTask};
 
 use node_network_protocol::{

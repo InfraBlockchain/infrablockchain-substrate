@@ -34,8 +34,8 @@ use futures::{
 	future, select, FutureExt, SinkExt, StreamExt,
 };
 use futures_timer::Delay;
-use parity_scale_codec::{Decode, Encode, Error as CodecError, Input};
 use node_subsystem_util::database::{DBTransaction, Database};
+use parity_scale_codec::{Decode, Encode, Error as CodecError, Input};
 use sp_consensus::SyncOracle;
 
 use bitvec::{order::Lsb0 as BitOrderLsb0, vec::BitVec};

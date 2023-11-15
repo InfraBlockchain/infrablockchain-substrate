@@ -26,9 +26,7 @@ use node_network_protocol::{
 use node_primitives::{
 	SignedFullStatement, Statement, StatementWithPVD, UncheckedSignedFullStatement,
 };
-use node_subsystem_util::{
-	self as util, rand, reputation::ReputationAggregator, MIN_GOSSIP_PEERS,
-};
+use node_subsystem_util::{self as util, rand, reputation::ReputationAggregator, MIN_GOSSIP_PEERS};
 
 use node_subsystem::{
 	jaeger,
@@ -665,17 +663,16 @@ impl ActiveHeadData {
 		Sender: StatementDistributionSenderTrait,
 	{
 		if let Entry::Vacant(entry) = self.cached_validation_data.entry(para_id) {
-			let persisted_validation_data =
-				node_subsystem_util::request_persisted_validation_data(
-					relay_parent,
-					para_id,
-					OccupiedCoreAssumption::Free,
-					sender,
-				)
-				.await
-				.await
-				.map_err(Error::RuntimeApiUnavailable)?
-				.map_err(|err| Error::FetchPersistedValidationData(para_id, err))?;
+			let persisted_validation_data = node_subsystem_util::request_persisted_validation_data(
+				relay_parent,
+				para_id,
+				OccupiedCoreAssumption::Free,
+				sender,
+			)
+			.await
+			.await
+			.map_err(Error::RuntimeApiUnavailable)?
+			.map_err(|err| Error::FetchPersistedValidationData(para_id, err))?;
 
 			match persisted_validation_data {
 				Some(pvd) => entry.insert(pvd),

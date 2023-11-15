@@ -18,6 +18,8 @@
 //! `suggest-garbage-candidate` variant and behaves honestly with other
 //! candidates.
 
+use node_subsystem::SpawnGlue;
+use node_subsystem_types::DefaultSubsystemClient;
 use polkadot_cli::{
 	prepared_overseer_builder,
 	service::{
@@ -27,8 +29,6 @@ use polkadot_cli::{
 	},
 	Cli,
 };
-use node_subsystem::SpawnGlue;
-use node_subsystem_types::DefaultSubsystemClient;
 use sp_core::traits::SpawnNamed;
 
 use crate::{

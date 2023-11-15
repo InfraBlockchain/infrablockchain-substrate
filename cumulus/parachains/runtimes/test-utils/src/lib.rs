@@ -28,13 +28,10 @@ use frame_support::{
 	weights::Weight,
 };
 use frame_system::pallet_prelude::{BlockNumberFor, HeaderFor};
-use parachains_common::{
-	types::AccountId,
-	constants::SLOT_DURATION,
-};
 use parachain_primitives::primitives::{
 	HeadData, HrmpChannelId, RelayChainBlockNumber, XcmpMessageFormat,
 };
+use parachains_common::{constants::SLOT_DURATION, types::AccountId};
 use sp_consensus_aura::{SlotDuration, AURA_ENGINE_ID};
 use sp_core::Encode;
 use sp_runtime::{traits::Header, BuildStorage, Digest, DigestItem};

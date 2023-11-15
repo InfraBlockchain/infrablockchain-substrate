@@ -33,9 +33,7 @@ const ASSET_HUB_INFRA_RELAY_ED: AssetHubBalance =
 /// Generate the session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn asset_hub_session_keys(
-	keys: AuraId,
-) -> asset_hub_runtime::SessionKeys {
+pub fn asset_hub_session_keys(keys: AuraId) -> asset_hub_runtime::SessionKeys {
 	asset_hub_runtime::SessionKeys { aura: keys }
 }
 
@@ -235,8 +233,8 @@ fn asset_hub_genesis(
 				.into_iter()
 				.map(|(acc, aura)| {
 					(
-						acc.clone(),                           // account id
-						acc,                                   // validator id
+						acc.clone(),                  // account id
+						acc,                          // validator id
 						asset_hub_session_keys(aura), // session keys
 					)
 				})

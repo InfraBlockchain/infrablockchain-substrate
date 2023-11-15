@@ -38,6 +38,7 @@ use node_primitives::{
 	SignedDisputeStatement, SignedFullStatement, SignedFullStatementWithPVD, SubmitCollationParams,
 	ValidationResult,
 };
+use polkadot_statement_table::v2::Misbehavior;
 use primitives::{
 	async_backing, slashing, AuthorityDiscoveryId, BackedCandidate, BlockNumber, CandidateEvent,
 	CandidateHash, CandidateIndex, CandidateReceipt, CollatorId, CommittedCandidateReceipt,
@@ -48,7 +49,6 @@ use primitives::{
 	SignedAvailabilityBitfields, ValidationCode, ValidationCodeHash, ValidatorId, ValidatorIndex,
 	ValidatorSignature,
 };
-use polkadot_statement_table::v2::Misbehavior;
 use std::{
 	collections::{BTreeMap, HashMap, HashSet},
 	sync::Arc,
@@ -628,11 +628,7 @@ pub enum RuntimeApiRequest {
 		RuntimeApiSender<Option<(PersistedValidationData, ValidationCodeHash)>>,
 	),
 	/// Sends back `true` if the validation outputs pass all acceptance criteria checks.
-	CheckValidationOutputs(
-		ParaId,
-		primitives::CandidateCommitments,
-		RuntimeApiSender<bool>,
-	),
+	CheckValidationOutputs(ParaId, primitives::CandidateCommitments, RuntimeApiSender<bool>),
 	/// Get the session index that a child of the block will have.
 	SessionIndexForChild(RuntimeApiSender<SessionIndex>),
 	/// Get the validation code for a para, taking the given `OccupiedCoreAssumption`, which
