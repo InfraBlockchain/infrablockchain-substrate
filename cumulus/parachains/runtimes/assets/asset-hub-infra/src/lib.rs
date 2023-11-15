@@ -87,11 +87,10 @@ use frame_system::{
 
 use pallet_system_token_tx_payment::{CreditToBucket, TransactionFeeCharger};
 use parachains_common::{
+	types::*, constants::*,
 	impls::DealWithFees, 
 	infra_relay::{consensus::*, currency::*, fee::WeightToFee },
-	opaque, AccountId, AssetId, AuraId, Balance, BlockNumber, Hash, Header, Nonce,
-	Signature, AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT,
-	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
+	opaque::*, 
 };
 use xcm_config::{
 	DotLocation, TrustBackedAssetsConvertedConcreteId, XcmConfig, XcmOriginToTransactDispatchOrigin,
@@ -252,7 +251,7 @@ impl pallet_system_token_tx_payment::Config for Runtime {
 }
 
 parameter_types! {
-	pub const DepositToCreateAsset: Balance = 1 * UNITS; // 1 UNITS deposit to create fungible asset class
+	pub const DepositToCreateAsset: Balance = 1 * DOLLARS; // 1 UNITS deposit to create fungible asset class
 	pub const DepositToMaintainAsset: Balance = deposit(1, 16);
 	pub const ApprovalDeposit: Balance = EXISTENTIAL_DEPOSIT;
 	pub const StringLimit: u32 = 50;
@@ -642,7 +641,7 @@ construct_runtime!(
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 11,
-		SystemTokenPayment: pallet_system_token_tx_payment::{Pallet, Event<T>} = 12,
+		SystemTokenTxPayment: pallet_system_token_tx_payment::{Pallet, Event<T>} = 12,
 
 		// Collator support. the order of these 5 are important and shall not change.
 		Authorship: pallet_authorship::{Pallet, Storage} = 20,

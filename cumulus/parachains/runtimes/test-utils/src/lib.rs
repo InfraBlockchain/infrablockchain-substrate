@@ -28,7 +28,10 @@ use frame_support::{
 	weights::Weight,
 };
 use frame_system::pallet_prelude::{BlockNumberFor, HeaderFor};
-use parachains_common::{AccountId, SLOT_DURATION};
+use parachains_common::{
+	types::AccountId,
+	constants::SLOT_DURATION,
+};
 use parachain_primitives::primitives::{
 	HeadData, HrmpChannelId, RelayChainBlockNumber, XcmpMessageFormat,
 };

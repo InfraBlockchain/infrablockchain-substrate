@@ -19,40 +19,40 @@ use crate::chain_spec::{
 };
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
-use parachains_common::types::{AccountId, AuraId, Balance as AssetHubBalance};
+use parachains_common::types::{AccountId, AuraId, Balance as URAuthBalance};
 use sc_service::ChainType;
 use sp_core::{crypto::UncheckedInto, sr25519};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
-pub type AssetHubChainSpec =
-	sc_service::GenericChainSpec<asset_hub_runtime::RuntimeGenesisConfig, Extensions>;
+pub type URAuthChainSpec =
+	sc_service::GenericChainSpec<urauth_runtime::RuntimeGenesisConfig, Extensions>;
 
-const ASSET_HUB_INFRA_RELAY_ED: AssetHubBalance =
+const URAUTH_INFRA_RELAY_ED: URAuthBalance =
 	parachains_common::infra_relay::currency::EXISTENTIAL_DEPOSIT;
 
 /// Generate the session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn asset_hub_session_keys(
+pub fn urauth_session_keys(
 	keys: AuraId,
-) -> asset_hub_runtime::SessionKeys {
-	asset_hub_runtime::SessionKeys { aura: keys }
+) -> urauth_runtime::SessionKeys {
+	urauth_runtime::SessionKeys { aura: keys }
 }
 
-pub fn asset_hub_development_config() -> AssetHubChainSpec {
+pub fn urauth_development_config() -> URAuthChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("ss58Format".into(), 0.into());
 	properties.insert("tokenSymbol".into(), "".into());
 	properties.insert("tokenDecimals".into(), 10.into());
 
-	AssetHubChainSpec::from_genesis(
+	URAuthChainSpec::from_genesis(
 		// Name
-		"Asset Hub Development",
+		"URAuth Development",
 		// ID
-		"asset-hub-dev",
+		"urauth-dev",
 		ChainType::Local,
 		move || {
-			asset_hub_genesis(
+			urauth_genesis(
 				// initial collators.
 				vec![(
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -64,6 +64,8 @@ pub fn asset_hub_development_config() -> AssetHubChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
 				],
+                vec![],
+                Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
 				1000.into(),
 			)
 		},
@@ -76,20 +78,20 @@ pub fn asset_hub_development_config() -> AssetHubChainSpec {
 	)
 }
 
-pub fn asset_hub_local_config() -> AssetHubChainSpec {
+pub fn urauth_local_config() -> URAuthChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("ss58Format".into(), 0.into());
 	properties.insert("tokenSymbol".into(), "".into());
 	properties.insert("tokenDecimals".into(), 10.into());
 
-	AssetHubChainSpec::from_genesis(
+	URAuthChainSpec::from_genesis(
 		// Name
-		"Asset Hub Local",
+		"URAuth Local",
 		// ID
-		"asset-hub-local",
+		"urauth-local",
 		ChainType::Local,
 		move || {
-			asset_hub_genesis(
+			urauth_genesis(
 				// initial collators.
 				vec![
 					(
@@ -115,6 +117,8 @@ pub fn asset_hub_local_config() -> AssetHubChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
+                Default::default(),
+                Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
 				1000.into(),
 			)
 		},
@@ -128,20 +132,20 @@ pub fn asset_hub_local_config() -> AssetHubChainSpec {
 }
 
 // Not used for syncing, but just to determine the genesis values set for the upgrade from shell.
-pub fn asset_hub_config() -> AssetHubChainSpec {
+pub fn urauth_config() -> URAuthChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("ss58Format".into(), 0.into());
 	properties.insert("tokenSymbol".into(), "".into());
 	properties.insert("tokenDecimals".into(), 10.into());
 
-	AssetHubChainSpec::from_genesis(
+	URAuthChainSpec::from_genesis(
 		// Name
-		"Asset Hub",
+		"URAuth",
 		// ID
-		"asset-hub",
+		"URAuth",
 		ChainType::Live,
 		move || {
-			asset_hub_genesis(
+			urauth_genesis(
 				// initial collators.
 				vec![
 					(
@@ -170,6 +174,8 @@ pub fn asset_hub_config() -> AssetHubChainSpec {
 					),
 				],
 				vec![],
+                Default::default(),
+                None,
 				1000u32.into(),
 			)
 		},
@@ -187,26 +193,28 @@ pub fn asset_hub_config() -> AssetHubChainSpec {
 	)
 }
 
-fn asset_hub_genesis(
+fn urauth_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
+    oracle_members: Vec<AccountId>,
+    root_key: Option<AccountId>,
 	id: ParaId,
-) -> asset_hub_runtime::RuntimeGenesisConfig {
-	asset_hub_runtime::RuntimeGenesisConfig {
-		system: asset_hub_runtime::SystemConfig {
-			code: asset_hub_runtime::WASM_BINARY
+) -> urauth_runtime::RuntimeGenesisConfig {
+	urauth_runtime::RuntimeGenesisConfig {
+		system: urauth_runtime::SystemConfig {
+			code: urauth_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
 			..Default::default()
 		},
-		balances: asset_hub_runtime::BalancesConfig {
+		balances: urauth_runtime::BalancesConfig {
 			balances: endowed_accounts
 				.iter()
 				.cloned()
-				.map(|k| (k, ASSET_HUB_INFRA_RELAY_ED * 4096))
+				.map(|k| (k, URAUTH_INFRA_RELAY_ED * 4096))
 				.collect(),
 		},
-		assets: asset_hub_runtime::AssetsConfig {
+		assets: urauth_runtime::AssetsConfig {
 			assets: vec![(
 				99,                                                   // asset_id
 				get_account_id_from_seed::<sr25519::Public>("Alice"), // owner
@@ -221,23 +229,23 @@ fn asset_hub_genesis(
 			)],
 			..Default::default()
 		},
-		parachain_info: asset_hub_runtime::ParachainInfoConfig {
+		parachain_info: urauth_runtime::ParachainInfoConfig {
 			parachain_id: id,
 			..Default::default()
 		},
-		collator_selection: asset_hub_runtime::CollatorSelectionConfig {
+		collator_selection: urauth_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
-			candidacy_bond: ASSET_HUB_INFRA_RELAY_ED * 16,
+			candidacy_bond: URAUTH_INFRA_RELAY_ED * 16,
 			..Default::default()
 		},
-		session: asset_hub_runtime::SessionConfig {
+		session: urauth_runtime::SessionConfig {
 			keys: invulnerables
 				.into_iter()
 				.map(|(acc, aura)| {
 					(
 						acc.clone(),                           // account id
 						acc,                                   // validator id
-						asset_hub_session_keys(aura), // session keys
+						urauth_session_keys(aura), // session keys
 					)
 				})
 				.collect(),
@@ -247,9 +255,11 @@ fn asset_hub_genesis(
 		aura: Default::default(),
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
-		ibs_xcm: asset_hub_runtime::IbsXcmConfig {
+		ibs_xcm: urauth_runtime::IbsXcmConfig {
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
 			..Default::default()
 		},
+        ur_auth: urauth_runtime::URAuthConfig { oracle_members },
+        sudo: urauth_runtime::SudoConfig { key: root_key }
 	}
 }

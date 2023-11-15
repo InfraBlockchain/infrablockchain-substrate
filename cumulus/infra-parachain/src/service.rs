@@ -39,7 +39,10 @@ use sp_core::Pair;
 use jsonrpsee::RpcModule;
 
 use crate::rpc;
-pub use parachains_common::{AccountId, Balance, Block, BlockNumber, Hash, Header, Nonce};
+pub use parachains_common::{
+	types::{AccountId, Balance, BlockNumber, Hash, Nonce},
+	opaque::{Block, Header}
+};
 
 use cumulus_client_consensus_relay_chain::Verifier as RelayChainVerifier;
 use futures::{lock::Mutex, prelude::*};

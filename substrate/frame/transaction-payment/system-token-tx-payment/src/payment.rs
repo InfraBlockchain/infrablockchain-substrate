@@ -151,6 +151,7 @@ where
 			who,
 			converted_fee,
 		);
+		log::info!("Can withdraw? => {:?}", can_withdraw);
 		if !matches!(can_withdraw, WithdrawConsequence::Success) {
 			return Err(InvalidTransaction::Payment.into())
 		}

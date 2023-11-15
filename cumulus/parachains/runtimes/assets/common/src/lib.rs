@@ -23,7 +23,7 @@ pub mod runtime_api;
 
 use crate::matching::{Equals, LocalMultiLocationPattern, ParentLocation, StartsWith};
 use frame_support::traits::EverythingBut;
-use parachains_common::AssetIdForTrustBackedAssets;
+use parachains_common::types::AssetIdForTrustBackedAssets;
 use xcm::prelude::MultiLocation;
 use xcm_builder::{AsPrefixedGeneralIndex, MatchedConvertedConcreteId};
 use xcm_executor::traits::JustTry;

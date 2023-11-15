@@ -35,9 +35,9 @@ pub(super) type AssetAccountOf<T, I> = AssetAccount<
 pub(super) type ExistenceReasonOf<T, I> =
 	ExistenceReason<DepositBalanceOf<T, I>, <T as SystemConfig>::AccountId>;
 
-pub(super) const DEFAULT_SYSTEM_TOKEN_WEIGHT: u128 = 100_000;
+pub(super) const DEFAULT_SYSTEM_TOKEN_WEIGHT: SystemTokenWeight = 1_000_000;
 
-const CORRECTION_PARA_FEE_RATE: SystemTokenWeight = 1_000;
+pub(super) const CORRECTION_PARA_FEE_RATE: u128 = 1_000_000;
 
 /// AssetStatus holds the current state of the asset. It could either be Live and available for use,
 /// or in a Destroying state.

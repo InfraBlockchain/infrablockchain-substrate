@@ -22,7 +22,7 @@ use frame_support::{
 	weights::Weight,
 };
 use frame_system::pallet_prelude::BlockNumberFor;
-use parachains_common::{AccountId, Balance};
+use parachains_common::types::{AccountId, Balance};
 use parachains_runtimes_test_utils::{
 	assert_metadata, assert_total, AccountIdOf, BalanceOf, CollatorSessionKeys, ExtBuilder,
 	ValidatorIdOf, XcmReceivedFrom,
