@@ -70,16 +70,36 @@ use codec::{Decode, Encode, MaxEncodedLen};
 use core::{default::Default, marker::PhantomData};
 use frame_support::DebugNoBound;
 use sp_runtime::BoundedBTreeSet;
-use sp_std::prelude::*;
+// use sp_std::prelude::*;
 
+// use sp_runtime::{
+// 	DispatchError
+// };
+
+// use frame_support::{
+//     dispatch::{
+//         DispatchErrorWithPostInfo, DispatchResult, DispatchResultWithPostInfo,
+//         PostDispatchInfo,
+//     },
+//     ensure,
+//     traits::{Get, UnfilteredDispatchable},
+//     dispatch::{GetDispatchInfo, Pays},
+//     weights::{RuntimeDbWeight, Weight},
+//     CloneNoBound, EqNoBound, Parameter, PartialEqNoBound,
+// };
+
+use sp_std::prelude::*;
+use sp_runtime::{
+	DispatchError
+};
 use frame_support::{
     dispatch::{
-        DispatchError, DispatchErrorWithPostInfo, DispatchResult, DispatchResultWithPostInfo,
-        PostDispatchInfo,
+        DispatchErrorWithPostInfo, DispatchResult, DispatchResultWithPostInfo,
+        PostDispatchInfo, GetDispatchInfo, Pays
     },
     ensure,
     traits::{Get, UnfilteredDispatchable},
-    weights::{GetDispatchInfo, Pays, RuntimeDbWeight, Weight},
+    weights::{RuntimeDbWeight, Weight},
     CloneNoBound, EqNoBound, Parameter, PartialEqNoBound,
 };
 use frame_system::{ensure_root, ensure_signed};
@@ -197,9 +217,9 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config: frame_system::Config + did::Config {
         /// The overarching event type.
-        type Event: From<Event<Self>>
-            + IsType<<Self as frame_system::Config>::Event>
-            + Into<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>>
+            + IsType<<Self as frame_system::Config>::RuntimeEvent>
+            + Into<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// The dispatchable that master may call as Root. It is possible to use another type here, but
         /// it's expected that your runtime::Call will be used.
@@ -307,7 +327,7 @@ pub mod pallet {
     }
 
     #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {
             assert!(self.members.vote_requirement != 0);
             assert!(self.members.vote_requirement <= self.members.members.len() as u64);

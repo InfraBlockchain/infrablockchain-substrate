@@ -193,7 +193,7 @@ macro_rules! deposit_indexed_event {
     ($event: ident($($value: expr),+) over $($index: expr),+) => {{
         <frame_system::Pallet<T>>::deposit_event_indexed(
             &[$(<<T as frame_system::Config>::Hashing as sp_core::Hasher>::hash(&$index[..])),+],
-            <T as Config>::Event::from(Event::$event($($value),+)).into()
+            <T as Config>::RuntimeEvent::from(Event::$event($($value),+)).into()
         );
     }};
     ($event: ident($($value: expr),+)) => {

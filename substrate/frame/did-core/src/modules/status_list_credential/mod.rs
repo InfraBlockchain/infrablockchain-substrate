@@ -60,9 +60,9 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config: frame_system::Config + did::Config {
-        type Event: From<Event>
-            + IsType<<Self as frame_system::Config>::Event>
-            + Into<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event>
+            + IsType<<Self as frame_system::Config>::RuntimeEvent>
+            + Into<<Self as frame_system::Config>::RuntimeEvent>;
     }
 
     /// Stores `StatusListCredential`s along with their modification policies.

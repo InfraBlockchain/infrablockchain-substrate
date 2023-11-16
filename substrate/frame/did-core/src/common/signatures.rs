@@ -1,7 +1,7 @@
 use super::keys::PublicKey;
 use crate::util::{Bytes64, Bytes65};
 use codec::{Decode, Encode, MaxEncodedLen};
-use frame_support::dispatch::Weight;
+use frame_support::weights::Weight;
 use sha2::{Digest, Sha256};
 use sp_core::{ed25519, sr25519, Pair};
 use sp_runtime::traits::Verify;

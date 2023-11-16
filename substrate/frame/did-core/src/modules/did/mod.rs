@@ -4,7 +4,7 @@ use crate::{
 };
 
 use crate::common::Limits;
-use arith_utils::CheckedDivCeil;
+use crate::util::CheckedDivCeil;
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{
     dispatch::DispatchResult, ensure, weights::Weight, CloneNoBound, DebugNoBound, EqNoBound,
@@ -57,9 +57,9 @@ pub mod pallet {
         type OnDidRemoval: OnDidRemoval;
 
         /// The overarching event type.
-        type Event: From<Event<Self>>
-            + IsType<<Self as frame_system::Config>::Event>
-            + Into<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>>
+            + IsType<<Self as frame_system::Config>::RuntimeEvent>
+            + Into<<Self as frame_system::Config>::RuntimeEvent>;
     }
 
     #[pallet::event]
@@ -179,7 +179,7 @@ pub mod pallet {
     }
 
     #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {
             debug_assert!({
                 let dedup: BTreeSet<&Did> = self.dids.keys().collect();

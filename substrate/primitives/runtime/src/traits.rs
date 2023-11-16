@@ -1129,6 +1129,9 @@ sp_core::impl_maybe_marker!(
 
 	/// A type that implements Hash when in std environment.
 	trait MaybeHash: sp_std::hash::Hash;
+
+	/// A type that implements MallocSizeOf.
+	trait MaybeMallocSizeOf: parity_util_mem::MallocSizeOf;
 );
 
 sp_core::impl_maybe_marker_std_or_serde!(

@@ -24,9 +24,9 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
-        type Event: From<Event<Self>>
-            + IsType<<Self as frame_system::Config>::Event>
-            + Into<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>>
+            + IsType<<Self as frame_system::Config>::RuntimeEvent>
+            + Into<<Self as frame_system::Config>::RuntimeEvent>;
     }
 
     #[pallet::error]
@@ -39,7 +39,7 @@ pub mod pallet {
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
         /// A new permanent anchor was posted.
-        AnchorDeployed(T::Hash, T::AccountId, T::BlockNumber),
+        AnchorDeployed(T::Hash, T::AccountId),
     }
 
     #[pallet::pallet]
@@ -69,7 +69,7 @@ pub mod pallet {
             // execute
             let last_block = <frame_system::Pallet<T>>::block_number();
             Anchors::<T>::insert(hash, last_block);
-            Self::deposit_event(Event::<T>::AnchorDeployed(hash, account, last_block));
+            Self::deposit_event(Event::<T>::AnchorDeployed(hash, account));
 
             Ok(())
         }

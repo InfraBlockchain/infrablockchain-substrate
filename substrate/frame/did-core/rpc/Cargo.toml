@@ -11,8 +11,10 @@ jsonrpsee = { version = "0.15.1", features = ["server", "macros"] }
 thiserror = "1.0"
 codec = { package = "parity-scale-codec", version = "3.0.0" }
 serde = { version = "1.0.119", features = ["derive"] }
-sp-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.29"}
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.29"}
-sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.29" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.29" }
+
+sp-rpc = { path = "../../primitives/rpc", default-features = false}
+sp-runtime = { path = "../../primitives/runtime", default-features = false}
+sp-api = { path = "../../primitives/api", default-features = false}
+sp-blockchain = { path = "../../primitives/blockchain", default-features = false}
+
 did-core = { version = "0.5.0", path = ".." }

@@ -11,7 +11,8 @@ use codec::{Decode, Encode};
 use sp_std::prelude::*;
 
 use frame_support::{
-    dispatch::{DispatchResult, Weight},
+    weights::Weight,
+    dispatch::DispatchResult,
     traits::Get,
 };
 use frame_system::ensure_signed;
@@ -43,9 +44,9 @@ pub mod pallet {
     /// The module's configuration trait.
     pub trait Config: frame_system::Config + did::Config {
         /// The overarching event type.
-        type Event: From<Event>
-            + IsType<<Self as frame_system::Config>::Event>
-            + Into<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event>
+            + IsType<<Self as frame_system::Config>::RuntimeEvent>
+            + Into<<Self as frame_system::Config>::RuntimeEvent>;
     }
 
     #[pallet::event]
@@ -115,7 +116,7 @@ pub mod pallet {
     }
 
     #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {
             Version::<T>::put(common::StorageVersion::MultiKey);
         }

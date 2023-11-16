@@ -91,8 +91,7 @@ parachains-common = { path = "../../common", default-features = false }
 assets-common = { path = "../assets/common", default-features = false }
 
 # DID
-# did-core = { path = "../../../../substrate/frame/did-core", default-features = false }
-
+did-core = { path = "../../../../substrate/frame/did-core", default-features = false }
 
 [dev-dependencies]
 hex-literal = "0.3.4"

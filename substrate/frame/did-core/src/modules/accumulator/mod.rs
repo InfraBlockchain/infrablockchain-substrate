@@ -2,13 +2,13 @@ use crate::{
     common::{self, CurveType, SigValue},
     did,
     did::{Did, DidSignature},
-    util::{Bytes, IncId},
+    util::{Bytes, IncId, CheckedDivCeil},
 };
 pub use actions::*;
-use arith_utils::CheckedDivCeil;
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{
-    dispatch::{DispatchResult, Weight},
+    weights::Weight,
+    dispatch::{DispatchResult},
     ensure,
 };
 use sp_std::{fmt::Debug, prelude::*};
@@ -36,9 +36,9 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config: frame_system::Config + did::Config {
         /// The overarching event type.
-        type Event: From<Event>
-            + IsType<<Self as frame_system::Config>::Event>
-            + Into<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event>
+            + IsType<<Self as frame_system::Config>::RuntimeEvent>
+            + Into<<Self as frame_system::Config>::RuntimeEvent>;
     }
 
     #[pallet::event]
@@ -138,7 +138,7 @@ pub mod pallet {
     }
 
     #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {
             Version::<T>::put(common::StorageVersion::MultiKey);
         }

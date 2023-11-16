@@ -4041,6 +4041,118 @@ dependencies = [
 ]
 
 [[package]]
+name = "did-core"
+version = "0.5.0"
+dependencies = [
+ "bitflags 1.3.2",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "getrandom 0.2.11",
+ "hex",
+ "hex-literal 0.3.4",
+ "libsecp256k1",
+ "merlin 2.0.1",
+ "num-traits",
+ "pallet-balances",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "rand 0.8.5",
+ "rand_chacha 0.2.2",
+ "scale-info",
+ "scale-info-derive 2.3.0",
+ "schnorrkel 0.9.1",
+ "serde",
+ "serde-big-array",
+ "sha2 0.9.9",
+ "sp-api",
+ "sp-application-crypto",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std 8.0.0",
+]
+
+[[package]]
+name = "did-runtime"
+version = "1.0.0"
+dependencies = [
+ "asset-test-utils",
+ "assets-common",
+ "cumulus-pallet-aura-ext",
+ "cumulus-pallet-dmp-queue",
+ "cumulus-pallet-parachain-system",
+ "cumulus-pallet-session-benchmarking",
+ "cumulus-pallet-xcm",
+ "cumulus-pallet-xcmp-queue",
+ "cumulus-primitives-core",
+ "cumulus-primitives-timestamp",
+ "cumulus-primitives-utility",
+ "did-core",
+ "frame-benchmarking",
+ "frame-executive",
+ "frame-support",
+ "frame-system",
+ "frame-system-benchmarking",
+ "frame-system-rpc-runtime-api",
+ "frame-try-runtime",
+ "hex-literal 0.3.4",
+ "hex-literal 0.4.1",
+ "infra-asset-link",
+ "infra-relay-runtime-constants",
+ "infrablockspace-core-primitives",
+ "log",
+ "pallet-asset-tx-payment",
+ "pallet-assets",
+ "pallet-aura",
+ "pallet-authorship",
+ "pallet-balances",
+ "pallet-collator-selection",
+ "pallet-multisig",
+ "pallet-nfts",
+ "pallet-nfts-runtime-api",
+ "pallet-proxy",
+ "pallet-session",
+ "pallet-sudo",
+ "pallet-system-token",
+ "pallet-system-token-tx-payment",
+ "pallet-timestamp",
+ "pallet-transaction-payment",
+ "pallet-transaction-payment-rpc-runtime-api",
+ "pallet-uniques",
+ "pallet-utility",
+ "pallet-xcm",
+ "pallet-xcm-benchmarks",
+ "parachain-info",
+ "parachain-primitives",
+ "parachains-common",
+ "parity-scale-codec",
+ "runtime-common",
+ "runtime-parachains",
+ "scale-info",
+ "smallvec",
+ "sp-api",
+ "sp-block-builder",
+ "sp-consensus-aura",
+ "sp-core",
+ "sp-genesis-builder",
+ "sp-inherents",
+ "sp-offchain",
+ "sp-runtime",
+ "sp-session",
+ "sp-std 8.0.0",
+ "sp-storage 13.0.0",
+ "sp-transaction-pool",
+ "sp-version",
+ "sp-weights",
+ "staging-xcm",
+ "staging-xcm-builder",
+ "staging-xcm-executor",
+ "substrate-wasm-builder",
+ "xcm-primitives",
+]
+
+[[package]]
 name = "diff"
 version = "0.1.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5711,6 +5823,9 @@ name = "hex"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "hex-literal"
@@ -15519,8 +15634,19 @@ dependencies = [
  "cfg-if",
  "derive_more",
  "parity-scale-codec",
- "scale-info-derive",
+ "scale-info-derive 2.10.0",
  "serde",
+]
+
+[[package]]
+name = "scale-info-derive"
+version = "2.3.0"
+source = "git+https://github.com/docknetwork/scale-info.git?branch=master#dabc4569256239243aabf60f967d1f1e88d35173"
+dependencies = [
+ "proc-macro-crate",
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
 ]
 
 [[package]]
@@ -15567,6 +15693,7 @@ dependencies = [
  "getrandom 0.1.16",
  "merlin 2.0.1",
  "rand 0.7.3",
+ "rand_chacha 0.2.2",
  "rand_core 0.5.1",
  "sha2 0.8.2",
  "subtle 2.4.1",
@@ -15757,6 +15884,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "91d3c334ca1ee894a2c6f6ad698fe8c435b76d504b13d436f0685d648d6d96f7"
 dependencies = [
  "serde_derive",
+]
+
+[[package]]
+name = "serde-big-array"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cd31f59f6fe2b0c055371bb2f16d7f0aa7d8881676c04a55b1596d1a17cd10a4"
+dependencies = [
+ "serde",
 ]
 
 [[package]]
@@ -16890,6 +17026,7 @@ dependencies = [
  "impl-trait-for-tuples",
  "log",
  "parity-scale-codec",
+ "parity-util-mem",
  "paste",
  "rand 0.8.5",
  "scale-info",
