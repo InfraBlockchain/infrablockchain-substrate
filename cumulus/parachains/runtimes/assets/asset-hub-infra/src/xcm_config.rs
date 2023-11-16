@@ -32,7 +32,7 @@ use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowSubscriptionsFrom,
 	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, CurrencyAdapter, EnsureXcmOrigin,
-	FungiblesAdapter, IsConcrete, LocalMint, NativeAsset, NonLocalMint, ParentAsSuperuser,
+	FungiblesAdapter, IsConcrete, LocalMint, NonLocalMint, ParentAsSuperuser,
 	ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
 	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
 	WeightInfoBounds,
@@ -317,17 +317,12 @@ parameter_types! {
 	pub const ItestForTemplateParachain: (MultiAssetFilter, MultiLocation) = (ItestInfraSystemFilter::get(), TemplateParachain::get());
 }
 
-pub type TrustedTeleporters = (xcm_builder::Case<ItestForTemplateParachain>, NativeAsset);
-
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
 	type RuntimeCall = RuntimeCall;
 	type XcmSender = XcmRouter;
 	type AssetTransactor = AssetTransactors;
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
-	// Statemint does not recognize a reserve location for any asset. This does not prevent
-	// Statemint acting _as_ a reserve location for DOT and assets created under `pallet-assets`.
-	// For DOT, users must use teleport where allowed (e.g. with the Relay Chain).
 	type IsReserve = ();
 	type IsTeleporter = ();
 	type UniversalLocation = UniversalLocation;

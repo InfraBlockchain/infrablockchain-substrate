@@ -53,6 +53,7 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 pub mod constants;
+use constants::{currency::*, fee::WeightToFee};
 mod weights;
 pub mod xcm_config;
 
@@ -90,11 +91,9 @@ use frame_system::{
 
 use pallet_system_token_tx_payment::{CreditToBucket, TransactionFeeCharger};
 use parachains_common::{
-	constants::*,
 	impls::DealWithFees,
-	infra_relay::{consensus::*, currency::*, fee::WeightToFee},
-	opaque::*,
-	types::*,
+	constants::*, opaque::*, types::*, 
+	infra_relay::consensus::*,
 };
 use xcm_config::{
 	DotLocation, TrustBackedAssetsConvertedConcreteId, XcmConfig, XcmOriginToTransactDispatchOrigin,
@@ -578,8 +577,8 @@ impl pallet_system_token::Config for Runtime {
 }
 
 parameter_types! {
-	pub const CollectionDeposit: Balance = 10 * UNITS; // 10 UNIT deposit to create uniques class
-	pub const ItemDeposit: Balance = UNITS / 100; // 1 / 100 UNIT deposit to create uniques instance
+	pub const CollectionDeposit: Balance = 10 * DOLLARS; // 10 UNIT deposit to create uniques class
+	pub const ItemDeposit: Balance = DOLLARS / 100; // 1 / 100 UNIT deposit to create uniques instance
 	pub const KeyLimit: u32 = 32;	// Max 32 bytes per key
 	pub const ValueLimit: u32 = 64;	// Max 64 bytes per value
 	pub const UniquesMetadataDepositBase: Balance = deposit(1, 129);

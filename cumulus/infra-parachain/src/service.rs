@@ -18,8 +18,7 @@ use codec::{Codec, Decode};
 use cumulus_client_cli::CollatorOptions;
 use cumulus_client_collator::service::CollatorService;
 use cumulus_client_consensus_aura::collators::{
-	basic::{self as basic_aura, Params as BasicAuraParams},
-	lookahead::{self as aura, Params as AuraParams},
+	basic::{self as basic_aura, Params as BasicAuraParams}
 };
 use cumulus_client_consensus_common::{
 	ParachainBlockImport as TParachainBlockImport, ParachainCandidate, ParachainConsensus,
@@ -1011,7 +1010,7 @@ where
 /// Start a shell node which should later transition into an Aura powered parachain node. Asset Hub
 /// uses this because at genesis, Asset Hub was on the `shell` runtime which didn't have Aura and
 /// needs to sync and upgrade before it can run `AuraApi` functions.
-pub async fn start_asset_hub_node<RuntimeApi, AuraId: AppCrypto + Send + Codec + Sync>(
+pub async fn _start_asset_hub_node<RuntimeApi, AuraId: AppCrypto + Send + Codec + Sync>(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
 	collator_options: CollatorOptions,

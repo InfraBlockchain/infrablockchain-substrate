@@ -53,9 +53,12 @@ impl PotVote {
 /// Vote is included in transaction and send to blockchain.
 /// It is collected for every block as a form of (Asset Id, Account Id, Vote Weight).
 pub struct PotVotes {
+	/// Status of the votes
 	pub votes: BTreeMap<(SystemTokenId, VoteAccountId), VoteWeight>,
+	/// Current number of the votes.
 	#[codec(compact)]
 	pub vote_count: u32,
+	/// Maximum number of the votes.
 	#[codec(compact)]
 	pub max_vote_count: u32,
 }
@@ -95,6 +98,7 @@ impl PotVotes {
 		}
 	}
 
+	/// Convert from `status of the votes` to `BoundedVec<_, Max>`
 	pub fn votes(&self) -> PotVotesResult {
 		let res = self
 			.votes

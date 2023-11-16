@@ -20,9 +20,10 @@ use serde::{Deserialize, Serialize};
 use sp_core::{Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
+// Parachains' Runtime Module
 pub mod asset_hubs;
-
 pub mod urauth;
+pub mod contracts;
 
 /// The default XCM version to set in genesis config.
 const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;

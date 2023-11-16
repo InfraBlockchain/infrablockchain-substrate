@@ -23,8 +23,11 @@ serde_json = "1.0.107"
 # Local
 jsonrpsee = { version = "0.16.2", features = ["server"] }
 parachains-common = { path = "../parachains/common" }
+
+# parachains's runtimes
 asset-hub-runtime = { path = "../parachains/runtimes/assets/asset-hub-infra" }
-urauth-runtime = { path = "../parachains/runtimes/ur-auth"}
+urauth-runtime = { path = "../parachains/runtimes/ur-auth" }
+contracts-infra-runtime = { path = "../parachains/runtimes/contracts/contracts-infra" }
 
 # Substrate
 frame-benchmarking = { path = "../../substrate/frame/benchmarking" }

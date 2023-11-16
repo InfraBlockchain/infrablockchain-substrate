@@ -7,7 +7,7 @@ pub mod currency {
 	pub const EXISTENTIAL_DEPOSIT: Balance = constants::currency::EXISTENTIAL_DEPOSIT / 100;
 
 	pub const UNITS: Balance = constants::currency::UNITS;
-	pub const DOLLARS: Balance = constants::currency::DOLLARS;
+	pub const DOLLARS: Balance = UNITS;
 	pub const CENTS: Balance = constants::currency::CENTS;
 	pub const MILLICENTS: Balance = constants::currency::MILLICENTS;
 
@@ -17,7 +17,7 @@ pub mod currency {
 	}
 }
 
-mod fee {
+pub mod fee {
 
 	use frame_support::weights::{
 		constants::ExtrinsicBaseWeight, WeightToFeeCoefficient, WeightToFeeCoefficients,
@@ -26,9 +26,6 @@ mod fee {
 	use infrablockspace_core_primitives::Balance;
 	use smallvec::smallvec;
 	pub use sp_runtime::Perbill;
-
-	/// The block saturation level. Fees will be updates based on this value.
-	pub const TARGET_BLOCK_FULLNESS: Perbill = Perbill::from_percent(25);
 
 	/// Handles converting a weight scalar to a fee value, based on the scale and granularity of the
 	/// node's balance type.

@@ -67,6 +67,7 @@ members = [
 	"cumulus/parachains/runtimes/assets/common",
 	"cumulus/parachains/runtimes/assets/test-utils",
 	"cumulus/parachains/runtimes/ur-auth",
+	"cumulus/parachains/runtimes/contracts/contracts-infra",
 	"cumulus/infra-parachain",
 	"cumulus/primitives/aura",
 	"cumulus/primitives/core",

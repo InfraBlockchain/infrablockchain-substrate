@@ -39,6 +39,7 @@ enum Runtime {
 	#[default]
 	Default,
 	AssetHubInfra,
+	ContractsInfra,
 	URAuth,
 }
 
@@ -71,10 +72,12 @@ impl RuntimeResolver for PathBuf {
 
 fn runtime(id: &str) -> Runtime {
 	let id = id.replace('_', "-");
-	let (_, id, para_id) = extract_parachain_id(&id);
+	let (_, id, _para_id) = extract_parachain_id(&id);
 
 	if id.starts_with("asset-hub-infra") {
 		Runtime::AssetHubInfra
+	} else if id.starts_with("contracts-infra") {
+		Runtime::ContractsInfra
 	} else if id.starts_with("urauth") {
 		Runtime::URAuth
 	} else {
@@ -94,9 +97,14 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		"asset-hub-infra" => Box::new(chain_spec::asset_hubs::AssetHubChainSpec::from_json_bytes(
 			&include_bytes!("../chain-specs/asset-hub-polkadot.json")[..],
 		)?),
+		"contracts-infra-dev" => Box::new(chain_spec::contracts::contracts_infra_development_config()),
+		"contracts-infra-local" => Box::new(chain_spec::contracts::contracts_infra_local_config()),
+		"contracts-infra" => Box::new(chain_spec::contracts::contracts_infra_config()),
+		// ToDo: chain-spec file for `ContractsInfra`
 		"urauth-dev" => Box::new(chain_spec::urauth::urauth_development_config()),
 		"urauth-local" => Box::new(chain_spec::urauth::urauth_local_config()),
 		"urauth" => Box::new(chain_spec::urauth::urauth_config()),
+		// ToDo: chain-spec file for `URAuth`
 		// -- Fallback (generic chainspec)
 		"" => {
 			log::warn!("No ChainSpec.id specified, so using default one, based on rococo-parachain runtime");
@@ -109,6 +117,8 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 			match path.runtime() {
 				Runtime::AssetHubInfra =>
 					Box::new(chain_spec::asset_hubs::AssetHubChainSpec::from_json_file(path)?),
+				Runtime::ContractsInfra =>
+					Box::new(chain_spec::contracts::ContractsInfraChainSpec::from_json_file(path)?),
 				Runtime::URAuth =>
 					Box::new(chain_spec::urauth::URAuthChainSpec::from_json_file(path)?),
 				Runtime::Default =>
@@ -234,6 +244,13 @@ macro_rules! construct_partials {
 				)?;
 				$code
 			},
+			Runtime::ContractsInfra => {
+				let $partials = new_partial::<contracts_infra_runtime::RuntimeApi, _>(
+					&$config,
+					crate::service::aura_build_import_queue::<_, AuraId>,
+				)?;
+				$code
+			},
 			Runtime::URAuth => {
 				let $partials = new_partial::<urauth_runtime::RuntimeApi, _>(
 					&$config,
@@ -259,6 +276,16 @@ macro_rules! construct_async_run {
 			Runtime::AssetHubInfra => {
 				runner.async_run(|$config| {
 					let $components = new_partial::<asset_hub_runtime::RuntimeApi, _>(
+						&$config,
+						crate::service::aura_build_import_queue::<_, AuraId>,
+					)?;
+					let task_manager = $components.task_manager;
+					{ $( $code )* }.map(|v| (v, task_manager))
+				})
+			},
+			Runtime::ContractsInfra => {
+				runner.async_run(|$config| {
+					let $components = new_partial::<contracts_infra_runtime::RuntimeApi, _>(
 						&$config,
 						crate::service::aura_build_import_queue::<_, AuraId>,
 					)?;
@@ -466,6 +493,13 @@ pub fn run() -> Result<()> {
 				match config.chain_spec.runtime() {
 					Runtime::AssetHubInfra => crate::service::start_generic_aura_node::<
 						asset_hub_runtime::RuntimeApi,
+						AuraId,
+					>(config, infra_relay_config, collator_options, id, hwbench)
+					.await
+					.map(|r| r.0)
+					.map_err(Into::into),
+					Runtime::ContractsInfra => crate::service::start_generic_aura_node::<
+						contracts_infra_runtime::RuntimeApi,
 						AuraId,
 					>(config, infra_relay_config, collator_options, id, hwbench)
 					.await
