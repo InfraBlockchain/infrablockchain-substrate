@@ -21,7 +21,7 @@ use frame_support::traits::{
 	AccountTouch, Contains, ContainsPair, Get, PalletInfoAccess,
 };
 use pallet_asset_conversion::{MultiAssetIdConversionResult, MultiAssetIdConverter};
-use parachains_common::AccountId;
+use parachains_common::types::AccountId;
 use sp_runtime::{traits::MaybeEquivalence, DispatchError, DispatchResult};
 use sp_std::{boxed::Box, marker::PhantomData};
 use xcm::latest::MultiLocation;

@@ -1,3 +1,5 @@
+//! Module that defines System Token type
+
 use crate::{
 	codec::{Decode, Encode, MaxEncodedLen},
 	scale_info::TypeInfo,

@@ -20,6 +20,15 @@ use sc_transaction_pool_api::OffchainTransactionPoolFactory;
 use sp_core::traits::SpawnNamed;
 
 use availability_distribution::IncomingRequestReceivers;
+#[cfg(any(feature = "malus", test))]
+pub use infrablockspace_overseer::{
+	dummy::{dummy_overseer_builder, DummySubsystem},
+	HeadSupportsParachains,
+};
+use infrablockspace_overseer::{
+	metrics::Metrics as OverseerMetrics, InitializedOverseerBuilder, MetricsTrait, Overseer,
+	OverseerConnector, OverseerHandle, SpawnGlue,
+};
 use node_core_approval_voting::Config as ApprovalVotingConfig;
 use node_core_av_store::Config as AvailabilityConfig;
 use node_core_candidate_validation::Config as CandidateValidationConfig;
@@ -30,15 +39,6 @@ use node_network_protocol::{
 	request_response::{
 		v1 as request_v1, v2 as request_v2, IncomingRequestReceiver, ReqProtocolNames,
 	},
-};
-#[cfg(any(feature = "malus", test))]
-pub use infrablockspace_overseer::{
-	dummy::{dummy_overseer_builder, DummySubsystem},
-	HeadSupportsParachains,
-};
-use infrablockspace_overseer::{
-	metrics::Metrics as OverseerMetrics, InitializedOverseerBuilder, MetricsTrait, Overseer,
-	OverseerConnector, OverseerHandle, SpawnGlue,
 };
 use schnellru::{ByLength, LruMap};
 

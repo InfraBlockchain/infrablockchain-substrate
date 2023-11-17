@@ -45,8 +45,7 @@ where
 		<Runtime as pallet_assets::Config<AssetInstance>>::AssetId,
 		<Runtime as pallet_assets::Config<AssetInstance>>::Balance,
 	>,
-	AccountIdOf<Runtime>:
-		From<primitives::AccountId> + Into<primitives::AccountId>,
+	AccountIdOf<Runtime>: From<primitives::AccountId> + Into<primitives::AccountId>,
 {
 	fn charge_weight_in_fungibles(
 		asset_id: <pallet_assets::Pallet<Runtime, AssetInstance> as Inspect<

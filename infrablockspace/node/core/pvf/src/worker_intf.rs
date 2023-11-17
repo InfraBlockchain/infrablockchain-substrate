@@ -19,8 +19,8 @@
 use crate::LOG_TARGET;
 use futures::FutureExt as _;
 use futures_timer::Delay;
-use pin_project::pin_project;
 use node_core_pvf_common::SecurityStatus;
+use pin_project::pin_project;
 use rand::Rng;
 use std::{
 	fmt, mem,

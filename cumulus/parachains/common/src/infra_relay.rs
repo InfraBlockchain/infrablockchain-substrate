@@ -45,7 +45,7 @@ pub mod consensus {
 	pub const RELAY_CHAIN_SLOT_DURATION_MILLIS: u32 = 6000;
 }
 
-/// Constants relating to DOT.
+/// Constants relating to monetary.
 pub mod currency {
 	use infrablockspace_core_primitives::Balance;
 

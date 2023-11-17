@@ -52,8 +52,7 @@ pub type SubsystemResult<T> = Result<T, SubsystemError>;
 pub type FromOrchestra<M> = overseer::gen::FromOrchestra<M, OverseerSignal>;
 
 /// Specialized subsystem instance type of subsystems consuming a particular message type.
-pub type SubsystemInstance<Message> =
-	overseer::gen::SubsystemInstance<Message, OverseerSignal>;
+pub type SubsystemInstance<Message> = overseer::gen::SubsystemInstance<Message, OverseerSignal>;
 
 /// Spawned subsystem.
 pub type SpawnedSubsystem = overseer::gen::SpawnedSubsystem<SubsystemError>;

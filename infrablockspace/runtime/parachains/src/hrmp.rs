@@ -20,8 +20,8 @@ use crate::{
 };
 use frame_support::{pallet_prelude::*, traits::ReservableCurrency, DefaultNoBound};
 use frame_system::pallet_prelude::*;
-use parity_scale_codec::{Decode, Encode};
 use parachain_primitives::primitives::{HorizontalMessages, IsSystem};
+use parity_scale_codec::{Decode, Encode};
 use primitives::{
 	Balance, Hash, HrmpChannelId, Id as ParaId, InboundHrmpMessage, OutboundHrmpMessage,
 	SessionIndex,

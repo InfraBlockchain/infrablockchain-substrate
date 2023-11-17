@@ -15,8 +15,8 @@
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::error::InternalValidationError;
-use parity_scale_codec::{Decode, Encode};
 use parachain_primitives::primitives::ValidationResult;
+use parity_scale_codec::{Decode, Encode};
 use primitives::ExecutorParams;
 use std::time::Duration;
 

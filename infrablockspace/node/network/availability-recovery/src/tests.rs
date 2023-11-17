@@ -20,10 +20,10 @@ use assert_matches::assert_matches;
 use futures::{executor, future};
 use futures_timer::Delay;
 
-use parity_scale_codec::Encode;
 use node_network_protocol::request_response::{
 	self as req_res, IncomingRequest, Recipient, ReqProtocolNames, Requests,
 };
+use parity_scale_codec::Encode;
 
 use super::*;
 

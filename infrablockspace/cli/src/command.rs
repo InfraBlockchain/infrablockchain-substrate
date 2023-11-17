@@ -91,7 +91,7 @@ impl SubstrateCli for Cli {
 			#[cfg(feature = "infra-relay-native")]
 			"infra-relay-local" => Box::new(service::chain_spec::infra_relay_development_config()?),
 			#[cfg(feature = "infra-relay-native")]
-			"infra-relay-staging" => Box::new(service::chain_spec::infra_relay_staging_testnet_config()?), 
+			"infra-relay-staging" => Box::new(service::chain_spec::infra_relay_staging_testnet_config()?),
 			"rococo" => Box::new(service::chain_spec::rococo_config()?),
 			#[cfg(feature = "rococo-native")]
 			"rococo-dev" => Box::new(service::chain_spec::rococo_development_config()?),
@@ -265,12 +265,7 @@ pub fn run() -> Result<()> {
 	}
 
 	match &cli.subcommand {
-		None => run_node_inner(
-			cli,
-			service::RealOverseerGen,
-			None,
-			node_metrics::logger_hook(),
-		),
+		None => run_node_inner(cli, service::RealOverseerGen, None, node_metrics::logger_hook()),
 		Some(Subcommand::BuildSpec(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 			Ok(runner.sync_run(|config| cmd.run(config.chain_spec, config.network))?)

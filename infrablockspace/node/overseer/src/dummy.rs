@@ -19,8 +19,8 @@ use crate::{
 	Overseer, OverseerMetrics, OverseerSignal, OverseerSubsystemContext, SpawnGlue,
 	KNOWN_LEAVES_CACHE_SIZE,
 };
-use orchestra::{FromOrchestra, SpawnedSubsystem, Subsystem, SubsystemContext};
 use node_subsystem_types::{errors::SubsystemError, messages::*};
+use orchestra::{FromOrchestra, SpawnedSubsystem, Subsystem, SubsystemContext};
 use schnellru::{ByLength, LruMap};
 // Generated dummy messages
 use crate::messages::*;

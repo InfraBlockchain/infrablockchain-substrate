@@ -37,7 +37,8 @@ use primitives_test_helpers::dummy_collator_signature;
 use sc_network::Multiaddr;
 use sp_keyring::Sr25519Keyring;
 
-const TIMEOUT: std::time::Duration = node_subsystem_test_helpers::TestSubsystemContextHandle::<NetworkBridgeTxMessage>::TIMEOUT;
+const TIMEOUT: std::time::Duration =
+	node_subsystem_test_helpers::TestSubsystemContextHandle::<NetworkBridgeTxMessage>::TIMEOUT;
 
 use crate::{network::Network, validator_discovery::AuthorityDiscovery};
 
@@ -210,8 +211,7 @@ fn test_harness<T: Future<Output = VirtualOverseer>>(test: impl FnOnce(TestHarne
 	let pool = sp_core::testing::TaskExecutor::new();
 	let (network, network_handle, discovery) = new_test_network(peerset_protocol_names.clone());
 
-	let (context, virtual_overseer) =
-		node_subsystem_test_helpers::make_subsystem_context(pool);
+	let (context, virtual_overseer) = node_subsystem_test_helpers::make_subsystem_context(pool);
 
 	let bridge_out = NetworkBridgeTx::new(
 		network,

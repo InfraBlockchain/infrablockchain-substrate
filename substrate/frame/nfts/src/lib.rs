@@ -58,8 +58,7 @@ use sp_runtime::{
 	traits::{IdentifyAccount, Saturating, StaticLookup, Verify, Zero},
 	RuntimeDebug,
 };
-use sp_std::prelude::*;
-use sp_std::vec;
+use sp_std::{prelude::*, vec};
 
 pub use pallet::*;
 pub use types::*;

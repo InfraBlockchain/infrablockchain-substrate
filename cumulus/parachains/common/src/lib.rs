@@ -17,14 +17,10 @@
 
 pub mod impls;
 pub mod infra_relay;
-pub mod rococo;
 pub mod xcm_config;
-pub use constants::*;
-pub use opaque::*;
-pub use types::*;
 
 /// Common types of parachains.
-mod types {
+pub mod types {
 	use sp_runtime::traits::{IdentifyAccount, Verify};
 
 	/// An index to a block.
@@ -64,9 +60,9 @@ mod types {
 }
 
 /// Common constants of parachains.
-mod constants {
+pub mod constants {
 	use super::types::BlockNumber;
-	use frame_support::weights::{constants::WEIGHT_REF_TIME_PER_SECOND, Weight};
+	use frame_support::{weights::{constants::WEIGHT_REF_TIME_PER_SECOND, Weight}, PalletId};
 	use sp_runtime::Perbill;
 	/// This determines the average expected block time that we are targeting. Blocks will be
 	/// produced at a minimum duration defined by `SLOT_DURATION`. `SLOT_DURATION` is picked up by
@@ -94,6 +90,9 @@ mod constants {
 		WEIGHT_REF_TIME_PER_SECOND.saturating_div(2),
 		primitives::MAX_POV_SIZE as u64,
 	);
+
+	/// Treasury pallet id of the local chain, used to convert into AccountId
+	pub const TREASURY_PALLET_ID: PalletId = PalletId(*b"py/trsry");
 }
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
@@ -101,7 +100,7 @@ mod constants {
 /// of data like extrinsics, allowing for them to continue syncing the network through upgrades
 /// to even the core data structures.
 pub mod opaque {
-	use super::*;
+	use super::types::BlockNumber;
 	use sp_runtime::{generic, traits::BlakeTwo256};
 
 	pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;

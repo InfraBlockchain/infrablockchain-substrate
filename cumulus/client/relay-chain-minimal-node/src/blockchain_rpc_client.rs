@@ -55,10 +55,7 @@ impl BlockChainRpcClient {
 
 #[async_trait::async_trait]
 impl RuntimeApiSubsystemClient for BlockChainRpcClient {
-	async fn validators(
-		&self,
-		at: Hash,
-	) -> Result<Vec<primitives::ValidatorId>, sp_api::ApiError> {
+	async fn validators(&self, at: Hash) -> Result<Vec<primitives::ValidatorId>, sp_api::ApiError> {
 		Ok(self.rpc_client.parachain_host_validators(at).await?)
 	}
 
@@ -181,7 +178,11 @@ impl RuntimeApiSubsystemClient for BlockChainRpcClient {
 		at: Hash,
 		recipient: cumulus_primitives_core::ParaId,
 	) -> Result<
-		Vec<cumulus_primitives_core::InboundDownwardMessage<infrablockspace_core_primitives::BlockNumber>>,
+		Vec<
+			cumulus_primitives_core::InboundDownwardMessage<
+				infrablockspace_core_primitives::BlockNumber,
+			>,
+		>,
 		sp_api::ApiError,
 	> {
 		Ok(self.rpc_client.parachain_host_dmq_contents(recipient, at).await?)
@@ -195,7 +196,9 @@ impl RuntimeApiSubsystemClient for BlockChainRpcClient {
 		std::collections::BTreeMap<
 			cumulus_primitives_core::ParaId,
 			Vec<
-				infrablockspace_core_primitives::InboundHrmpMessage<infrablockspace_core_primitives::BlockNumber>,
+				infrablockspace_core_primitives::InboundHrmpMessage<
+					infrablockspace_core_primitives::BlockNumber,
+				>,
 			>,
 		>,
 		sp_api::ApiError,
@@ -308,11 +311,7 @@ impl RuntimeApiSubsystemClient for BlockChainRpcClient {
 		&self,
 		at: Hash,
 	) -> Result<
-		Vec<(
-			primitives::SessionIndex,
-			primitives::CandidateHash,
-			slashing::PendingSlashes,
-		)>,
+		Vec<(primitives::SessionIndex, primitives::CandidateHash, slashing::PendingSlashes)>,
 		ApiError,
 	> {
 		Ok(self.rpc_client.parachain_host_unapplied_slashes(at).await?)

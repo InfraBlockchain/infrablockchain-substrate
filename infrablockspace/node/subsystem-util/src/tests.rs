@@ -19,7 +19,7 @@
 use super::*;
 use executor::block_on;
 use futures::{channel::mpsc, executor, FutureExt, SinkExt, StreamExt};
-use primitives_test_helpers::AlwaysZeroRng;
+use polkadot_primitives_test_helpers::AlwaysZeroRng;
 use std::{
 	sync::{
 		atomic::{AtomicUsize, Ordering},

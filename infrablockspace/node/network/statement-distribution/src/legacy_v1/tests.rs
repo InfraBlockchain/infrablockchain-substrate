@@ -22,7 +22,6 @@ use crate::{metrics::Metrics, *};
 use assert_matches::assert_matches;
 use futures::executor;
 use futures_timer::Delay;
-use parity_scale_codec::{Decode, Encode};
 use node_network_protocol::{
 	grid_topology::{SessionGridTopology, TopologyPeerInfo},
 	peer_set::ValidationVersion,
@@ -32,9 +31,7 @@ use node_network_protocol::{
 	},
 	view, ObservedRole, VersionedValidationProtocol,
 };
-use node_primitives::{
-	SignedFullStatementWithPVD, Statement, UncheckedSignedFullStatement,
-};
+use node_primitives::{SignedFullStatementWithPVD, Statement, UncheckedSignedFullStatement};
 use node_subsystem::{
 	messages::{
 		network_bridge_event, AllMessages, ReportPeerMessage, RuntimeApiMessage, RuntimeApiRequest,
@@ -42,13 +39,12 @@ use node_subsystem::{
 	RuntimeApiError,
 };
 use node_subsystem_test_helpers::mock::{make_ferdie_keystore, new_leaf};
+use parity_scale_codec::{Decode, Encode};
 use primitives::{
 	ExecutorParams, GroupIndex, Hash, HeadData, Id as ParaId, IndexedVec, SessionInfo,
 	ValidationCode,
 };
-use primitives_test_helpers::{
-	dummy_committed_candidate_receipt, dummy_hash, AlwaysZeroRng,
-};
+use primitives_test_helpers::{dummy_committed_candidate_receipt, dummy_hash, AlwaysZeroRng};
 use sc_keystore::LocalKeystore;
 use sp_application_crypto::{sr25519::Pair, AppCrypto, Pair as TraitPair};
 use sp_authority_discovery::AuthorityPair;

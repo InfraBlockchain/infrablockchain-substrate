@@ -15,8 +15,8 @@
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::prepare::PrepareJobKind;
-use parity_scale_codec::{Decode, Encode};
 use parachain_primitives::primitives::ValidationCodeHash;
+use parity_scale_codec::{Decode, Encode};
 use primitives::ExecutorParams;
 use sp_core::blake2_256;
 use std::{

@@ -18,11 +18,11 @@
 
 use futures::channel::oneshot;
 use futures_timer::Delay;
-use parity_scale_codec::{Decode, Encode};
 use node_primitives::{
 	maybe_compress_pov, Collation, CollationResult, CollationSecondedSignal, CollatorFn,
 	MaybeCompressedPoV, PoV, Statement,
 };
+use parity_scale_codec::{Decode, Encode};
 use primitives::{CollatorId, CollatorPair, Hash};
 use sp_core::Pair;
 use std::{

@@ -32,7 +32,6 @@
 #![deny(missing_docs)]
 
 use futures::{channel::oneshot, future::FutureExt, join, select};
-use parity_scale_codec::Encode;
 use node_primitives::{
 	AvailableData, Collation, CollationGenerationConfig, CollationSecondedSignal, PoV,
 	SubmitCollationParams,
@@ -46,6 +45,7 @@ use node_subsystem_util::{
 	request_async_backing_params, request_availability_cores, request_persisted_validation_data,
 	request_validation_code, request_validation_code_hash, request_validators,
 };
+use parity_scale_codec::Encode;
 use primitives::{
 	collator_signature_payload, CandidateCommitments, CandidateDescriptor, CandidateReceipt,
 	CollatorPair, CoreState, Hash, Id as ParaId, OccupiedCoreAssumption, PersistedValidationData,

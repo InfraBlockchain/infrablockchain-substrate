@@ -39,8 +39,7 @@ type VirtualOverseer = TestSubsystemContextHandle<CollationGenerationMessage>;
 
 fn test_harness<T: Future<Output = VirtualOverseer>>(test: impl FnOnce(VirtualOverseer) -> T) {
 	let pool = sp_core::testing::TaskExecutor::new();
-	let (context, virtual_overseer) =
-		node_subsystem_test_helpers::make_subsystem_context(pool);
+	let (context, virtual_overseer) = node_subsystem_test_helpers::make_subsystem_context(pool);
 	let subsystem = async move {
 		let subsystem = crate::CollationGenerationSubsystem::new(Metrics::default());
 

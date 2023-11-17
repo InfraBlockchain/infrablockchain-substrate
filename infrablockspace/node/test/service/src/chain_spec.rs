@@ -18,10 +18,10 @@
 
 use babe_primitives::AuthorityId as BabeId;
 use grandpa::AuthorityId as GrandpaId;
-use pallet_staking::Forcing;
-use primitives::{AccountId, AssignmentId, ValidatorId, MAX_CODE_SIZE, MAX_POV_SIZE};
 use infrablockspace_service::chain_spec::{get_account_id_from_seed, get_from_seed, Extensions};
+use pallet_staking::Forcing;
 use polkadot_test_runtime::BABE_GENESIS_EPOCH_CONFIG;
+use primitives::{AccountId, AssignmentId, ValidatorId, MAX_CODE_SIZE, MAX_POV_SIZE};
 use sc_chain_spec::{ChainSpec, ChainType};
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_core::sr25519;

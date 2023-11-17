@@ -50,9 +50,7 @@ use {
 		self as chain_selection_subsystem, Config as ChainSelectionConfig,
 	},
 	node_core_dispute_coordinator::Config as DisputeCoordinatorConfig,
-	node_network_protocol::{
-		peer_set::PeerSetProtocolNames, request_response::ReqProtocolNames,
-	},
+	node_network_protocol::{peer_set::PeerSetProtocolNames, request_response::ReqProtocolNames},
 	sc_client_api::BlockBackend,
 	sc_transaction_pool_api::OffchainTransactionPoolFactory,
 	sp_core::traits::SpawnNamed,
@@ -84,7 +82,7 @@ use telemetry::TelemetryWorker;
 #[cfg(feature = "full-node")]
 use telemetry::{Telemetry, TelemetryWorkerHandle};
 
-pub use chain_spec::{GenericChainSpec, RococoChainSpec, InfraRelayChainSpec};
+pub use chain_spec::{GenericChainSpec, InfraRelayChainSpec, RococoChainSpec};
 pub use consensus_common::{Proposal, SelectChain};
 use frame_benchmarking_cli::SUBSTRATE_REFERENCE_HARDWARE;
 use mmr_gadget::MmrGadget;
@@ -268,7 +266,6 @@ pub enum Chain {
 
 /// Can be called for a `Configuration` to identify which network the configuration targets.
 pub trait IdentifyVariant {
-
 	/// Returns if this is a configuration for the `Infra Relay` network.
 	fn is_infra_relay(&self) -> bool;
 
@@ -1299,11 +1296,8 @@ pub fn build_full<OverseerGenerator: OverseerGen>(
 	config: Configuration,
 	mut params: NewFullParams<OverseerGenerator>,
 ) -> Result<NewFull, Error> {
-
 	params.overseer_message_channel_capacity_override =
-		params.overseer_message_channel_capacity_override.map(move |capacity| {
-			capacity
-		});
+		params.overseer_message_channel_capacity_override.map(move |capacity| capacity);
 
 	new_full(config, params)
 }

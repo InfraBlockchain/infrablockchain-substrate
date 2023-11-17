@@ -22,9 +22,7 @@ use cumulus_primitives_core::{
 };
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
 
-use parachain_primitives::primitives::{
-	HeadData, RelayChainBlockNumber, ValidationResult,
-};
+use parachain_primitives::primitives::{HeadData, RelayChainBlockNumber, ValidationResult};
 
 use codec::Encode;
 

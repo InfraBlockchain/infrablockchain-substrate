@@ -978,7 +978,7 @@ mod tests {
 			assert!(Parachains::is_parathread(para_id));
 			assert!(!Parachains::is_parachain(para_id));
 			// Deregister it
-			assert_ok!(Registrar::deregister(RuntimeOrigin::root(), para_id,));
+			assert_ok!(Registrar::deregister(para_id));
 			run_to_session(START_SESSION_INDEX + 8);
 			// It is nothing
 			assert!(!Parachains::is_parathread(para_id));
@@ -1053,7 +1053,7 @@ mod tests {
 			// Can skip pre-check and deregister para which's still onboarding.
 			run_to_session(2);
 
-			assert_ok!(Registrar::deregister(RuntimeOrigin::root(), para_id));
+			assert_ok!(Registrar::deregister(para_id));
 
 			// Can't do it again
 			assert_noop!(
@@ -1118,7 +1118,7 @@ mod tests {
 
 			run_to_session(START_SESSION_INDEX + 2);
 			assert!(Parachains::is_parathread(para_id));
-			assert_ok!(Registrar::deregister(RuntimeOrigin::root(), para_id,));
+			assert_ok!(Registrar::deregister(para_id,));
 			run_to_session(START_SESSION_INDEX + 4);
 			assert!(paras::Pallet::<Test>::lifecycle(para_id).is_none());
 			assert_eq!(Balances::reserved_balance(&1), 0);
@@ -1147,12 +1147,12 @@ mod tests {
 			run_to_session(START_SESSION_INDEX + 2);
 			assert!(Parachains::is_parathread(para_id));
 			// Owner check
-			assert_noop!(Registrar::deregister(RuntimeOrigin::signed(2), para_id,), BadOrigin);
+			assert_noop!(Registrar::deregister(para_id,), BadOrigin);
 			assert_ok!(Registrar::make_parachain(para_id));
 			run_to_session(START_SESSION_INDEX + 4);
 			// Cant directly deregister parachain
 			assert_noop!(
-				Registrar::deregister(RuntimeOrigin::root(), para_id,),
+				Registrar::deregister(para_id,),
 				Error::<Test>::NotParathread
 			);
 		});
@@ -1308,9 +1308,9 @@ mod tests {
 				BadOrigin
 			);
 			// Owner cannot remove lock.
-			assert_noop!(Registrar::remove_lock(RuntimeOrigin::signed(1), para_id), BadOrigin);
+			assert_noop!(Registrar::remove_lock(para_id), BadOrigin);
 			// Para can.
-			assert_ok!(Registrar::remove_lock(para_origin(para_id), para_id));
+			assert_ok!(Registrar::remove_lock(para_id));
 			// Owner can pass origin check again
 			assert_ok!(Registrar::ensure_root_para_or_owner(RuntimeOrigin::signed(1), para_id));
 

@@ -41,14 +41,21 @@ macro_rules! identify_chain {
 
 					let call = $generic_code;
 
-					Ok(infra_relay_sign_call(call, $nonce, $current_block, $period, $genesis, $signer))
+					Ok(infra_relay_sign_call(
+						call,
+						$nonce,
+						$current_block,
+						$period,
+						$genesis,
+						$signer,
+					))
 				}
 
 				#[cfg(not(feature = "infra-relay-native"))]
 				{
 					Err("`infra-relay-native` feature not enabled")
 				}
-			}
+			},
 			Chain::Rococo => {
 				#[cfg(feature = "rococo-native")]
 				{
@@ -184,8 +191,8 @@ fn infra_relay_sign_call(
 	acc: sp_core::sr25519::Pair,
 ) -> OpaqueExtrinsic {
 	use codec::Encode;
-	use sp_core::Pair;
 	use infra_relay_runtime as runtime;
+	use sp_core::Pair;
 
 	let extra: runtime::SignedExtra = (
 		frame_system::CheckNonZeroSender::<runtime::Runtime>::new(),

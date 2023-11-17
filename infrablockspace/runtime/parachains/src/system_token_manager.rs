@@ -79,7 +79,7 @@ pub mod pallet {
 		/// and decimal.
 		SetSystemTokenWeight { original: SystemTokenId, property: SystemTokenProperty },
 		/// Update the fee rate of the parachain. The default value is 1_000.
-		SetParaFeeRate { para_id: IbsParaId, para_fee_rate: u32 },
+		SetParaFeeRate { para_id: IbsParaId, para_fee_rate: u128 },
 		/// Update the fee table of the parachain
 		SetFeeTable { para_call_metadata: ParaCallMetadata, fee: T::Balance },
 		/// Suspend a `original` system token.
@@ -443,7 +443,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			para_id: IbsParaId,
 			pallet_id: IbsPalletId,
-			para_fee_rate: u32,
+			para_fee_rate: u128,
 		) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -655,7 +655,6 @@ where
 	/// Try deregister for all `original` and `wrapped` system tokens registered on runtime.
 	///
 	/// **Changes:**
-	///
 	fn try_deregister_all(original: SystemTokenId) -> DispatchResult {
 		let wrapped_system_tokens = Self::try_get_wrapped_system_token_list(&original)?;
 		for wrapped_system_token_id in wrapped_system_tokens {
@@ -707,7 +706,6 @@ where
 	/// Try suspend for all `original` and `wrapped` system tokens registered on runtime.
 	///
 	/// **Changes:**
-	///
 	fn try_suspend_all(original: SystemTokenId) -> DispatchResult {
 		let wrapped_system_tokens = Self::try_get_wrapped_system_token_list(&original)?;
 		for wrapped_system_token_id in wrapped_system_tokens {
@@ -758,7 +756,6 @@ where
 	/// Try unsuspend for all `original` and `wrapped` system tokens registered on runtime.
 	///
 	/// **Changes:**
-	///
 	fn try_unsuspend_all(original: SystemTokenId) -> DispatchResult {
 		let wrapped_system_tokens = Self::try_get_wrapped_system_token_list(&original)?;
 		for wrapped_system_token_id in wrapped_system_tokens {

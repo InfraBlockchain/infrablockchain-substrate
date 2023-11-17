@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
-use honggfuzz::fuzz;
 use erasure_coding::*;
+use honggfuzz::fuzz;
 use node_primitives::AvailableData;
 
 fn main() {

@@ -242,7 +242,7 @@ async fn start_node_impl(
 		task_manager: &mut task_manager,
 		config: parachain_config,
 		keystore: params.keystore_container.keystore(),
-		backend: backend,
+		backend,
 		network: network.clone(),
 		sync_service: sync_service.clone(),
 		system_rpc_tx,

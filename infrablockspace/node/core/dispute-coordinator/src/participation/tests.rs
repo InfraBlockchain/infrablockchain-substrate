@@ -25,7 +25,6 @@ use super::*;
 use ::test_helpers::{
 	dummy_candidate_commitments, dummy_candidate_receipt_bad_sig, dummy_digest, dummy_hash,
 };
-use parity_scale_codec::Encode;
 use node_primitives::{AvailableData, BlockData, InvalidCandidate, PoV};
 use node_subsystem::{
 	messages::{
@@ -37,6 +36,7 @@ use node_subsystem::{
 use node_subsystem_test_helpers::{
 	make_subsystem_context, mock::new_leaf, TestSubsystemContext, TestSubsystemContextHandle,
 };
+use parity_scale_codec::Encode;
 use primitives::{
 	BlakeTwo256, CandidateCommitments, HashT, Header, PersistedValidationData, ValidationCode,
 };

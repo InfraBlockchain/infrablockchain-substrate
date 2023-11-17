@@ -20,6 +20,10 @@ use std::sync::Arc;
 
 use availability_recovery::AvailabilityRecoverySubsystem;
 use collator_protocol::{CollatorProtocolSubsystem, ProtocolSide};
+use infrablockspace_overseer::{
+	BlockInfo, DummySubsystem, Handle, Overseer, OverseerConnector, OverseerHandle, SpawnGlue,
+	UnpinHandle, KNOWN_LEAVES_CACHE_SIZE,
+};
 use network_bridge::{
 	Metrics as NetworkBridgeMetrics, NetworkBridgeRx as NetworkBridgeRxSubsystem,
 	NetworkBridgeTx as NetworkBridgeTxSubsystem,
@@ -34,10 +38,6 @@ use node_network_protocol::{
 	},
 };
 use node_subsystem_util::metrics::{prometheus::Registry, Metrics};
-use infrablockspace_overseer::{
-	BlockInfo, DummySubsystem, Handle, Overseer, OverseerConnector, OverseerHandle, SpawnGlue,
-	UnpinHandle, KNOWN_LEAVES_CACHE_SIZE,
-};
 use primitives::CollatorPair;
 
 use sc_authority_discovery::Service as AuthorityDiscoveryService;

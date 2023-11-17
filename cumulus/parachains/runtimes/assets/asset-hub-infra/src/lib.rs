@@ -15,8 +15,8 @@
 
 //! # Infra Asset Hub MainNet Runtime
 //!
-//! Infra Asset System is a parachain that provides an interface to create, manage, and use assets. Assets
-//! may be fungible or non-fungible.
+//! Infra Asset System is a parachain that provides an interface to create, manage, and use assets.
+//! Assets may be fungible or non-fungible.
 //!
 //! ## Assets
 //!
@@ -31,14 +31,14 @@
 //!
 //! ### Governance
 //!
-//! As a common good parachain, Infra Asset System defers its governance (namely, its `Root` origin), to its
-//! Relay Chain parent, Polkadot.
+//! As a common good parachain, Infra Asset System defers its governance (namely, its `Root`
+//! origin), to its Relay Chain parent, Polkadot.
 //!
 //! ### Collator Selection
 //!
-//! Infra Asset System uses `pallet-collator-selection`, a simple first-come-first-served registration
-//! system where collators can reserve a small bond to join the block producer set. There is no
-//! slashing.
+//! Infra Asset System uses `pallet-collator-selection`, a simple first-come-first-served
+//! registration system where collators can reserve a small bond to join the block producer set.
+//! There is no slashing.
 //!
 //! ### XCM
 //!
@@ -53,6 +53,7 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 pub mod constants;
+use constants::{currency::*, fee::WeightToFee};
 mod weights;
 pub mod xcm_config;
 
@@ -76,9 +77,12 @@ use frame_support::{
 	construct_runtime,
 	dispatch::DispatchClass,
 	parameter_types,
-	traits::{AsEnsureOriginWithArg, ConstBool, ConstU32, ConstU64, ConstU8, EitherOfDiverse, InstanceFilter},
+	traits::{
+		AsEnsureOriginWithArg, ConstBool, ConstU32, ConstU64, ConstU8, EitherOfDiverse,
+		InstanceFilter,
+	},
 	weights::{ConstantMultiplier, Weight},
-	PalletId, 
+	PalletId,
 };
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
@@ -87,11 +91,9 @@ use frame_system::{
 
 use pallet_system_token_tx_payment::{CreditToBucket, TransactionFeeCharger};
 use parachains_common::{
-	impls::DealWithFees, 
-	infra_relay::{consensus::*, currency::*, fee::WeightToFee },
-	opaque, AccountId, AssetId, AuraId, Balance, BlockNumber, Hash, Header, Nonce,
-	Signature, AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT,
-	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
+	impls::DealWithFees,
+	constants::*, opaque::*, types::*, 
+	infra_relay::consensus::*,
 };
 use xcm_config::{
 	DotLocation, TrustBackedAssetsConvertedConcreteId, XcmConfig, XcmOriginToTransactDispatchOrigin,
@@ -101,9 +103,9 @@ use xcm_config::{
 pub use sp_runtime::BuildStorage;
 
 // Polkadot imports
+use pallet_xcm::{EnsureXcm, IsMajorityOfBody};
 use runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 use runtime_parachains::system_token_aggregator;
-use pallet_xcm::{EnsureXcm, IsMajorityOfBody};
 use xcm::latest::BodyId;
 use xcm_executor::XcmExecutor;
 
@@ -252,7 +254,7 @@ impl pallet_system_token_tx_payment::Config for Runtime {
 }
 
 parameter_types! {
-	pub const DepositToCreateAsset: Balance = 1 * UNITS; // 1 UNITS deposit to create fungible asset class
+	pub const DepositToCreateAsset: Balance = 1 * DOLLARS; // 1 UNITS deposit to create fungible asset class
 	pub const DepositToMaintainAsset: Balance = deposit(1, 16);
 	pub const ApprovalDeposit: Balance = EXISTENTIAL_DEPOSIT;
 	pub const StringLimit: u32 = 50;
@@ -575,8 +577,8 @@ impl pallet_system_token::Config for Runtime {
 }
 
 parameter_types! {
-	pub const CollectionDeposit: Balance = 10 * UNITS; // 10 UNIT deposit to create uniques class
-	pub const ItemDeposit: Balance = UNITS / 100; // 1 / 100 UNIT deposit to create uniques instance
+	pub const CollectionDeposit: Balance = 10 * DOLLARS; // 10 UNIT deposit to create uniques class
+	pub const ItemDeposit: Balance = DOLLARS / 100; // 1 / 100 UNIT deposit to create uniques instance
 	pub const KeyLimit: u32 = 32;	// Max 32 bytes per key
 	pub const ValueLimit: u32 = 64;	// Max 64 bytes per value
 	pub const UniquesMetadataDepositBase: Balance = deposit(1, 129);
@@ -642,7 +644,7 @@ construct_runtime!(
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 11,
-		SystemTokenPayment: pallet_system_token_tx_payment::{Pallet, Event<T>} = 12,
+		SystemTokenTxPayment: pallet_system_token_tx_payment::{Pallet, Event<T>} = 12,
 
 		// Collator support. the order of these 5 are important and shall not change.
 		Authorship: pallet_authorship::{Pallet, Storage} = 20,

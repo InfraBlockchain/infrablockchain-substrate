@@ -29,9 +29,7 @@ pub use parachain_primitives::primitives::{
 	DmpMessageHandler, Id as ParaId, IsSystem, UpwardMessage, ValidationParams, XcmpMessageFormat,
 	XcmpMessageHandler,
 };
-pub use primitives::{
-	AbridgedHostConfiguration, AbridgedHrmpChannel, PersistedValidationData,
-};
+pub use primitives::{AbridgedHostConfiguration, AbridgedHrmpChannel, PersistedValidationData};
 
 pub use sp_runtime::{
 	generic::{Digest, DigestItem},

@@ -274,7 +274,10 @@ fn build_polkadot_full_node(
 ) -> Result<(NewFull, Option<CollatorPair>), infrablockspace_service::Error> {
 	let (is_parachain_node, maybe_collator_key) = if parachain_config.role.is_authority() {
 		let collator_key = CollatorPair::generate().0;
-		(infrablockspace_service::IsParachainNode::Collator(collator_key.clone()), Some(collator_key))
+		(
+			infrablockspace_service::IsParachainNode::Collator(collator_key.clone()),
+			Some(collator_key),
+		)
 	} else {
 		(infrablockspace_service::IsParachainNode::FullNode, None)
 	};
@@ -343,12 +346,12 @@ pub fn build_inprocess_relay_chain(
 mod tests {
 	use super::*;
 
-	use primitives::Block as PBlock;
 	use polkadot_test_client::{
 		construct_transfer_extrinsic, BlockBuilderExt, Client, ClientBlockImportExt,
 		DefaultTestClientBuilderExt, InitPolkadotBlockBuilder, TestClientBuilder,
 		TestClientBuilderExt,
 	};
+	use primitives::Block as PBlock;
 	use sp_consensus::{BlockOrigin, SyncOracle};
 	use sp_runtime::traits::Block as BlockT;
 	use std::sync::Arc;

@@ -28,9 +28,7 @@ use node_network_protocol::{
 };
 use node_subsystem::{messages::NetworkBridgeTxMessage, overseer};
 use node_subsystem_util::{metrics, nesting_sender::NestingSender, runtime::RuntimeInfo};
-use primitives::{
-	AuthorityDiscoveryId, CandidateHash, Hash, SessionIndex, ValidatorIndex,
-};
+use primitives::{AuthorityDiscoveryId, CandidateHash, Hash, SessionIndex, ValidatorIndex};
 
 use super::error::{FatalError, Result};
 

@@ -16,9 +16,9 @@
 
 use crate::{Client, FullBackend};
 use parity_scale_codec::{Decode, Encode};
-use primitives::{Block, InherentData as ParachainsInherentData};
 use polkadot_test_runtime::UncheckedExtrinsic;
 use polkadot_test_service::GetLastTimestamp;
+use primitives::{Block, InherentData as ParachainsInherentData};
 use sc_block_builder::{BlockBuilder, BlockBuilderProvider};
 use sp_api::ProvideRuntimeApi;
 use sp_consensus_babe::{
@@ -113,10 +113,7 @@ impl InitPolkadotBlockBuilder for Client {
 		};
 
 		inherent_data
-			.put_data(
-				primitives::PARACHAINS_INHERENT_IDENTIFIER,
-				&parachains_inherent_data,
-			)
+			.put_data(primitives::PARACHAINS_INHERENT_IDENTIFIER, &parachains_inherent_data)
 			.expect("Put parachains inherent data");
 
 		let inherents = block_builder.create_inherents(inherent_data).expect("Creates inherents");

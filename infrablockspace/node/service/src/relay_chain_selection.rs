@@ -38,13 +38,13 @@
 use super::{HeaderProvider, HeaderProviderProvider};
 use consensus_common::{Error as ConsensusError, SelectChain};
 use futures::channel::oneshot;
+use infrablockspace_overseer::{AllMessages, Handle};
 use node_primitives::MAX_FINALITY_LAG as PRIMITIVES_MAX_FINALITY_LAG;
 use node_subsystem::messages::{
 	ApprovalDistributionMessage, ApprovalVotingMessage, ChainSelectionMessage,
 	DisputeCoordinatorMessage, HighestApprovedAncestorBlock,
 };
 use node_subsystem_util::metrics::{self, prometheus};
-use infrablockspace_overseer::{AllMessages, Handle};
 use primitives::{Block as PolkadotBlock, BlockNumber, Hash, Header as PolkadotHeader};
 use std::sync::Arc;
 

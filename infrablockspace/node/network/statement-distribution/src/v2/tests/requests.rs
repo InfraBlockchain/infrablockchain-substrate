@@ -17,10 +17,8 @@
 use super::*;
 
 use bitvec::order::Lsb0;
+use node_network_protocol::{request_response::v2 as request_v2, v2::BackedCandidateManifest};
 use parity_scale_codec::{Decode, Encode};
-use node_network_protocol::{
-	request_response::v2 as request_v2, v2::BackedCandidateManifest,
-};
 use primitives_test_helpers::make_candidate;
 use sc_network::config::{
 	IncomingRequest as RawIncomingRequest, OutgoingResponse as RawOutgoingResponse,

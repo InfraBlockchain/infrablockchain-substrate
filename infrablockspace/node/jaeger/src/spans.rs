@@ -83,8 +83,8 @@
 //! # }
 //! ```
 
-use parity_scale_codec::Encode;
 use node_primitives::PoV;
+use parity_scale_codec::Encode;
 use primitives::{BlakeTwo256, CandidateHash, Hash, HashT, Id as ParaId, ValidatorIndex};
 use sc_network::PeerId;
 

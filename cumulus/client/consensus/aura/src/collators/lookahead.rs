@@ -44,11 +44,9 @@ use cumulus_primitives_core::{
 };
 use cumulus_relay_chain_interface::RelayChainInterface;
 
-use node_primitives::SubmitCollationParams;
-use node_subsystem::messages::{
-	CollationGenerationMessage, RuntimeApiMessage, RuntimeApiRequest,
-};
 use infrablockspace_overseer::Handle as OverseerHandle;
+use node_primitives::SubmitCollationParams;
+use node_subsystem::messages::{CollationGenerationMessage, RuntimeApiMessage, RuntimeApiRequest};
 use primitives::{CollatorPair, Id as ParaId, OccupiedCoreAssumption};
 
 use futures::{channel::oneshot, prelude::*};

@@ -19,7 +19,7 @@ use crate::chain_spec::{
 };
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
-use parachains_common::{AccountId, AuraId, Balance as AssetHubBalance};
+use parachains_common::types::{AccountId, AuraId, Balance as AssetHubBalance};
 use sc_service::ChainType;
 use sp_core::{crypto::UncheckedInto, sr25519};
 
@@ -33,9 +33,7 @@ const ASSET_HUB_INFRA_RELAY_ED: AssetHubBalance =
 /// Generate the session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn asset_hub_session_keys(
-	keys: AuraId,
-) -> asset_hub_runtime::SessionKeys {
+pub fn asset_hub_session_keys(keys: AuraId) -> asset_hub_runtime::SessionKeys {
 	asset_hub_runtime::SessionKeys { aura: keys }
 }
 
@@ -72,7 +70,7 @@ pub fn asset_hub_development_config() -> AssetHubChainSpec {
 		None,
 		None,
 		Some(properties),
-		Extensions { relay_chain: "infra-relay-dev".into(), para_id: 1000 },
+		Extensions { relay_chain: "infra-relay-local".into(), para_id: 1000 },
 	)
 }
 
@@ -235,8 +233,8 @@ fn asset_hub_genesis(
 				.into_iter()
 				.map(|(acc, aura)| {
 					(
-						acc.clone(),                           // account id
-						acc,                                   // validator id
+						acc.clone(),                  // account id
+						acc,                          // validator id
 						asset_hub_session_keys(aura), // session keys
 					)
 				})

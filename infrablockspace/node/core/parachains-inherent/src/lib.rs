@@ -26,9 +26,7 @@
 #![deny(unused_crate_dependencies, unused_results)]
 
 use futures::{select, FutureExt};
-use node_subsystem::{
-	errors::SubsystemError, messages::ProvisionerMessage, overseer::Handle,
-};
+use node_subsystem::{errors::SubsystemError, messages::ProvisionerMessage, overseer::Handle};
 use primitives::{Block, Hash, InherentData as ParachainsInherentData};
 use std::{sync::Arc, time};
 
@@ -140,8 +138,7 @@ impl<C: sp_blockchain::HeaderBackend<Block>> sp_inherents::InherentDataProvider
 		.await
 		.map_err(|e| sp_inherents::Error::Application(Box::new(e)))?;
 
-		dst_inherent_data
-			.put_data(primitives::PARACHAINS_INHERENT_IDENTIFIER, &inherent_data)
+		dst_inherent_data.put_data(primitives::PARACHAINS_INHERENT_IDENTIFIER, &inherent_data)
 	}
 
 	async fn try_handle_error(

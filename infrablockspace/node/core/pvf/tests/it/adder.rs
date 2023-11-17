@@ -16,11 +16,11 @@
 
 use super::TestHost;
 use adder::{hash_state, BlockData, HeadData};
-use parity_scale_codec::{Decode, Encode};
 use parachain_primitives::primitives::{
 	BlockData as GenericBlockData, HeadData as GenericHeadData, RelayChainBlockNumber,
 	ValidationParams,
 };
+use parity_scale_codec::{Decode, Encode};
 
 #[tokio::test]
 async fn execute_good_block_on_parent() {

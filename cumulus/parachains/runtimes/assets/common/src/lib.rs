@@ -23,7 +23,7 @@ pub mod runtime_api;
 
 use crate::matching::{Equals, LocalMultiLocationPattern, ParentLocation, StartsWith};
 use frame_support::traits::EverythingBut;
-use parachains_common::AssetIdForTrustBackedAssets;
+use parachains_common::types::AssetIdForTrustBackedAssets;
 use xcm::prelude::MultiLocation;
 use xcm_builder::{AsPrefixedGeneralIndex, MatchedConvertedConcreteId};
 use xcm_executor::traits::JustTry;
@@ -63,22 +63,25 @@ pub type MultiLocationConvertedConcreteId<MultiLocationFilter, AssetConverter, B
 /// - all local MultiLocations
 ///
 /// `AdditionalMultiLocationExclusionFilter` can customize additional excluded MultiLocations
-pub type ForeignAssetsConvertedConcreteId<AdditionalMultiLocationExclusionFilter, AssetConverter, Balance> =
-	MultiLocationConvertedConcreteId<
-		EverythingBut<(
-			// Excludes relay/parent chain currency
-			Equals<ParentLocation>,
-			// Here we rely on fact that something like this works:
-			// assert!(MultiLocation::new(1,
-			// X1(Parachain(100))).starts_with(&MultiLocation::parent()));
-			// assert!(X1(Parachain(100)).starts_with(&Here));
-			StartsWith<LocalMultiLocationPattern>,
-			// Here we can exclude more stuff or leave it as `()`
-			AdditionalMultiLocationExclusionFilter,
-		)>,
-		AssetConverter,
-		Balance,
-	>;
+pub type ForeignAssetsConvertedConcreteId<
+	AdditionalMultiLocationExclusionFilter,
+	AssetConverter,
+	Balance,
+> = MultiLocationConvertedConcreteId<
+	EverythingBut<(
+		// Excludes relay/parent chain currency
+		Equals<ParentLocation>,
+		// Here we rely on fact that something like this works:
+		// assert!(MultiLocation::new(1,
+		// X1(Parachain(100))).starts_with(&MultiLocation::parent()));
+		// assert!(X1(Parachain(100)).starts_with(&Here));
+		StartsWith<LocalMultiLocationPattern>,
+		// Here we can exclude more stuff or leave it as `()`
+		AdditionalMultiLocationExclusionFilter,
+	)>,
+	AssetConverter,
+	Balance,
+>;
 
 type AssetIdForPoolAssets = u32;
 /// `MultiLocation` vs `AssetIdForPoolAssets` converter for `PoolAssets`.

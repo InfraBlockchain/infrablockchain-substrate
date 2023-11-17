@@ -127,11 +127,8 @@ impl RelayStateSproofBuilder {
 		})
 	}
 
-	pub fn into_state_root_and_proof(
-		self,
-	) -> (primitives::Hash, sp_state_machine::StorageProof) {
-		let (db, root) =
-			PrefixedMemoryDB::<HashingFor<primitives::Block>>::default_with_root();
+	pub fn into_state_root_and_proof(self) -> (primitives::Hash, sp_state_machine::StorageProof) {
+		let (db, root) = PrefixedMemoryDB::<HashingFor<primitives::Block>>::default_with_root();
 		let state_version = Default::default(); // for test using default.
 		let mut backend = sp_state_machine::TrieBackendBuilder::new(db, root).build();
 

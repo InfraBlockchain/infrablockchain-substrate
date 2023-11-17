@@ -380,7 +380,7 @@ pub mod pallet {
 	#[pallet::storage]
 	/// The fee rate imposed to parachain. The fee rate 1_000 actually equals 1.
 	/// It is initilzed as 1_000(1.0), then it SHOULD be only set by a dmp call from RELAY CHAIN.
-	pub(super) type ParaFeeRate<T: Config<I>, I: 'static = ()> = StorageValue<_, u32, OptionQuery>;
+	pub(super) type ParaFeeRate<T: Config<I>, I: 'static = ()> = StorageValue<_, u128, OptionQuery>;
 
 	#[pallet::genesis_config]
 	#[derive(frame_support::DefaultNoBound)]
@@ -396,6 +396,7 @@ pub mod pallet {
 	#[pallet::genesis_build]
 	impl<T: Config<I>, I: 'static> BuildGenesisConfig for GenesisConfig<T, I> {
 		fn build(&self) {
+			ParaFeeRate::<T, I>::set(Some(CORRECTION_PARA_FEE_RATE));
 			for (id, owner, is_sufficient, min_balance) in &self.assets {
 				assert!(!Asset::<T, I>::contains_key(id), "Asset id already in use");
 				assert!(!min_balance.is_zero(), "Min balance should not be zero");
@@ -549,7 +550,7 @@ pub mod pallet {
 		/// No sufficient token to pay the transaciton fee
 		NoSufficientTokenToPay,
 		/// The ParaFeeRate has been updated
-		ParaFeeRateUpdated { para_fee_rate: u32 },
+		ParaFeeRateUpdated { para_fee_rate: u128 },
 	}
 
 	#[pallet::error]
@@ -1850,7 +1851,7 @@ pub mod pallet {
 		/// Emits `AssetSystemTokenWeightChanged` event when successful.
 		#[pallet::call_index(37)]
 		#[pallet::weight(T::WeightInfo::set_min_balance())]
-		pub fn update_para_fee_rate(origin: OriginFor<T>, para_fee_rate: u32) -> DispatchResult {
+		pub fn update_para_fee_rate(origin: OriginFor<T>, para_fee_rate: u128) -> DispatchResult {
 			T::ForceOrigin::ensure_origin(origin)?;
 
 			ParaFeeRate::<T, I>::set(Some(para_fee_rate));

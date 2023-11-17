@@ -1,3 +1,6 @@
+
+//! Types for InfraBlockchain
+
 mod fee;
 pub mod token;
 mod vote;

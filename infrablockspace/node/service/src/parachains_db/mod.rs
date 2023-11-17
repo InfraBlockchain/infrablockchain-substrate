@@ -14,9 +14,7 @@
 //! A `RocksDB` instance for storing parachain data; availability data, and approvals.
 
 #[cfg(feature = "full-node")]
-use {
-	node_subsystem_util::database::Database, std::io, std::path::PathBuf, std::sync::Arc,
-};
+use {node_subsystem_util::database::Database, std::io, std::path::PathBuf, std::sync::Arc};
 
 #[cfg(feature = "full-node")]
 mod upgrade;
@@ -144,10 +142,7 @@ pub fn open_creating_rocksdb(
 	std::fs::create_dir_all(&path_str)?;
 	upgrade::try_upgrade_db(&path, DatabaseKind::RocksDB)?;
 	let db = Database::open(&db_config, &path_str)?;
-	let db = node_subsystem_util::database::kvdb_impl::DbAdapter::new(
-		db,
-		columns::v3::ORDERED_COL,
-	);
+	let db = node_subsystem_util::database::kvdb_impl::DbAdapter::new(db, columns::v3::ORDERED_COL);
 
 	Ok(Arc::new(db))
 }
@@ -169,9 +164,7 @@ pub fn open_creating_paritydb(
 	let db = parity_db::Db::open_or_create(&upgrade::paritydb_version_3_config(&path))
 		.map_err(|err| io::Error::new(io::ErrorKind::Other, format!("{:?}", err)))?;
 
-	let db = node_subsystem_util::database::paritydb_impl::DbAdapter::new(
-		db,
-		columns::v3::ORDERED_COL,
-	);
+	let db =
+		node_subsystem_util::database::paritydb_impl::DbAdapter::new(db, columns::v3::ORDERED_COL);
 	Ok(Arc::new(db))
 }
