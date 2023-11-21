@@ -1,7 +1,7 @@
 version: '3'
 services:
-  polkadot:
-    image: parity/polkadot:latest
+  infrablockspace:
+    image: infrablockchain/infrablockspace:latest
 
     ports:
       - "127.0.0.1:30333:30333/tcp"
@@ -10,7 +10,7 @@ services:
       - "127.0.0.1:9615:9615/tcp"
 
     volumes:
-      - "polkadot-data:/data"
+      - "infrablockspace-data:/data"
 
     command: |
       --unsafe-rpc-external
@@ -19,4 +19,4 @@ services:
       --prometheus-external
 
 volumes:
-  polkadot-data:
+  infrablockspace-data:

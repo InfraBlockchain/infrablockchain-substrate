@@ -6,11 +6,11 @@ services:
       - "9933:9933"
       - "9944:9944"
       - "9615:9615"
-    image: parity/polkadot:latest
+    image: infrablockchain/infrablockspace:latest
     volumes:
-      - "polkadot-data-alice:/data"
+      - "infrablockspace-data-alice:/data"
     command: |
-      --chain=polkadot-local
+      --chain=infra-relay-local
       --alice
       -d /data
       --node-key 0000000000000000000000000000000000000000000000000000000000000001
@@ -24,13 +24,13 @@ services:
       - "9935:9933"
       - "9945:9944"
       - "29615:9615"
-    image: parity/polkadot:latest
+    image: infrablockchain/infrablockspace:latest
     volumes:
-      - "polkadot-data-bob:/data"
+      - "infrablockspace-data-bob:/data"
     links:
       - "node_alice:alice"
     command: |
-      --chain=polkadot-local
+      --chain=infra-relay-local
       --bob
       -d /data
       --bootnodes '/ip4/172.28.1.1/tcp/30333/p2p/QmRpheLN4JWdAnY7HGJfWFNbfkQCb6tFf4vvA6hgjMZKrR'
@@ -39,8 +39,8 @@ services:
         ipv4_address: 172.28.1.2
 
 volumes:
-  polkadot-data-alice:
-  polkadot-data-bob:
+  infrablockspace-data-alice:
+  infrablockspace-data-bob:
 
 networks:
   testing_net:
