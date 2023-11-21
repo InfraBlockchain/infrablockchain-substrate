@@ -9,8 +9,7 @@ pub mod runtime_api;
 pub mod util;
 
 pub use modules::{
-    accumulator, anchor, attest, blob, did, master, offchain_signatures, revoke,
-    status_list_credential,
+	accumulator, anchor, attest, blob, did, offchain_signatures, revoke, status_list_credential,
 };
 
 #[cfg(test)]
