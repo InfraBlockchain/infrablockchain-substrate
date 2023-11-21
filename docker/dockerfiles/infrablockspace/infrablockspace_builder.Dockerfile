@@ -2,9 +2,9 @@
 FROM docker.io/paritytech/ci-linux:production as builder
 
 WORKDIR /infrablockspace
-COPY . /infrablockspace
 
-RUN cargo build --locked --release
+RUN --mount=type=bind,source=.,target=. \
+    cargo build --release --locked
 
 # This is the 2nd stage: a very small image where we copy the infrablockspace binary."
 FROM docker.io/library/ubuntu:20.04
