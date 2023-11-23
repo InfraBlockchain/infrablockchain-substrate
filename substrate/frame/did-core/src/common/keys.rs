@@ -1,6 +1,7 @@
 use crate::util::Bytes32;
 use codec::{Decode, Encode, MaxEncodedLen};
 use sp_core::{ed25519, sr25519};
+use serde::{Deserialize, Serialize};
 
 /// An abstraction for a public key. Abstracts the type and value of the public key where the value
 /// is a byte array
@@ -14,9 +15,11 @@ use sp_core::{ed25519, sr25519};
 	PartialOrd,
 	Ord,
 	MaxEncodedLen,
+	Serialize,
+	Deserialize,
 	scale_info_derive::TypeInfo,
 )]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+// #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[scale_info(omit_prefix)]
 pub enum PublicKey {
 	/// Public key for Sr25519 is 32 bytes

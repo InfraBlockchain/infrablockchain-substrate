@@ -41,7 +41,7 @@ enum Runtime {
 	AssetHubInfra,
 	ContractsInfra,
 	URAuth,
-	DidInfra
+	DidInfra,
 }
 
 trait RuntimeResolver {
@@ -83,8 +83,7 @@ fn runtime(id: &str) -> Runtime {
 		Runtime::URAuth
 	} else if id.starts_with("did-infra"){
 		Runtime::DidInfra
-	}
-	else {
+	} else {
 		log::warn!("No specific runtime was recognized for ChainSpec's id: '{}', so Runtime::default() will be used", id);
 		Runtime::default()
 	}
@@ -109,6 +108,10 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		"urauth-local" => Box::new(chain_spec::urauth::urauth_local_config()),
 		"urauth" => Box::new(chain_spec::urauth::urauth_config()),
 		// ToDo: chain-spec file for `URAuth`
+		"did-infra-dev" => Box::new(chain_spec::did::did_development_config()),
+		"did-infra-local" => Box::new(chain_spec::did::did_local_config()),
+		"did-infra" => Box::new(chain_spec::did::did_config()),
+		"did-infra" => Box::new(chain_spec::did::did_config()),
 		// -- Fallback (generic chainspec)
 		"" => {
 			log::warn!("No ChainSpec.id specified, so using default one, based on rococo-parachain runtime");

@@ -20,8 +20,10 @@ use sp_std::{fmt, vec::Vec};
 	PartialOrd,
 	Ord,
 	MaxEncodedLen,
+	Deserialize,
+	Serialize,
 )]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+// #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(
 	feature = "serde",
 	serde(bound(serialize = "MaxSize: Sized", deserialize = "MaxSize: Sized"))
@@ -73,9 +75,11 @@ impl_wrapper! { Bytes(Vec<u8>), for rand use rand::distributions::Standard.sampl
 	Copy,
 	PartialOrd,
 	MaxEncodedLen,
+	Serialize,
+	Deserialize,
 	scale_info_derive::TypeInfo,
 )]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+// #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[scale_info(omit_prefix)]
 pub struct Bytes32(#[cfg_attr(feature = "serde", serde(with = "hex"))] pub [u8; 32]);
 

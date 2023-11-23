@@ -24,8 +24,7 @@ use sc_service::ChainType;
 use sp_core::{crypto::UncheckedInto, sr25519};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
-pub type DidChainSpec =
-	sc_service::GenericChainSpec<did_runtime::RuntimeGenesisConfig, Extensions>;
+pub type DidChainSpec = sc_service::GenericChainSpec<did_runtime::RuntimeGenesisConfig, Extensions>;
 
 const DID_INFRA_RELAY_ED: DidBalance =
 	parachains_common::infra_relay::currency::EXISTENTIAL_DEPOSIT;
@@ -33,9 +32,7 @@ const DID_INFRA_RELAY_ED: DidBalance =
 /// Generate the session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn did_session_keys(
-	keys: AuraId,
-) -> did_runtime::SessionKeys {
+pub fn did_session_keys(keys: AuraId) -> did_runtime::SessionKeys {
 	did_runtime::SessionKeys { aura: keys }
 }
 
@@ -49,7 +46,7 @@ pub fn did_development_config() -> DidChainSpec {
 		// Name
 		"DID Development",
 		// ID
-		"did-dev",
+		"did-infra-dev",
 		ChainType::Local,
 		move || {
 			did_genesis(
@@ -86,7 +83,7 @@ pub fn did_local_config() -> DidChainSpec {
 		// Name
 		"DID Local",
 		// ID
-		"did-local",
+		"did-infra-local",
 		ChainType::Local,
 		move || {
 			did_genesis(
@@ -138,7 +135,7 @@ pub fn did_config() -> DidChainSpec {
 		// Name
 		"DID",
 		// ID
-		"did",
+		"did-infra",
 		ChainType::Live,
 		move || {
 			did_genesis(
@@ -221,10 +218,7 @@ fn did_genesis(
 			)],
 			..Default::default()
 		},
-		parachain_info: did_runtime::ParachainInfoConfig {
-			parachain_id: id,
-			..Default::default()
-		},
+		parachain_info: did_runtime::ParachainInfoConfig { parachain_id: id, ..Default::default() },
 		collator_selection: did_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
 			candidacy_bond: DID_INFRA_RELAY_ED * 16,
@@ -235,8 +229,8 @@ fn did_genesis(
 				.into_iter()
 				.map(|(acc, aura)| {
 					(
-						acc.clone(),                           // account id
-						acc,                                   // validator id
+						acc.clone(),            // account id
+						acc,                    // validator id
 						did_session_keys(aura), // session keys
 					)
 				})
@@ -251,5 +245,6 @@ fn did_genesis(
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
 			..Default::default()
 		},
+		did_module: Default::default(),
 	}
 }

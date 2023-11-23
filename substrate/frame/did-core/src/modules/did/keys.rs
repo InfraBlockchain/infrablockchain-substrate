@@ -48,7 +48,8 @@ impl Decode for DidKey {
 
 bitflags::bitflags! {
 	/// Different verification relation types specified in the DID spec here https://www.w3.org/TR/did-core/#verification-relationships.
-	#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+	// #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+	#[derive(Serialize, Deserialize)]
 	#[cfg_attr(feature = "serde", serde(try_from = "u16", into = "u16"))]
 	pub struct VerRelType: u16 {
 		/// No verification relation set.

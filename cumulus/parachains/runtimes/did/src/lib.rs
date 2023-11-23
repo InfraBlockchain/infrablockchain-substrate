@@ -15,8 +15,8 @@
 
 //! # Infra Asset Hub MainNet Runtime
 //!
-//! Infra Asset System is a parachain that provides an interface to create, manage, and use assets. Assets
-//! may be fungible or non-fungible.
+//! Infra Asset System is a parachain that provides an interface to create, manage, and use assets.
+//! Assets may be fungible or non-fungible.
 //!
 //! ## Assets
 //!
@@ -31,14 +31,14 @@
 //!
 //! ### Governance
 //!
-//! As a common good parachain, Infra Asset System defers its governance (namely, its `Root` origin), to its
-//! Relay Chain parent, Polkadot.
+//! As a common good parachain, Infra Asset System defers its governance (namely, its `Root`
+//! origin), to its Relay Chain parent, Polkadot.
 //!
 //! ### Collator Selection
 //!
-//! Infra Asset System uses `pallet-collator-selection`, a simple first-come-first-served registration
-//! system where collators can reserve a small bond to join the block producer set. There is no
-//! slashing.
+//! Infra Asset System uses `pallet-collator-selection`, a simple first-come-first-served
+//! registration system where collators can reserve a small bond to join the block producer set.
+//! There is no slashing.
 //!
 //! ### XCM
 //!
@@ -46,11 +46,23 @@
 //! `TrustedTeleporter`.
 
 #![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(not(feature = "std"), feature(alloc_error_handler))]
 #![recursion_limit = "256"]
 
-// Make the WASM binary available.
+// Make the WASM_BINARY available, but hide WASM_BINARY_BLOATY.
 #[cfg(feature = "std")]
-include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
+mod wasm {
+    include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
+    // The following assignment is to silence compiler warning for unused variable while not
+    // exposing `WASM_BINARY_BLOATY` as public
+    #[allow(dead_code)]
+    const _: Option<&[u8]> = WASM_BINARY_BLOATY;
+}
+
+#[cfg(feature = "std")]
+pub use wasm::WASM_BINARY;
+
+extern crate alloc;
 
 pub mod constants;
 mod weights;
@@ -66,6 +78,12 @@ use sp_runtime::{
 	ApplyExtrinsicResult,
 };
 
+pub use did_core::{
+	accumulator, anchor, attest, blob, common, did,
+	offchain_signatures::{self, BBSPlusPublicKey, OffchainPublicKey, PSPublicKey},
+	revoke, status_list_credential,
+};
+
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -76,9 +94,12 @@ use frame_support::{
 	construct_runtime,
 	dispatch::DispatchClass,
 	parameter_types,
-	traits::{AsEnsureOriginWithArg, ConstBool, ConstU32, ConstU64, ConstU8, EitherOfDiverse, InstanceFilter},
+	traits::{
+		AsEnsureOriginWithArg, ConstBool, ConstU32, ConstU64, ConstU8, EitherOfDiverse,
+		InstanceFilter,
+	},
 	weights::{ConstantMultiplier, Weight},
-	PalletId, 
+	PalletId,
 };
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
@@ -87,11 +108,10 @@ use frame_system::{
 
 use pallet_system_token_tx_payment::{CreditToBucket, TransactionFeeCharger};
 use parachains_common::{
-	impls::DealWithFees, 
-	infra_relay::{consensus::*, currency::*, fee::WeightToFee },
-	opaque, AccountId, AssetId, AuraId, Balance, BlockNumber, Hash, Header, Nonce,
-	Signature, AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT,
-	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
+	impls::DealWithFees,
+	infra_relay::{consensus::*, currency::*, fee::WeightToFee},
+	opaque, AccountId, AssetId, AuraId, Balance, BlockNumber, Hash, Header, Nonce, Signature,
+	AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
 use xcm_config::{
 	DotLocation, TrustBackedAssetsConvertedConcreteId, XcmConfig, XcmOriginToTransactDispatchOrigin,
@@ -101,9 +121,9 @@ use xcm_config::{
 pub use sp_runtime::BuildStorage;
 
 // Polkadot imports
+use pallet_xcm::{EnsureXcm, IsMajorityOfBody};
 use runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 use runtime_parachains::system_token_aggregator;
-use pallet_xcm::{EnsureXcm, IsMajorityOfBody};
 use xcm::latest::BodyId;
 use xcm_executor::XcmExecutor;
 
@@ -112,6 +132,23 @@ use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 impl_opaque_keys! {
 	pub struct SessionKeys {
 		pub aura: Aura,
+	}
+}
+
+#[cfg(not(feature = "std"))]
+mod wasm_handlers {
+	#[panic_handler]
+	#[no_mangle]
+	pub fn panic(info: &core::panic::PanicInfo) -> ! {
+		let message = sp_std::alloc::format!("{}", info);
+		log::error!("{}", message);
+		::core::arch::wasm32::unreachable();
+	}
+
+	#[alloc_error_handler]
+	pub fn oom(_: core::alloc::Layout) -> ! {
+		log::error!("Runtime memory exhausted. Aborting");
+		::core::arch::wasm32::unreachable();
 	}
 }
 
@@ -670,6 +707,14 @@ construct_runtime!(
 		SystemToken: pallet_system_token = 54,
 
 		// DID.
+		DIDModule: did::{Pallet, Call, Storage, Event<T>, Config<T>} = 61,
+		Revoke: revoke::{Pallet, Call, Storage, Event} = 62,
+		BlobStore: blob::{Pallet, Call, Storage} = 63,
+		Anchor: anchor::{Pallet, Call, Storage, Event<T>} = 64,
+		Attest: attest::{Pallet, Call, Storage} = 65,
+		Accumulator: accumulator::{Pallet, Call, Storage, Event} = 66,
+		OffchainSignatures: offchain_signatures::{Pallet, Call, Storage, Event} = 67,
+		StatusListCredential: status_list_credential::{Pallet, Call, Storage, Event} = 68,
 	}
 );
 
@@ -709,6 +754,97 @@ pub type Executive = frame_executive::Executive<
 	AllPalletsWithSystem,
 	Migrations,
 >;
+
+parameter_types! {
+	/// 8KB
+	pub const MaxBlobSize: u32 = 8192;
+	/// 1KB
+	pub const MaxIriSize: u32 = 1024;
+
+	/// 128 bytes, for large labels, hash of a label can be used
+	pub const MaxAccumulatorLabelSize: u32 = 128;
+
+	pub const MaxAccumulatorParamsSize: u32 = 512;
+
+	/// 128 bytes, for large labels, hash of a label can be used
+	pub const MaxOffchainParamsLabelSize: u32 = 128;
+	/// 16KB
+	pub const MaxOffchainParamsBytesSize: u32 = 65536;
+
+	pub const FixedPublicKeyMaxSize: u32 = 256;
+	pub const PSPublicKeyMaxSize: u32 = 65536;
+
+	pub const AccumulatedMaxSize: u32 = 128;
+
+	pub const MaxDidDocRefSize: u16 = 1024;
+	pub const MaxDidServiceEndpointIdSize: u16 = 1024;
+	pub const MaxDidServiceEndpointOrigins: u16 = 64;
+	pub const MaxDidServiceEndpointOriginSize: u16 = 1025;
+
+	pub const MaxPolicyControllers: u32 = 15;
+	pub const MinStatusListCredentialSize: u32 = 500;
+	pub const MaxStatusListCredentialSize: u32 = 40_000;
+
+	pub const MaxMasterMembers: u32 = 25;
+}
+
+impl did::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type OnDidRemoval = OffchainSignatures;
+}
+
+impl revoke::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+}
+
+impl common::Limits for Runtime {
+	type MaxPolicyControllers = MaxPolicyControllers;
+
+	type MaxDidDocRefSize = MaxDidDocRefSize;
+	type MaxDidServiceEndpointIdSize = MaxDidServiceEndpointIdSize;
+	type MaxDidServiceEndpointOriginSize = MaxDidServiceEndpointOriginSize;
+	type MaxDidServiceEndpointOrigins = MaxDidServiceEndpointOrigins;
+
+	type MinStatusListCredentialSize = MinStatusListCredentialSize;
+	type MaxStatusListCredentialSize = MaxStatusListCredentialSize;
+
+	type MaxPSPublicKeySize = PSPublicKeyMaxSize;
+	type MaxBBSPublicKeySize = FixedPublicKeyMaxSize;
+	type MaxBBSPlusPublicKeySize = FixedPublicKeyMaxSize;
+
+	type MaxOffchainParamsLabelSize = MaxOffchainParamsLabelSize;
+	type MaxOffchainParamsBytesSize = MaxOffchainParamsBytesSize;
+
+	type MaxAccumulatorLabelSize = MaxAccumulatorLabelSize;
+	type MaxAccumulatorParamsSize = MaxAccumulatorParamsSize;
+	type MaxAccumulatorPublicKeySize = FixedPublicKeyMaxSize;
+	type MaxAccumulatorAccumulatedSize = AccumulatedMaxSize;
+
+	type MaxBlobSize = MaxBlobSize;
+	type MaxIriSize = MaxIriSize;
+
+	type MaxMasterMembers = MaxMasterMembers;
+}
+
+impl status_list_credential::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+}
+
+impl offchain_signatures::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+}
+
+impl accumulator::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+}
+
+impl blob::Config for Runtime {}
+
+impl anchor::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+}
+
+impl attest::Config for Runtime {}
 
 #[cfg(feature = "runtime-benchmarks")]
 #[macro_use]
