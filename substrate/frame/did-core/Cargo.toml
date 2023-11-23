@@ -10,18 +10,19 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 sp-core = { path = "../../primitives/core", default-features = false, features = ["full_crypto"] }
-sp-std = { path = "../../primitives/std", default-features = false, features = ["std"] }
+sp-std = { path = "../../primitives/std", default-features = false }
 sp-runtime = { path = "../../primitives/runtime", default-features = false }
 sp-io = { path = "../../primitives/io", default-features = false }
 frame-system = { path = "../system", default-features = false }
 frame-support = { path = "../support", default-features = false }
-sp-api = { path = "../../primitives/api", default-features = false, features = ["std"] }
+sp-api = { path = "../../primitives/api", default-features = false }
 sp-application-crypto = { path = "../../primitives/application-crypto", default-features = false, features = [
     "serde",
     "full_crypto",
 ] }
 frame-benchmarking = { path = "../benchmarking", default-features = false, optional = true }
 num-traits = { version = "0.2.14", default-features = false }
+serde = { version = "1.0.188", default-features = false, features = ["derive", "alloc"] }
 
 [dependencies.bitflags]
 version = "1.3.2"
@@ -42,10 +43,10 @@ version = "0.4.2"
 features = ["serde"]
 optional = true
 
-[dependencies.serde]
-features = ["derive"]
-optional = true
-version = "1.0.119"
+# [dependencies.serde]
+# features = ["derive"]
+# optional = true
+# version = "1.0.119"
 
 [dependencies.serde-big-array]
 optional = true
@@ -70,11 +71,6 @@ features = ["static-context", "hmac"]
 version = "0.9"
 default-features = false
 
-[dependencies.getrandom]
-default-features = false
-version = "0.2"
-features = ["js"]
-optional = true
 
 [dependencies.rand]
 version = "0.8.3"
@@ -98,40 +94,8 @@ optional = true
 
 [dev-dependencies]
 rand = "0.8.3"
-# evm = { git = "https://github.com/rust-blockchain/evm", rev = "51b8c2ce3104265e1fd5bb0fe5cdfd2e0938239c", default-features = false, features = ["with-codec"] }
 pallet-balances = { path = "../balances", default-features = false }
 pallet-timestamp = { path = "../timestamp", default-features = false }
-
-# [dev-dependencies.pallet-evm-precompile-storage-reader]
-# default-features = false
-# git = "https://github.com/docknetwork/frontier.git"
-# branch = "master"
-# path = "../../../../frontier/frame/evm/precompile/storage-reader"
-
-
-# [dev-dependencies.pallet-evm]
-# default-features = false
-# git = "https://github.com/docknetwork/frontier.git"
-# branch = "master"
-# # path = "../../../../frontier/frame/evm"
-
-# [dev-dependencies.fp-evm]
-# default-features = false
-# git = "https://github.com/docknetwork/frontier.git"
-# branch = "master"
-# # path = "../../../../frontier/frame/evm"
-
-# [dev-dependencies.pallet-ethereum]
-# default-features = false
-# git = "https://github.com/docknetwork/frontier.git"
-# branch = "master"
-# # path = "../../../../frontier/frame/ethereum"
-
-# [dev-dependencies.pallet-evm-test-vector-support]
-# default-features = false
-# git = "https://github.com/docknetwork/frontier.git"
-# branch = "master"
-
 
 [features]
 default = ["std"]
@@ -142,10 +106,9 @@ std = [
     "frame-benchmarking/std",
     "sp-application-crypto/std",
     "sp-application-crypto/full_crypto",
-    "serde",
-    "serde-big-array",
-    "getrandom/std",
-    "serde-hex",
+    # "serde",
+    "serde/std",
+    # "serde-big-array/std",
     "serde-big-array",
     "sp-core/std",
     "sp-core/full_crypto",
@@ -156,17 +119,22 @@ std = [
     "sp-api/std",
     "num-traits/std",
     "libsecp256k1/std",
-    # "pallet-evm-precompile-storage-reader/std",
-    # "fp-evm/std",
     "scale-info/std",
-    # "pallet-evm/std",
-    # "evm/std"
+]
+
+# Serde support without relying on std features.
+serde = [
+    "serde-hex/serde",
+    "scale-info/serde",
+    "sp-application-crypto/serde",
+    "sp-core/serde",
+    "sp-runtime/serde",
+    "serde-big-array",
 ]
 
 runtime-benchmarks = [
     "frame-benchmarking/runtime-benchmarks",
     "hex-literal",
-    "getrandom",
     "schnorrkel",
     "schnorrkel/chacha",
     "rand_chacha",

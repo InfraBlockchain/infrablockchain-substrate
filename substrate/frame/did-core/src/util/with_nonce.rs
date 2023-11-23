@@ -1,5 +1,8 @@
 use codec::{Decode, Encode, MaxEncodedLen};
-use sp_runtime::{traits::CheckedAdd, DispatchError};
+use sp_runtime::{
+	traits::{Block as BlockT, CheckedAdd, Header as HeaderT},
+	DispatchError,
+};
 use sp_std::{convert::TryInto, fmt::Debug};
 
 use crate::common::Types;
@@ -62,8 +65,10 @@ impl<T: Types, D> WithNonce<T, D> {
 	pub fn new(data: D) -> Self
 	where
 		T: frame_system::Config,
+		T::BlockNumber:
+			From<<<<T as frame_system::Config>::Block as BlockT>::Header as HeaderT>::Number>,
 	{
-		Self::new_with_nonce(data, <frame_system::Pallet<T>>::block_number())
+		Self::new_with_nonce(data, <frame_system::Pallet<T>>::block_number().into())
 	}
 
 	/// Adds supplied nonce to the given `data`.

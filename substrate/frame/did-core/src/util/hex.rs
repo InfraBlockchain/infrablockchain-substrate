@@ -3,7 +3,8 @@ use serde::{
     de::{Error, Visitor},
 };
 use serde_hex::FromHex;
-use sp_std::{fmt, marker::PhantomData};
+use sp_std::{fmt, marker::PhantomData, vec::Vec};
+use alloc::{format, string::String};
 
 struct HexStrVisitor<T>(PhantomData<T>);
 

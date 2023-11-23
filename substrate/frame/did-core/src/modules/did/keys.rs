@@ -1,11 +1,20 @@
 use super::*;
 use crate::{deposit_indexed_event, impl_bits_conversion, impl_wrapper_type_info};
+use serde::{Deserialize, Serialize};
 
 /// Valid did key with correct verification relationships.
-#[derive(Encode, Clone, Debug, PartialEq, Eq, PartialOrd, MaxEncodedLen)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
-#[derive(scale_info_derive::TypeInfo)]
+#[derive(
+	Encode,
+	Clone,
+	Debug,
+	PartialEq,
+	Eq,
+	PartialOrd,
+	MaxEncodedLen,
+	Serialize,
+	Deserialize,
+	scale_info_derive::TypeInfo,
+)]
 #[scale_info(omit_prefix)]
 pub struct DidKey {
 	/// The public key

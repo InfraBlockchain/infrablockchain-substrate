@@ -1,4 +1,4 @@
-use codec::{Decode, Encode, MaxEncodedLen};
+use codec::{Decode, Encode, FullCodec, MaxEncodedLen};
 use core::fmt::Debug;
 use frame_support::pallet_prelude::*;
 use frame_system::pallet_prelude::BlockNumberFor;
@@ -17,20 +17,18 @@ pub enum CurveType {
 
 /// Defines associated types used by `did-core`.
 pub trait Types: Clone + Eq {
-	type BlockNumber: Parameter
-		+ Member
+	type BlockNumber: Member
 		+ MaybeSerializeDeserialize
+		+ MaybeFromStr
 		+ Debug
+		+ sp_std::hash::Hash
+		+ Copy
 		+ MaybeDisplay
 		+ AtLeast32BitUnsigned
 		+ Default
-		+ Bounded
-		+ Copy
-		+ sp_std::hash::Hash
-		+ sp_std::str::FromStr
-		+ MaybeMallocSizeOf
+		+ TypeInfo
 		+ MaxEncodedLen
-		+ TypeInfo;
+		+ FullCodec;
 
 	type AccountId: Parameter
 		+ Member

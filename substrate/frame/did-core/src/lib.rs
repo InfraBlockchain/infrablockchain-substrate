@@ -5,7 +5,6 @@ extern crate alloc;
 
 pub mod common;
 pub mod modules;
-pub mod runtime_api;
 pub mod util;
 
 pub use modules::{
