@@ -19,7 +19,7 @@ use crate::chain_spec::{
 };
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
-use parachains_common::{AccountId, AuraId, Balance as DidBalance};
+use parachains_common::types::{AccountId, AuraId, Balance as DidBalance};
 use sc_service::ChainType;
 use sp_core::{crypto::UncheckedInto, sr25519};
 

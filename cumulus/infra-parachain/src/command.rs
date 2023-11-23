@@ -81,7 +81,7 @@ fn runtime(id: &str) -> Runtime {
 		Runtime::ContractsInfra
 	} else if id.starts_with("urauth") {
 		Runtime::URAuth
-	} else if id.starts_with("did-infra"){
+	} else if id.starts_with("did-infra") {
 		Runtime::DidInfra
 	} else {
 		log::warn!("No specific runtime was recognized for ChainSpec's id: '{}', so Runtime::default() will be used", id);
@@ -100,7 +100,8 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		"asset-hub-infra" => Box::new(chain_spec::asset_hubs::AssetHubChainSpec::from_json_bytes(
 			&include_bytes!("../chain-specs/asset-hub-polkadot.json")[..],
 		)?),
-		"contracts-infra-dev" => Box::new(chain_spec::contracts::contracts_infra_development_config()),
+		"contracts-infra-dev" =>
+			Box::new(chain_spec::contracts::contracts_infra_development_config()),
 		"contracts-infra-local" => Box::new(chain_spec::contracts::contracts_infra_local_config()),
 		"contracts-infra" => Box::new(chain_spec::contracts::contracts_infra_config()),
 		// ToDo: chain-spec file for `ContractsInfra`
@@ -128,9 +129,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 					Box::new(chain_spec::contracts::ContractsInfraChainSpec::from_json_file(path)?),
 				Runtime::URAuth =>
 					Box::new(chain_spec::urauth::URAuthChainSpec::from_json_file(path)?),
-				Runtime::DidInfra => Box::new(
-						chain_spec::did::DidChainSpec::from_json_file(path)?,
-					),
+				Runtime::DidInfra => Box::new(chain_spec::did::DidChainSpec::from_json_file(path)?),
 				Runtime::Default =>
 					Box::new(chain_spec::asset_hubs::AssetHubChainSpec::from_json_file(path)?),
 			}
@@ -263,6 +262,11 @@ macro_rules! construct_partials {
 			},
 			Runtime::URAuth => {
 				let $partials = new_partial::<urauth_runtime::RuntimeApi, _>(
+					&$config,
+					crate::service::aura_build_import_queue::<_, AuraId>,
+				)?;
+				$code
+			},
 			Runtime::DidInfra => {
 				let $partials = new_partial::<did_runtime::RuntimeApi, _>(
 					&$config,
@@ -308,6 +312,13 @@ macro_rules! construct_async_run {
 			Runtime::URAuth => {
 				runner.async_run(|$config| {
 					let $components = new_partial::<urauth_runtime::RuntimeApi, _>(
+						&$config,
+						crate::service::aura_build_import_queue::<_, AuraId>,
+					)?;
+					let task_manager = $components.task_manager;
+					{ $( $code )* }.map(|v| (v, task_manager))
+				})
+			},
 			Runtime::DidInfra => {
 				runner.async_run(|$config| {
 					let $components = new_partial::<did_runtime::RuntimeApi, _>(
@@ -522,6 +533,11 @@ pub fn run() -> Result<()> {
 					.map_err(Into::into),
 					Runtime::URAuth => crate::service::start_generic_aura_node::<
 						urauth_runtime::RuntimeApi,
+						AuraId,
+					>(config, infra_relay_config, collator_options, id, hwbench)
+					.await
+					.map(|r| r.0)
+					.map_err(Into::into),
 					Runtime::DidInfra => crate::service::start_generic_aura_node::<
 						asset_hub_runtime::RuntimeApi,
 						AuraId,

@@ -52,11 +52,11 @@
 // Make the WASM_BINARY available, but hide WASM_BINARY_BLOATY.
 #[cfg(feature = "std")]
 mod wasm {
-    include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
-    // The following assignment is to silence compiler warning for unused variable while not
-    // exposing `WASM_BINARY_BLOATY` as public
-    #[allow(dead_code)]
-    const _: Option<&[u8]> = WASM_BINARY_BLOATY;
+	include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
+	// The following assignment is to silence compiler warning for unused variable while not
+	// exposing `WASM_BINARY_BLOATY` as public
+	#[allow(dead_code)]
+	const _: Option<&[u8]> = WASM_BINARY_BLOATY;
 }
 
 #[cfg(feature = "std")]
@@ -108,10 +108,14 @@ use frame_system::{
 
 use pallet_system_token_tx_payment::{CreditToBucket, TransactionFeeCharger};
 use parachains_common::{
+	constants::{
+		AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO,
+		SLOT_DURATION,
+	},
 	impls::DealWithFees,
 	infra_relay::{consensus::*, currency::*, fee::WeightToFee},
-	opaque, AccountId, AssetId, AuraId, Balance, BlockNumber, Hash, Header, Nonce, Signature,
-	AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO, SLOT_DURATION,
+	opaque::Header,
+	types::{AccountId, AssetId, AuraId, Balance, BlockNumber, Hash, Nonce, Signature},
 };
 use xcm_config::{
 	DotLocation, TrustBackedAssetsConvertedConcreteId, XcmConfig, XcmOriginToTransactDispatchOrigin,
