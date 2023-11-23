@@ -27,7 +27,7 @@ pub type ContractsInfraChainSpec =
 	sc_service::GenericChainSpec<contracts_infra_runtime::RuntimeGenesisConfig, Extensions>;
 
 /// No relay chain suffix because the id is the same over all relay chains.
-const CONTRACTS_PARACHAIN_ID: u32 = 1002;
+const CONTRACTS_PARACHAIN_ID: u32 = 1001;
 
 /// The existential deposit is determined by the runtime "contracts-infra".
 const CONTRACTS_INFRA_ED: contracts_infra_runtime::Balance =
@@ -259,8 +259,8 @@ fn contracts_infra_genesis(
 				.into_iter()
 				.map(|(acc, aura)| {
 					(
-						acc.clone(),                                    // account id
-						acc,                                            // validator id
+						acc.clone(),                                   // account id
+						acc,                                           // validator id
 						contracts_infra_runtime::SessionKeys { aura }, // session keys
 					)
 				})

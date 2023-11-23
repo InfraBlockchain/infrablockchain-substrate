@@ -22,7 +22,7 @@ use hex_literal::hex;
 use parachains_common::types::{AccountId, AuraId, Balance as DidBalance};
 use sc_service::ChainType;
 use sp_core::{crypto::UncheckedInto, sr25519};
-
+const DID_PARACHAIN_ID: u32 = 1002;
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type DidChainSpec = sc_service::GenericChainSpec<did_runtime::RuntimeGenesisConfig, Extensions>;
 
@@ -61,7 +61,7 @@ pub fn did_development_config() -> DidChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
 				],
-				1001.into(),
+				DID_PARACHAIN_ID.into(),
 			)
 		},
 		Vec::new(),
@@ -69,7 +69,7 @@ pub fn did_development_config() -> DidChainSpec {
 		None,
 		None,
 		Some(properties),
-		Extensions { relay_chain: "infra-relay-dev".into(), para_id: 1001 },
+		Extensions { relay_chain: "infra-relay-dev".into(), para_id: DID_PARACHAIN_ID },
 	)
 }
 
@@ -112,7 +112,7 @@ pub fn did_local_config() -> DidChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
-				1000.into(),
+				DID_PARACHAIN_ID.into(),
 			)
 		},
 		Vec::new(),
@@ -120,7 +120,7 @@ pub fn did_local_config() -> DidChainSpec {
 		None,
 		None,
 		Some(properties),
-		Extensions { relay_chain: "infra-relay-local".into(), para_id: 1000 },
+		Extensions { relay_chain: "infra-relay-local".into(), para_id: DID_PARACHAIN_ID },
 	)
 }
 
@@ -167,7 +167,7 @@ pub fn did_config() -> DidChainSpec {
 					),
 				],
 				vec![],
-				1000u32.into(),
+				DID_PARACHAIN_ID.into(),
 			)
 		},
 		vec![
@@ -180,7 +180,7 @@ pub fn did_config() -> DidChainSpec {
 		None,
 		None,
 		Some(properties),
-		Extensions { relay_chain: "infra-relay".into(), para_id: 1000 },
+		Extensions { relay_chain: "infra-relay".into(), para_id: DID_PARACHAIN_ID },
 	)
 }
 

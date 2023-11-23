@@ -112,7 +112,8 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		"did-infra-dev" => Box::new(chain_spec::did::did_development_config()),
 		"did-infra-local" => Box::new(chain_spec::did::did_local_config()),
 		"did-infra" => Box::new(chain_spec::did::did_config()),
-		"did-infra" => Box::new(chain_spec::did::did_config()),
+		// ToDo: chain-spec file for `DidInfra`
+
 		// -- Fallback (generic chainspec)
 		"" => {
 			log::warn!("No ChainSpec.id specified, so using default one, based on rococo-parachain runtime");
