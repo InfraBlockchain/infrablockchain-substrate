@@ -1002,7 +1002,8 @@ where
 				log::debug!(
 					target: LOG_TARGET,
 					"Peer is on different chain (our genesis: {} theirs: {})",
-					self.genesis_hash, status.genesis_hash
+					self.genesis_hash,
+					status.genesis_hash
 				);
 			}
 
@@ -1217,9 +1218,7 @@ where
 						Err(BlockResponseError::DecodeFailed(e)) => {
 							debug!(
 								target: LOG_TARGET,
-								"Failed to decode block response from peer {:?}: {:?}.",
-								peer_id,
-								e
+								"Failed to decode block response from peer {:?}: {:?}.", peer_id, e
 							);
 							self.network_service.report_peer(peer_id, rep::BAD_MESSAGE);
 							self.network_service.disconnect_peer(

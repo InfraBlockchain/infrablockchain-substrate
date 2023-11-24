@@ -53,6 +53,12 @@ impl Weight {
 		self.ref_time
 	}
 
+	/// Construct only ref time [`Weight`] from only having a ref time part.
+	/// ToDo: This call should be repaced with from_parts.
+	pub const fn from_ref_time(ref_time: u64) -> Self {
+		Self { ref_time, proof_size: 0 }
+	}
+
 	/// Return the storage size part of the weight.
 	pub const fn proof_size(&self) -> u64 {
 		self.proof_size

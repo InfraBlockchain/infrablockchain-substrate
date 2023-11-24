@@ -13,9 +13,7 @@ pub mod xcm_config;
 
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 pub use parachains_common::{
-	constants::*, opaque::*, types::*,
-	impls::DealWithFees,
-	infra_relay::consensus::*, 
+	constants::*, impls::DealWithFees, infra_relay::consensus::*, opaque::*, types::*,
 };
 
 use sp_api::impl_runtime_apis;

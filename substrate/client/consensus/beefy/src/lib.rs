@@ -339,7 +339,11 @@ pub async fn start_beefy_gadget<B, BE, C, N, P, R, S>(
 		{
 			// On `ConsensusReset` error, just reinit and restart voter.
 			futures::future::Either::Left(((error::Error::ConsensusReset, reuse_comms), _)) => {
-				error!(target: LOG_TARGET, "🥩 Error: {:?}. Restarting voter.", error::Error::ConsensusReset);
+				error!(
+					target: LOG_TARGET,
+					"🥩 Error: {:?}. Restarting voter.",
+					error::Error::ConsensusReset
+				);
 				beefy_comms = reuse_comms;
 				continue
 			},

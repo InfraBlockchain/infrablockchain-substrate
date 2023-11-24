@@ -14,8 +14,8 @@
 // limitations under the License.
 
 use super::{
-	AccountId, AllPalletsWithSystem, Balances, ParachainInfo, ParachainSystem, IbsXcm,
-	Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, WeightToFee, XcmpQueue,
+	AccountId, AllPalletsWithSystem, Balances, IbsXcm, ParachainInfo, ParachainSystem, Runtime,
+	RuntimeCall, RuntimeEvent, RuntimeOrigin, WeightToFee, XcmpQueue,
 };
 use crate::common::infra_relay::currency::CENTS;
 use frame_support::{
@@ -25,8 +25,8 @@ use frame_support::{
 };
 use frame_system::EnsureRoot;
 use pallet_xcm::{EnsureXcm, IsMajorityOfBody, XcmPassthrough};
-use parachains_common::constants::TREASURY_PALLET_ID;
 use parachain_primitives::primitives::Sibling;
+use parachains_common::constants::TREASURY_PALLET_ID;
 use sp_runtime::traits::AccountIdConversion;
 use xcm::latest::prelude::*;
 use xcm_builder::{

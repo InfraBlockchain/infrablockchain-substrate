@@ -65,7 +65,10 @@ impl<T: Config> Tracing<T> for () {
 		entry_point: ExportedFunction,
 		input_data: &[u8],
 	) {
-		log::trace!(target: LOG_TARGET, "call {entry_point:?} account: {contract_address:?}, input_data: {input_data:?}")
+		log::trace!(
+			target: LOG_TARGET,
+			"call {entry_point:?} account: {contract_address:?}, input_data: {input_data:?}"
+		)
 	}
 }
 

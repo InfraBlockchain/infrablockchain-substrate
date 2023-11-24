@@ -91,9 +91,7 @@ use frame_system::{
 
 use pallet_system_token_tx_payment::{CreditToBucket, TransactionFeeCharger};
 use parachains_common::{
-	impls::DealWithFees,
-	constants::*, opaque::*, types::*, 
-	infra_relay::consensus::*,
+	constants::*, impls::DealWithFees, infra_relay::consensus::*, opaque::*, types::*,
 };
 use xcm_config::{
 	DotLocation, TrustBackedAssetsConvertedConcreteId, XcmConfig, XcmOriginToTransactDispatchOrigin,

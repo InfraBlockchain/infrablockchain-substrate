@@ -137,9 +137,7 @@ impl<B: BlockT> BlockAnnounceValidator<B> {
 		if number.is_zero() {
 			warn!(
 				target: LOG_TARGET,
-				"💔 Ignored genesis block (#0) announcement from {}: {}",
-				peer_id,
-				hash,
+				"💔 Ignored genesis block (#0) announcement from {}: {}", peer_id, hash,
 			);
 			return
 		}

@@ -450,7 +450,7 @@ where
 		// There is nothing sync can get from the node that has no blockchain data.
 		match self.block_status(&best_hash) {
 			Err(e) => {
-				debug!(target:LOG_TARGET, "Error reading blockchain: {e}");
+				debug!(target: LOG_TARGET, "Error reading blockchain: {e}");
 				Err(BadPeer(who, rep::BLOCKCHAIN_READ_ERROR))
 			},
 			Ok(BlockStatus::KnownBad) => {
@@ -468,7 +468,7 @@ where
 				// an ancestor search, which is what we do in the next match case below.
 				if self.queue_blocks.len() > MAJOR_SYNC_BLOCKS.into() {
 					debug!(
-						target:LOG_TARGET,
+						target: LOG_TARGET,
 						"New peer with unknown best hash {} ({}), assuming common block.",
 						self.best_queued_hash,
 						self.best_queued_number
@@ -489,7 +489,7 @@ where
 				// If we are at genesis, just start downloading.
 				let (state, req) = if self.best_queued_number.is_zero() {
 					debug!(
-						target:LOG_TARGET,
+						target: LOG_TARGET,
 						"New peer with best hash {best_hash} ({best_number}).",
 					);
 
@@ -498,7 +498,7 @@ where
 					let common_best = std::cmp::min(self.best_queued_number, best_number);
 
 					debug!(
-						target:LOG_TARGET,
+						target: LOG_TARGET,
 						"New peer with unknown best hash {} ({}), searching for common ancestor.",
 						best_hash,
 						best_number
@@ -601,10 +601,7 @@ where
 				Syncing from these peers {peers:?} instead.",
 			);
 		} else {
-			debug!(
-				target: LOG_TARGET,
-				"Explicit sync request for block {hash:?} with {peers:?}",
-			);
+			debug!(target: LOG_TARGET, "Explicit sync request for block {hash:?} with {peers:?}",);
 		}
 
 		if self.is_known(hash) {
@@ -778,7 +775,7 @@ where
 						}
 						if matching_hash.is_none() && current.is_zero() {
 							trace!(
-								target:LOG_TARGET,
+								target: LOG_TARGET,
 								"Ancestry search: genesis mismatch for peer {who}",
 							);
 							return Err(BadPeer(*who, rep::GENESIS_MISMATCH))
@@ -1019,7 +1016,10 @@ where
 		let peer = if let Some(peer) = self.peers.get_mut(&who) {
 			peer
 		} else {
-			error!(target: LOG_TARGET, "💔 Called `on_validated_block_announce` with a bad peer ID");
+			error!(
+				target: LOG_TARGET,
+				"💔 Called `on_validated_block_announce` with a bad peer ID"
+			);
 			return
 		};
 
@@ -1226,7 +1226,7 @@ where
 			.and_then(|b| b.header.as_ref().map(|h| (&b.hash, *h.number())))
 		{
 			trace!(
-				target:LOG_TARGET,
+				target: LOG_TARGET,
 				"Accepted {} blocks ({:?}) with origin {:?}",
 				new_blocks.len(),
 				h,
@@ -1295,9 +1295,7 @@ where
 		self.allowed_requests.set_all();
 		debug!(
 			target: LOG_TARGET,
-			"Restarted with {} ({})",
-			self.best_queued_number,
-			self.best_queued_hash,
+			"Restarted with {} ({})", self.best_queued_number, self.best_queued_hash,
 		);
 		let old_peers = std::mem::take(&mut self.peers);
 
@@ -1972,7 +1970,9 @@ where
 						info!(
 							target: LOG_TARGET,
 							"State sync is complete ({} MiB), restarting block sync.",
-							self.state_sync.as_ref().map_or(0, |s| s.progress().size / (1024 * 1024)),
+							self.state_sync
+								.as_ref()
+								.map_or(0, |s| s.progress().size / (1024 * 1024)),
 						);
 						self.state_sync = None;
 						self.mode = SyncMode::Full;
@@ -1986,7 +1986,9 @@ where
 						info!(
 							target: LOG_TARGET,
 							"Warp sync is complete ({} MiB), restarting block sync.",
-							self.warp_sync.as_ref().map_or(0, |s| s.progress().total_bytes / (1024 * 1024)),
+							self.warp_sync
+								.as_ref()
+								.map_or(0, |s| s.progress().total_bytes / (1024 * 1024)),
 						);
 						self.warp_sync = None;
 						self.mode = SyncMode::Full;
@@ -1995,10 +1997,7 @@ where
 					let gap_sync_complete =
 						self.gap_sync.as_ref().map_or(false, |s| s.target == number);
 					if gap_sync_complete {
-						info!(
-							target: LOG_TARGET,
-							"Block history download is complete."
-						);
+						info!(target: LOG_TARGET, "Block history download is complete.");
 						self.gap_sync = None;
 					}
 				},
@@ -2041,7 +2040,11 @@ where
 					trace!(target: LOG_TARGET, "Obsolete block {hash:?}");
 				},
 				e @ Err(BlockImportError::UnknownParent) | e @ Err(BlockImportError::Other(_)) => {
-					warn!(target: LOG_TARGET, "💔 Error importing block {hash:?}: {}", e.unwrap_err());
+					warn!(
+						target: LOG_TARGET,
+						"💔 Error importing block {hash:?}: {}",
+						e.unwrap_err()
+					);
 					self.state_sync = None;
 					self.warp_sync = None;
 					output.extend(self.restart());
@@ -2384,11 +2387,8 @@ fn validate_blocks<Block: BlockT>(
 			let hash = header.hash();
 			if hash != b.hash {
 				debug!(
-					target:LOG_TARGET,
-					"Bad header received from {}. Expected hash {:?}, got {:?}",
-					who,
-					b.hash,
-					hash,
+					target: LOG_TARGET,
+					"Bad header received from {}. Expected hash {:?}, got {:?}", who, b.hash, hash,
 				);
 				return Err(BadPeer(*who, rep::BAD_BLOCK))
 			}
@@ -2401,7 +2401,7 @@ fn validate_blocks<Block: BlockT>(
 			);
 			if expected != got {
 				debug!(
-					target:LOG_TARGET,
+					target: LOG_TARGET,
 					"Bad extrinsic root for a block {} received from {}. Expected {:?}, got {:?}",
 					b.hash,
 					who,

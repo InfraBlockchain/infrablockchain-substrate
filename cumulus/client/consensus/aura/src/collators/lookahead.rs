@@ -204,7 +204,11 @@ where
 				Ok(None) => continue,
 				Ok(Some(pvd)) => pvd.max_pov_size,
 				Err(err) => {
-					tracing::error!(target: crate::LOG_TARGET, ?err, "Failed to gather information from relay-client");
+					tracing::error!(
+						target: crate::LOG_TARGET,
+						?err,
+						"Failed to gather information from relay-client"
+					);
 					continue
 				},
 			};
@@ -336,7 +340,11 @@ where
 				let validation_code_hash = match params.code_hash_provider.code_hash_at(parent_hash)
 				{
 					None => {
-						tracing::error!(target: crate::LOG_TARGET, ?parent_hash, "Could not fetch validation code hash");
+						tracing::error!(
+							target: crate::LOG_TARGET,
+							?parent_hash,
+							"Could not fetch validation code hash"
+						);
 						break
 					},
 					Some(v) => v,

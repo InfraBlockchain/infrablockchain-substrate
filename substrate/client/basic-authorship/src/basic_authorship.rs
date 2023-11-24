@@ -468,7 +468,7 @@ where
 					debug!(
 						target: LOG_TARGET,
 						"Transaction would overflow the block size limit, \
-					 but will try {} more transactions before quitting.",
+					but will try {} more transactions before quitting.",
 						MAX_SKIPPED_TRANSACTIONS - skipped,
 					);
 					continue
@@ -476,8 +476,8 @@ where
 					debug!(
 						target: LOG_TARGET,
 						"Transaction would overflow the block size limit, \
-					 but we still have time before the soft deadline, so \
-					 we will try a bit more."
+					but we still have time before the soft deadline, so \
+					we will try a bit more."
 					);
 					continue
 				} else {

@@ -5,23 +5,25 @@ authors.workspace = true
 edition.workspace = true
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = [ "derive" ] }
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = [
+	"derive",
+] }
 scale-info = { version = "2.9.0", default-features = false, features = ["derive"] }
 
 # Substrate
-sp-api = { path = "../../../substrate/primitives/api", default-features = false}
-sp-runtime = { path = "../../../substrate/primitives/runtime", default-features = false}
-sp-std = { path = "../../../substrate/primitives/std", default-features = false}
-sp-trie = { path = "../../../substrate/primitives/trie", default-features = false}
+sp-api = { path = "../../../substrate/primitives/api", default-features = false }
+sp-runtime = { path = "../../../substrate/primitives/runtime", default-features = false }
+sp-std = { path = "../../../substrate/primitives/std", default-features = false }
+sp-trie = { path = "../../../substrate/primitives/trie", default-features = false }
 
 # Polkadot
-infrablockspace-core-primitives = { path = "../../../infrablockspace/core-primitives", default-features = false}
-parachain-primitives = { path = "../../../infrablockspace/parachain", default-features = false}
-primitives = { path = "../../../infrablockspace/primitives", default-features = false}
-xcm = { package = "staging-xcm", path = "../../../infrablockspace/xcm", default-features = false}
+infrablockspace-core-primitives = { path = "../../../infrablockspace/core-primitives", default-features = false }
+parachain-primitives = { path = "../../../infrablockspace/parachain", default-features = false }
+primitives = { path = "../../../infrablockspace/primitives", default-features = false }
+xcm = { package = "staging-xcm", path = "../../../infrablockspace/xcm", default-features = false }
 
 [features]
-default = [ "std" ]
+default = ["std"]
 std = [
 	"codec/std",
 	"infrablockspace-core-primitives/std",

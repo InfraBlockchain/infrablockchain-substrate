@@ -1,5 +1,5 @@
 [relaychain]
-default_command = "../target/release/infrablockspace"
+default_command = "./target/release/infrablockspace"
 default_args = ["-lparachain=debug", "-l=xcm=trace"]
 chain = "infra-relay-local"
 
@@ -7,7 +7,6 @@ chain = "infra-relay-local"
 name = "alice"
 validator = true
 args = ["-lparachain=debug", "-l=xcm=trace"]
-
 rpc_port = 7100
 ws_port = 7101
 
@@ -49,7 +48,7 @@ cumulus_based = true
 name = "asset-hub-alice"
 validator = true
 args = ["-lparachain=debug", "-l=xcm=trace"]
-command = "../target/release/infra-parachain"
+command = "./target/release/infra-parachain"
 rpc_port = 9500
 ws_port = 9501
 
@@ -58,7 +57,7 @@ ws_port = 9501
 name = "asset-hub-bob"
 validator = true
 args = ["-lparachain=debug", "-l=xcm=trace"]
-command = "../target/release/infra-parachain"
+command = "./target/release/infra-parachain"
 rpc_port = 9600
 ws_port = 9601
 
@@ -72,7 +71,7 @@ cumulus_based = true
 name = "contracts-infra-alice"
 validator = true
 args = ["-lparachain=debug", "-l=xcm=trace"]
-command = "../target/release/infra-parachain"
+command = "./target/release/infra-parachain"
 rpc_port = 9700
 ws_port = 9701
 
@@ -81,9 +80,32 @@ ws_port = 9701
 name = "contracts-infra-bob"
 validator = true
 args = ["-lparachain=debug", "-l=xcm=trace"]
-command = "../target/release/infra-parachain"
+command = "./target/release/infra-parachain"
 rpc_port = 9800
 ws_port = 9801
+
+[[parachains]]
+id = 1002
+chain = "did-infra-local"
+cumulus_based = true
+
+# run alice as parachain collator
+[[parachains.collators]]
+name = "did-infra-alice"
+validator = true
+args = ["-lparachain=debug", "-l=xcm=trace"]
+command = "./target/release/infra-parachain"
+rpc_port = 9900
+ws_port = 9901
+
+# run alice as parachain collator
+[[parachains.collators]]
+name = "did-infra-bob"
+validator = true
+args = ["-lparachain=debug", "-l=xcm=trace"]
+command = "./target/release/infra-parachain"
+rpc_port = 10000
+ws_port = 10001
 
 [[parachains]]
 id = 2000
@@ -95,15 +117,15 @@ cumulus_based = true
 name = "urauth-alice"
 validator = true
 args = ["-lparachain=debug", "-l=xcm=trace"]
-command = "../target/release/infra-parachain"
-rpc_port = 9900
-ws_port = 9901
+command = "./target/release/infra-parachain"
+rpc_port = 10100
+ws_port = 10101
 
 # run alice as parachain collator
 [[parachains.collators]]
 name = "urauth-bob"
 validator = true
 args = ["-lparachain=debug", "-l=xcm=trace"]
-command = "../target/release/infra-parachain"
-rpc_port = 10000
-ws_port = 10001
+command = "./target/release/infra-parachain"
+rpc_port = 10200
+ws_port = 10201

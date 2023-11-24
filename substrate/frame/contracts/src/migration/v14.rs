@@ -142,7 +142,11 @@ where
 		};
 
 		if let Some((hash, code_info)) = iter.next() {
-			log::debug!(target: LOG_TARGET, "Migrating code upload deposit for 0x{:?}", HexDisplay::from(&code_info.owner.encode()));
+			log::debug!(
+				target: LOG_TARGET,
+				"Migrating code upload deposit for 0x{:?}",
+				HexDisplay::from(&code_info.owner.encode())
+			);
 
 			let remaining = OldCurrency::unreserve(&code_info.owner, code_info.deposit);
 
@@ -254,11 +258,7 @@ where
 			total_held += held;
 		}
 
-		log::info!(
-			target: LOG_TARGET,
-			"Code owners processed: {:?}.",
-			count
-		);
+		log::info!(target: LOG_TARGET, "Code owners processed: {:?}.", count);
 
 		log::info!(
 			target: LOG_TARGET,
