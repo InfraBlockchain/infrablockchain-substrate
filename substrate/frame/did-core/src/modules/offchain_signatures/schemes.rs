@@ -1,7 +1,7 @@
 use crate::{
-    common::{CurveType, Limits},
-    offchain_signatures::SignatureParams,
-    util::BoundedBytes,
+	common::{CurveType, Limits},
+	offchain_signatures::SignatureParams,
+	util::BoundedBytes,
 };
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{CloneNoBound, DebugNoBound, EqNoBound, PartialEqNoBound};
@@ -167,25 +167,25 @@ macro_rules! def_signature_scheme_key_and_params {
 }
 
 def_signature_scheme_key_and_params! {
-    for BBS:
-        /// Public key for the BBS signature scheme.
-        BBSPublicKey<MaxBBSPublicKeySize>,
-        /// Signature parameters for the BBS signature scheme.
-        BBSParameters<MaxOffchainParamsBytesSize>
+	for BBS:
+		/// Public key for the BBS signature scheme.
+		BBSPublicKey<MaxBBSPublicKeySize>,
+		/// Signature parameters for the BBS signature scheme.
+		BBSParameters<MaxOffchainParamsBytesSize>
 }
 
 def_signature_scheme_key_and_params! {
-    for BBSPlus:
-        /// Public key for the BBS+ signature scheme.
-        BBSPlusPublicKey<MaxBBSPlusPublicKeySize>,
-        /// Signature parameters for the BBS+ signature scheme.
-        BBSPlusParameters<MaxOffchainParamsBytesSize>
+	for BBSPlus:
+		/// Public key for the BBS+ signature scheme.
+		BBSPlusPublicKey<MaxBBSPlusPublicKeySize>,
+		/// Signature parameters for the BBS+ signature scheme.
+		BBSPlusParameters<MaxOffchainParamsBytesSize>
 }
 
 def_signature_scheme_key_and_params! {
-    for PS:
-        /// Public key for the PS signature scheme.
-        PSPublicKey<MaxPSPublicKeySize>,
-        /// Signature parameters for the PS signature scheme.
-        PSParameters<MaxOffchainParamsBytesSize>
+	for PS:
+		/// Public key for the PS signature scheme.
+		PSPublicKey<MaxPSPublicKeySize>,
+		/// Signature parameters for the PS signature scheme.
+		PSParameters<MaxOffchainParamsBytesSize>
 }

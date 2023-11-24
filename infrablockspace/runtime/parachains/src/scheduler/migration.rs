@@ -96,7 +96,10 @@ pub mod v1 {
 
 				weight_consumed
 			} else {
-				log::warn!(target: scheduler::LOG_TARGET, "Para scheduler v1 migration should be removed.");
+				log::warn!(
+					target: scheduler::LOG_TARGET,
+					"Para scheduler v1 migration should be removed."
+				);
 				T::DbWeight::get().reads(1)
 			}
 		}

@@ -24,8 +24,8 @@ use frame_support::{
 	traits::{ConstU32, Contains, Everything, Nothing, PalletInfoAccess},
 };
 
-use parachain_primitives::primitives::Sibling;
 use pallet_xcm::XcmPassthrough;
+use parachain_primitives::primitives::Sibling;
 use parachains_common::xcm_config::AssetFeeAsExistentialDepositMultiplier;
 use sp_runtime::traits::ConvertInto;
 use xcm::latest::prelude::*;
@@ -109,8 +109,10 @@ pub type ForeignAssetsConvertedConcreteId = assets_common::ForeignAssetsConverte
 		// Ignore `TrustBackedAssets` explicitly
 		StartsWith<TrustBackedAssetsPalletLocation>,
 		// Ignore asset which starts explicitly with our `GlobalConsensus(NetworkId)`, means:
-		// - foreign assets from our consensus should be: `MultiLocation {parent: 1, X*(Parachain(xyz))}
-		// - foreign assets outside our consensus with the same `GlobalConsensus(NetworkId)` wont be accepted here
+		// - foreign assets from our consensus should be: `MultiLocation {parent: 1,
+		//   X*(Parachain(xyz))}
+		// - foreign assets outside our consensus with the same `GlobalConsensus(NetworkId)` wont
+		//   be accepted here
 		StartsWithExplicitGlobalConsensus<UniversalLocationNetworkId>,
 	),
 	AssetLink,
@@ -389,7 +391,8 @@ impl pallet_xcm::Config for Runtime {
 	type XcmRouter = XcmRouter;
 	// We support local origins dispatching XCM executions in principle...
 	type ExecuteXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
-	// ... but disallow generic XCM execution. As a result only teleports and reserve transfers are allowed.
+	// ... but disallow generic XCM execution. As a result only teleports and reserve transfers are
+	// allowed.
 	type XcmExecuteFilter = Nothing;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type XcmTeleportFilter = Everything;

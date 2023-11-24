@@ -17,8 +17,8 @@
 use codec::{Codec, Decode};
 use cumulus_client_cli::CollatorOptions;
 use cumulus_client_collator::service::CollatorService;
-use cumulus_client_consensus_aura::collators::{
-	basic::{self as basic_aura, Params as BasicAuraParams}
+use cumulus_client_consensus_aura::collators::basic::{
+	self as basic_aura, Params as BasicAuraParams,
 };
 use cumulus_client_consensus_common::{
 	ParachainBlockImport as TParachainBlockImport, ParachainCandidate, ParachainConsensus,

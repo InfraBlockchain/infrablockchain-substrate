@@ -165,7 +165,10 @@ pub struct MigrateToV8<T>(sp_std::marker::PhantomData<T>);
 impl<T: Config> OnRuntimeUpgrade for MigrateToV8<T> {
 	#[cfg(feature = "try-runtime")]
 	fn pre_upgrade() -> Result<Vec<u8>, sp_runtime::TryRuntimeError> {
-		log::trace!(target: crate::configuration::LOG_TARGET, "Running pre_upgrade() for HostConfiguration MigrateToV8");
+		log::trace!(
+			target: crate::configuration::LOG_TARGET,
+			"Running pre_upgrade() for HostConfiguration MigrateToV8"
+		);
 		Ok(Vec::new())
 	}
 
@@ -174,19 +177,28 @@ impl<T: Config> OnRuntimeUpgrade for MigrateToV8<T> {
 		if StorageVersion::get::<Pallet<T>>() == 7 {
 			let weight_consumed = migrate_to_v8::<T>();
 
-			log::info!(target: configuration::LOG_TARGET, "HostConfiguration MigrateToV8 executed successfully");
+			log::info!(
+				target: configuration::LOG_TARGET,
+				"HostConfiguration MigrateToV8 executed successfully"
+			);
 			StorageVersion::new(8).put::<Pallet<T>>();
 
 			weight_consumed
 		} else {
-			log::warn!(target: configuration::LOG_TARGET, "HostConfiguration MigrateToV8 should be removed.");
+			log::warn!(
+				target: configuration::LOG_TARGET,
+				"HostConfiguration MigrateToV8 should be removed."
+			);
 			T::DbWeight::get().reads(1)
 		}
 	}
 
 	#[cfg(feature = "try-runtime")]
 	fn post_upgrade(_state: Vec<u8>) -> Result<(), sp_runtime::TryRuntimeError> {
-		log::trace!(target: crate::configuration::LOG_TARGET, "Running post_upgrade() for HostConfiguration MigrateToV8");
+		log::trace!(
+			target: crate::configuration::LOG_TARGET,
+			"Running post_upgrade() for HostConfiguration MigrateToV8"
+		);
 		ensure!(
 			StorageVersion::get::<Pallet<T>>() >= 8,
 			"Storage version should be >= 8 after the migration"

@@ -62,7 +62,10 @@ pub mod types {
 /// Common constants of parachains.
 pub mod constants {
 	use super::types::BlockNumber;
-	use frame_support::{weights::{constants::WEIGHT_REF_TIME_PER_SECOND, Weight}, PalletId};
+	use frame_support::{
+		weights::{constants::WEIGHT_REF_TIME_PER_SECOND, Weight},
+		PalletId,
+	};
 	use sp_runtime::Perbill;
 	/// This determines the average expected block time that we are targeting. Blocks will be
 	/// produced at a minimum duration defined by `SLOT_DURATION`. `SLOT_DURATION` is picked up by

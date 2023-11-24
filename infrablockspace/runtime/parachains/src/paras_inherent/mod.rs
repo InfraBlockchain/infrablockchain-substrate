@@ -381,8 +381,20 @@ impl<T: Config> Pallet<T> {
 		let all_weight_before = candidates_weight + bitfields_weight + disputes_weight;
 
 		METRICS.on_before_filter(all_weight_before.ref_time());
-		log::debug!(target: LOG_TARGET, "Size before filter: {}, candidates + bitfields: {}, disputes: {}", all_weight_before.proof_size(), candidates_weight.proof_size() + bitfields_weight.proof_size(), disputes_weight.proof_size());
-		log::debug!(target: LOG_TARGET, "Time weight before filter: {}, candidates + bitfields: {}, disputes: {}", all_weight_before.ref_time(), candidates_weight.ref_time() + bitfields_weight.ref_time(), disputes_weight.ref_time());
+		log::debug!(
+			target: LOG_TARGET,
+			"Size before filter: {}, candidates + bitfields: {}, disputes: {}",
+			all_weight_before.proof_size(),
+			candidates_weight.proof_size() + bitfields_weight.proof_size(),
+			disputes_weight.proof_size()
+		);
+		log::debug!(
+			target: LOG_TARGET,
+			"Time weight before filter: {}, candidates + bitfields: {}, disputes: {}",
+			all_weight_before.ref_time(),
+			candidates_weight.ref_time() + bitfields_weight.ref_time(),
+			disputes_weight.ref_time()
+		);
 
 		let current_session = <shared::Pallet<T>>::session_index();
 		let expected_bits = <scheduler::Pallet<T>>::availability_cores().len();
@@ -397,7 +409,11 @@ impl<T: Config> Pallet<T> {
 		let max_block_weight = {
 			let dispatch_class = DispatchClass::Mandatory;
 			let max_block_weight_full = <T as frame_system::Config>::BlockWeights::get();
-			log::debug!(target: LOG_TARGET, "Max block weight: {}", max_block_weight_full.max_block);
+			log::debug!(
+				target: LOG_TARGET,
+				"Max block weight: {}",
+				max_block_weight_full.max_block
+			);
 			// Get max block weight for the mandatory class if defined, otherwise total max weight
 			// of the block.
 			let max_weight = max_block_weight_full
@@ -460,11 +476,28 @@ impl<T: Config> Pallet<T> {
 			backed_candidates.len(),
 			checked_disputes_sets.len()
 			);
-			log::debug!(target: LOG_TARGET, "Size after filter: {}, candidates + bitfields: {}, disputes: {}", all_weight_after.proof_size(), non_disputes_weight.proof_size(), checked_disputes_sets_consumed_weight.proof_size());
-			log::debug!(target: LOG_TARGET, "Time weight after filter: {}, candidates + bitfields: {}, disputes: {}", all_weight_after.ref_time(), non_disputes_weight.ref_time(), checked_disputes_sets_consumed_weight.ref_time());
+			log::debug!(
+				target: LOG_TARGET,
+				"Size after filter: {}, candidates + bitfields: {}, disputes: {}",
+				all_weight_after.proof_size(),
+				non_disputes_weight.proof_size(),
+				checked_disputes_sets_consumed_weight.proof_size()
+			);
+			log::debug!(
+				target: LOG_TARGET,
+				"Time weight after filter: {}, candidates + bitfields: {}, disputes: {}",
+				all_weight_after.ref_time(),
+				non_disputes_weight.ref_time(),
+				checked_disputes_sets_consumed_weight.ref_time()
+			);
 
 			if all_weight_after.any_gt(max_block_weight) {
-				log::warn!(target: LOG_TARGET, "Post weight limiting weight is still too large, time: {}, size: {}", all_weight_after.ref_time(), all_weight_after.proof_size());
+				log::warn!(
+					target: LOG_TARGET,
+					"Post weight limiting weight is still too large, time: {}, size: {}",
+					all_weight_after.ref_time(),
+					all_weight_after.proof_size()
+				);
 			}
 			all_weight_after
 		} else {
@@ -778,7 +811,12 @@ fn apply_weight_limit<T: Config + inclusion::Config>(
 				|c| backed_candidate_weight::<T>(c),
 				max_consumable_by_candidates,
 			);
-		log::debug!(target: LOG_TARGET, "Indices Candidates: {:?}, size: {}", indices, candidates.len());
+		log::debug!(
+			target: LOG_TARGET,
+			"Indices Candidates: {:?}, size: {}",
+			indices,
+			candidates.len()
+		);
 		candidates.indexed_retain(|idx, _backed_candidate| indices.binary_search(&idx).is_ok());
 		// pick all bitfields, and
 		// fill the remaining space with candidates
@@ -998,7 +1036,12 @@ fn limit_and_sanitize_disputes<
 	let disputes_weight = multi_dispute_statement_sets_weight::<T>(&disputes);
 
 	if disputes_weight.any_gt(max_consumable_weight) {
-		log::debug!(target: LOG_TARGET, "Above max consumable weight: {}/{}", disputes_weight, max_consumable_weight);
+		log::debug!(
+			target: LOG_TARGET,
+			"Above max consumable weight: {}/{}",
+			disputes_weight,
+			max_consumable_weight
+		);
 		let mut checked_acc = Vec::<CheckedDisputeStatementSet>::with_capacity(disputes.len());
 
 		// Accumualated weight of all disputes picked, that passed the checks.

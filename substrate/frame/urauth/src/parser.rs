@@ -206,9 +206,7 @@ fn parse_url(buf: &str, is_connect: bool) -> Result<Url, ParseError> {
 			State::SchemeSlashSlash |
 			State::ServerStart |
 			State::QueryStringStart |
-			State::FragmentStart => {
-				continue
-			},
+			State::FragmentStart => continue,
 			State::Scheme => {
 				uf = UrlFields::Scheme;
 			},
@@ -320,9 +318,7 @@ fn parse_url(buf: &str, is_connect: bool) -> Result<Url, ParseError> {
 			HttpHostState::Hostv6Zone |
 			HttpHostState::HostPortStart |
 			HttpHostState::Userinfo |
-			HttpHostState::UserinfoStart => {
-				return Err(ParseError::Invalid)
-			},
+			HttpHostState::UserinfoStart => return Err(ParseError::Invalid),
 			_ => {},
 		}
 	}

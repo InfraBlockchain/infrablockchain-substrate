@@ -1,4 +1,3 @@
-
 //! Types for InfraBlockchain
 
 mod fee;

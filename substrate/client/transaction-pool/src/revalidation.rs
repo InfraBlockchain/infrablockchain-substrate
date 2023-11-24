@@ -75,7 +75,10 @@ async fn batch_revalidate<Api: ChainApi>(
 	let block_number = match api.block_id_to_number(&BlockId::Hash(at)) {
 		Ok(Some(n)) => n,
 		Ok(None) => {
-			log::debug!(target: LOG_TARGET, "revalidation skipped at block {at:?}, could not get block number.");
+			log::debug!(
+				target: LOG_TARGET,
+				"revalidation skipped at block {at:?}, could not get block number."
+			);
 			return
 		},
 		Err(e) => {

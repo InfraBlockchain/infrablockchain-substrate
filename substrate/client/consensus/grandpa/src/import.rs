@@ -673,8 +673,7 @@ where
 				} else {
 					debug!(
 						target: LOG_TARGET,
-						"Ignoring unnecessary justification for block #{}",
-						number,
+						"Ignoring unnecessary justification for block #{}", number,
 					);
 				}
 			},

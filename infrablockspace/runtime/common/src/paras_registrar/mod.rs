@@ -1151,10 +1151,7 @@ mod tests {
 			assert_ok!(Registrar::make_parachain(para_id));
 			run_to_session(START_SESSION_INDEX + 4);
 			// Cant directly deregister parachain
-			assert_noop!(
-				Registrar::deregister(para_id,),
-				Error::<Test>::NotParathread
-			);
+			assert_noop!(Registrar::deregister(para_id,), Error::<Test>::NotParathread);
 		});
 	}
 

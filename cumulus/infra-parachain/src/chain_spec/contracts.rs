@@ -203,20 +203,7 @@ pub fn contracts_infra_config() -> ContractsInfraChainSpec {
 			)
 		},
 		// Bootnodes
-		vec![
-			"/dns/contracts-collator-0.parity-testnet.parity.io/tcp/30333/p2p/12D3KooWKg3Rpxcr9oJ8n6khoxpGKWztCZydtUZk2cojHqnfLrpj"
-				.parse()
-				.expect("MultiaddrWithPeerId"),
-			"/dns/contracts-collator-1.parity-testnet.parity.io/tcp/30333/p2p/12D3KooWPEXYrz8tHU3nDtPoPw4V7ou5dzMEWSTuUj7vaWiYVAVh"
-				.parse()
-				.expect("MultiaddrWithPeerId"),
-			"/dns/contracts-collator-2.parity-testnet.parity.io/tcp/30333/p2p/12D3KooWEVU8AFNary4nP4qEnEcwJaRuy59Wefekzdu9pKbnVEhk"
-				.parse()
-				.expect("MultiaddrWithPeerId"),
-			"/dns/contracts-collator-3.parity-testnet.parity.io/tcp/30333/p2p/12D3KooWP6pV3ZmcXzGDjv8ZMgA6nZxfAKDxSz4VNiLx6vVCQgJX"
-				.parse()
-				.expect("MultiaddrWithPeerId"),
-		],
+		vec![],
 		// Telemetry
 		None,
 		// Protocol ID

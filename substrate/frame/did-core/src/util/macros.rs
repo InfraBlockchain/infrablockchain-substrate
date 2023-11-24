@@ -1,41 +1,41 @@
 /// Implements bits conversion from/to the given type for the supplied bitflags identifier.
 #[macro_export]
 macro_rules! impl_bits_conversion {
-    ($ident: ident from $type: ty) => {
-        impl From<$ident> for $type {
-            fn from(value: $ident) -> Self {
-                value.bits()
-            }
-        }
+	($ident: ident from $type: ty) => {
+		impl From<$ident> for $type {
+			fn from(value: $ident) -> Self {
+				value.bits()
+			}
+		}
 
-        impl TryFrom<$type> for $ident {
-            type Error = $type;
+		impl TryFrom<$type> for $ident {
+			type Error = $type;
 
-            fn try_from(value: $type) -> Result<Self, $type> {
-                Self::from_bits(value).ok_or(value)
-            }
-        }
+			fn try_from(value: $type) -> Result<Self, $type> {
+				Self::from_bits(value).ok_or(value)
+			}
+		}
 
-        impl Encode for $ident {
-            fn encode(&self) -> Vec<u8> {
-                <$type>::encode(&self.clone().into())
-            }
-        }
+		impl Encode for $ident {
+			fn encode(&self) -> Vec<u8> {
+				<$type>::encode(&self.clone().into())
+			}
+		}
 
-        impl Decode for $ident {
-            fn decode<I: codec::Input>(input: &mut I) -> Result<Self, codec::Error> {
-                let decoded = <$type>::decode(input)?;
+		impl Decode for $ident {
+			fn decode<I: codec::Input>(input: &mut I) -> Result<Self, codec::Error> {
+				let decoded = <$type>::decode(input)?;
 
-                Self::from_bits(decoded).ok_or("Invalid value".into())
-            }
-        }
+				Self::from_bits(decoded).ok_or("Invalid value".into())
+			}
+		}
 
-        impl MaxEncodedLen for $ident {
-            fn max_encoded_len() -> usize {
-                <$type>::max_encoded_len()
-            }
-        }
-    };
+		impl MaxEncodedLen for $ident {
+			fn max_encoded_len() -> usize {
+				<$type>::max_encoded_len()
+			}
+		}
+	};
 }
 
 /// Makes given ident `pub` only for test and uses supplied visibility if compiled otherwise.
@@ -72,13 +72,13 @@ macro_rules! field_accessor {
 /// Implements `ToStateChange` trait with supplied params for the given ident(s).
 #[macro_export]
 macro_rules! impl_to_state_change {
-    ($type: ident) => {
-        impl<T: $crate::common::TypesAndLimits> $crate::common::ToStateChange<T> for $type<T> {
-            fn to_state_change(&self) -> $crate::common::StateChange<'_, T> {
-                $crate::common::StateChange::$type(sp_std::borrow::Cow::Borrowed(self))
-            }
-        }
-    };
+	($type: ident) => {
+		impl<T: $crate::common::TypesAndLimits> $crate::common::ToStateChange<T> for $type<T> {
+			fn to_state_change(&self) -> $crate::common::StateChange<'_, T> {
+				$crate::common::StateChange::$type(sp_std::borrow::Cow::Borrowed(self))
+			}
+		}
+	};
 }
 
 /// Implements `Action` trait with supplied params for the given ident(s).
@@ -201,7 +201,8 @@ macro_rules! deposit_indexed_event {
     }
 }
 
-/// Implements two-direction `From`/`Into` and one-direction `Deref`/`DeferMut` traits for the supplied wrapper and type.
+/// Implements two-direction `From`/`Into` and one-direction `Deref`/`DeferMut` traits for the
+/// supplied wrapper and type.
 #[macro_export]
 macro_rules! impl_wrapper {
     (no_wrapper_from_type $wrapper: ident$(<$($gen: ident: $($bound: path),+),*>)?($type: ty) $(,$($rest: tt)*)?) => {
@@ -249,20 +250,20 @@ macro_rules! impl_wrapper_from_type_conversion {
 /// Implements type's type info for the wrapper.
 #[macro_export]
 macro_rules! impl_wrapper_type_info {
-    ($wrapper: ident($type: ty)) => {
-        impl scale_info::TypeInfo for $wrapper {
-            type Identity = Self;
+	($wrapper: ident($type: ty)) => {
+		impl scale_info::TypeInfo for $wrapper {
+			type Identity = Self;
 
-            fn type_info() -> scale_info::Type {
-                scale_info::Type::builder()
-                    .path(scale_info::Path::new(
-                        core::stringify!($wrapper),
-                        core::stringify!($wrapper),
-                    ))
-                    .composite(scale_info::build::Fields::unnamed().field(|f| f.ty::<$type>()))
-            }
-        }
-    };
+			fn type_info() -> scale_info::Type {
+				scale_info::Type::builder()
+					.path(scale_info::Path::new(
+						core::stringify!($wrapper),
+						core::stringify!($wrapper),
+					))
+					.composite(scale_info::build::Fields::unnamed().field(|f| f.ty::<$type>()))
+			}
+		}
+	};
 }
 
 /// Defines `StateChange` using supplied actions.
@@ -357,48 +358,45 @@ macro_rules! impl_encode_decode_wrapper_tests {
 #[cfg(feature = "runtime-benchmarks")]
 #[macro_export]
 macro_rules! def_test_pair {
-    (sr25519, $seed: expr) => {{
-        use sp_core::Pair;
+	(sr25519, $seed: expr) => {{
+		use sp_core::Pair;
 
-        let pair = sp_core::sr25519::Pair::from_seed($seed);
-        struct TestSr25519Pair {
-            pair: sp_core::sr25519::Pair,
-        }
+		let pair = sp_core::sr25519::Pair::from_seed($seed);
+		struct TestSr25519Pair {
+			pair: sp_core::sr25519::Pair,
+		}
 
-        impl TestSr25519Pair {
-            fn sign(&self, msg: &[u8]) -> sp_core::sr25519::Signature {
-                use rand_chacha::rand_core::SeedableRng;
-                use schnorrkel::{context::attach_rng, *};
+		impl TestSr25519Pair {
+			fn sign(&self, msg: &[u8]) -> sp_core::sr25519::Signature {
+				use rand_chacha::rand_core::SeedableRng;
+				use schnorrkel::{context::attach_rng, *};
 
-                let mut transcript = merlin::Transcript::new(b"SigningContext");
-                transcript.append_message(b"", b"substrate");
-                transcript.append_message(b"sign-bytes", msg);
-                let context = attach_rng(transcript, rand_chacha::ChaChaRng::from_seed([10u8; 32]));
+				let mut transcript = merlin::Transcript::new(b"SigningContext");
+				transcript.append_message(b"", b"substrate");
+				transcript.append_message(b"sign-bytes", msg);
+				let context = attach_rng(transcript, rand_chacha::ChaChaRng::from_seed([10u8; 32]));
 
-                let sk = SecretKey::from_bytes(&self.pair.to_raw_vec()[..]).unwrap();
+				let sk = SecretKey::from_bytes(&self.pair.to_raw_vec()[..]).unwrap();
 
-                sk.sign(
-                    context,
-                    &PublicKey::from_bytes(&self.pair.public()[..]).unwrap(),
-                )
-                .into()
-            }
+				sk.sign(context, &PublicKey::from_bytes(&self.pair.public()[..]).unwrap())
+					.into()
+			}
 
-            fn public(&self) -> sp_core::sr25519::Public {
-                self.pair.public()
-            }
-        }
+			fn public(&self) -> sp_core::sr25519::Public {
+				self.pair.public()
+			}
+		}
 
-        TestSr25519Pair { pair }
-    }};
-    (ed25519, $seed: expr) => {{
-        use sp_core::Pair;
+		TestSr25519Pair { pair }
+	}};
+	(ed25519, $seed: expr) => {{
+		use sp_core::Pair;
 
-        sp_core::ed25519::Pair::from_seed($seed)
-    }};
-    (secp256k1, $seed: expr) => {
-        $crate::common::get_secp256k1_keypair_struct($seed)
-    };
+		sp_core::ed25519::Pair::from_seed($seed)
+	}};
+	(secp256k1, $seed: expr) => {
+		$crate::common::get_secp256k1_keypair_struct($seed)
+	};
 }
 
 /// Repeats the benchmark for every pair.

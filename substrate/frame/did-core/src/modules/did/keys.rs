@@ -1,20 +1,11 @@
 use super::*;
 use crate::{deposit_indexed_event, impl_bits_conversion, impl_wrapper_type_info};
-use serde::{Deserialize, Serialize};
 
 /// Valid did key with correct verification relationships.
 #[derive(
-	Encode,
-	Clone,
-	Debug,
-	PartialEq,
-	Eq,
-	PartialOrd,
-	MaxEncodedLen,
-	Serialize,
-	Deserialize,
-	scale_info_derive::TypeInfo,
+	Encode, Clone, Debug, PartialEq, Eq, PartialOrd, MaxEncodedLen, scale_info_derive::TypeInfo,
 )]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[scale_info(omit_prefix)]
 pub struct DidKey {
 	/// The public key
@@ -49,7 +40,7 @@ impl Decode for DidKey {
 bitflags::bitflags! {
 	/// Different verification relation types specified in the DID spec here https://www.w3.org/TR/did-core/#verification-relationships.
 	// #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-	#[derive(Serialize, Deserialize)]
+	#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 	#[cfg_attr(feature = "serde", serde(try_from = "u16", into = "u16"))]
 	pub struct VerRelType: u16 {
 		/// No verification relation set.

@@ -50,11 +50,7 @@ impl<
 	fn on_runtime_upgrade() -> Weight {
 		let onchain = Pallet::<T, I>::on_chain_storage_version();
 		if onchain < 2 {
-			log::info!(
-				target: TARGET,
-				"Running migration against onchain version {:?}",
-				onchain
-			);
+			log::info!(target: TARGET, "Running migration against onchain version {:?}", onchain);
 			from_original::<T, I>(&mut PastPayouts::get()).defensive_unwrap_or(Weight::MAX)
 		} else {
 			log::warn!("Unexpected onchain version: {:?} (expected 0)", onchain);

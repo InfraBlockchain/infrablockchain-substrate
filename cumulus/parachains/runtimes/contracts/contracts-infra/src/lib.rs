@@ -56,9 +56,11 @@ use frame_support::{
 use frame_system::limits::{BlockLength, BlockWeights};
 pub use parachains_common as common;
 pub use parachains_common::{
+	constants::*,
 	impls::DealWithFees,
 	infra_relay::{consensus::*, currency::*, fee::WeightToFee},
-	types::*, opaque::*, constants::*,
+	opaque::*,
+	types::*,
 };
 use xcm_config::CollatorSelectionUpdateOrigin;
 
