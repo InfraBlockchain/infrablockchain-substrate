@@ -668,6 +668,7 @@ construct_runtime!(
 		AssetLink: pallet_asset_link = 52,
 		SystemTokenAggregator: system_token_aggregator = 53,
 		SystemToken: pallet_system_token = 54,
+
 	}
 );
 
