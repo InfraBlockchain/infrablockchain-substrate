@@ -42,6 +42,7 @@ use xcm_executor::XcmExecutor;
 
 parameter_types! {
 	pub const RelayLocation: MultiLocation = MultiLocation::parent();
+	pub const DotLocation: MultiLocation = Here.into_location();
 	pub const RelayNetwork: Option<NetworkId> = None;
 	pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
 	pub UniversalLocation: InteriorMultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
@@ -109,6 +110,7 @@ parameter_types! {
 	// One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
 	pub UnitWeightCost: Weight = Weight::from_parts(1_000_000_000, 64 * 1024);
 	pub const MaxInstructions: u32 = 100;
+	pub const MaxAssetsIntoHolding: u32 = 64;
 }
 
 match_types! {

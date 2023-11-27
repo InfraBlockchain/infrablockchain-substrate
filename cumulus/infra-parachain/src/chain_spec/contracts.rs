@@ -262,10 +262,10 @@ fn contracts_infra_genesis(
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
 			..Default::default()
 		},
-		sudo: contracts_infra_runtime::SudoConfig {
-			key: Some(
-				hex!["2681a28014e7d3a5bfb32a003b3571f53c408acbc28d351d6bf58f5028c4ef14"].into(),
-			),
-		},
+		// sudo: contracts_infra_runtime::SudoConfig {
+		// 	key: Some(
+		// 		hex!["2681a28014e7d3a5bfb32a003b3571f53c408acbc28d351d6bf58f5028c4ef14"].into(),
+		// 	),
+		// },
 	}
 }
