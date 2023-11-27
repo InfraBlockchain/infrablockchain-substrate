@@ -32,11 +32,39 @@ rpc_port = 7400
 ws_port = 7401
 
 [[relaychain.nodes]]
+name = "eve"
+validator = true
+args = ["-lparachain=debug", "-l=xcm=trace"]
+rpc_port = 7500
+ws_port = 7501
+
+[[relaychain.nodes]]
 name = "ferdie"
 validator = true
 args = ["-lparachain=debug", "-l=xcm=trace"]
 rpc_port = 7500
 ws_port = 7501
+
+[[relaychain.nodes]]
+name = "grace"
+validator = true
+args = ["-lparachain=debug", "-l=xcm=trace"]
+rpc_port = 7500
+ws_port = 7501
+
+[[relaychain.nodes]]
+name = "harry"
+validator = true
+args = ["-lparachain=debug", "-l=xcm=trace"]
+rpc_port = 7500
+ws_port = 7501
+
+[[relaychain.nodes]]
+name = "irene"
+validator = true
+args = ["-lparachain=debug", "-l=xcm=trace"]
+rpc_port = 7600
+ws_port = 7601
 
 [[parachains]]
 id = 1000

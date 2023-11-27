@@ -30,6 +30,8 @@ pub type URAuthChainSpec =
 const URAUTH_INFRA_RELAY_ED: URAuthBalance =
 	parachains_common::infra_relay::currency::EXISTENTIAL_DEPOSIT;
 
+const URAUTH_PARACHAIN_ID: u32 = 2000;
+
 /// Generate the session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
@@ -64,7 +66,7 @@ pub fn urauth_development_config() -> URAuthChainSpec {
 				],
 				vec![],
 				Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
-				1000.into(),
+				URAUTH_PARACHAIN_ID.into(),
 			)
 		},
 		Vec::new(),
@@ -72,7 +74,7 @@ pub fn urauth_development_config() -> URAuthChainSpec {
 		None,
 		None,
 		Some(properties),
-		Extensions { relay_chain: "infra-relay-local".into(), para_id: 1000 },
+		Extensions { relay_chain: "infra-relay-local".into(), para_id: URAUTH_PARACHAIN_ID },
 	)
 }
 
@@ -117,7 +119,7 @@ pub fn urauth_local_config() -> URAuthChainSpec {
 				],
 				Default::default(),
 				Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
-				1000.into(),
+				URAUTH_PARACHAIN_ID.into(),
 			)
 		},
 		Vec::new(),
@@ -125,7 +127,7 @@ pub fn urauth_local_config() -> URAuthChainSpec {
 		None,
 		None,
 		Some(properties),
-		Extensions { relay_chain: "infra-relay-local".into(), para_id: 1000 },
+		Extensions { relay_chain: "infra-relay-local".into(), para_id: URAUTH_PARACHAIN_ID },
 	)
 }
 
@@ -174,7 +176,7 @@ pub fn urauth_config() -> URAuthChainSpec {
 				vec![],
 				Default::default(),
 				None,
-				1000u32.into(),
+				URAUTH_PARACHAIN_ID.into(),
 			)
 		},
 		vec![],
@@ -182,7 +184,7 @@ pub fn urauth_config() -> URAuthChainSpec {
 		None,
 		None,
 		Some(properties),
-		Extensions { relay_chain: "infra-relay".into(), para_id: 1000 },
+		Extensions { relay_chain: "infra-relay".into(), para_id: URAUTH_PARACHAIN_ID },
 	)
 }
 
