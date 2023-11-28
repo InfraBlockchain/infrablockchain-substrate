@@ -3,8 +3,9 @@ FROM docker.io/paritytech/ci-linux:production as builder
 
 WORKDIR /cumulus
 
-RUN --mount=type=bind,source=.,target=. \
-    cargo build --release --locked -p infra-parachain-bin
+COPY . /cumulus
+
+RUN cargo build --release --locked -p infra-parachain-bin
 
 # This is the 2nd stage: a very small image where we copy the infrablockspace binary."
 FROM docker.io/library/ubuntu:20.04
