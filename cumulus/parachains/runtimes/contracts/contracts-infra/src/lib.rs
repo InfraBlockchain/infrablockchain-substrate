@@ -30,9 +30,9 @@ mod weights;
 mod xcm_config;
 
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
-// use pallet_system_token_tx_payment::{CreditToBucket, TransactionFeeCharger};
+use pallet_system_token_tx_payment::{CreditToBucket, TransactionFeeCharger};
 use pallet_xcm::{EnsureXcm, IsMajorityOfBody};
-// use runtime_parachains::system_token_aggregator;
+use runtime_parachains::system_token_aggregator;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
@@ -41,7 +41,8 @@ use sp_runtime::{
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,
 };
-use xcm_config::{DotLocation, XcmConfig, XcmOriginToTransactDispatchOrigin};
+use xcm_config::{NativeLocation, XcmConfig, XcmOriginToTransactDispatchOrigin};
+use xcm_executor::XcmExecutor;
 
 use frame_system::{EnsureRoot, EnsureSigned};
 
@@ -97,8 +98,7 @@ pub type SignedExtra = (
 	frame_system::CheckEra<Runtime>,
 	frame_system::CheckNonce<Runtime>,
 	frame_system::CheckWeight<Runtime>,
-	pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
-	// pallet_system_token_tx_payment::ChargeSystemToken<Runtime>,
+	pallet_system_token_tx_payment::ChargeSystemToken<Runtime>,
 );
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic =
@@ -334,8 +334,10 @@ parameter_types! {
 }
 
 /// We allow root and the Relay Chain council to execute privileged collator selection operations.
-pub type CollatorSelectionUpdateOrigin =
-	EitherOfDiverse<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>>;
+pub type CollatorSelectionUpdateOrigin = EitherOfDiverse<
+	EnsureRoot<AccountId>,
+	EnsureXcm<IsMajorityOfBody<NativeLocation, ExecutiveBody>>,
+>;
 
 impl pallet_collator_selection::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -353,86 +355,101 @@ impl pallet_collator_selection::Config for Runtime {
 	type WeightInfo = pallet_collator_selection::weights::SubstrateWeight<Runtime>;
 }
 
-// impl pallet_sudo::Config for Runtime {
-// 	type RuntimeCall = RuntimeCall;
-// 	type RuntimeEvent = RuntimeEvent;
-// 	type WeightInfo = pallet_sudo::weights::SubstrateWeight<Runtime>;
-// }
+impl cumulus_pallet_xcmp_queue::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type XcmExecutor = XcmExecutor<XcmConfig>;
+	type ChannelInfo = ParachainSystem;
+	type VersionWrapper = IbsXcm;
+	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
+	type ControllerOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		EnsureXcm<IsMajorityOfBody<NativeLocation, ExecutiveBody>>,
+	>;
+	type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
+	type WeightInfo = cumulus_pallet_xcmp_queue::weights::SubstrateWeight<Runtime>;
+	type PriceForSiblingDelivery = ();
+}
 
-// impl pallet_system_token::Config for Runtime {
-// 	type RuntimeEvent = RuntimeEvent;
-// 	type AuthorizedOrigin = EnsureRoot<AccountId>;
-// }
+impl cumulus_pallet_dmp_queue::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type XcmExecutor = XcmExecutor<XcmConfig>;
+	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
+}
 
-// parameter_types! {
-// 	pub const CollectionDeposit: Balance = 10 * DOLLARS; // 10 UNIT deposit to create uniques class
-// 	pub const ItemDeposit: Balance = DOLLARS / 100; // 1 / 100 UNIT deposit to create uniques
-// instance 	pub const KeyLimit: u32 = 32;	// Max 32 bytes per key
-// 	pub const ValueLimit: u32 = 64;	// Max 64 bytes per value
-// 	pub const UniquesMetadataDepositBase: Balance = deposit(1, 129);
-// 	pub const AttributeDepositBase: Balance = deposit(1, 0);
-// 	pub const DepositPerByte: Balance = deposit(0, 1);
-// 	pub const UniquesStringLimit: u32 = 128;
-// }
+impl pallet_system_token::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type AuthorizedOrigin = EnsureRoot<AccountId>;
+}
 
-// impl pallet_uniques::Config for Runtime {
-// 	type RuntimeEvent = RuntimeEvent;
-// 	type CollectionId = u32;
-// 	type ItemId = u32;
-// 	type Currency = Balances;
-// 	type ForceOrigin = RootOrigin;
-// 	type CollectionDeposit = CollectionDeposit;
-// 	type ItemDeposit = ItemDeposit;
-// 	type MetadataDepositBase = UniquesMetadataDepositBase;
-// 	type AttributeDepositBase = AttributeDepositBase;
-// 	type DepositPerByte = DepositPerByte;
-// 	type StringLimit = UniquesStringLimit;
-// 	type KeyLimit = KeyLimit;
-// 	type ValueLimit = ValueLimit;
-// 	type WeightInfo = ();
-// 	#[cfg(feature = "runtime-benchmarks")]
-// 	type Helper = ();
-// 	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
-// 	type Locker = ();
-// }
+parameter_types! {
+	pub const CollectionDeposit: Balance = 10 * DOLLARS; // 10 UNIT deposit to create uniques class
+	pub const ItemDeposit: Balance = DOLLARS / 100; // 1 / 100 UNIT deposit to create uniques instance
+	pub const KeyLimit: u32 = 32;	// Max 32 bytes per key
+	pub const ValueLimit: u32 = 64;	// Max 64 bytes per value
+	pub const UniquesMetadataDepositBase: Balance = deposit(1, 129);
+	pub const AttributeDepositBase: Balance = deposit(1, 0);
+	pub const DepositPerByte: Balance = deposit(0, 1);
+	pub const UniquesStringLimit: u32 = 128;
+}
 
-// impl pallet_asset_link::Config for Runtime {
-// 	type RuntimeEvent = RuntimeEvent;
-// 	type ReserveAssetModifierOrigin = EnsureRoot<AccountId>;
-// 	type Assets = Assets;
-// 	type WeightInfo = ();
-// }
+impl pallet_uniques::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type CollectionId = u32;
+	type ItemId = u32;
+	type Currency = Balances;
+	type ForceOrigin = RootOrigin;
+	type CollectionDeposit = CollectionDeposit;
+	type ItemDeposit = ItemDeposit;
+	type MetadataDepositBase = UniquesMetadataDepositBase;
+	type AttributeDepositBase = AttributeDepositBase;
+	type DepositPerByte = DepositPerByte;
+	type StringLimit = UniquesStringLimit;
+	type KeyLimit = KeyLimit;
+	type ValueLimit = ValueLimit;
+	type WeightInfo = ();
+	#[cfg(feature = "runtime-benchmarks")]
+	type Helper = ();
+	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
+	type Locker = ();
+}
+
+impl pallet_asset_link::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type ReserveAssetModifierOrigin = EnsureRoot<AccountId>;
+	type Assets = Assets;
+	type WeightInfo = ();
+}
 
 // parameter_types! {
 // 	pub const MaxVotedValidators: u32 = 1024;
 // 	pub const WeightFactor: u64 = 1;
 // }
 
-// parameter_types! {
-// 	pub const AggregatedPeriod: BlockNumber = 10;
-// }
+parameter_types! {
+	pub const AggregatedPeriod: BlockNumber = 10;
+}
 
-// impl system_token_aggregator::Config for Runtime {
-// 	type RuntimeEvent = RuntimeEvent;
-// 	type Period = AggregatedPeriod;
-// 	type AssetMultiLocationGetter = AssetLink;
-// }
+impl system_token_aggregator::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Period = AggregatedPeriod;
+	type AssetMultiLocationGetter = AssetLink;
+}
 
-// parameter_types! {
-// 	pub const FeeTreasuryId: PalletId = PalletId(*b"infrapid");
-// }
+parameter_types! {
+	pub const FeeTreasuryId: PalletId = PalletId(*b"infrapid");
+}
 
-// impl pallet_system_token_tx_payment::Config for Runtime {
-// 	type RuntimeEvent = RuntimeEvent;
-// 	type Assets = Assets;
-// 	type OnChargeSystemToken = TransactionFeeCharger<
-// 		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
-// 		CreditToBucket<Runtime>,
-// 	>;
-// 	type FeeTableProvider = SystemToken;
-// 	type VotingHandler = ParachainSystem;
-// 	type PalletId = FeeTreasuryId;
-// }
+impl pallet_system_token_tx_payment::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Assets = Assets;
+	type OnChargeSystemToken = TransactionFeeCharger<
+		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
+		CreditToBucket<Runtime>,
+	>;
+	type FeeTableProvider = SystemToken;
+	type VotingHandler = ParachainSystem;
+	type PalletId = FeeTreasuryId;
+}
 
 parameter_types! {
 	pub const DepositToCreateAsset: Balance = 1 * DOLLARS; // 1 UNITS deposit to create fungible asset class
@@ -446,32 +463,32 @@ parameter_types! {
 	pub const ExecutiveBody: BodyId = BodyId::Executive;
 }
 
-// /// We allow root and the Relay Chain council to execute privileged asset operations.
-// pub type RootOrigin = EnsureRoot<AccountId>;
+/// We allow root and the Relay Chain council to execute privileged asset operations.
+pub type RootOrigin = EnsureRoot<AccountId>;
 
-// impl pallet_assets::Config for Runtime {
-// 	type RuntimeEvent = RuntimeEvent;
-// 	type Balance = Balance;
-// 	type AssetId = AssetId;
-// 	type AssetLink = AssetLink;
-// 	type AssetIdParameter = codec::Compact<AssetId>;
-// 	type Currency = Balances;
-// 	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
-// 	type ForceOrigin = RootOrigin;
-// 	type AssetDeposit = DepositToCreateAsset;
-// 	type MetadataDepositBase = MetadataDepositBase;
-// 	type MetadataDepositPerByte = MetadataDepositPerByte;
-// 	type ApprovalDeposit = ApprovalDeposit;
-// 	type AssetAccountDeposit = DepositToMaintainAsset;
-// 	type StringLimit = StringLimit;
-// 	type RemoveItemsLimit = frame_support::traits::ConstU32<1000>;
-// 	type WeightInfo = weights::pallet_assets::WeightInfo<Runtime>;
-// 	type Freezer = ();
-// 	type Extra = ();
-// 	type CallbackHandle = ();
-// 	#[cfg(feature = "runtime-benchmarks")]
-// 	type BenchmarkHelper = ();
-// }
+impl pallet_assets::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Balance = Balance;
+	type AssetId = AssetId;
+	type AssetLink = AssetLink;
+	type AssetIdParameter = codec::Compact<AssetId>;
+	type Currency = Balances;
+	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
+	type ForceOrigin = RootOrigin;
+	type AssetDeposit = DepositToCreateAsset;
+	type MetadataDepositBase = MetadataDepositBase;
+	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type ApprovalDeposit = ApprovalDeposit;
+	type AssetAccountDeposit = DepositToMaintainAsset;
+	type StringLimit = StringLimit;
+	type RemoveItemsLimit = frame_support::traits::ConstU32<1000>;
+	type WeightInfo = weights::pallet_assets::WeightInfo<Runtime>;
+	type Freezer = ();
+	type Extra = ();
+	type CallbackHandle = ();
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = ();
+}
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
@@ -512,12 +529,12 @@ construct_runtime!(
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 46,
 
 		// The main stage.
-		// SystemTokenTxPayment: pallet_system_token_tx_payment::{Pallet, Event<T>} = 12,
-		// Assets: pallet_assets::{Pallet, Call, Storage, Event<T>, Config<T>} = 50,
-		// Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
-		// AssetLink: pallet_asset_link = 52,
-		// SystemTokenAggregator: system_token_aggregator = 53,
-		// SystemToken: pallet_system_token = 54,
+		SystemTokenTxPayment: pallet_system_token_tx_payment::{Pallet, Event<T>} = 12,
+		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>, Config<T>} = 50,
+		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
+		AssetLink: pallet_asset_link = 52,
+		SystemTokenAggregator: system_token_aggregator = 53,
+		SystemToken: pallet_system_token = 54,
 	}
 );
 

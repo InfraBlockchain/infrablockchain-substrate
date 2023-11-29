@@ -40,11 +40,7 @@ use xcm_builder::{
 use xcm_executor::{traits::WithOriginFilter, XcmExecutor};
 parameter_types! {
 	pub UniversalLocationNetworkId: NetworkId = UniversalLocation::get().global_consensus().unwrap();
-	pub const DotLocation: MultiLocation = Here.into_location();
-	pub const AssetLocation: MultiLocation = MultiLocation{
-		parents:1,
-		interior:Junctions::X1(Parachain(1000))
-	};
+	pub const NativeLocation: MultiLocation = Here.into_location();
 	pub const RelayNetwork: Option<NetworkId> = Some(NetworkId::InfraRelay);
 	pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
 	pub UniversalLocation: InteriorMultiLocation =
@@ -53,7 +49,6 @@ parameter_types! {
 	pub TrustBackedAssetsPalletLocation: MultiLocation =
 		PalletInstance(<Assets as PalletInfoAccess>::index() as u8).into();
 	pub CheckingAccount: AccountId = IbsXcm::check_account();
-	pub GovernanceLocation: MultiLocation = MultiLocation::parent();
 }
 
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
@@ -73,7 +68,7 @@ pub type CurrencyTransactor = CurrencyAdapter<
 	// Use this currency:
 	Balances,
 	// Use this currency when it is a fungible asset matching the given location or name:
-	IsConcrete<DotLocation>,
+	IsConcrete<NativeLocation>,
 	// Convert an XCM MultiLocation into a local account id:
 	LocationToAccountId,
 	// Our chain's account ID type (we can't get away without mentioning it explicitly):

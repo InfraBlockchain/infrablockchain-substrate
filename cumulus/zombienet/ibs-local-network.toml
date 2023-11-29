@@ -42,27 +42,6 @@ ws_port = 7501
 name = "ferdie"
 validator = true
 args = ["-lparachain=debug", "-l=xcm=trace"]
-rpc_port = 7500
-ws_port = 7501
-
-[[relaychain.nodes]]
-name = "grace"
-validator = true
-args = ["-lparachain=debug", "-l=xcm=trace"]
-rpc_port = 7500
-ws_port = 7501
-
-[[relaychain.nodes]]
-name = "harry"
-validator = true
-args = ["-lparachain=debug", "-l=xcm=trace"]
-rpc_port = 7500
-ws_port = 7501
-
-[[relaychain.nodes]]
-name = "irene"
-validator = true
-args = ["-lparachain=debug", "-l=xcm=trace"]
 rpc_port = 7600
 ws_port = 7601
 
@@ -71,7 +50,6 @@ id = 1000
 chain = "asset-hub-infra-local"
 cumulus_based = true
 
-# run alice as parachain collator
 [[parachains.collators]]
 name = "asset-hub-alice"
 validator = true
@@ -80,7 +58,6 @@ command = "./target/release/infra-parachain"
 rpc_port = 9500
 ws_port = 9501
 
-# run alice as parachain collator
 [[parachains.collators]]
 name = "asset-hub-bob"
 validator = true
@@ -94,7 +71,6 @@ id = 1001
 chain = "contracts-infra-local"
 cumulus_based = true
 
-# run alice as parachain collator
 [[parachains.collators]]
 name = "contracts-infra-alice"
 validator = true
@@ -103,7 +79,6 @@ command = "./target/release/infra-parachain"
 rpc_port = 9700
 ws_port = 9701
 
-# run alice as parachain collator
 [[parachains.collators]]
 name = "contracts-infra-bob"
 validator = true
@@ -117,7 +92,6 @@ id = 1002
 chain = "did-infra-local"
 cumulus_based = true
 
-# run alice as parachain collator
 [[parachains.collators]]
 name = "did-infra-alice"
 validator = true
@@ -126,7 +100,6 @@ command = "./target/release/infra-parachain"
 rpc_port = 9900
 ws_port = 9901
 
-# run alice as parachain collator
 [[parachains.collators]]
 name = "did-infra-bob"
 validator = true
@@ -140,7 +113,6 @@ id = 2000
 chain = "urauth-local"
 cumulus_based = true
 
-# run alice as parachain collator
 [[parachains.collators]]
 name = "urauth-alice"
 validator = true
@@ -149,7 +121,6 @@ command = "./target/release/infra-parachain"
 rpc_port = 10100
 ws_port = 10101
 
-# run alice as parachain collator
 [[parachains.collators]]
 name = "urauth-bob"
 validator = true
@@ -157,3 +128,45 @@ args = ["-lparachain=debug", "-l=xcm=trace"]
 command = "./target/release/infra-parachain"
 rpc_port = 10200
 ws_port = 10201
+
+[[parachains]]
+id = 1200
+chain = "local"
+cumulus_based = true
+
+[[parachains.collators]]
+name = "evm-infra-alice"
+validator = true
+args = ["-lparachain=debug", "-l=xcm=trace"]
+command = "./target/release/infra-evm-node"
+rpc_port = 10300
+ws_port = 10301
+
+[[parachains.collators]]
+name = "evm-infra-bob"
+validator = true
+args = ["-lparachain=debug", "-l=xcm=trace"]
+command = "./target/release/infra-evm-node"
+rpc_port = 10400
+ws_port = 10401
+
+[[parachains]]
+id = 9999
+chain = "template-local"
+cumulus_based = true
+
+[[parachains.collators]]
+name = "template-alice"
+validator = true
+args = ["-lparachain=debug", "-l=xcm=trace"]
+command = "./target/release/infra-evm-node"
+rpc_port = 10500
+ws_port = 10501
+
+[[parachains.collators]]
+name = "template-bob"
+validator = true
+args = ["-lparachain=debug", "-l=xcm=trace"]
+command = "./target/release/infra-evm-node"
+rpc_port = 10600
+ws_port = 10601

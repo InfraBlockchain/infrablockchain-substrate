@@ -829,8 +829,8 @@ pub fn infra_relay_testnet_genesis(
 		xcm_pallet: Default::default(),
 		validator_election: infra_relay::ValidatorElectionConfig {
 			seed_trust_validators: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
-			total_number_of_validators: 4,
-			number_of_seed_trust_validators: 4,
+			total_number_of_validators: 6,
+			number_of_seed_trust_validators: 6,
 			..Default::default()
 		},
 	}
@@ -933,6 +933,8 @@ fn infra_relay_development_config_genesis(wasm_binary: &[u8]) -> infra_relay::Ru
 			get_authority_keys_from_seed_no_beefy("Bob"),
 			get_authority_keys_from_seed_no_beefy("Charlie"),
 			get_authority_keys_from_seed_no_beefy("Dave"),
+			get_authority_keys_from_seed_no_beefy("Eve"),
+			get_authority_keys_from_seed_no_beefy("Ferdie"),
 		],
 		get_account_id_from_seed::<sr25519::Public>("Alice"),
 		None,
