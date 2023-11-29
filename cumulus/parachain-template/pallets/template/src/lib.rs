@@ -38,6 +38,9 @@ pub mod pallet {
 	// https://docs.substrate.io/v3/runtime/storage#declaring-storage-items
 	pub type Something<T> = StorageValue<_, u32>;
 
+	#[pallet::storage]
+	pub type SomethingFixedFloat<T> = StorageValue<_, F64, ValueQuery>;
+
 	// Pallets use events to inform users when important changes are made.
 	// https://docs.substrate.io/v3/runtime/events-and-errors
 	#[pallet::event]
@@ -103,6 +106,27 @@ pub mod pallet {
 					Ok(().into())
 				},
 			}
+		}
+
+		#[pallet::call_index(2)]
+		#[pallet::weight(Weight::from_parts(10_000, 0) + T::DbWeight::get().writes(1))]
+		pub fn put_float(origin: OriginFor<T>, num: u64, denom: u64) -> DispatchResultWithPostInfo {
+			// Check that the extrinsic was signed and get the signer.
+			// This function will return an error if the extrinsic is not signed.
+			// https://docs.substrate.io/v3/runtime/origins
+			let _who = ensure_signed(origin)?;
+
+			let input: f64 = 126.625;
+
+			let soft_input: F64 = F64::from_native_f64(input);
+
+			// // Update storage.
+			<SomethingFixedFloat<T>>::put(soft_input);
+
+			// Emit an event.
+			Self::deposit_event(Event::SomethingStored(something, who));
+			// Return a successful DispatchResultWithPostInfo
+			Ok(().into())
 		}
 	}
 }

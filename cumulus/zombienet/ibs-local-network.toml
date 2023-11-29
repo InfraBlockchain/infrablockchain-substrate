@@ -2,8 +2,7 @@
 default_command = "../target/release/infrablockspace"
 default_args = ["-lparachain=debug", "-l=xcm=trace"]
 chain = "infra-relay-local"
-# "/Users/bclabs-raf/downloads/archive/infrablockspace"
-# 
+
 [[relaychain.nodes]]
 name = "alice"
 validator = true
@@ -70,7 +69,7 @@ ws_port = 9601
 
 [[parachains]]
 id = 1001
-chain = "contracts-hub-infra-local"
+chain = "contracts-infra-local"
 cumulus_based = true
 
 [[parachains.collators]]
@@ -91,7 +90,7 @@ ws_port = 9801
 
 [[parachains]]
 id = 1002
-chain = "did-hub-infra-local"
+chain = "did-infra-local"
 cumulus_based = true
 
 [[parachains.collators]]
@@ -112,14 +111,14 @@ ws_port = 10001
 
 [[parachains]]
 id = 2000
-chain = "urauth-infra-local"
+chain = "urauth-local"
 cumulus_based = true
 
 [[parachains.collators]]
 name = "urauth-alice"
 validator = true
 args = ["-lparachain=debug", "-l=xcm=trace"]
-command = "../target/release/infra-parachain"
+command = "./target/release/infra-parachain"
 rpc_port = 10100
 ws_port = 10101
 
@@ -127,6 +126,6 @@ ws_port = 10101
 name = "urauth-bob"
 validator = true
 args = ["-lparachain=debug", "-l=xcm=trace"]
-command = "../target/release/infra-parachain"
+command = "./target/release/infra-parachain"
 rpc_port = 10200
 ws_port = 10201

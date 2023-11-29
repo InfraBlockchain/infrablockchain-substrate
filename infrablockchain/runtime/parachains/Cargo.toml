@@ -110,7 +110,7 @@ std = [
 	"pallet-timestamp/std",
 	"pallet-vesting/std",
 	"parity-scale-codec/std",
-	"infrablockchain-core-primitives/std",
+	"infrablockspace-core-primitives/std",
 	"parachain-primitives/std",
 	"polkadot-runtime-metrics/std",
 	"primitives/std",
