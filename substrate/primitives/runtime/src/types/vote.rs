@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 /// Account Id type of vote candidate. Should be equal to the AccountId type of the Relay Chain
 pub type VoteAccountId = AccountId32;
 /// Weight of vote which is weight of transaction and asset id
-pub type VoteWeight = u128;
+pub type VoteWeight = softfloat::F64;
 /// Which asset to vote for
 pub type VoteAssetId = u32;
 
@@ -22,8 +22,8 @@ pub const MAX_VOTE_NUM: u32 = 16 * 1024;
 /// Aggregated votes with maximum amount `MAX_VOTE_NUM`
 pub type PotVotesResult = BoundedVec<PotVote, ConstU32<MAX_VOTE_NUM>>;
 
-#[derive(Encode, Decode, Clone, PartialEq, Eq, sp_core::RuntimeDebug, TypeInfo)]
-#[cfg_attr(feature = "std", derive(Default, Hash))]
+#[derive(Encode, Decode, Clone, PartialEq, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Default))]
 /// Single Pot vote type
 pub struct PotVote {
 	#[allow(missing_docs)]
@@ -31,7 +31,6 @@ pub struct PotVote {
 	#[allow(missing_docs)]
 	pub account_id: VoteAccountId,
 	#[allow(missing_docs)]
-	#[codec(compact)]
 	pub vote_weight: VoteWeight,
 }
 
@@ -46,7 +45,7 @@ impl PotVote {
 	}
 }
 
-#[derive(Encode, Decode, PartialEq, Eq, Clone, sp_core::RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, PartialEq, Eq, Clone, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 /// Transaction-as-a-Vote
 ///
@@ -90,7 +89,7 @@ impl PotVotes {
 		// Weight for asset id already existed
 		if let Some(old_weight) = self.votes.get_mut(&key) {
 			// Weight for asset id already existed
-			vote_weight = old_weight.saturating_add(vote_weight);
+			vote_weight = old_weight.add(vote_weight);
 		}
 		// We update value if vote count is not exceeded for given period
 		if self.increase_vote_count_if_not_exceeds() {
