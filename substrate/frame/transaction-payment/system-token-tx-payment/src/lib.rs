@@ -90,6 +90,7 @@ pub mod pallet {
 		/// has been paid by `who` in an asset `asset_id`.
 		AssetTxFeePaid {
 			fee_payer: T::AccountId,
+			actual_fee: BalanceOf<T>,
 			fee_detail: FeeDetail<SystemTokenId, AssetBalanceOf<T>>,
 			tip: Option<AssetBalanceOf<T>>,
 			vote_candidate: Option<VoteAccountId>,
@@ -305,6 +306,7 @@ where
 						(Some(vote_candidate), Some(system_token_id)) => {
 							Pallet::<T>::deposit_event(Event::<T>::AssetTxFeePaid {
 								fee_payer: who,
+								actual_fee,
 								fee_detail: FeeDetail::<SystemTokenId, AssetBalanceOf<T>>::new(
 									system_token_id.clone(),
 									converted_fee,
@@ -323,6 +325,7 @@ where
 						(None, Some(system_token_id)) =>
 							Pallet::<T>::deposit_event(Event::<T>::AssetTxFeePaid {
 								fee_payer: who,
+								actual_fee,
 								fee_detail: FeeDetail::<SystemTokenId, AssetBalanceOf<T>>::new(
 									system_token_id.clone(),
 									converted_fee,
