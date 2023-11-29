@@ -46,7 +46,7 @@
 //! `TrustedTeleporter`.
 
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(not(feature = "std"), feature(alloc_error_handler))]
+#![cfg_attr(enable_alloc_error_handler, feature(alloc_error_handler))]
 #![recursion_limit = "256"]
 
 // Make the WASM_BINARY available, but hide WASM_BINARY_BLOATY.
@@ -150,6 +150,7 @@ mod wasm_handlers {
 		::core::arch::wasm32::unreachable();
 	}
 
+	#[cfg(enable_alloc_error_handler)]
 	#[alloc_error_handler]
 	pub fn oom(_: core::alloc::Layout) -> ! {
 		log::error!("Runtime memory exhausted. Aborting");
