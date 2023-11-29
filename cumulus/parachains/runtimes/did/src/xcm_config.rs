@@ -1,4 +1,4 @@
-// Copyright (C) 2022 Parity Technologies (UK) Ltd.
+// Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: Apache-2.0
 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,32 +23,35 @@ use frame_support::{
 	match_types, parameter_types,
 	traits::{ConstU32, Contains, Everything, Nothing, PalletInfoAccess},
 };
-
 use pallet_xcm::XcmPassthrough;
 use parachain_primitives::primitives::Sibling;
-use parachains_common::xcm_config::AssetFeeAsExistentialDepositMultiplier;
+use parachains_common::{
+	infra_relay::currency::CENTS, xcm_config::AssetFeeAsExistentialDepositMultiplier,
+};
 use sp_runtime::traits::ConvertInto;
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowSubscriptionsFrom,
-	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, CurrencyAdapter, EnsureXcmOrigin,
-	FungiblesAdapter, IsConcrete, LocalMint, NativeAsset, NonLocalMint, ParentAsSuperuser,
-	ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
-	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
-	WeightInfoBounds,
+	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, EnsureXcmOrigin, FungiblesAdapter,
+	LocalMint, NonLocalMint, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
+	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
+	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, WeightInfoBounds,
+	WithUniqueTopic,
 };
 use xcm_executor::{traits::WithOriginFilter, XcmExecutor};
+
 parameter_types! {
+	pub const RelayLocation: MultiLocation = MultiLocation::parent();
 	pub UniversalLocationNetworkId: NetworkId = UniversalLocation::get().global_consensus().unwrap();
 	pub const NativeLocation: MultiLocation = Here.into_location();
 	pub const RelayNetwork: Option<NetworkId> = Some(NetworkId::InfraRelay);
 	pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
 	pub UniversalLocation: InteriorMultiLocation =
 		X2(GlobalConsensus(RelayNetwork::get().unwrap()), Parachain(ParachainInfo::parachain_id().into()));
-	pub const Local: MultiLocation = MultiLocation::here();
 	pub TrustBackedAssetsPalletLocation: MultiLocation =
 		PalletInstance(<Assets as PalletInfoAccess>::index() as u8).into();
 	pub CheckingAccount: AccountId = IbsXcm::check_account();
+	pub const ExecutiveBody: BodyId = BodyId::Executive;
 }
 
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
@@ -62,20 +65,6 @@ pub type LocationToAccountId = (
 	// Straight up local `AccountId32` origins just alias directly to `AccountId`.
 	AccountId32Aliases<RelayNetwork, AccountId>,
 );
-
-/// Means for transacting the native currency on this chain.
-pub type CurrencyTransactor = CurrencyAdapter<
-	// Use this currency:
-	Balances,
-	// Use this currency when it is a fungible asset matching the given location or name:
-	IsConcrete<NativeLocation>,
-	// Convert an XCM MultiLocation into a local account id:
-	LocationToAccountId,
-	// Our chain's account ID type (we can't get away without mentioning it explicitly):
-	AccountId,
-	// We don't track any teleports of `Balances`.
-	(),
->;
 
 /// `AssetId/Balancer` converter for `TrustBackedAssets``
 pub type TrustBackedAssetsConvertedConcreteId =
@@ -164,10 +153,6 @@ parameter_types! {
 }
 
 match_types! {
-	pub type ParentOrParentsExecutivePlurality: impl Contains<MultiLocation> = {
-		MultiLocation { parents: 1, interior: Here } |
-		MultiLocation { parents: 1, interior: X1(Plurality { id: BodyId::Executive, .. }) }
-	};
 	pub type ParentOrParentsPlurality: impl Contains<MultiLocation> = {
 		MultiLocation { parents: 1, interior: Here } |
 		MultiLocation { parents: 1, interior: X1(Plurality { .. }) }
@@ -178,13 +163,6 @@ match_types! {
 	};
 }
 
-/// A call filter for the XCM Transact instruction. This is a temporary measure until we properly
-/// account for proof size weights.
-///
-/// Calls that are allowed through this filter must:
-/// 1. Have a fixed weight;
-/// 2. Cannot lead to another call being made;
-/// 3. Have a defined proof size weight, e.g. no unbounded vecs in call parameters.
 pub struct SafeCallFilter;
 impl Contains<RuntimeCall> for SafeCallFilter {
 	fn contains(call: &RuntimeCall) -> bool {
@@ -302,27 +280,12 @@ pub type AssetFeeAsExistentialDepositMultiplierFeeCharger = AssetFeeAsExistentia
 	(),
 >;
 
-parameter_types! {
-	pub const ItestInfraSystemLocation: MultiLocation = X2(PalletInstance(50), GeneralIndex(99)).into_location();
-	pub const ItestInfraSystemFilter: MultiAssetFilter = Wild(AllOf { fun: WildFungible, id: Concrete(ItestInfraSystemLocation::get()) });
-
-	pub const TemplateParachain: MultiLocation = Parachain(2000).into_exterior(1);
-	pub const InfraSystem: MultiLocation = Parachain(1000).into_exterior(1);
-
-	pub const ItestForTemplateParachain: (MultiAssetFilter, MultiLocation) = (ItestInfraSystemFilter::get(), TemplateParachain::get());
-}
-
-pub type TrustedTeleporters = (xcm_builder::Case<ItestForTemplateParachain>, NativeAsset);
-
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
 	type RuntimeCall = RuntimeCall;
 	type XcmSender = XcmRouter;
 	type AssetTransactor = AssetTransactors;
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
-	// Statemint does not recognize a reserve location for any asset. This does not prevent
-	// Statemint acting _as_ a reserve location for DOT and assets created under `pallet-assets`.
-	// For DOT, users must use teleport where allowed (e.g. with the Relay Chain).
 	type IsReserve = ();
 	type IsTeleporter = ();
 	type UniversalLocation = UniversalLocation;
@@ -367,12 +330,12 @@ pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, R
 
 /// The means for routing XCM messages which are not for local execution into the right message
 /// queues.
-pub type XcmRouter = (
+pub type XcmRouter = WithUniqueTopic<(
 	// Two routers - use UMP to communicate with the relay chain:
 	cumulus_primitives_utility::ParentAsUmp<ParachainSystem, IbsXcm, ()>,
 	// ..and XCMP to communicate with the sibling chains.
 	XcmpQueue,
-);
+)>;
 
 #[cfg(feature = "runtime-benchmarks")]
 parameter_types! {
@@ -407,6 +370,7 @@ impl pallet_xcm::Config for Runtime {
 	type TrustedLockers = ();
 	type SovereignAccountOf = LocationToAccountId;
 	type MaxLockers = ConstU32<8>;
+	// FIXME: Replace with benchmarked weight info
 	type WeightInfo = crate::weights::pallet_xcm::WeightInfo<Runtime>;
 	#[cfg(feature = "runtime-benchmarks")]
 	type ReachableDest = ReachableDest;
@@ -418,4 +382,11 @@ impl pallet_xcm::Config for Runtime {
 impl cumulus_pallet_xcm::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
+}
+
+parameter_types! {
+	/// The asset ID for the asset that we use to pay for message delivery fees.
+	pub FeeAssetId: AssetId = Concrete(RelayLocation::get());
+	/// The base fee for the message delivery fees.
+	pub const BaseDeliveryFee: u128 = CENTS.saturating_mul(3);
 }
