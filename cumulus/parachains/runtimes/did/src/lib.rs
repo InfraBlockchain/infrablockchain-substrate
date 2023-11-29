@@ -118,7 +118,8 @@ use parachains_common::{
 	types::{AccountId, AssetId, AuraId, Balance, BlockNumber, Hash, Nonce, Signature},
 };
 use xcm_config::{
-	DotLocation, TrustBackedAssetsConvertedConcreteId, XcmConfig, XcmOriginToTransactDispatchOrigin,
+	NativeLocation, TrustBackedAssetsConvertedConcreteId, XcmConfig,
+	XcmOriginToTransactDispatchOrigin,
 };
 
 #[cfg(any(feature = "std", test))]
@@ -545,7 +546,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
 	type ControllerOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
-		EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>,
+		EnsureXcm<IsMajorityOfBody<NativeLocation, ExecutiveBody>>,
 	>;
 	type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
 	type PriceForSiblingDelivery = ();
@@ -591,8 +592,10 @@ parameter_types! {
 }
 
 /// We allow root and the Relay Chain council to execute privileged collator selection operations.
-pub type CollatorSelectionUpdateOrigin =
-	EitherOfDiverse<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>>;
+pub type CollatorSelectionUpdateOrigin = EitherOfDiverse<
+	EnsureRoot<AccountId>,
+	EnsureXcm<IsMajorityOfBody<NativeLocation, ExecutiveBody>>,
+>;
 
 impl pallet_collator_selection::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -1026,7 +1029,7 @@ impl_runtime_apis! {
 				{
 					let balance = Balances::free_balance(account.clone());
 					if balance > 0 {
-						vec![convert_balance::<DotLocation, Balance>(balance)?]
+						vec![convert_balance::<NativeLocation, Balance>(balance)?]
 					} else {
 						vec![]
 					}
@@ -1104,14 +1107,14 @@ impl_runtime_apis! {
 			impl cumulus_pallet_session_benchmarking::Config for Runtime {}
 
 			use xcm::latest::prelude::*;
-			use xcm_config::{DotLocation, MaxAssetsIntoHolding};
+			use xcm_config::{NativeLocation, MaxAssetsIntoHolding};
 			use pallet_xcm_benchmarks::asset_instance_from;
 
 			impl pallet_xcm_benchmarks::Config for Runtime {
 				type XcmConfig = xcm_config::XcmConfig;
 				type AccountIdConverter = xcm_config::LocationToAccountId;
 				fn valid_destination() -> Result<MultiLocation, BenchmarkError> {
-					Ok(DotLocation::get())
+					Ok(NativeLocation::get())
 				}
 				fn worst_case_holding(depositable_count: u32) -> MultiAssets {
 					// A mix of fungible, non-fungible, and concrete assets.
@@ -1134,7 +1137,7 @@ impl_runtime_apis! {
 						.collect::<Vec<_>>();
 
 					assets.push(MultiAsset {
-						id: Concrete(DotLocation::get()),
+						id: Concrete(NativeLocation::get()),
 						fun: Fungible(1_000_000 * UNITS),
 					});
 					assets.into()
@@ -1143,8 +1146,8 @@ impl_runtime_apis! {
 
 			parameter_types! {
 				pub const TrustedTeleporter: Option<(MultiLocation, MultiAsset)> = Some((
-					DotLocation::get(),
-					MultiAsset { fun: Fungible(1 * UNITS), id: Concrete(DotLocation::get()) },
+					NativeLocation::get(),
+					MultiAsset { fun: Fungible(1 * UNITS), id: Concrete(NativeLocation::get()) },
 				));
 				pub const CheckedAccount: Option<(AccountId, xcm_builder::MintLocation)> = None;
 			}
@@ -1157,7 +1160,7 @@ impl_runtime_apis! {
 
 				fn get_multi_asset() -> MultiAsset {
 					MultiAsset {
-						id: Concrete(DotLocation::get()),
+						id: Concrete(NativeLocation::get()),
 						fun: Fungible(1 * UNITS),
 					}
 				}
@@ -1179,16 +1182,16 @@ impl_runtime_apis! {
 				}
 
 				fn transact_origin_and_runtime_call() -> Result<(MultiLocation, RuntimeCall), BenchmarkError> {
-					Ok((DotLocation::get(), frame_system::Call::remark_with_event { remark: vec![] }.into()))
+					Ok((NativeLocation::get(), frame_system::Call::remark_with_event { remark: vec![] }.into()))
 				}
 
 				fn subscribe_origin() -> Result<MultiLocation, BenchmarkError> {
-					Ok(DotLocation::get())
+					Ok(NativeLocation::get())
 				}
 
 				fn claimable_asset() -> Result<(MultiLocation, MultiLocation, MultiAssets), BenchmarkError> {
-					let origin = DotLocation::get();
-					let assets: MultiAssets = (Concrete(DotLocation::get()), 1_000 * UNITS).into();
+					let origin = NativeLocation::get();
+					let assets: MultiAssets = (Concrete(NativeLocation::get()), 1_000 * UNITS).into();
 					let ticket = MultiLocation { parents: 0, interior: Here };
 					Ok((origin, ticket, assets))
 				}

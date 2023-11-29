@@ -262,10 +262,20 @@ fn contracts_infra_genesis(
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
 			..Default::default()
 		},
-		// sudo: contracts_infra_runtime::SudoConfig {
-		// 	key: Some(
-		// 		hex!["2681a28014e7d3a5bfb32a003b3571f53c408acbc28d351d6bf58f5028c4ef14"].into(),
-		// 	),
-		// },
+		assets: contracts_infra_runtime::AssetsConfig {
+			assets: vec![(
+				99,                                                   // asset_id
+				get_account_id_from_seed::<sr25519::Public>("Alice"), // owner
+				true,                                                 // is_sufficient
+				1000,                                                 // min_balance
+			)],
+			metadata: vec![(99, "iBOOT".into(), "iBOOT".into(), 2)],
+			accounts: vec![(
+				99,
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				100_000_000_000, // 1_000_000_000 iTEST
+			)],
+			..Default::default()
+		},
 	}
 }

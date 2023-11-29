@@ -16,7 +16,9 @@ mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
+	use frame_support::{
+		dispatch::DispatchResultWithPostInfo, pallet_prelude::*, sp_runtime::FixedU128,
+	};
 	use frame_system::pallet_prelude::*;
 	use softfloat::F64;
 
@@ -38,8 +40,12 @@ pub mod pallet {
 	// https://docs.substrate.io/v3/runtime/storage#declaring-storage-items
 	pub type Something<T> = StorageValue<_, u32>;
 
+	// The pallet's runtime storage items.
+	// https://docs.substrate.io/v3/runtime/storage
 	#[pallet::storage]
-	pub type SomethingFixedFloat<T> = StorageValue<_, F64, ValueQuery>;
+	// Learn more about declaring storage items:
+	// https://docs.substrate.io/v3/runtime/storage#declaring-storage-items
+	pub type SomethingFixedFloat<T> = StorageValue<_, FixedU128, ValueQuery>;
 
 	// Pallets use events to inform users when important changes are made.
 	// https://docs.substrate.io/v3/runtime/events-and-errors
@@ -110,21 +116,17 @@ pub mod pallet {
 
 		#[pallet::call_index(2)]
 		#[pallet::weight(Weight::from_parts(10_000, 0) + T::DbWeight::get().writes(1))]
-		pub fn put_float(origin: OriginFor<T>, num: u64, denom: u64) -> DispatchResultWithPostInfo {
+		pub fn put_float(origin: OriginFor<T>, input: FixedU128) -> DispatchResultWithPostInfo {
 			// Check that the extrinsic was signed and get the signer.
 			// This function will return an error if the extrinsic is not signed.
 			// https://docs.substrate.io/v3/runtime/origins
-			let who = ensure_signed(origin)?;
+			let _who = ensure_signed(origin)?;
 
-			let input: f64 = num as f64 / denom as f64;
-
-			let soft_input: F64 = F64::from_native_f64(input);
-
-			// // Update storage.
-			<SomethingFixedFloat<T>>::put(soft_input);
+			// Update storage.
+			<SomethingFixedFloat<T>>::put(input);
 
 			// Emit an event.
-			Self::deposit_event(Event::SomethingStoredF64(soft_input, who));
+			// Self::deposit_event(Event::SomethingStored(something, who));
 			// Return a successful DispatchResultWithPostInfo
 			Ok(().into())
 		}
