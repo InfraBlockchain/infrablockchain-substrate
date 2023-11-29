@@ -128,24 +128,3 @@ args = ["-lparachain=debug", "-l=xcm=trace"]
 command = "./target/release/infra-parachain"
 rpc_port = 10200
 ws_port = 10201
-
-[[parachains]]
-id = 1200
-chain = "local"
-cumulus_based = true
-
-[[parachains.collators]]
-name = "evm-infra-alice"
-validator = true
-args = ["-lparachain=debug", "-l=xcm=trace"]
-command = "./target/release/infra-evm-node"
-rpc_port = 10300
-ws_port = 10301
-
-[[parachains.collators]]
-name = "evm-infra-bob"
-validator = true
-args = ["-lparachain=debug", "-l=xcm=trace"]
-command = "./target/release/infra-evm-node"
-rpc_port = 10400
-ws_port = 10401
