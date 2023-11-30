@@ -154,7 +154,7 @@ pub use extra_mutator::*;
 mod functions;
 mod impl_fungibles;
 mod impl_stored_map;
-mod types;
+pub mod types;
 pub use types::*;
 
 use scale_info::TypeInfo;
@@ -415,7 +415,7 @@ pub mod pallet {
 						sufficients: 0,
 						approvals: 0,
 						status: AssetStatus::Live,
-						system_token_weight: DEFAULT_SYSTEM_TOKEN_WEIGHT,
+						system_token_weight: BASE_SYSTEM_TOKEN_WEIGHT,
 					},
 				);
 			}
@@ -653,7 +653,7 @@ pub mod pallet {
 					sufficients: 0,
 					approvals: 0,
 					status: AssetStatus::Live,
-					system_token_weight: DEFAULT_SYSTEM_TOKEN_WEIGHT,
+					system_token_weight: BASE_SYSTEM_TOKEN_WEIGHT,
 				},
 			);
 			ensure!(T::CallbackHandle::created(&id, &owner).is_ok(), Error::<T, I>::CallbackFailed);

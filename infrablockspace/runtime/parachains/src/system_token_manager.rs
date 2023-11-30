@@ -32,6 +32,7 @@ use sp_runtime::{
 };
 use sp_std::prelude::*;
 use types::*;
+pub use pallet_assets::types::BASE_SYSTEM_TOKEN_WEIGHT;
 
 #[frame_support::pallet(dev_mode)]
 pub mod pallet {
@@ -1104,8 +1105,8 @@ impl<T: Config> SystemTokenInterface for Pallet<T> {
 	fn adjusted_weight(original: SystemTokenId, vote_weight: VoteWeight) -> VoteWeight {
 		// updated_vote_weight = vote_weight * system_token_weight / base_system_token_weight
 		if let Some(p) = <SystemTokenProperties<T>>::get(original) {
-			let system_token_weight = p.system_token_weight.map_or(BASE_WEIGHT, |w| w);
-			return vote_weight.saturating_mul(system_token_weight) / BASE_WEIGHT
+			let system_token_weight = p.system_token_weight.map_or(BASE_SYSTEM_TOKEN_WEIGHT, |w| w);
+			return vote_weight.saturating_mul(system_token_weight) / BASE_SYSTEM_TOKEN_WEIGHT
 		}
 		vote_weight
 	}
@@ -1138,8 +1139,6 @@ pub mod types {
 		#[default]
 		Pending,
 	}
-
-	pub const BASE_WEIGHT: u128 = 100_000;
 
 	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, Default, TypeInfo)]
 	pub struct ParaCallMetadata {

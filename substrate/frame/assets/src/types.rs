@@ -35,9 +35,12 @@ pub(super) type AssetAccountOf<T, I> = AssetAccount<
 pub(super) type ExistenceReasonOf<T, I> =
 	ExistenceReason<DepositBalanceOf<T, I>, <T as SystemConfig>::AccountId>;
 
-pub(super) const DEFAULT_SYSTEM_TOKEN_WEIGHT: SystemTokenWeight = 1_000_000;
+pub const BASE_SYSTEM_TOKEN_WEIGHT: SystemTokenWeight = 1_000_000;
 
 pub(super) const CORRECTION_PARA_FEE_RATE: u128 = 1_000_000;
+
+/// Correction constant for converting the actual gas fee of ``asset_transfer` which is same with 0.05 iUSD
+pub(super) const CORRECTION_GAS_FEE: u128 = 25;
 
 /// AssetStatus holds the current state of the asset. It could either be Live and available for use,
 /// or in a Destroying state.
@@ -331,7 +334,7 @@ where
 		// balance * para_fee_rate / (system_token_weight * correction_para_fee_rate)
 		// ToDo: Divisor should be changed based on the decimals
 		Ok(FixedU128::saturating_from_rational(
-			para_fee_rate,
+			para_fee_rate * CORRECTION_GAS_FEE,
 			asset.system_token_weight * CORRECTION_PARA_FEE_RATE,
 		)
 		.saturating_mul_int(balance))
