@@ -35,12 +35,12 @@ use frame_system::pallet_prelude::*;
 pub use pallet::*;
 use pallet_validator_election::{RewardInterface, SessionIndex};
 use scale_info::TypeInfo;
+use softfloat::F64;
 use sp_runtime::{
 	traits::{Convert, StaticLookup},
 	types::{ParaId, SystemTokenId, VoteWeight},
 };
 use sp_std::prelude::*;
-
 type AccountIdLookupOf<T> = <<T as frame_system::Config>::Lookup as StaticLookup>::Source;
 
 /// A type for representing the validator id in a session.
@@ -48,14 +48,14 @@ pub type ValidatorId<T> = <<T as Config>::ValidatorSet as ValidatorSet<
 	<T as frame_system::Config>::AccountId,
 >>::ValidatorId;
 
-#[derive(Encode, Decode, Clone, PartialEq, Eq, sp_core::RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
 pub struct ValidatorReward {
 	pub system_token_id: SystemTokenId,
-	pub amount: u128,
+	pub amount: F64,
 }
 
 impl ValidatorReward {
-	pub fn new(system_token_id: SystemTokenId, amount: u128) -> Self {
+	pub fn new(system_token_id: SystemTokenId, amount: F64) -> Self {
 		Self { system_token_id, amount }
 	}
 }
@@ -196,12 +196,10 @@ impl<T: Config> Pallet<T> {
 		system_token_id: SystemTokenId,
 		amount: VoteWeight,
 	) {
-		let amount: u128 = amount.into();
-
 		if let Some(mut rewards) = RewardsByParaId::<T>::get(session_index, para_id.clone()) {
 			for reward in rewards.iter_mut() {
 				if reward.system_token_id == system_token_id {
-					reward.amount += amount;
+					reward.amount = reward.amount.add(amount);
 				}
 			}
 			RewardsByParaId::<T>::insert(session_index, para_id.clone(), rewards.clone());

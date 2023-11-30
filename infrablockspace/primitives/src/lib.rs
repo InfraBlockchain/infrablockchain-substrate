@@ -46,7 +46,7 @@ pub use v6::{
 	ExecutorParam, ExecutorParams, ExecutorParamsHash, ExplicitDisputeStatement, GroupIndex,
 	GroupRotationInfo, Hash, HashT, HeadData, Header, HorizontalMessages, HrmpChannelId, Id,
 	InboundDownwardMessage, InboundHrmpMessage, IndexedVec, InherentData,
-	InvalidDisputeStatementKind, MilliBlockTimeWeight, Moment, MultiDisputeStatementSet, Nonce,
+	InvalidDisputeStatementKind, Moment, MultiDisputeStatementSet, Nonce,
 	OccupiedCore, OccupiedCoreAssumption, OutboundHrmpMessage, ParathreadClaim, ParathreadEntry,
 	PersistedValidationData, PvfCheckStatement, PvfExecTimeoutKind, PvfPrepTimeoutKind,
 	RuntimeMetricLabel, RuntimeMetricLabelValue, RuntimeMetricLabelValues, RuntimeMetricLabels,

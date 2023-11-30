@@ -7,7 +7,6 @@ use bounded_collections::{BoundedVec, ConstU32};
 use sp_core::crypto::AccountId32;
 use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 
-#[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
 /// Account Id type of vote candidate. Should be equal to the AccountId type of the Relay Chain
@@ -22,8 +21,8 @@ pub const MAX_VOTE_NUM: u32 = 16 * 1024;
 /// Aggregated votes with maximum amount `MAX_VOTE_NUM`
 pub type PotVotesResult = BoundedVec<PotVote, ConstU32<MAX_VOTE_NUM>>;
 
-#[derive(Encode, Decode, Clone, PartialEq, TypeInfo)]
-#[cfg_attr(feature = "std", derive(Default))]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Default, Hash))]
 /// Single Pot vote type
 pub struct PotVote {
 	#[allow(missing_docs)]
@@ -46,7 +45,7 @@ impl PotVote {
 }
 
 #[derive(Encode, Decode, PartialEq, Eq, Clone, Debug, TypeInfo)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+// #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 /// Transaction-as-a-Vote
 ///
 /// Vote is included in transaction and send to blockchain.

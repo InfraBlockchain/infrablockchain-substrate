@@ -14,16 +14,11 @@ codec = { package = "parity-scale-codec", version = "3.6.1", default-features = 
     "max-encoded-len",
 ] }
 scale-info = { version = "2.9.0", default-features = false, features = ["derive"] }
-sp-runtime = { path = "../runtime", default-features = false }
+serde = { version = "1.0.188", default-features = false, features = ["derive", "alloc"] }
 
 [dev-dependencies]
 cfg-if = "1"
 
-[profile.test]
-opt-level = 3
-lto = "fat"
-debug-assertions = true
-
 [features]
 default = ["std"]
-std = ["sp-runtime/std"]
+std = ["serde/std"]

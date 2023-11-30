@@ -23,6 +23,7 @@ pub use frame_support::{
 use frame_system::pallet_prelude::*;
 pub use pallet::*;
 use pallet_asset_link::AssetIdOf;
+use softfloat::F64;
 use sp_runtime::{
 	traits::StaticLookup,
 	types::{
@@ -1102,10 +1103,14 @@ impl<T: Config> SystemTokenInterface for Pallet<T> {
 		None
 	}
 	fn adjusted_weight(original: SystemTokenId, vote_weight: VoteWeight) -> VoteWeight {
-		// updated_vote_weight = vote_weight * system_token_weight / base_system_token_weight
 		if let Some(p) = <SystemTokenProperties<T>>::get(original) {
-			let system_token_weight = p.system_token_weight.map_or(BASE_WEIGHT, |w| w);
-			return vote_weight.saturating_mul(system_token_weight) / BASE_WEIGHT
+			let system_token_weight = {
+				let w: u32 = p.system_token_weight.map_or(BASE_WEIGHT, |w| w);
+				let system_token_weight = F64::from_i32(w as i32);
+				system_token_weight
+			};
+			let base_weight = F64::from_i32(BASE_WEIGHT as i32);
+			return vote_weight.mul(system_token_weight) / BASE_WEIGHT
 		}
 		vote_weight
 	}
@@ -1139,7 +1144,7 @@ pub mod types {
 		Pending,
 	}
 
-	pub const BASE_WEIGHT: u128 = 100_000;
+	pub const BASE_WEIGHT: u32 = 1_000_000;
 
 	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, Default, TypeInfo)]
 	pub struct ParaCallMetadata {
