@@ -33,6 +33,7 @@ use sp_runtime::{
 };
 use sp_std::prelude::*;
 use types::*;
+pub use pallet_assets::types::BASE_SYSTEM_TOKEN_WEIGHT;
 
 #[frame_support::pallet(dev_mode)]
 pub mod pallet {
