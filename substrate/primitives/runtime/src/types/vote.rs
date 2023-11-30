@@ -43,7 +43,7 @@ impl PotVote {
 }
 
 #[derive(Encode, Decode, PartialEq, Eq, Clone, Debug, TypeInfo)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+// #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 /// Transaction-as-a-Vote
 ///
 /// Vote is included in transaction and send to blockchain.

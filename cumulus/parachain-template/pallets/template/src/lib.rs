@@ -114,9 +114,9 @@ pub mod pallet {
 			// Check that the extrinsic was signed and get the signer.
 			// This function will return an error if the extrinsic is not signed.
 			// https://docs.substrate.io/v3/runtime/origins
-			let _who = ensure_signed(origin)?;
+			let who = ensure_signed(origin)?;
 
-			let input: f64 = 126.625;
+			let input: f64 = num as f64 / denom as f64;
 
 			let soft_input: F64 = F64::from_native_f64(input);
 
@@ -124,7 +124,7 @@ pub mod pallet {
 			<SomethingFixedFloat<T>>::put(soft_input);
 
 			// Emit an event.
-			Self::deposit_event(Event::SomethingStored(something, who));
+			Self::deposit_event(Event::SomethingStoredF64(soft_input, who));
 			// Return a successful DispatchResultWithPostInfo
 			Ok(().into())
 		}

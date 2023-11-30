@@ -67,10 +67,10 @@ command = "../target/release/infra-parachain"
 rpc_port = 9600
 ws_port = 9601
 
-[[parachains]]
-id = 1001
-chain = "contracts-infra-local"
-cumulus_based = true
+# [[parachains]]
+# id = 1001
+# chain = "contracts-infra-local"
+# cumulus_based = true
 
 [[parachains.collators]]
 name = "contracts-infra-alice"
@@ -88,10 +88,10 @@ command = "../target/release/infra-parachain"
 rpc_port = 9800
 ws_port = 9801
 
-[[parachains]]
-id = 1002
-chain = "did-infra-local"
-cumulus_based = true
+# [[parachains]]
+# id = 1002
+# chain = "did-infra-local"
+# cumulus_based = true
 
 [[parachains.collators]]
 name = "did-infra-alice"
@@ -110,12 +110,12 @@ rpc_port = 10000
 ws_port = 10001
 
 [[parachains]]
-id = 2000
-chain = "urauth-local"
+id = 9999
+chain = "parachain-template-local"
 cumulus_based = true
 
 [[parachains.collators]]
-name = "urauth-alice"
+name = "template-alice"
 validator = true
 args = ["-lparachain=debug", "-l=xcm=trace"]
 command = "./target/release/infra-parachain"
@@ -123,7 +123,7 @@ rpc_port = 10100
 ws_port = 10101
 
 [[parachains.collators]]
-name = "urauth-bob"
+name = "template-bob"
 validator = true
 args = ["-lparachain=debug", "-l=xcm=trace"]
 command = "./target/release/infra-parachain"
