@@ -11160,7 +11160,7 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serde",
- "softfloat",
+ "softfloat 1.0.0",
  "sp-core",
  "sp-io",
  "sp-runtime",
@@ -14025,7 +14025,7 @@ dependencies = [
  "scale-info",
  "serde",
  "serde_json",
- "softfloat",
+ "softfloat 1.0.0 (git+https://github.com/energyGiver/softfloat.git)",
  "sp-api",
  "sp-application-crypto",
  "sp-core",
@@ -16372,6 +16372,16 @@ dependencies = [
 [[package]]
 name = "softfloat"
 version = "1.0.0"
+dependencies = [
+ "cfg-if",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-runtime",
+]
+
+[[package]]
+name = "softfloat"
+version = "1.0.0"
 source = "git+https://github.com/energyGiver/softfloat.git#c711cabdb54c6c696e7fcd5fd3e2e8e627f6b2b8"
 dependencies = [
  "parity-scale-codec",
@@ -17102,7 +17112,7 @@ dependencies = [
  "scale-info",
  "serde",
  "serde_json",
- "softfloat",
+ "softfloat 1.0.0 (git+https://github.com/energyGiver/softfloat.git)",
  "sp-api",
  "sp-application-crypto",
  "sp-arithmetic",

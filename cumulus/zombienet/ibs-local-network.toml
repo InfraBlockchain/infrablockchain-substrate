@@ -66,10 +66,10 @@ args = ["-lparachain=debug", "-l=xcm=trace"]
 rpc_port = 7600
 ws_port = 7601
 
-# [[parachains]]
-# id = 1000
-# chain = "asset-hub-infra-local"
-# cumulus_based = true
+[[parachains]]
+id = 1000
+chain = "asset-hub-infra-local"
+cumulus_based = true
 
 # run alice as parachain collator
 [[parachains.collators]]
@@ -89,10 +89,10 @@ command = "./target/release/infra-parachain"
 rpc_port = 9600
 ws_port = 9601
 
-# [[parachains]]
-# id = 1001
-# chain = "contracts-infra-local"
-# cumulus_based = true
+[[parachains]]
+id = 1001
+chain = "contracts-infra-local"
+cumulus_based = true
 
 # run alice as parachain collator
 [[parachains.collators]]
@@ -112,10 +112,10 @@ command = "./target/release/infra-parachain"
 rpc_port = 9800
 ws_port = 9801
 
-# [[parachains]]
-# id = 1002
-# chain = "did-infra-local"
-# cumulus_based = true
+[[parachains]]
+id = 1002
+chain = "did-infra-local"
+cumulus_based = true
 
 # run alice as parachain collator
 [[parachains.collators]]
@@ -136,8 +136,8 @@ rpc_port = 10000
 ws_port = 10001
 
 [[parachains]]
-id = 9999
-chain = "parachain-template-local"
+id = 2000
+chain = "urauth-local"
 cumulus_based = true
 
 # run alice as parachain collator
