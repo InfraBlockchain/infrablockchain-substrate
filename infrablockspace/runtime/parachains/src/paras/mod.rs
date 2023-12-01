@@ -1925,7 +1925,8 @@ impl<T: Config> Pallet<T> {
 				let known_code = CodeByHash::<T>::contains_key(&code_hash);
 				weight += T::DbWeight::get().reads(1);
 
-				if known_code {
+				// Temporarily disable the PVF pre-checking.
+				if true || known_code {
 					// The code is known and there is no active PVF vote for it meaning it is
 					// already checked -- fast track the PVF checking into the accepted state.
 					weight += T::DbWeight::get().reads(1);
