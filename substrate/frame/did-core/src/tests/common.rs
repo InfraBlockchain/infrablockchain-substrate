@@ -4,7 +4,7 @@ use crate::{
 	accumulator, anchor, attest, blob,
 	common::{self, StateChange, ToStateChange},
 	did::{self, Did, DidKey, DidSignature},
-	master, offchain_signatures, revoke, status_list_credential,
+	offchain_signatures, revoke, status_list_credential, trusted_entity,
 };
 
 use crate::{
@@ -41,8 +41,8 @@ frame_support::construct_runtime!(
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		DIDModule: did::{Pallet, Call, Storage, Event<T>, Config<T>},
 		RevoMod: revoke::{Pallet, Call, Storage, Event},
+		TrustedEntityMod: trusted_entity::{Pallet, Call, Storage, Event},
 		BlobMod: blob::{Pallet, Call, Storage},
-		MasterMod: master::{Pallet, Call, Storage, Event<T>, Config<T>},
 		AnchorMod: anchor::{Pallet, Call, Storage, Event<T>},
 		AttestMod: attest::{Pallet, Call, Storage},
 		SignatureMod: offchain_signatures::{Pallet, Call, Storage, Event},
@@ -56,12 +56,12 @@ frame_support::construct_runtime!(
 pub enum TestEvent {
 	Did(crate::did::Event<Test>),
 	Revoke(crate::revoke::Event),
-	Master(crate::master::Event<Test>),
 	Anchor(crate::anchor::Event<Test>),
 	Unknown,
 	OffchainSignature(offchain_signatures::Event),
 	Accum(accumulator::Event),
 	StatusListCredential(status_list_credential::Event),
+	TrustedEntity(trusted_entity::Event),
 }
 
 impl From<frame_system::Event<Test>> for TestEvent {
@@ -106,12 +106,6 @@ impl From<crate::anchor::Event<Test>> for TestEvent {
 	}
 }
 
-impl From<crate::master::Event<Test>> for TestEvent {
-	fn from(other: crate::master::Event<Test>) -> Self {
-		Self::Master(other)
-	}
-}
-
 impl From<crate::status_list_credential::Event> for TestEvent {
 	fn from(other: crate::status_list_credential::Event) -> Self {
 		Self::StatusListCredential(other)
@@ -127,6 +121,12 @@ impl From<offchain_signatures::Event> for TestEvent {
 impl From<accumulator::Event> for TestEvent {
 	fn from(other: accumulator::Event) -> Self {
 		Self::Accum(other)
+	}
+}
+
+impl From<trusted_entity::Event> for TestEvent {
+	fn from(other: trusted_entity::Event) -> Self {
+		Self::TrustedEntity(other)
 	}
 }
 
@@ -146,30 +146,29 @@ impl Contains<Call> for BaseFilter {
 }
 
 impl frame_system::Config for Test {
-	type OnSetCode = ();
-	type MaxConsumers = ConstU32<10>;
-	type BaseCallFilter = BaseFilter;
-	type Origin = Origin;
-	type Call = Call;
-	type Index = u64;
-	type BlockNumber = u64;
+	type RuntimeOrigin = RuntimeOrigin;
+	type Nonce = u64;
+	type RuntimeCall = RuntimeCall;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
-	type AccountId = u64;
+	type AccountId = AccountId;
 	type Lookup = IdentityLookup<Self::AccountId>;
-	type Header = Header;
-	type Event = TestEvent;
-	type BlockHashCount = BlockHashCount;
+	type Block = Block;
+	type RuntimeEvent = RuntimeEvent;
+	type BlockHashCount = ConstU64<250>;
+	type Version = ();
+	type PalletInfo = PalletInfo;
+	type AccountData = ();
+	type OnNewAccount = ();
+	type OnKilledAccount = ();
+	type BaseCallFilter = frame_support::traits::Everything;
+	type SystemWeightInfo = ();
 	type DbWeight = ();
 	type BlockWeights = ();
 	type BlockLength = ();
-	type Version = ();
-	type PalletInfo = PalletInfo;
-	type AccountData = pallet_balances::AccountData<u64>;
-	type OnNewAccount = ();
-	type OnKilledAccount = ();
-	type SystemWeightInfo = ();
 	type SS58Prefix = ();
+	type OnSetCode = ();
+	type MaxConsumers = ConstU32<16>;
 }
 
 impl pallet_timestamp::Config for Test {
@@ -207,7 +206,7 @@ impl pallet_evm::Config for Test {
 	type WithdrawOrigin = DummyCallOrigin;
 	type AddressMapping = DummyAddressMapping;
 	type Currency = Balances;
-	type Event = TestEvent;
+	type RuntimeEvent = TestEvent;
 	type Runner = pallet_evm::runner::stack::Runner<Self>;
 	type ByteReadWeight = ByteReadWeight;
 	type PrecompilesType = ();
@@ -219,15 +218,19 @@ impl pallet_evm::Config for Test {
 }
 
 impl pallet_balances::Config for Test {
-	type ReserveIdentifier = ();
-	type MaxReserves = ();
-	type MaxLocks = ();
-	type Balance = u64;
-	type Event = TestEvent;
+	type Balance = ThisChainBalance;
+	type RuntimeEvent = RuntimeEvent;
 	type DustRemoval = ();
-	type ExistentialDeposit = ();
+	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
 	type WeightInfo = ();
+	type MaxLocks = ConstU32<50>;
+	type MaxReserves = ConstU32<50>;
+	type ReserveIdentifier = [u8; 8];
+	type RuntimeHoldReason = RuntimeHoldReason;
+	type FreezeIdentifier = ();
+	type MaxHolds = ConstU32<0>;
+	type MaxFreezes = ConstU32<0>;
 }
 
 parameter_types! {
@@ -262,15 +265,18 @@ impl crate::common::Limits for Test {
 }
 
 impl crate::did::Config for Test {
-	type Event = TestEvent;
+	type RuntimeEvent = TestEvent;
 	type OnDidRemoval = SignatureMod;
 }
 
 impl crate::revoke::Config for Test {
-	type Event = TestEvent;
+	type RuntimeEvent = TestEvent;
+}
+impl crate::trusted_entity::Config for Test {
+	type RuntimeEvent = TestEvent;
 }
 impl crate::status_list_credential::Config for Test {
-	type Event = TestEvent;
+	type RuntimeEvent = TestEvent;
 }
 impl crate::blob::Config for Test {}
 impl crate::attest::Config for Test {}
@@ -290,20 +296,15 @@ parameter_types! {
 }
 
 impl crate::anchor::Config for Test {
-	type Event = TestEvent;
-}
-
-impl crate::master::Config for Test {
-	type Event = TestEvent;
-	type Call = Call;
+	type RuntimeEvent = TestEvent;
 }
 
 impl offchain_signatures::Config for Test {
-	type Event = TestEvent;
+	type RuntimeEvent = TestEvent;
 }
 
 impl accumulator::Config for Test {
-	type Event = TestEvent;
+	type RuntimeEvent = TestEvent;
 }
 
 pub const ABBA: u64 = 0;
@@ -314,6 +315,10 @@ pub const RGA: RegistryId = RegistryId([0u8; 32]);
 pub const RA: RevokeId = RevokeId([0u8; 32]);
 pub const RB: RevokeId = RevokeId([1u8; 32]);
 pub const RC: RevokeId = RevokeId([2u8; 32]);
+pub const AUA: AuthorizerId = AuthorizerId([0u8; 32]);
+pub const TEA: TrustedEntityId = TrustedEntityId([0u8; 32]);
+pub const TEB: TrustedEntityId = TrustedEntityId([1u8; 32]);
+pub const TEC: TrustedEntityId = TrustedEntityId([2u8; 32]);
 
 /// check whether test externalities are available
 pub fn in_ext() -> bool {
