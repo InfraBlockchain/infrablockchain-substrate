@@ -159,6 +159,24 @@ impl<
 	}
 }
 
+// function to split Imbalance with no refund
+pub fn split_no_refund<A, B, OnDrop, OppositeOnDrop>(
+	asset: A,
+	amount: B,
+) -> (Imbalance<A, B, OnDrop, OppositeOnDrop>, Imbalance<A, B, OnDrop, OppositeOnDrop>)
+where
+	A: AssetId,
+	B: Balance,
+	OnDrop: HandleImbalanceDrop<A, B>,
+	OppositeOnDrop: HandleImbalanceDrop<A, B>,
+{
+	let refund_amount = B::zero();
+
+	let first_imbalance = Imbalance::new(asset.clone(), amount);
+	let refund_imbalance = Imbalance::new(asset, refund_amount);
+	(first_imbalance, refund_imbalance)
+}
+
 /// Imbalance implying that the total_issuance value is less than the sum of all account balances.
 pub type Debt<AccountId, B> = Imbalance<
 	<B as Inspect<AccountId>>::AssetId,
