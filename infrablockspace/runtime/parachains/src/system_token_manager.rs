@@ -23,6 +23,7 @@ pub use frame_support::{
 use frame_system::pallet_prelude::*;
 pub use pallet::*;
 use pallet_asset_link::AssetIdOf;
+pub use pallet_assets::types::BASE_SYSTEM_TOKEN_WEIGHT;
 use sp_runtime::{
 	traits::StaticLookup,
 	types::{
@@ -32,7 +33,6 @@ use sp_runtime::{
 };
 use sp_std::prelude::*;
 use types::*;
-pub use pallet_assets::types::BASE_SYSTEM_TOKEN_WEIGHT;
 
 #[frame_support::pallet(dev_mode)]
 pub mod pallet {
