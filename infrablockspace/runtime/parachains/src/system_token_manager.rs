@@ -23,7 +23,11 @@ pub use frame_support::{
 use frame_system::pallet_prelude::*;
 pub use pallet::*;
 use pallet_asset_link::AssetIdOf;
+<<<<<<< HEAD
 use softfloat::F64;
+=======
+pub use pallet_assets::types::BASE_SYSTEM_TOKEN_WEIGHT;
+>>>>>>> 71c97eb (refactor: 💡 apply formatter)
 use sp_runtime::{
 	traits::StaticLookup,
 	types::{
