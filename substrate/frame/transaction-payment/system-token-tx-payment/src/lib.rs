@@ -280,39 +280,31 @@ where
 						call_metadata.pallet_name,
 						call_metadata.function_name,
 					);
+					let mut refundable: bool = true;
 
-					let (actual_fee, converted_fee, converted_tip): (BalanceOf<T>, _, _) =
+					let actual_fee: BalanceOf<T> =
 						// `fee` will be calculated based on the 'fee table'.
 						// The fee will be directly applied to the `final_fee` without any refunds.
 						if let Some(fee) = T::FeeTableProvider::get_fee_from_fee_table(metadata) {
-							let (converted_fee, converted_tip) =
-								T::OnChargeSystemToken::correct_and_deposit_fee_without_refund(
-									&who,
-									info,
-									post_info,
-									fee.into(),
-									tip.into(),
-									already_withdrawn.into(),
-								)?;
-
-							(fee.into(), converted_fee, converted_tip)
+							refundable = false;
+							fee.into()
 						} else {
 							// The `fee` will be calculated according to the original fee calculation logic.
-							let actual_fee =
-								pallet_transaction_payment::Pallet::<T>::compute_actual_fee(
-									len as u32, info, post_info, tip,
-								);
-							let (converted_fee, converted_tip) =
-								T::OnChargeSystemToken::correct_and_deposit_fee(
-									&who,
-									info,
-									post_info,
-									actual_fee.into(),
-									tip.into(),
-									already_withdrawn.into(),
-								)?;
-							(actual_fee, converted_fee, converted_tip)
+							pallet_transaction_payment::Pallet::<T>::compute_actual_fee(
+								len as u32, info, post_info, tip,
+								)
 						};
+
+					let (converted_fee, converted_tip) =
+						T::OnChargeSystemToken::correct_and_deposit_fee(
+							&who,
+							info,
+							post_info,
+							actual_fee.into(),
+							tip.into(),
+							already_withdrawn.into(),
+							refundable,
+						)?;
 
 					let tip: Option<AssetBalanceOf<T>> =
 						if converted_tip.is_zero() { None } else { Some(converted_tip) };
