@@ -87,7 +87,6 @@ pub mod pallet {
 	}
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
 
 	#[pallet::storage]
@@ -99,6 +98,7 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// Create a new immutable blob.
 		#[pallet::weight(SubstrateWeight::<T>::new(blob, signature))]
+		#[pallet::call_index(0)]
 		pub fn new(
 			origin: OriginFor<T>,
 			blob: AddBlob<T>,
@@ -132,7 +132,6 @@ impl<T: Config> SubstrateWeight<T> {
 		(match sig {
 			SigValue::Sr25519(_) => Self::new_sr25519,
 			SigValue::Ed25519(_) => Self::new_ed25519,
-			SigValue::Secp256k1(_) => Self::new_secp256k1,
 		}(blob.blob.len() as u32))
 	}
 }

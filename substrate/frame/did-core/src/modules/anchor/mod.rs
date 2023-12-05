@@ -43,7 +43,6 @@ pub mod pallet {
 	}
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
 
 	#[pallet::storage]
@@ -53,6 +52,7 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// Drop a permanent anchor.
 		#[pallet::weight(SubstrateWeight::<T>::deploy(data.len() as u32))]
+		#[pallet::call_index(0)]
 		pub fn deploy(origin: OriginFor<T>, data: Vec<u8>) -> DispatchResult {
 			let account = ensure_signed(origin)?;
 

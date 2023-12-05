@@ -1,5 +1,6 @@
 use super::*;
 use crate::tests::common::*;
+use frame_system::Origin;
 use sp_core::sr25519;
 
 type Er = crate::attest::Error<Test>;
@@ -14,7 +15,7 @@ fn priority_too_low() {
 		let did = Attester(did);
 		let att = Attestation { priority: 0, iri: None };
 		let err = AttestMod::set_claim(
-			Origin::signed(0),
+			RuntimeOrigin::signed(0),
 			SetAttestationClaim { attest: att.clone(), nonce: 10 + 1 },
 			did_sig::<Test, _, _>(&SetAttestationClaim { attest: att, nonce: 10 + 1 }, &kp, did, 1),
 		)
@@ -65,7 +66,7 @@ fn invalid_sig_a() {
 		// Modify payload so sig doesn't match
 		att.priority += 1;
 		let err = AttestMod::set_claim(
-			Origin::signed(0),
+			RuntimeOrigin::signed(0),
 			SetAttestationClaim { attest: att, nonce: 10 + 2 },
 			sig,
 		)
@@ -84,7 +85,7 @@ fn invalid_sig_b() {
 		let (_didb, kpb) = newdid();
 		let att = Attestation { priority: 1, iri: None };
 		let err = AttestMod::set_claim(
-			Origin::signed(0),
+			RuntimeOrigin::signed(0),
 			SetAttestationClaim { attest: att.clone(), nonce: 10 + 1 },
 			did_sig::<Test, _, _>(
 				&SetAttestationClaim { attest: att, nonce: 10 + 1 },
@@ -234,7 +235,7 @@ fn set_claim(
 	nonce: u64,
 ) -> DispatchResult {
 	AttestMod::set_claim(
-		Origin::signed(0),
+		RuntimeOrigin::signed(0),
 		SetAttestationClaim { attest: att.clone(), nonce },
 		did_sig::<Test, _, _>(&SetAttestationClaim { attest: att.clone(), nonce }, kp, *claimer, 1),
 	)

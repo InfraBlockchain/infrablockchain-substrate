@@ -1,11 +1,9 @@
 use super::keys::PublicKey;
-use crate::util::{Bytes64, Bytes65};
+use crate::util::Bytes64;
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::weights::Weight;
-use sha2::{Digest, Sha256};
 use sp_core::{ed25519, sr25519, Pair};
 use sp_runtime::traits::Verify;
-use sp_std::convert::TryInto;
 
 /// An abstraction for a signature.
 #[derive(
@@ -18,8 +16,6 @@ pub enum SigValue {
 	Sr25519(Bytes64),
 	/// Signature for Ed25519 is 64 bytes
 	Ed25519(Bytes64),
-	/// Signature for Secp256k1 is 65 bytes
-	Secp256k1(Bytes65),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -36,7 +32,6 @@ impl SigValue {
 		match self {
 			SigValue::Sr25519(_) => SR25519_WEIGHT,
 			SigValue::Ed25519(_) => ED25519_WEIGHT,
-			SigValue::Secp256k1(_) => SECP256K1_WEIGHT,
 		}
 	}
 
@@ -73,10 +68,6 @@ impl SigValue {
 	pub fn ed25519(msg: &[u8], pair: &ed25519::Pair) -> Self {
 		SigValue::Ed25519(pair.sign(msg).0.into())
 	}
-
-	pub fn secp256k1(msg: &[u8], sk: &libsecp256k1::SecretKey) -> Self {
-		sign_with_secp256k1(msg, sk)
-	}
 }
 
 impl From<ed25519::Signature> for SigValue {
@@ -95,23 +86,9 @@ impl From<sr25519::Signature> for SigValue {
 pub const SR25519_WEIGHT: Weight = Weight::from_ref_time(140_000_000);
 // Weight for Ed25519 sig verification
 pub const ED25519_WEIGHT: Weight = Weight::from_ref_time(152_000_000);
-// Weight for ecdsa using secp256k1 sig verification
-pub const SECP256K1_WEIGHT: Weight = Weight::from_ref_time(456_000_000);
-
-pub fn sign_with_secp256k1(msg: &[u8], sk: &libsecp256k1::SecretKey) -> SigValue {
-	let hash = Sha256::digest(msg).try_into().unwrap();
-	let m = libsecp256k1::Message::parse(&hash);
-	let sig = libsecp256k1::sign(&m, sk);
-	let mut sig_bytes: [u8; 65] = [0; 65];
-	sig_bytes[0..64].copy_from_slice(&sig.0.serialize()[..]);
-	sig_bytes[64] = sig.1.serialize();
-	SigValue::Secp256k1(sig_bytes.into())
-}
 
 #[cfg(test)]
 mod tests {
-	use crate::common::get_secp256k1_keypair;
-
 	use super::*;
 
 	use sp_core::Pair;
@@ -145,12 +122,5 @@ mod tests {
 
 		check_sig_verification!(sr25519, PublicKey::Sr25519, SigValue::Sr25519, SigValue::Ed25519);
 		check_sig_verification!(ed25519, PublicKey::Ed25519, SigValue::Ed25519, SigValue::Sr25519);
-
-		let (sk, pk) = get_secp256k1_keypair(&[1; 32]);
-		assert!(pk.can_sign());
-		let correct_sig = sign_with_secp256k1(&msg, &sk);
-		let incorrect_sig = SigValue::Ed25519([10; 64].into());
-		assert!(correct_sig.verify(&msg, &pk).unwrap());
-		assert!(incorrect_sig.verify(&msg, &pk).is_err());
 	}
 }

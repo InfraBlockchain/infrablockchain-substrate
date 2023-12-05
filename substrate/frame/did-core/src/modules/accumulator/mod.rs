@@ -62,7 +62,6 @@ pub mod pallet {
 	}
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
 
 	#[pallet::storage]
@@ -142,6 +141,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::weight(SubstrateWeight::<T>::add_params(params, signature))]
+		#[pallet::call_index(0)]
 		pub fn add_params(
 			origin: OriginFor<T>,
 			params: AddAccumulatorParams<T>,
@@ -157,6 +157,7 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(SubstrateWeight::<T>::add_public(public_key, signature))]
+		#[pallet::call_index(1)]
 		pub fn add_public_key(
 			origin: OriginFor<T>,
 			public_key: AddAccumulatorPublicKey<T>,
@@ -172,6 +173,7 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(SubstrateWeight::<T>::remove_params(remove, signature))]
+		#[pallet::call_index(2)]
 		pub fn remove_params(
 			origin: OriginFor<T>,
 			remove: RemoveAccumulatorParams<T>,
@@ -187,6 +189,7 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(SubstrateWeight::<T>::remove_public(remove, signature))]
+		#[pallet::call_index(3)]
 		pub fn remove_public_key(
 			origin: OriginFor<T>,
 			remove: RemoveAccumulatorPublicKey<T>,
@@ -209,6 +212,7 @@ pub mod pallet {
 		/// Note: Weight is same for both kinds of accumulator even when universal takes a bit more
 		/// space
 		#[pallet::weight(SubstrateWeight::<T>::add_accumulator(add_accumulator, signature))]
+		#[pallet::call_index(4)]
 		pub fn add_accumulator(
 			origin: OriginFor<T>,
 			add_accumulator: AddAccumulator<T>,
@@ -230,6 +234,7 @@ pub mod pallet {
 		/// verifier. But the prover (who has a witness to update) needs the updates and the witness
 		/// update info and is expected to look into the corresponding extrinsic arguments.
 		#[pallet::weight(SubstrateWeight::<T>::update_accumulator(update, signature))]
+		#[pallet::call_index(5)]
 		pub fn update_accumulator(
 			origin: OriginFor<T>,
 			update: UpdateAccumulator<T>,
@@ -245,6 +250,7 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(SubstrateWeight::<T>::remove_accumulator(remove, signature))]
+		#[pallet::call_index(6)]
 		pub fn remove_accumulator(
 			origin: OriginFor<T>,
 			remove: RemoveAccumulator<T>,
@@ -269,7 +275,6 @@ impl<T: Config> SubstrateWeight<T> {
 		(match sig {
 			SigValue::Sr25519(_) => Self::add_params_sr25519,
 			SigValue::Ed25519(_) => Self::add_params_ed25519,
-			SigValue::Secp256k1(_) => Self::add_params_secp256k1,
 		}(
 			add_params.params.bytes.len() as u32,
 			add_params.params.label.as_ref().map_or(0, |v| v.len()) as u32,
@@ -283,7 +288,6 @@ impl<T: Config> SubstrateWeight<T> {
 		(match sig {
 			SigValue::Sr25519(_) => Self::add_public_sr25519,
 			SigValue::Ed25519(_) => Self::add_public_ed25519,
-			SigValue::Secp256k1(_) => Self::add_public_secp256k1,
 		}(public_key.public_key.bytes.len() as u32))
 	}
 
@@ -294,7 +298,6 @@ impl<T: Config> SubstrateWeight<T> {
 		(match sig {
 			SigValue::Sr25519(_) => Self::remove_params_sr25519,
 			SigValue::Ed25519(_) => Self::remove_params_ed25519,
-			SigValue::Secp256k1(_) => Self::remove_params_secp256k1,
 		}())
 	}
 
@@ -305,7 +308,6 @@ impl<T: Config> SubstrateWeight<T> {
 		(match sig {
 			SigValue::Sr25519(_) => Self::remove_public_sr25519,
 			SigValue::Ed25519(_) => Self::remove_public_ed25519,
-			SigValue::Secp256k1(_) => Self::remove_public_secp256k1,
 		}())
 	}
 
@@ -316,7 +318,6 @@ impl<T: Config> SubstrateWeight<T> {
 		(match sig {
 			SigValue::Sr25519(_) => Self::add_accumulator_sr25519,
 			SigValue::Ed25519(_) => Self::add_accumulator_ed25519,
-			SigValue::Secp256k1(_) => Self::add_accumulator_secp256k1,
 		}(acc.accumulator.accumulated().len() as u32))
 	}
 
@@ -327,7 +328,6 @@ impl<T: Config> SubstrateWeight<T> {
 		(match sig {
 			SigValue::Sr25519(_) => Self::remove_accumulator_sr25519,
 			SigValue::Ed25519(_) => Self::remove_accumulator_ed25519,
-			SigValue::Secp256k1(_) => Self::remove_accumulator_secp256k1,
 		}())
 	}
 
@@ -338,7 +338,6 @@ impl<T: Config> SubstrateWeight<T> {
 		(match sig {
 			SigValue::Sr25519(_) => Self::update_accumulator_sr25519,
 			SigValue::Ed25519(_) => Self::update_accumulator_ed25519,
-			SigValue::Secp256k1(_) => Self::update_accumulator_secp256k1,
 		})(
 			acc.new_accumulated.len() as u32,
 			acc.additions.as_ref().map_or(0, |v| v.len()) as u32,

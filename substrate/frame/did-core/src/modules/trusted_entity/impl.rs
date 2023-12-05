@@ -10,7 +10,7 @@ impl<T: Config> Pallet<T> {
 	) -> DispatchResult {
 		// check
 		new_authorizer.policy.ensure_valid()?;
-		ensure!(!Authorizers::<T>::contains_key(id), Error::<T>::RegExists);
+		ensure!(!Authorizers::<T>::contains_key(id), Error::<T>::AuthzExists);
 
 		// execute
 		Authorizers::<T>::insert(id, new_authorizer);
@@ -92,17 +92,17 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	/// Executes action over target registry providing a mutable reference if all checks succeed.
+	/// Executes action over target authorizer providing a mutable reference if all checks succeed.
 	///
 	/// Checks:
-	/// 1. Ensure that the `StatusListCredential` exists.
+	/// 1. Ensure that the `Authorizer` exists.
 	/// 2. Verify that `proof` authorizes `action` according to `policy`.
 	/// 3. Verify that the action is not a replayed payload by ensuring each provided controller
 	/// nonce equals the last nonce plus 1.
 	///
-	/// Returns a mutable reference to the underlying registry if the command is authorized,
+	/// Returns a mutable reference to the underlying authorizer if the command is authorized,
 	/// otherwise returns Err.
-	pub(crate) fn try_exec_action_over_registry<A, F, R, E>(
+	pub(crate) fn try_exec_action_over_authorizer<A, F, R, E>(
 		f: F,
 		action: A,
 		proof: Vec<DidSignatureWithNonce<T>>,
@@ -113,27 +113,27 @@ impl<T: Config> Pallet<T> {
 		WithNonce<T, A>: ToStateChange<T>,
 		E: From<Error<T>> + From<PolicyExecutionError> + From<did::Error<T>> + From<NonceError>,
 	{
-		Self::try_exec_removable_action_over_registry(
+		Self::try_exec_removable_action_over_authorizer(
 			|action, reg| f(action, reg.as_mut().unwrap()),
 			action,
 			proof,
 		)
 	}
 
-	/// Executes action over target registry providing a mutable reference if all checks succeed.
+	/// Executes action over target authorizer providing a mutable reference if all checks succeed.
 	///
-	/// Unlike `try_exec_action_over_registry`, this action may result in a removal of a Registry,
-	/// if the value under option will be taken.
+	/// Unlike `try_exec_action_over_authorizer`, this action may result in a removal of a
+	/// Authorizer, if the value under option will be taken.
 	///
 	/// Checks:
-	/// 1. Ensure that the `Registry` exists.
+	/// 1. Ensure that the `Authorizer` exists.
 	/// 2. Verify that `proof` authorizes `action` according to `policy`.
 	/// 3. Verify that the action is not a replayed payload by ensuring each provided controller
 	/// nonce equals the last nonce plus 1.
 	///
-	/// Returns a mutable reference to the underlying registry wrapped into an option if the command
-	/// is authorized, otherwise returns Err.
-	pub(crate) fn try_exec_removable_action_over_registry<A, F, R, E>(
+	/// Returns a mutable reference to the underlying authorizer wrapped into an option if the
+	/// command is authorized, otherwise returns Err.
+	pub(crate) fn try_exec_removable_action_over_authorizer<A, F, R, E>(
 		f: F,
 		action: A,
 		proof: Vec<DidSignatureWithNonce<T>>,
@@ -146,8 +146,8 @@ impl<T: Config> Pallet<T> {
 	{
 		ensure!(!action.is_empty(), Error::EmptyPayload);
 
-		Authorizers::try_mutate_exists(action.target(), |registry| {
-			Policy::try_exec_removable_action(registry, f, action, proof)
+		Authorizers::try_mutate_exists(action.target(), |authorizer| {
+			Policy::try_exec_removable_action(authorizer, f, action, proof)
 		})
 	}
 }

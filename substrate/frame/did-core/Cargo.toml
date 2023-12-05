@@ -104,6 +104,7 @@ std = [
     "codec/std",
     "frame-support/std",
     "frame-benchmarking/std",
+    "pallet-balances/std",
     "sp-application-crypto/std",
     "sp-application-crypto/full_crypto",
     "serde",

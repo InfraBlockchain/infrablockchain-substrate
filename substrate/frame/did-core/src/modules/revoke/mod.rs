@@ -90,7 +90,6 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
 
 	#[pallet::config]
@@ -181,6 +180,7 @@ pub mod pallet {
 		///
 		/// Returns an error if `registry.policy` is invalid.
 		#[pallet::weight(SubstrateWeight::<T>::new_registry(add_registry.new_registry.policy.len()))]
+		#[pallet::call_index(0)]
 		pub fn new_registry(origin: OriginFor<T>, add_registry: AddRegistry<T>) -> DispatchResult {
 			ensure_signed(origin)?;
 
@@ -198,6 +198,7 @@ pub mod pallet {
 		/// Returns an error if `proof` does not satisfy the policy requirements of the registry
 		/// referenced by `revoke.registry_id`.
 		#[pallet::weight(SubstrateWeight::<T>::revoke(&proof[0])(revoke.len()))]
+		#[pallet::call_index(1)]
 		pub fn revoke(
 			origin: OriginFor<T>,
 			revoke: RevokeRaw<T>,
@@ -221,6 +222,7 @@ pub mod pallet {
 		/// Returns an error if `proof` does not satisfy the policy requirements of the registry
 		/// referenced by `unrevoke.registry_id`.
 		#[pallet::weight(SubstrateWeight::<T>::unrevoke(&proof[0])(unrevoke.len()))]
+		#[pallet::call_index(2)]
 		pub fn unrevoke(
 			origin: OriginFor<T>,
 			unrevoke: UnRevokeRaw<T>,
@@ -246,6 +248,7 @@ pub mod pallet {
 		/// Returns an error if `proof` does not satisfy the policy requirements of the registry
 		/// referenced by `removal.registry_id`.
 		#[pallet::weight(SubstrateWeight::<T>::remove_registry(&proof[0]))]
+		#[pallet::call_index(3)]
 		pub fn remove_registry(
 			origin: OriginFor<T>,
 			removal: RemoveRegistryRaw<T>,
@@ -264,7 +267,6 @@ impl<T: Config> SubstrateWeight<T> {
 		match sig.sig {
 			SigValue::Sr25519(_) => Self::revoke_sr25519,
 			SigValue::Ed25519(_) => Self::revoke_ed25519,
-			SigValue::Secp256k1(_) => Self::revoke_secp256k1,
 		}
 	}
 
@@ -272,7 +274,6 @@ impl<T: Config> SubstrateWeight<T> {
 		match sig.sig {
 			SigValue::Sr25519(_) => Self::unrevoke_sr25519,
 			SigValue::Ed25519(_) => Self::unrevoke_ed25519,
-			SigValue::Secp256k1(_) => Self::unrevoke_secp256k1,
 		}
 	}
 
@@ -280,7 +281,6 @@ impl<T: Config> SubstrateWeight<T> {
 		(match sig.sig {
 			SigValue::Sr25519(_) => Self::remove_registry_sr25519,
 			SigValue::Ed25519(_) => Self::remove_registry_ed25519,
-			SigValue::Secp256k1(_) => Self::remove_registry_secp256k1,
 		}())
 	}
 }

@@ -12,8 +12,8 @@ pub struct AddAuthorizer<T: Limits> {
 	pub new_authorizer: Authorizer<T>,
 }
 
-/// Command to create a set of revocations withing a registry.
-/// Creation of revocations is idempotent; creating a revocation that already exists is allowed,
+/// Command to create a set of issuers withing a authorizer.
+/// Creation of issuers is idempotent; creating a issuers that already exists is allowed,
 /// but has no effect.
 #[derive(Encode, Decode, scale_info_derive::TypeInfo, Clone, PartialEq, DebugNoBound, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -22,17 +22,17 @@ pub struct AddAuthorizer<T: Limits> {
 #[scale_info(skip_type_params(T))]
 #[scale_info(omit_prefix)]
 pub struct AddIssuerRaw<T> {
-	/// The registry on which to operate
+	/// The authorizer on which to operate
 	pub authorizer_id: AuthorizerId,
-	/// Credential ids which will be revoked
+	/// entity ids which will be registered as trusted entities
 	pub entity_ids: BTreeSet<TrustedEntityId>,
 	#[codec(skip)]
 	#[cfg_attr(feature = "serde", serde(skip))]
 	pub _marker: PhantomData<T>,
 }
 
-/// Command to remove a set of revocations within a registry.
-/// Removal of revocations is idempotent; removing a revocation that doesn't exists is allowed,
+/// Command to remove a set of issuers within a authorizer.
+/// Removal of issuers is idempotent; removing a issuers that doesn't exists is allowed,
 /// but has no effect.
 #[derive(Encode, Decode, scale_info_derive::TypeInfo, Clone, PartialEq, DebugNoBound, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -41,17 +41,17 @@ pub struct AddIssuerRaw<T> {
 #[scale_info(skip_type_params(T))]
 #[scale_info(omit_prefix)]
 pub struct RemoveIssuerRaw<T> {
-	/// The registry on which to operate
+	/// The authorizer on which to operate
 	pub authorizer_id: AuthorizerId,
-	/// Credential ids which will be revoked
+	/// entity ids which will be removed as trusted entities
 	pub entity_ids: BTreeSet<TrustedEntityId>,
 	#[codec(skip)]
 	#[cfg_attr(feature = "serde", serde(skip))]
 	pub _marker: PhantomData<T>,
 }
 
-/// Command to create a set of revocations withing a registry.
-/// Creation of revocations is idempotent; creating a revocation that already exists is allowed,
+/// Command to create a set of verifiers withing a authorizer.
+/// Creation of verifiers is idempotent; creating a verifiers that already exists is allowed,
 /// but has no effect.
 #[derive(Encode, Decode, scale_info_derive::TypeInfo, Clone, PartialEq, DebugNoBound, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -60,17 +60,17 @@ pub struct RemoveIssuerRaw<T> {
 #[scale_info(skip_type_params(T))]
 #[scale_info(omit_prefix)]
 pub struct AddVerifierRaw<T> {
-	/// The registry on which to operate
+	/// The authorizer on which to operate
 	pub authorizer_id: AuthorizerId,
-	/// Credential ids which will be revoked
+	/// entity ids which will be registered as trusted entities
 	pub entity_ids: BTreeSet<TrustedEntityId>,
 	#[codec(skip)]
 	#[cfg_attr(feature = "serde", serde(skip))]
 	pub _marker: PhantomData<T>,
 }
 
-/// Command to remove a set of revocations within a registry.
-/// Removal of revocations is idempotent; removing a revocation that doesn't exists is allowed,
+/// Command to remove a set of verifiers within a authorizer.
+/// Removal of verifiers is idempotent; removing a verifiers that doesn't exists is allowed,
 /// but has no effect.
 #[derive(Encode, Decode, scale_info_derive::TypeInfo, Clone, PartialEq, DebugNoBound, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -79,17 +79,17 @@ pub struct AddVerifierRaw<T> {
 #[scale_info(skip_type_params(T))]
 #[scale_info(omit_prefix)]
 pub struct RemoveVerifierRaw<T> {
-	/// The registry on which to operate
+	/// The authorizer on which to operate
 	pub authorizer_id: AuthorizerId,
-	/// Credential ids which will be revoked
+	/// entity ids which will be removed as trusted entities
 	pub entity_ids: BTreeSet<TrustedEntityId>,
 	#[codec(skip)]
 	#[cfg_attr(feature = "serde", serde(skip))]
 	pub _marker: PhantomData<T>,
 }
 
-/// Command to remove an entire registry. Removes all revocations in the registry as well as
-/// registry metadata.
+/// Command to remove an entire authorizer storage. Removes all issuers and verifiers in the
+/// authorizer storage as well as authorizer metadata.
 #[derive(Encode, Decode, scale_info_derive::TypeInfo, Clone, PartialEq, DebugNoBound, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(bound(serialize = "T: Sized", deserialize = "T: Sized")))]
@@ -97,7 +97,7 @@ pub struct RemoveVerifierRaw<T> {
 #[scale_info(skip_type_params(T))]
 #[scale_info(omit_prefix)]
 pub struct RemoveAuthorizerRaw<T> {
-	/// The registry on which to operate
+	/// The authorizer on which to operate
 	pub authorizer_id: AuthorizerId,
 	#[codec(skip)]
 	#[cfg_attr(feature = "serde", serde(skip))]
@@ -113,24 +113,24 @@ crate::impl_action! {
 	RemoveAuthorizerRaw with 1 as len, authorizer_id as target no_state_change
 }
 
-/// Command to create a set of revocations withing a registry.
-/// Creation of revocations is idempotent; creating a revocation that already exists is allowed,
+/// Command to create a set of issuers withing a authorizer.
+/// Creation of issuers is idempotent; creating a issuers that already exists is allowed,
 /// but has no effect.
 pub type AddIssuer<T> = WithNonce<T, AddIssuerRaw<T>>;
-/// Command to remove a set of revocations within a registry.
-/// Removal of revocations is idempotent; removing a revocation that doesn't exists is allowed,
+/// Command to remove a set of issuers within a authorizer.
+/// Removal of issuers is idempotent; removing a issuers that doesn't exists is allowed,
 /// but has no effect.
 pub type RemoveIssuer<T> = WithNonce<T, RemoveIssuerRaw<T>>;
-/// Command to create a set of revocations withing a registry.
-/// Creation of revocations is idempotent; creating a revocation that already exists is allowed,
+/// Command to create a set of verifiers withing a authorizer.
+/// Creation of verifiers is idempotent; creating a verifiers that already exists is allowed,
 /// but has no effect.
 pub type AddVerifier<T> = WithNonce<T, AddVerifierRaw<T>>;
-/// Command to remove a set of revocations within a registry.
-/// Removal of revocations is idempotent; removing a revocation that doesn't exists is allowed,
+/// Command to remove a set of verifiers within a authorizer.
+/// Removal of verifiers is idempotent; removing a verifiers that doesn't exists is allowed,
 /// but has no effect.
 pub type RemoveVerifier<T> = WithNonce<T, RemoveVerifierRaw<T>>;
-/// Command to remove an entire registry. Removes all revocations in the registry as well as
-/// registry metadata.
+/// Command to remove an entire authorizer storage. Removes all issuers and verifiers in the
+/// authorizer storage as well as authorizer metadata.
 pub type RemoveAuthorizer<T> = WithNonce<T, RemoveAuthorizerRaw<T>>;
 
 crate::impl_action_with_nonce! {

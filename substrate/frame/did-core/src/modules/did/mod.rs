@@ -126,7 +126,6 @@ pub mod pallet {
 	}
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
 
 	/// Stores details of off-chain and on-chain DIDs
@@ -202,6 +201,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::weight(SubstrateWeight::<T>::new_offchain(did_doc_ref.len()))]
+		#[pallet::call_index(0)]
 		pub fn new_offchain(
 			origin: OriginFor<T>,
 			did: Did,
@@ -214,6 +214,7 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(SubstrateWeight::<T>::set_offchain_did_doc_ref(did_doc_ref.len()))]
+		#[pallet::call_index(1)]
 		pub fn set_offchain_did_doc_ref(
 			origin: OriginFor<T>,
 			did: Did,
@@ -225,6 +226,7 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(SubstrateWeight::<T>::remove_offchain_did())]
+		#[pallet::call_index(2)]
 		pub fn remove_offchain_did(origin: OriginFor<T>, did: Did) -> DispatchResult {
 			let caller = ensure_signed(origin)?;
 
@@ -236,6 +238,7 @@ pub mod pallet {
 		/// If any supplied key has an empty `ver_rel`, then it will use all verification
 		/// relationships available for its key type.
 		#[pallet::weight(SubstrateWeight::<T>::new_onchain(keys.len() as u32, controllers.len() as u32))]
+		#[pallet::call_index(3)]
 		pub fn new_onchain(
 			origin: OriginFor<T>,
 			did: Did,
@@ -250,6 +253,7 @@ pub mod pallet {
 		/// Add more keys from DID doc.
 		/// **Does not** check if the key was already added.
 		#[pallet::weight(SubstrateWeight::<T>::add_keys(keys, sig))]
+		#[pallet::call_index(4)]
 		pub fn add_keys(
 			origin: OriginFor<T>,
 			keys: AddKeys<T>,
@@ -263,6 +267,7 @@ pub mod pallet {
 		/// Remove keys from DID doc. This is an atomic operation meaning that it will either remove
 		/// all keys or do nothing. **Note that removing all keys might make DID unusable**.
 		#[pallet::weight(SubstrateWeight::<T>::remove_keys(keys, sig))]
+		#[pallet::call_index(5)]
 		pub fn remove_keys(
 			origin: OriginFor<T>,
 			keys: RemoveKeys<T>,
@@ -278,6 +283,7 @@ pub mod pallet {
 		/// - have any key
 		/// - exist on- or off-chain
 		#[pallet::weight(SubstrateWeight::<T>::add_controllers(controllers, sig))]
+		#[pallet::call_index(6)]
 		pub fn add_controllers(
 			origin: OriginFor<T>,
 			controllers: AddControllers<T>,
@@ -292,6 +298,7 @@ pub mod pallet {
 		/// This is an atomic operation meaning that it will either remove all keys or do nothing.
 		/// **Note that removing all controllers might make DID unusable**.
 		#[pallet::weight(SubstrateWeight::<T>::remove_controllers(controllers, sig))]
+		#[pallet::call_index(7)]
 		pub fn remove_controllers(
 			origin: OriginFor<T>,
 			controllers: RemoveControllers<T>,
@@ -308,6 +315,7 @@ pub mod pallet {
 
 		/// Add a single service endpoint to the signer DID.
 		#[pallet::weight(SubstrateWeight::<T>::add_service_endpoint(service_endpoint, sig))]
+		#[pallet::call_index(8)]
 		pub fn add_service_endpoint(
 			origin: OriginFor<T>,
 			service_endpoint: AddServiceEndpoint<T>,
@@ -324,6 +332,7 @@ pub mod pallet {
 
 		/// Remove a single service endpoint.
 		#[pallet::weight(SubstrateWeight::<T>::remove_service_endpoint(service_endpoint, sig))]
+		#[pallet::call_index(9)]
 		pub fn remove_service_endpoint(
 			origin: OriginFor<T>,
 			service_endpoint: RemoveServiceEndpoint<T>,
@@ -343,6 +352,7 @@ pub mod pallet {
 		/// However, the authorization logic ensures that once a DID is removed, it loses its
 		/// ability to control any DID.
 		#[pallet::weight(SubstrateWeight::<T>::remove_onchain_did(removal, sig))]
+		#[pallet::call_index(10)]
 		pub fn remove_onchain_did(
 			origin: OriginFor<T>,
 			removal: DidRemoval<T>,
@@ -360,6 +370,7 @@ pub mod pallet {
 		/// Adds `StateChange` and `AggregatedDidDetailsResponse` to the metadata.
 		#[doc(hidden)]
 		#[pallet::weight(<T as frame_system::Config>::DbWeight::get().writes(10))]
+		#[pallet::call_index(11)]
 		pub fn noop(
 			_o: OriginFor<T>,
 			_s: common::StateChange<'static, T>,
@@ -390,7 +401,6 @@ impl<T: Config> SubstrateWeight<T> {
 		(match sig {
 			SigValue::Sr25519(_) => Self::add_keys_sr25519,
 			SigValue::Ed25519(_) => Self::add_keys_ed25519,
-			SigValue::Secp256k1(_) => Self::add_keys_secp256k1,
 		}(keys.len()))
 	}
 
@@ -401,7 +411,6 @@ impl<T: Config> SubstrateWeight<T> {
 		(match sig {
 			SigValue::Sr25519(_) => Self::remove_keys_sr25519,
 			SigValue::Ed25519(_) => Self::remove_keys_ed25519,
-			SigValue::Secp256k1(_) => Self::remove_keys_secp256k1,
 		}(keys.len()))
 	}
 
@@ -412,7 +421,6 @@ impl<T: Config> SubstrateWeight<T> {
 		(match sig {
 			SigValue::Sr25519(_) => Self::add_controllers_sr25519,
 			SigValue::Ed25519(_) => Self::add_controllers_ed25519,
-			SigValue::Secp256k1(_) => Self::add_controllers_secp256k1,
 		}(controllers.len()))
 	}
 
@@ -423,7 +431,6 @@ impl<T: Config> SubstrateWeight<T> {
 		(match sig {
 			SigValue::Sr25519(_) => Self::remove_controllers_sr25519,
 			SigValue::Ed25519(_) => Self::remove_controllers_ed25519,
-			SigValue::Secp256k1(_) => Self::remove_controllers_secp256k1,
 		}(controllers.len()))
 	}
 
@@ -434,7 +441,6 @@ impl<T: Config> SubstrateWeight<T> {
 		(match sig {
 			SigValue::Sr25519(_) => Self::add_service_endpoint_sr25519,
 			SigValue::Ed25519(_) => Self::add_service_endpoint_ed25519,
-			SigValue::Secp256k1(_) => Self::add_service_endpoint_secp256k1,
 		})(
 			endpoint.origins.len() as u32,
 			endpoint
@@ -455,7 +461,6 @@ impl<T: Config> SubstrateWeight<T> {
 		(match sig {
 			SigValue::Sr25519(_) => Self::remove_service_endpoint_sr25519,
 			SigValue::Ed25519(_) => Self::remove_service_endpoint_ed25519,
-			SigValue::Secp256k1(_) => Self::remove_service_endpoint_secp256k1,
 		}(id.len() as u32))
 	}
 
@@ -466,7 +471,6 @@ impl<T: Config> SubstrateWeight<T> {
 		(match sig {
 			SigValue::Sr25519(_) => Self::remove_onchain_did_sr25519,
 			SigValue::Ed25519(_) => Self::remove_onchain_did_ed25519,
-			SigValue::Secp256k1(_) => Self::remove_onchain_did_secp256k1,
 		}())
 	}
 }

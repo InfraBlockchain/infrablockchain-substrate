@@ -26,7 +26,7 @@ mod r#impl;
 pub mod tests;
 mod weights;
 
-/// Points to an on-chain revocation registry.
+/// Points to an on-chain authorizer.
 #[derive(Encode, Decode, Clone, Debug, PartialEq, Eq, Copy, Ord, PartialOrd, MaxEncodedLen)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(scale_info_derive::TypeInfo)]
@@ -43,7 +43,7 @@ impl Index<RangeFull> for AuthorizerId {
 
 crate::impl_wrapper!(AuthorizerId([u8; 32]));
 
-/// Points to a revocation which may or may not exist in a registry.
+/// Points to a issuer or verifier which may or may not exist in a authorizer.
 #[derive(Encode, Decode, Clone, Debug, PartialEq, Eq, Copy, Ord, PartialOrd, MaxEncodedLen)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(scale_info_derive::TypeInfo)]
@@ -60,7 +60,7 @@ impl Index<RangeFull> for TrustedEntityId {
 
 crate::impl_wrapper!(TrustedEntityId([u8; 32]));
 
-/// Metadata about a revocation scope.
+/// Metadata about a authorizer scope.
 #[derive(
 	PartialEq, Eq, Encode, Decode, Clone, DebugNoBound, MaxEncodedLen, scale_info_derive::TypeInfo,
 )]
@@ -70,10 +70,10 @@ crate::impl_wrapper!(TrustedEntityId([u8; 32]));
 #[scale_info(skip_type_params(T))]
 #[scale_info(omit_prefix)]
 pub struct Authorizer<T: Limits> {
-	/// Who is allowed to update this registry.
+	/// Who is allowed to update this authorizer.
 	pub policy: Policy<T>,
-	/// true: credentials can be add_issuerd, but not un-add_issuerd and the registry can't be
-	/// removed either false: credentials can be add_issuerd and un-add_issuerd
+	/// true: credentials can be add entities, but not remove entities and the authorizer can't be
+	/// removed either false: credentials can be add entities and remove entities
 	pub add_only: bool,
 }
 
@@ -119,14 +119,14 @@ pub mod pallet {
 	/// Revocation Error
 	#[pallet::error]
 	pub enum Error<T> {
-		/// A revocation registry with that name already exists.
-		RegExists,
+		/// A authorizer with that name already exists.
+		AuthzExists,
 		/// nonce is incorrect. This is related to replay protection.
 		IncorrectNonce,
 		/// Too many controllers specified.
 		TooManyControllers,
-		/// This registry is marked as add_only. Deletion of revocations is not allowed. Deletion
-		/// of the registry is not allowed.
+		/// This authorizer is marked as add_only. Deletion of revocations is not allowed. Deletion
+		/// of the authorizer is not allowed.
 		AddOnly,
 		/// Action is empty.
 		EmptyPayload,
@@ -138,12 +138,12 @@ pub mod pallet {
 		}
 	}
 
-	/// Registry metadata
+	/// Authorizer metadata
 	#[pallet::storage]
 	#[pallet::getter(fn get_authorizer)]
 	pub type Authorizers<T: Config> = StorageMap<_, Blake2_128Concat, AuthorizerId, Authorizer<T>>;
 
-	/// The single global revocation set
+	/// The single global issuer set
 	// double_map requires and explicit hasher specification for the second key. blake2_256 is
 	// the default.
 	#[pallet::storage]
@@ -151,7 +151,7 @@ pub mod pallet {
 	pub type Issuers<T> =
 		StorageDoubleMap<_, Blake2_128Concat, AuthorizerId, Blake2_256, TrustedEntityId, ()>;
 
-	/// The single global revocation set
+	/// The single global verifier set
 	// double_map requires and explicit hasher specification for the second key. blake2_256 is
 	// the default.
 	#[pallet::storage]
@@ -184,13 +184,13 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Create a new revocation registry named `id` with `registry` metadata.
+		/// Create a new authorizer named `id` with `authorizer` metadata.
 		///
 		/// # Errors
 		///
-		/// Returns an error if `id` is already in use as a registry id.
+		/// Returns an error if `id` is already in use as a authorizer id.
 		///
-		/// Returns an error if `registry.policy` is invalid.
+		/// Returns an error if `authorizer.policy` is invalid.
 		#[pallet::weight(SubstrateWeight::<T>::new_authorizer(add_authorizer.new_authorizer.policy.len()))]
 		#[pallet::call_index(0)]
 		pub fn new_authorizer(
@@ -203,15 +203,15 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Create some revocations according to the `add_issuer` command.
+		/// Create some issuer according to the `add_issuer` command.
 		///
 		/// # Errors
 		///
 		/// Returns an error if `add_issuer.last_modified` does not match the block number when the
-		/// registry referenced by `add_issuer.registry_id` was last modified.
+		/// authorizer referenced by `add_issuer.authorizer_id` was last modified.
 		///
-		/// Returns an error if `proof` does not satisfy the policy requirements of the registry
-		/// referenced by `add_issuer.registry_id`.
+		/// Returns an error if `proof` does not satisfy the policy requirements of the authorizer
+		/// referenced by `add_issuer.authorizer_id`.
 		#[pallet::weight(SubstrateWeight::<T>::add_issuer(&proof[0])(add_issuer.len()))]
 		#[pallet::call_index(1)]
 		pub fn add_issuer(
@@ -221,21 +221,22 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_signed(origin)?;
 
-			Self::try_exec_action_over_registry(Self::add_issuer_, add_issuer, proof)?;
+			Self::try_exec_action_over_authorizer(Self::add_issuer_, add_issuer, proof)?;
 			Ok(())
 		}
 
-		/// Delete some revocations according to the `remove_issuer` command.
+		/// Delete some issuer according to the `remove_issuer` command.
 		///
 		/// # Errors
 		///
-		/// Returns an error if the registry referenced by `add_issuer.registry_id` is `add_only`.
+		/// Returns an error if the authorizer referenced by `add_issuer.authorizer_id` is
+		/// `add_only`.
 		///
 		/// Returns an error if `remove_issuer.last_modified` does not match the block number when
-		/// the registry referenced by `add_issuer.registry_id` was last modified.
+		/// the authorizer referenced by `add_issuer.authorizer_id` was last modified.
 		///
-		/// Returns an error if `proof` does not satisfy the policy requirements of the registry
-		/// referenced by `remove_issuer.registry_id`.
+		/// Returns an error if `proof` does not satisfy the policy requirements of the authorizer
+		/// referenced by `remove_issuer.authorizer_id`.
 		#[pallet::weight(SubstrateWeight::<T>::remove_issuer(&proof[0])(remove_issuer.len()))]
 		#[pallet::call_index(2)]
 		pub fn remove_issuer(
@@ -245,21 +246,19 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_signed(origin)?;
 
-			Self::try_exec_action_over_registry(Self::remove_issuer_, remove_issuer, proof)?;
+			Self::try_exec_action_over_authorizer(Self::remove_issuer_, remove_issuer, proof)?;
 			Ok(())
 		}
 
-		/// Delete some revocations according to the `remove_issuer` command.
+		/// Create some verifier according to the `add_verifier` command.
 		///
 		/// # Errors
 		///
-		/// Returns an error if the registry referenced by `add_issuer.registry_id` is `add_only`.
+		/// Returns an error if `add_verifier.last_modified` does not match the block number when
+		/// the authorizer referenced by `add_verifier.authorizer_id` was last modified.
 		///
-		/// Returns an error if `remove_issuer.last_modified` does not match the block number when
-		/// the registry referenced by `add_issuer.registry_id` was last modified.
-		///
-		/// Returns an error if `proof` does not satisfy the policy requirements of the registry
-		/// referenced by `remove_issuer.registry_id`.
+		/// Returns an error if `proof` does not satisfy the policy requirements of the authorizer
+		/// referenced by `add_verifier.authorizer_id`.
 		#[pallet::weight(SubstrateWeight::<T>::add_verifier(&proof[0])(add_verifier.len()))]
 		#[pallet::call_index(3)]
 		pub fn add_verifier(
@@ -269,19 +268,22 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_signed(origin)?;
 
-			Self::try_exec_action_over_registry(Self::add_verifier_, add_verifier, proof)?;
+			Self::try_exec_action_over_authorizer(Self::add_verifier_, add_verifier, proof)?;
 			Ok(())
 		}
 
-		/// Create some revocations according to the `add_issuer` command.
+		/// Delete some verifier according to the `remove_verifier` command.
 		///
 		/// # Errors
 		///
-		/// Returns an error if `add_issuer.last_modified` does not match the block number when the
-		/// registry referenced by `add_issuer.registry_id` was last modified.
+		/// Returns an error if the authorizer referenced by `add_issuer.authorizer_id` is
+		/// `add_only`.
 		///
-		/// Returns an error if `proof` does not satisfy the policy requirements of the registry
-		/// referenced by `add_issuer.registry_id`.
+		/// Returns an error if `remove_verifier.last_modified` does not match the block number when
+		/// the authorizer referenced by `add_verifier.authorizer_id` was last modified.
+		///
+		/// Returns an error if `proof` does not satisfy the policy requirements of the authorizer
+		/// referenced by `remove_verifier.authorizer_id`.
 		#[pallet::weight(SubstrateWeight::<T>::remove_verifier(&proof[0])(remove_verifier.len()))]
 		#[pallet::call_index(4)]
 		pub fn remove_verifier(
@@ -291,23 +293,24 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_signed(origin)?;
 
-			Self::try_exec_action_over_registry(Self::remove_verifier_, remove_verifier, proof)?;
+			Self::try_exec_action_over_authorizer(Self::remove_verifier_, remove_verifier, proof)?;
 			Ok(())
 		}
 
-		/// Delete an entire registry. Deletes all revocations within the registry, as well as
-		/// registry metadata. Once the registry is deleted, it can be reclaimed by any party using
-		/// a call to `new_registry`.
+		/// Delete an entire authorizer. Deletes all issuer, verifier within the authorizer, as well
+		/// as authorizer metadata. Once the authorizer is deleted, it can be reclaimed by any party
+		/// using a call to `new_authorizer`.
 		///
 		/// # Errors
 		///
-		/// Returns an error if the registry referenced by `add_issuer.registry_id` is `add_only`.
+		/// Returns an error if the authorizer referenced by `add_issuer.authorizer_id` is
+		/// `add_only`.
 		///
 		/// Returns an error if `removal.last_modified` does not match the block number when the
-		/// registry referenced by `removal.registry_id` was last modified.
+		/// authorizer referenced by `removal.authorizer_id` was last modified.
 		///
-		/// Returns an error if `proof` does not satisfy the policy requirements of the registry
-		/// referenced by `removal.registry_id`.
+		/// Returns an error if `proof` does not satisfy the policy requirements of the authorizer
+		/// referenced by `removal.authorizer_id`.
 		#[pallet::weight(SubstrateWeight::<T>::remove_authorizer(&proof[0]))]
 		#[pallet::call_index(5)]
 		pub fn remove_authorizer(
@@ -317,7 +320,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_signed(origin)?;
 
-			Self::try_exec_removable_action_over_registry(
+			Self::try_exec_removable_action_over_authorizer(
 				Self::remove_authorizer_,
 				removal,
 				proof,
@@ -334,7 +337,6 @@ impl<T: Config> SubstrateWeight<T> {
 		match sig.sig {
 			SigValue::Sr25519(_) => Self::add_issuer_sr25519,
 			SigValue::Ed25519(_) => Self::add_issuer_ed25519,
-			SigValue::Secp256k1(_) => Self::add_issuer_secp256k1,
 		}
 	}
 
@@ -344,7 +346,6 @@ impl<T: Config> SubstrateWeight<T> {
 		match sig.sig {
 			SigValue::Sr25519(_) => Self::remove_issuer_sr25519,
 			SigValue::Ed25519(_) => Self::remove_issuer_ed25519,
-			SigValue::Secp256k1(_) => Self::remove_issuer_secp256k1,
 		}
 	}
 
@@ -354,7 +355,6 @@ impl<T: Config> SubstrateWeight<T> {
 		match sig.sig {
 			SigValue::Sr25519(_) => Self::add_verifier_sr25519,
 			SigValue::Ed25519(_) => Self::add_verifier_ed25519,
-			SigValue::Secp256k1(_) => Self::add_verifier_secp256k1,
 		}
 	}
 
@@ -364,7 +364,6 @@ impl<T: Config> SubstrateWeight<T> {
 		match sig.sig {
 			SigValue::Sr25519(_) => Self::remove_verifier_sr25519,
 			SigValue::Ed25519(_) => Self::remove_verifier_ed25519,
-			SigValue::Secp256k1(_) => Self::remove_verifier_secp256k1,
 		}
 	}
 
@@ -372,7 +371,6 @@ impl<T: Config> SubstrateWeight<T> {
 		(match sig.sig {
 			SigValue::Sr25519(_) => Self::remove_authorizer_sr25519,
 			SigValue::Ed25519(_) => Self::remove_authorizer_ed25519,
-			SigValue::Secp256k1(_) => Self::remove_authorizer_secp256k1,
 		}())
 	}
 }
