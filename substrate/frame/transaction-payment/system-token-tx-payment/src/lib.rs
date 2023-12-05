@@ -280,15 +280,21 @@ where
 						call_metadata.pallet_name,
 						call_metadata.function_name,
 					);
-					// Actual fee will be based on 'fee table' or default calculation
+					let mut refundable: bool = true;
+
 					let actual_fee: BalanceOf<T> =
+						// `fee` will be calculated based on the 'fee table'.
+						// The fee will be directly applied to the `final_fee` without any refunds.
 						if let Some(fee) = T::FeeTableProvider::get_fee_from_fee_table(metadata) {
+							refundable = false;
 							fee.into()
 						} else {
+							// The `fee` will be calculated according to the original fee calculation logic.
 							pallet_transaction_payment::Pallet::<T>::compute_actual_fee(
 								len as u32, info, post_info, tip,
-							)
+								)
 						};
+
 					let (converted_fee, converted_tip) =
 						T::OnChargeSystemToken::correct_and_deposit_fee(
 							&who,
@@ -297,7 +303,9 @@ where
 							actual_fee.into(),
 							tip.into(),
 							already_withdrawn.into(),
+							refundable,
 						)?;
+
 					let tip: Option<AssetBalanceOf<T>> =
 						if converted_tip.is_zero() { None } else { Some(converted_tip) };
 					// update_vote_info is only excuted when vote_info has some data

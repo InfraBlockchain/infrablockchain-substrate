@@ -69,6 +69,7 @@ pub trait OnChargeSystemToken<T: Config> {
 		corrected_fee: Self::Balance,
 		tip: Self::Balance,
 		already_withdrawn: Self::LiquidityInfo,
+		refundable: bool,
 	) -> Result<(AssetBalanceOf<T>, AssetBalanceOf<T>), TransactionValidityError>;
 }
 
@@ -179,6 +180,7 @@ where
 		corrected_fee: Self::Balance,
 		tip: Self::Balance,
 		paid: Self::LiquidityInfo,
+		refundable: bool,
 	) -> Result<(AssetBalanceOf<T>, AssetBalanceOf<T>), TransactionValidityError> {
 		let min_converted_fee = if corrected_fee.is_zero() { Zero::zero() } else { One::one() };
 		// Convert the corrected fee and tip into the asset used for payment.
@@ -189,7 +191,14 @@ where
 			.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })?;
 
 		// Calculate how much refund we should return.
-		let (final_fee, refund) = paid.split(converted_fee);
+		let (final_fee, refund) = if refundable {
+			// Split the paid amount into final fee and refund when refundable.
+			paid.split(converted_fee)
+		} else {
+			// When not refundable, split without any refund.
+			paid.split_no_refund(converted_fee)
+		};
+
 		// Refund to the account that paid the fees. If this fails, the account might have dropped
 		// below the existential balance. In that case we don't refund anything.
 		let final_fee_amount = final_fee.peek();

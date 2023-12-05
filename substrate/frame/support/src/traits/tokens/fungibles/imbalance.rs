@@ -109,6 +109,13 @@ impl<
 		sp_std::mem::forget(self);
 		(Imbalance::new(asset.clone(), first), Imbalance::new(asset, second))
 	}
+	pub fn split_no_refund(self, amount: B) -> (Self, Self) {
+		let first = amount;
+		let second = B::zero();
+		let asset = self.asset.clone();
+		sp_std::mem::forget(self);
+		(Imbalance::new(asset.clone(), first), Imbalance::new(asset, second))
+	}
 	pub fn merge(mut self, other: Self) -> Result<Self, (Self, Self)> {
 		if self.asset == other.asset {
 			self.amount = self.amount.saturating_add(other.amount);
@@ -157,6 +164,24 @@ impl<
 	pub fn asset(&self) -> A {
 		self.asset.clone()
 	}
+}
+
+// function to split Imbalance with no refund
+pub fn split_no_refund<A, B, OnDrop, OppositeOnDrop>(
+	asset: A,
+	amount: B,
+) -> (Imbalance<A, B, OnDrop, OppositeOnDrop>, Imbalance<A, B, OnDrop, OppositeOnDrop>)
+where
+	A: AssetId,
+	B: Balance,
+	OnDrop: HandleImbalanceDrop<A, B>,
+	OppositeOnDrop: HandleImbalanceDrop<A, B>,
+{
+	let refund_amount = B::zero();
+
+	let first_imbalance = Imbalance::new(asset.clone(), amount);
+	let refund_imbalance = Imbalance::new(asset, refund_amount);
+	(first_imbalance, refund_imbalance)
 }
 
 /// Imbalance implying that the total_issuance value is less than the sum of all account balances.
