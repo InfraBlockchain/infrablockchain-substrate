@@ -21,8 +21,8 @@ use frame_support::{
 	traits::{
 		fungibles::{Balanced, Credit, Inspect},
 		tokens::{
-			fungibles::split_no_refund, AssetId, Balance, ConversionToAssetBalance,
-			Fortitude::Polite, Precision::Exact, Preservation::Protect,
+			AssetId, Balance, ConversionToAssetBalance, Fortitude::Polite, Precision::Exact,
+			Preservation::Protect,
 		},
 	},
 	unsigned::TransactionValidityError,
@@ -69,15 +69,7 @@ pub trait OnChargeSystemToken<T: Config> {
 		corrected_fee: Self::Balance,
 		tip: Self::Balance,
 		already_withdrawn: Self::LiquidityInfo,
-	) -> Result<(AssetBalanceOf<T>, AssetBalanceOf<T>), TransactionValidityError>;
-
-	fn correct_and_deposit_fee_without_refund(
-		who: &T::AccountId,
-		dispatch_info: &DispatchInfoOf<T::RuntimeCall>,
-		post_info: &PostDispatchInfoOf<T::RuntimeCall>,
-		corrected_fee: Self::Balance,
-		tip: Self::Balance,
-		already_withdrawn: Self::LiquidityInfo,
+		refundable: bool,
 	) -> Result<(AssetBalanceOf<T>, AssetBalanceOf<T>), TransactionValidityError>;
 }
 
@@ -188,6 +180,7 @@ where
 		corrected_fee: Self::Balance,
 		tip: Self::Balance,
 		paid: Self::LiquidityInfo,
+		refundable: bool,
 	) -> Result<(AssetBalanceOf<T>, AssetBalanceOf<T>), TransactionValidityError> {
 		let min_converted_fee = if corrected_fee.is_zero() { Zero::zero() } else { One::one() };
 		// Convert the corrected fee and tip into the asset used for payment.
@@ -198,7 +191,14 @@ where
 			.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })?;
 
 		// Calculate how much refund we should return.
-		let (final_fee, refund) = paid.split(converted_fee);
+		let (final_fee, refund) = if refundable {
+			// Split the paid amount into final fee and refund when refundable.
+			paid.split(converted_fee)
+		} else {
+			// When not refundable, split without any refund.
+			paid.split_no_refund(converted_fee)
+		};
+
 		// Refund to the account that paid the fees. If this fails, the account might have dropped
 		// below the existential balance. In that case we don't refund anything.
 		let final_fee_amount = final_fee.peek();
@@ -206,32 +206,5 @@ where
 		// Handle the final fee, e.g. by transferring to the block author or burning.
 		HC::handle_credit(final_fee);
 		Ok((final_fee_amount, converted_tip))
-	}
-
-	fn correct_and_deposit_fee_without_refund(
-		_who: &T::AccountId,
-		_dispatch_info: &DispatchInfoOf<T::RuntimeCall>,
-		_post_info: &PostDispatchInfoOf<T::RuntimeCall>,
-		corrected_fee: Self::Balance,
-		tip: Self::Balance,
-		paid: Self::LiquidityInfo,
-	) -> Result<(AssetBalanceOf<T>, AssetBalanceOf<T>), TransactionValidityError> {
-		let min_converted_fee = if corrected_fee.is_zero() { Zero::zero() } else { One::one() };
-		// Convert the corrected fee and tip into the asset used for payment.
-		let converted_fee = CON::to_asset_balance(corrected_fee, paid.asset())
-			.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })?
-			.max(min_converted_fee);
-		let _converted_tip = CON::to_asset_balance(tip, paid.asset())
-			.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })?;
-
-		// No refund and directly impose coverted fee to final fee.
-		// Imbalance cannot be created in external.
-		let (final_fee, refund) = split_no_refund(paid.asset(), converted_fee);
-		let final_fee_amount = final_fee.peek();
-		let refund_amount = refund.peek();
-
-		// Handle the final fee, e.g. by transferring to the block author or burning.
-		HC::handle_credit(final_fee);
-		Ok((final_fee_amount, refund_amount))
 	}
 }
