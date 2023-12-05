@@ -1,8 +1,8 @@
 use super::{Anchors, Error, Event};
-use sp_runtime::traits::Hash;
-
 use crate::tests::common::*;
+use frame_system::Origin;
 use sp_core::H256;
+use sp_runtime::traits::Hash;
 
 #[test]
 fn deploy_and_check() {
@@ -10,7 +10,7 @@ fn deploy_and_check() {
 		let bs = random_bytes(32);
 		let h = <Test as frame_system::Config>::Hashing::hash(&bs);
 		assert!(Anchors::<Test>::get(h).is_none());
-		AnchorMod::deploy(Origin::signed(ABBA), bs).unwrap();
+		AnchorMod::deploy(RuntimeOrigin::signed(ABBA), bs).unwrap();
 		assert!(Anchors::<Test>::get(h).is_some());
 	});
 }
@@ -19,8 +19,8 @@ fn deploy_and_check() {
 fn deploy_twice_error() {
 	ext().execute_with(|| {
 		let bs = random_bytes(32);
-		AnchorMod::deploy(Origin::signed(ABBA), bs.clone()).unwrap();
-		let err = AnchorMod::deploy(Origin::signed(ABBA), bs).unwrap_err();
+		AnchorMod::deploy(RuntimeOrigin::signed(ABBA), bs.clone()).unwrap();
+		let err = AnchorMod::deploy(RuntimeOrigin::signed(ABBA), bs).unwrap_err();
 		assert_eq!(err, Error::<Test>::AnchorExists.into());
 	});
 }
@@ -30,11 +30,8 @@ fn deploy_and_observe_event() {
 	ext().execute_with(|| {
 		let bs = random_bytes(32);
 		let h = <Test as frame_system::Config>::Hashing::hash(&bs);
-		AnchorMod::deploy(Origin::signed(ABBA), bs).unwrap();
-		assert_eq!(
-			&anchor_events(),
-			&[Event::<Test>::AnchorDeployed(h, ABBA, System::block_number())]
-		);
+		AnchorMod::deploy(RuntimeOrigin::signed(ABBA), bs).unwrap();
+		assert_eq!(&anchor_events(), &[Event::<Test>::AnchorDeployed(h, ABBA)]);
 	});
 }
 

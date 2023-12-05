@@ -55,7 +55,6 @@ pub mod pallet {
 	}
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
 
 	#[pallet::config]
@@ -79,6 +78,7 @@ pub mod pallet {
 		/// Associates a new `StatusListCredentialWithPolicy` with the supplied identifier.
 		/// This method doesn't ensure `StatusListCredential` is a valid `JSON-LD` object.
 		#[pallet::weight(SubstrateWeight::<T>::create(credential))]
+		#[pallet::call_index(0)]
 		pub fn create(
 			origin: OriginFor<T>,
 			id: StatusListCredentialId,
@@ -92,6 +92,7 @@ pub mod pallet {
 		/// Updates `StatusListCredential` associated with the supplied identifier.
 		/// This method doesn't ensure `StatusListCredential` is a valid `JSON-LD` object.
 		#[pallet::weight(SubstrateWeight::<T>::update(&proof[0], update_credential))]
+		#[pallet::call_index(1)]
 		pub fn update(
 			origin: OriginFor<T>,
 			update_credential: UpdateStatusListCredentialRaw<T>,
@@ -108,6 +109,7 @@ pub mod pallet {
 
 		/// Removes `StatusListCredential` associated with the supplied identifier.
 		#[pallet::weight(SubstrateWeight::<T>::remove(&proof[0]))]
+		#[pallet::call_index(2)]
 		pub fn remove(
 			origin: OriginFor<T>,
 			remove_credential: RemoveStatusListCredentialRaw<T>,
@@ -141,7 +143,6 @@ impl<T: Config> SubstrateWeight<T> {
 		match sig.sig {
 			SigValue::Sr25519(_) => Self::update_sr25519(credential.len()),
 			SigValue::Ed25519(_) => Self::update_ed25519(credential.len()),
-			SigValue::Secp256k1(_) => Self::update_secp256k1(credential.len()),
 		}
 	}
 
@@ -149,7 +150,6 @@ impl<T: Config> SubstrateWeight<T> {
 		match sig.sig {
 			SigValue::Sr25519(_) => Self::remove_sr25519(),
 			SigValue::Ed25519(_) => Self::remove_ed25519(),
-			SigValue::Secp256k1(_) => Self::remove_secp256k1(),
 		}
 	}
 }

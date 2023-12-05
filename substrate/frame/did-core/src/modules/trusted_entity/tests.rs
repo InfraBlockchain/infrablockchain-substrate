@@ -9,7 +9,9 @@ use crate::{
 };
 use alloc::collections::BTreeMap;
 use frame_support::assert_noop;
+use frame_system::Origin;
 use sp_core::{sr25519, U256};
+use sp_runtime::DispatchError;
 use sp_std::{iter::once, marker::PhantomData};
 
 pub fn get_pauth<A: Action + Clone>(
@@ -61,7 +63,6 @@ mod errors {
 	// `tests::common`
 	use super::*;
 	use alloc::collections::BTreeSet;
-	use frame_support::dispatch::DispatchError;
 
 	#[test]
 	fn invalidpolicy() {
@@ -77,7 +78,7 @@ mod errors {
 			},
 		};
 
-		let err = TrustedEntityMod::new_authorizer(Origin::signed(ABBA), ar).unwrap_err();
+		let err = TrustedEntityMod::new_authorizer(RuntimeOrigin::signed(ABBA), ar).unwrap_err();
 		assert_eq!(err, PolicyValidationError::Empty.into());
 	}
 
@@ -97,7 +98,7 @@ mod errors {
 				id: authorizer_id,
 				new_authorizer: Authorizer { policy, add_only: false },
 			};
-			TrustedEntityMod::new_authorizer(Origin::signed(ABBA), ar).unwrap();
+			TrustedEntityMod::new_authorizer(RuntimeOrigin::signed(ABBA), ar).unwrap();
 
 			let add_issuer_raw = AddIssuerRaw {
 				_marker: PhantomData,
@@ -107,7 +108,8 @@ mod errors {
 			let pauth = get_pauth(&add_issuer_raw, signers);
 			dbg!(&add_issuer_raw);
 			dbg!(&pauth);
-			TrustedEntityMod::add_issuer(Origin::signed(ABBA), add_issuer_raw, pauth).unwrap_err()
+			TrustedEntityMod::add_issuer(RuntimeOrigin::signed(ABBA), add_issuer_raw, pauth)
+				.unwrap_err()
 		}
 
 		run_to_block(10);
@@ -151,47 +153,53 @@ mod errors {
 		run_to_block(10);
 
 		let kpa = create_did(DIDA);
+		let _kpb = create_did(DIDB);
 		let authorizer = Authorizer { policy, add_only };
 
 		let ar = AddAuthorizer { id: authorizer_id, new_authorizer: authorizer };
-		TrustedEntityMod::new_authorizer(Origin::signed(ABBA), ar).unwrap();
+		TrustedEntityMod::new_authorizer(RuntimeOrigin::signed(ABBA), ar).unwrap();
 
-		let remove_issuer = RemoveIssuerRaw {
+		let remove_issuer_raw = RemoveIssuerRaw {
 			_marker: PhantomData,
 			authorizer_id,
 			entity_ids: once(TrustedEntityId(Default::default())).collect(),
 		};
-		let ur_proof = get_pauth(&remove_issuer, &[(DIDA, &kpa)]);
-		TrustedEntityMod::remove_issuer(Origin::signed(ABBA), remove_issuer.clone(), ur_proof)
-			.unwrap();
+		let ur_proof = get_pauth(&remove_issuer_raw, &[(DIDA, &kpa)]);
+		TrustedEntityMod::remove_issuer(
+			RuntimeOrigin::signed(ABBA),
+			remove_issuer_raw.clone(),
+			ur_proof,
+		)
+		.unwrap();
 
 		let add_issuer_raw = AddIssuerRaw {
 			_marker: PhantomData,
 			authorizer_id,
 			entity_ids: once(TrustedEntityId(Default::default())).collect(),
 		};
-		let ur_proof = get_pauth(&remove_issuer, &[(DIDA, &kpa)]);
+		let ur_proof = get_pauth(&add_issuer_raw, &[(DIDB, &kpa)]);
 		assert_eq!(
-			TrustedEntityMod::add_issuer(Origin::signed(ABBA), add_issuer_raw, ur_proof)
+			TrustedEntityMod::add_issuer(RuntimeOrigin::signed(ABBA), add_issuer_raw, ur_proof)
 				.unwrap_err(),
 			PolicyExecutionError::NotAuthorized.into()
 		);
 
-		let ur_proof = get_pauth(&remove_issuer, &[(DIDA, &kpa)]);
-		TrustedEntityMod::remove_issuer(Origin::signed(ABBA), remove_issuer, ur_proof).unwrap();
+		let ur_proof = get_pauth(&remove_issuer_raw, &[(DIDA, &kpa)]);
+		TrustedEntityMod::remove_issuer(RuntimeOrigin::signed(ABBA), remove_issuer_raw, ur_proof)
+			.unwrap();
 	}
 
 	#[test]
-	fn regexists() {
+	fn authzexists() {
 		if !in_ext() {
-			return ext().execute_with(regexists)
+			return ext().execute_with(authzexists)
 		}
 
 		let authorizer = Authorizer { policy: Policy::one_of([DIDA]).unwrap(), add_only: false };
 		let ar = AddAuthorizer { id: AUA, new_authorizer: authorizer };
-		TrustedEntityMod::new_authorizer(Origin::signed(ABBA), ar.clone()).unwrap();
-		let err = TrustedEntityMod::new_authorizer(Origin::signed(ABBA), ar).unwrap_err();
-		assert_eq!(err, Error::<Test>::RegExists.into());
+		TrustedEntityMod::new_authorizer(RuntimeOrigin::signed(ABBA), ar.clone()).unwrap();
+		let err = TrustedEntityMod::new_authorizer(RuntimeOrigin::signed(ABBA), ar).unwrap_err();
+		assert_eq!(err, Error::<Test>::AuthzExists.into());
 	}
 
 	#[test]
@@ -206,7 +214,7 @@ mod errors {
 
 		assert_eq!(
 			TrustedEntityMod::add_issuer(
-				Origin::signed(ABBA),
+				RuntimeOrigin::signed(ABBA),
 				AddIssuerRaw {
 					_marker: PhantomData,
 					authorizer_id,
@@ -218,7 +226,7 @@ mod errors {
 		);
 		assert_eq!(
 			TrustedEntityMod::remove_issuer(
-				Origin::signed(ABBA),
+				RuntimeOrigin::signed(ABBA),
 				RemoveIssuerRaw {
 					_marker: PhantomData,
 					authorizer_id,
@@ -230,7 +238,7 @@ mod errors {
 		);
 		assert_eq!(
 			TrustedEntityMod::remove_authorizer(
-				Origin::signed(ABBA),
+				RuntimeOrigin::signed(ABBA),
 				RemoveAuthorizerRaw { _marker: PhantomData, authorizer_id },
 				vec![],
 			),
@@ -255,7 +263,7 @@ mod errors {
 			},
 		};
 
-		assert_noop!(TrustedEntityMod::new_authorizer(Origin::signed(ABBA), ar), err);
+		assert_noop!(TrustedEntityMod::new_authorizer(RuntimeOrigin::signed(ABBA), ar), err);
 	}
 
 	#[test]
@@ -269,13 +277,13 @@ mod errors {
 		let authorizer_id = AUA;
 		let authorizer = Authorizer { policy: Policy::one_of([DIDA]).unwrap(), add_only: false };
 		let ar = AddAuthorizer { id: AUA, new_authorizer: authorizer };
-		TrustedEntityMod::new_authorizer(Origin::signed(ABBA), ar).unwrap();
+		TrustedEntityMod::new_authorizer(RuntimeOrigin::signed(ABBA), ar).unwrap();
 		let add_issuer_raw =
 			AddIssuerRaw { _marker: PhantomData, authorizer_id, entity_ids: Default::default() };
 		let proof = get_pauth(&add_issuer_raw, &[(DIDA, &kpa)]);
 
 		assert_noop!(
-			TrustedEntityMod::add_issuer(Origin::signed(ABBA), add_issuer_raw, proof),
+			TrustedEntityMod::add_issuer(RuntimeOrigin::signed(ABBA), add_issuer_raw, proof),
 			err
 		);
 	}
@@ -298,7 +306,7 @@ mod errors {
 			new_authorizer: Authorizer { policy: Policy::one_of([DIDA]).unwrap(), add_only: false },
 		};
 
-		TrustedEntityMod::new_authorizer(Origin::signed(ABBA), ar).unwrap();
+		TrustedEntityMod::new_authorizer(RuntimeOrigin::signed(ABBA), ar).unwrap();
 
 		let add_issuer_raw = AddIssuerRaw {
 			_marker: PhantomData,
@@ -309,7 +317,10 @@ mod errors {
 
 		// Increase nonce to make the auth chekc fail
 		inc_nonce(&DIDA);
-		assert_eq!(TrustedEntityMod::add_issuer(Origin::signed(ABBA), add_issuer_raw, proof), err);
+		assert_eq!(
+			TrustedEntityMod::add_issuer(RuntimeOrigin::signed(ABBA), add_issuer_raw, proof),
+			err
+		);
 
 		let remove_issuer = RemoveIssuerRaw {
 			_marker: PhantomData,
@@ -321,7 +332,7 @@ mod errors {
 		// Increase nonce to make the auth check fail
 		inc_nonce(&DIDA);
 		assert_eq!(
-			TrustedEntityMod::remove_issuer(Origin::signed(ABBA), remove_issuer, proof,),
+			TrustedEntityMod::remove_issuer(RuntimeOrigin::signed(ABBA), remove_issuer, proof,),
 			err
 		);
 
@@ -330,7 +341,10 @@ mod errors {
 
 		// Increase nonce to make the auth check fail
 		inc_nonce(&DIDA);
-		assert_eq!(TrustedEntityMod::remove_authorizer(Origin::signed(ABBA), remove, proof,), err);
+		assert_eq!(
+			TrustedEntityMod::remove_authorizer(RuntimeOrigin::signed(ABBA), remove, proof,),
+			err
+		);
 	}
 
 	#[test]
@@ -352,18 +366,21 @@ mod errors {
 			new_authorizer: Authorizer { policy: Policy::one_of([DIDA]).unwrap(), add_only: true },
 		};
 
-		TrustedEntityMod::new_authorizer(Origin::signed(ABBA), ar).unwrap();
+		TrustedEntityMod::new_authorizer(RuntimeOrigin::signed(ABBA), ar).unwrap();
 
 		let remove_issuer = RemoveIssuerRaw { _marker: PhantomData, authorizer_id, entity_ids };
 		let proof = get_pauth(&remove_issuer, &[(DIDA, &kpa)]);
 		assert_eq!(
-			TrustedEntityMod::remove_issuer(Origin::signed(ABBA), remove_issuer, proof),
+			TrustedEntityMod::remove_issuer(RuntimeOrigin::signed(ABBA), remove_issuer, proof),
 			err
 		);
 
 		let remove = RemoveAuthorizerRaw { _marker: PhantomData, authorizer_id };
 		let proof = get_pauth(&remove, &[(DIDA, &kpa)]);
-		assert_eq!(TrustedEntityMod::remove_authorizer(Origin::signed(ABBA), remove, proof), err);
+		assert_eq!(
+			TrustedEntityMod::remove_authorizer(RuntimeOrigin::signed(ABBA), remove, proof),
+			err
+		);
 	}
 
 	// Untested variants will be a match error.
@@ -371,7 +388,7 @@ mod errors {
 	fn _all_included(dummy: Error<Test>) {
 		match dummy {
 			Error::__Ignore(_, _) |
-			Error::RegExists |
+			Error::AuthzExists |
 			Error::EmptyPayload |
 			Error::IncorrectNonce |
 			Error::AddOnly |
@@ -390,7 +407,7 @@ mod calls {
 	use super::*;
 	// Cannot do `use super::super::*` as that would import `Call` as `Call` which conflicts with
 	// `Call` in `tests::common`
-	use super::super::{Authorizers, Call as RevCall, Revocations};
+	use super::super::{Authorizers, Call as RevCall, Issuers, Verifiers};
 	use alloc::collections::BTreeSet;
 
 	#[test]
@@ -410,7 +427,7 @@ mod calls {
 			let authorizer = Authorizer { policy, add_only };
 			let ar = AddAuthorizer { id: authorizer_id, new_authorizer: authorizer.clone() };
 			assert!(!Authorizers::<Test>::contains_key(authorizer_id));
-			TrustedEntityMod::new_authorizer(Origin::signed(ABBA), ar).unwrap();
+			TrustedEntityMod::new_authorizer(RuntimeOrigin::signed(ABBA), ar).unwrap();
 			assert!(Authorizers::<Test>::contains_key(authorizer_id));
 			assert_eq!(Authorizers::<Test>::get(authorizer_id).unwrap(), authorizer);
 		}
@@ -433,7 +450,7 @@ mod calls {
 		let ar =
 			AddAuthorizer { id: authorizer_id, new_authorizer: Authorizer { policy, add_only } };
 
-		TrustedEntityMod::new_authorizer(Origin::signed(ABBA), ar).unwrap();
+		TrustedEntityMod::new_authorizer(RuntimeOrigin::signed(ABBA), ar).unwrap();
 
 		let cases: &[&[TrustedEntityId]] = &[
 			// &[],
@@ -452,8 +469,8 @@ mod calls {
 			};
 			let proof = get_pauth(&add_issuer, &[(DIDA, &kpa)]);
 			let old_nonces = get_nonces(&[(DIDA, &kpa)]);
-			TrustedEntityMod::add_issuer(Origin::signed(ABBA), add_issuer, proof).unwrap();
-			assert!(ids.iter().all(|id| Revocations::<Test>::contains_key(authorizer_id, id)));
+			TrustedEntityMod::add_issuer(RuntimeOrigin::signed(ABBA), add_issuer, proof).unwrap();
+			assert!(ids.iter().all(|id| Issuers::<Test>::contains_key(authorizer_id, id)));
 			check_nonce_increase(old_nonces, &[(DIDA, &kpa)]);
 			run_to_block(1 + 1 + i as u64);
 		}
@@ -483,7 +500,7 @@ mod calls {
 		let ar =
 			AddAuthorizer { id: authorizer_id, new_authorizer: Authorizer { policy, add_only } };
 
-		TrustedEntityMod::new_authorizer(Origin::signed(ABBA), ar).unwrap();
+		TrustedEntityMod::new_authorizer(RuntimeOrigin::signed(ABBA), ar).unwrap();
 
 		let cases: &[(Action, &[TrustedEntityId], u32)] = &[
 			//(Action::RemoveIssuer, &[], line!()),
@@ -519,7 +536,8 @@ mod calls {
 						AddIssuerRaw { _marker: PhantomData, authorizer_id, entity_ids };
 					let proof = get_pauth(&add_issuer, &[(DIDA, &kpa)]);
 					let old_nonces = get_nonces(&[(DIDA, &kpa)]);
-					TrustedEntityMod::add_issuer(Origin::signed(ABBA), add_issuer, proof).unwrap();
+					TrustedEntityMod::add_issuer(RuntimeOrigin::signed(ABBA), add_issuer, proof)
+						.unwrap();
 					check_nonce_increase(old_nonces, &[(DIDA, &kpa)]);
 				},
 				Action::RemoveIssuer => {
@@ -530,19 +548,166 @@ mod calls {
 					};
 					let old_nonces = get_nonces(&[(DIDA, &kpa)]);
 					let proof = get_pauth(&remove_issuer, &[(DIDA, &kpa)]);
-					TrustedEntityMod::remove_issuer(Origin::signed(ABBA), remove_issuer, proof)
-						.unwrap();
+					TrustedEntityMod::remove_issuer(
+						RuntimeOrigin::signed(ABBA),
+						remove_issuer,
+						proof,
+					)
+					.unwrap();
 					check_nonce_increase(old_nonces, &[(DIDA, &kpa)]);
 				},
 				Action::AsrtIssuer => {
 					assert!(entity_ids
 						.iter()
-						.all(|id| Revocations::<Test>::contains_key(authorizer_id, id)));
+						.all(|id| Issuers::<Test>::contains_key(authorizer_id, id)));
 				},
 				Action::AsrtNotIssuer => {
 					assert!(!entity_ids
 						.iter()
-						.any(|id| Revocations::<Test>::contains_key(authorizer_id, id)));
+						.any(|id| Issuers::<Test>::contains_key(authorizer_id, id)));
+				},
+			}
+			run_to_block(10 + 1 + i as u64)
+		}
+	}
+
+	#[test]
+	fn add_verifier() {
+		if !in_ext() {
+			return ext().execute_with(add_verifier)
+		}
+
+		let policy = Policy::one_of([DIDA]).unwrap();
+		let authorizer_id = AUA;
+		let add_only = true;
+
+		run_to_block(1);
+
+		let kpa = create_did(DIDA);
+
+		let ar =
+			AddAuthorizer { id: authorizer_id, new_authorizer: Authorizer { policy, add_only } };
+
+		TrustedEntityMod::new_authorizer(RuntimeOrigin::signed(ABBA), ar).unwrap();
+
+		let cases: &[&[TrustedEntityId]] = &[
+			// &[],
+			&[TrustedEntityId(random())],
+			&[TrustedEntityId(random()), TrustedEntityId(random())],
+			&[TrustedEntityId(random()), TrustedEntityId(random()), TrustedEntityId(random())],
+			&[TEA], // Test idempotence, step 1
+			&[TEA], // Test idempotence, step 2
+		];
+		for (i, ids) in cases.iter().enumerate() {
+			println!("AddVerifier ids: {:?}", ids);
+			let add_verifier_raw = AddVerifierRaw {
+				_marker: PhantomData,
+				authorizer_id,
+				entity_ids: ids.iter().cloned().collect(),
+			};
+			let proof = get_pauth(&add_verifier_raw, &[(DIDA, &kpa)]);
+			let old_nonces = get_nonces(&[(DIDA, &kpa)]);
+			TrustedEntityMod::add_verifier(RuntimeOrigin::signed(ABBA), add_verifier_raw, proof)
+				.unwrap();
+			assert!(ids.iter().all(|id| Verifiers::<Test>::contains_key(authorizer_id, id)));
+			check_nonce_increase(old_nonces, &[(DIDA, &kpa)]);
+			run_to_block(1 + 1 + i as u64);
+		}
+	}
+
+	#[test]
+	fn remove_verifier() {
+		if !in_ext() {
+			return ext().execute_with(remove_verifier)
+		}
+
+		let policy = Policy::one_of([DIDA]).unwrap();
+		let authorizer_id = AUA;
+		let add_only = false;
+
+		run_to_block(10);
+
+		let kpa = create_did(DIDA);
+
+		enum Action {
+			AddVerifier,
+			RemoveVerifier,
+			AsrtVerifier,    // assert verifier
+			AsrtNotVerifier, // assert not verifier
+		}
+
+		let ar =
+			AddAuthorizer { id: authorizer_id, new_authorizer: Authorizer { policy, add_only } };
+
+		TrustedEntityMod::new_authorizer(RuntimeOrigin::signed(ABBA), ar).unwrap();
+
+		let cases: &[(Action, &[TrustedEntityId], u32)] = &[
+			//(Action::RemoveVerifier, &[], line!()),
+			(Action::RemoveVerifier, &[TrustedEntityId(random())], line!()),
+			(
+				Action::RemoveVerifier,
+				&[TrustedEntityId(random()), TrustedEntityId(random())],
+				line!(),
+			),
+			(
+				Action::RemoveVerifier,
+				&[TrustedEntityId(random()), TrustedEntityId(random()), TrustedEntityId(random())],
+				line!(),
+			),
+			(Action::AddVerifier, &[TEA, TEB], line!()),
+			(Action::AsrtVerifier, &[TEA, TEB], line!()),
+			(Action::RemoveVerifier, &[TEA], line!()),
+			(Action::AsrtNotVerifier, &[TEA], line!()),
+			(Action::AsrtVerifier, &[TEB], line!()),
+			(Action::RemoveVerifier, &[TEA, TEB], line!()),
+			(Action::AsrtNotVerifier, &[TEA, TEB], line!()),
+			(Action::AddVerifier, &[TEA, TEB], line!()),
+			(Action::AsrtVerifier, &[TEA, TEB], line!()),
+			(Action::RemoveVerifier, &[TEA, TEB], line!()),
+			(Action::AsrtNotVerifier, &[TEA, TEB], line!()),
+		];
+		for (i, (action, ids, line_no)) in cases.iter().enumerate() {
+			eprintln!("running action from line {}", line_no);
+			let entity_ids: BTreeSet<TrustedEntityId> = ids.iter().cloned().collect();
+			match action {
+				Action::AddVerifier => {
+					let add_verifier_raw =
+						AddVerifierRaw { _marker: PhantomData, authorizer_id, entity_ids };
+					let proof = get_pauth(&add_verifier_raw, &[(DIDA, &kpa)]);
+					let old_nonces = get_nonces(&[(DIDA, &kpa)]);
+					TrustedEntityMod::add_verifier(
+						RuntimeOrigin::signed(ABBA),
+						add_verifier_raw,
+						proof,
+					)
+					.unwrap();
+					check_nonce_increase(old_nonces, &[(DIDA, &kpa)]);
+				},
+				Action::RemoveVerifier => {
+					let remove_verifier_raw = RemoveVerifierRaw {
+						_marker: PhantomData,
+						authorizer_id,
+						entity_ids: entity_ids.clone(),
+					};
+					let old_nonces = get_nonces(&[(DIDA, &kpa)]);
+					let proof = get_pauth(&remove_verifier_raw, &[(DIDA, &kpa)]);
+					TrustedEntityMod::remove_verifier(
+						RuntimeOrigin::signed(ABBA),
+						remove_verifier_raw,
+						proof,
+					)
+					.unwrap();
+					check_nonce_increase(old_nonces, &[(DIDA, &kpa)]);
+				},
+				Action::AsrtVerifier => {
+					assert!(entity_ids
+						.iter()
+						.all(|id| Verifiers::<Test>::contains_key(authorizer_id, id)));
+				},
+				Action::AsrtNotVerifier => {
+					assert!(!entity_ids
+						.iter()
+						.any(|id| Verifiers::<Test>::contains_key(authorizer_id, id)));
 				},
 			}
 			run_to_block(10 + 1 + i as u64)
@@ -563,14 +728,14 @@ mod calls {
 		let authorizer = Authorizer { policy, add_only };
 		let ar = AddAuthorizer { id: authorizer_id, new_authorizer: authorizer };
 
-		TrustedEntityMod::new_authorizer(Origin::signed(ABBA), ar).unwrap();
+		TrustedEntityMod::new_authorizer(RuntimeOrigin::signed(ABBA), ar).unwrap();
 		assert!(Authorizers::<Test>::contains_key(authorizer_id));
 
 		// destroy authorizer
 		let rem = RemoveAuthorizerRaw { _marker: PhantomData, authorizer_id };
 		let proof = get_pauth(&rem, &[(DIDA, &kpa)]);
 		let old_nonces = get_nonces(&[(DIDA, &kpa)]);
-		TrustedEntityMod::remove_authorizer(Origin::signed(ABBA), rem, proof).unwrap();
+		TrustedEntityMod::remove_authorizer(RuntimeOrigin::signed(ABBA), rem, proof).unwrap();
 		check_nonce_increase(old_nonces, &[(DIDA, &kpa)]);
 
 		// assert not exists
@@ -668,7 +833,7 @@ mod test {
 		let ar = AddAuthorizer { id: authorizer_id, new_authorizer: authorizer.clone() };
 
 		assert_eq!(TrustedEntityMod::get_authorizer(authorizer_id), None);
-		TrustedEntityMod::new_authorizer(Origin::signed(ABBA), ar).unwrap();
+		TrustedEntityMod::new_authorizer(RuntimeOrigin::signed(ABBA), ar).unwrap();
 		assert_eq!(TrustedEntityMod::get_authorizer(authorizer_id), Some(authorizer));
 	}
 
@@ -688,7 +853,7 @@ mod test {
 
 		let ar = AddAuthorizer { id: authorizer_id, new_authorizer: authorizer };
 
-		TrustedEntityMod::new_authorizer(Origin::signed(ABBA), ar).unwrap();
+		TrustedEntityMod::new_authorizer(RuntimeOrigin::signed(ABBA), ar).unwrap();
 		let add_issuer = AddIssuerRaw {
 			_marker: PhantomData,
 			authorizer_id,
@@ -697,7 +862,37 @@ mod test {
 		let proof = get_pauth(&add_issuer, &[(DIDA, &kpa)]);
 
 		assert_eq!(TrustedEntityMod::get_issuer(authorizer_id, entity_id), None);
-		TrustedEntityMod::add_issuer(Origin::signed(ABBA), add_issuer, proof).unwrap();
+		TrustedEntityMod::add_issuer(RuntimeOrigin::signed(ABBA), add_issuer, proof).unwrap();
 		assert_eq!(TrustedEntityMod::get_issuer(authorizer_id, entity_id), Some(()));
+	}
+
+	#[test]
+	/// Exercises the revocation status convenience getter, get_verifier.
+	fn get_verifier() {
+		if !in_ext() {
+			return ext().execute_with(get_verifier)
+		}
+
+		let policy = Policy::one_of([DIDA]).unwrap();
+		let authorizer_id = AUA;
+		let add_only = false;
+		let authorizer = Authorizer { policy, add_only };
+		let kpa = create_did(DIDA);
+		let entity_id: TrustedEntityId = TrustedEntityId(random());
+
+		let ar = AddAuthorizer { id: authorizer_id, new_authorizer: authorizer };
+
+		TrustedEntityMod::new_authorizer(RuntimeOrigin::signed(ABBA), ar).unwrap();
+		let add_verifier_raw = AddVerifierRaw {
+			_marker: PhantomData,
+			authorizer_id,
+			entity_ids: once(entity_id).collect(),
+		};
+		let proof = get_pauth(&add_verifier_raw, &[(DIDA, &kpa)]);
+
+		assert_eq!(TrustedEntityMod::get_verifier(authorizer_id, entity_id), None);
+		TrustedEntityMod::add_verifier(RuntimeOrigin::signed(ABBA), add_verifier_raw, proof)
+			.unwrap();
+		assert_eq!(TrustedEntityMod::get_verifier(authorizer_id, entity_id), Some(()));
 	}
 }

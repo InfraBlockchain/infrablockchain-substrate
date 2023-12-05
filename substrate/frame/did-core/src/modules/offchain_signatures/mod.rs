@@ -64,7 +64,6 @@ pub mod pallet {
 	}
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
 
 	/// Pair of counters where each is used to assign unique id to parameters and public keys
@@ -119,6 +118,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::weight(SubstrateWeight::<T>::add_params(params, signature))]
+		#[pallet::call_index(0)]
 		pub fn add_params(
 			origin: OriginFor<T>,
 			params: AddOffchainSignatureParams<T>,
@@ -138,6 +138,7 @@ pub mod pallet {
 		/// `remove_keys` from the DID module but only by calling `remove_public_key` of this
 		/// module.
 		#[pallet::weight(SubstrateWeight::<T>::add_public(public_key, signature))]
+		#[pallet::call_index(1)]
 		pub fn add_public_key(
 			origin: OriginFor<T>,
 			public_key: AddOffchainSignaturePublicKey<T>,
@@ -153,6 +154,7 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(SubstrateWeight::<T>::remove_params(remove, signature))]
+		#[pallet::call_index(2)]
 		pub fn remove_params(
 			origin: OriginFor<T>,
 			remove: RemoveOffchainSignatureParams<T>,
@@ -171,6 +173,7 @@ pub mod pallet {
 		/// and it should use the nonce from the DID module. This kind of key cannot be removed by
 		/// calling `remove_keys` from the DID module.
 		#[pallet::weight(SubstrateWeight::<T>::remove_public(remove, signature))]
+		#[pallet::call_index(3)]
 		pub fn remove_public_key(
 			origin: OriginFor<T>,
 			remove: RemoveOffchainSignaturePublicKey<T>,
@@ -206,7 +209,6 @@ impl<T: Config> SubstrateWeight<T> {
 		(match sig {
 			SigValue::Sr25519(_) => Self::add_params_sr25519,
 			SigValue::Ed25519(_) => Self::add_params_ed25519,
-			SigValue::Secp256k1(_) => Self::add_params_secp256k1,
 		}(
 			add_params.params.bytes().len() as u32,
 			add_params.params.label().map_or(0, |v| v.len()) as u32,
@@ -220,7 +222,6 @@ impl<T: Config> SubstrateWeight<T> {
 		(match sig {
 			SigValue::Sr25519(_) => Self::add_public_sr25519,
 			SigValue::Ed25519(_) => Self::add_public_ed25519,
-			SigValue::Secp256k1(_) => Self::add_public_secp256k1,
 		}(public_key.key.bytes().len() as u32))
 	}
 
@@ -231,7 +232,6 @@ impl<T: Config> SubstrateWeight<T> {
 		(match sig {
 			SigValue::Sr25519(_) => Self::remove_params_sr25519,
 			SigValue::Ed25519(_) => Self::remove_params_ed25519,
-			SigValue::Secp256k1(_) => Self::remove_params_secp256k1,
 		}())
 	}
 
@@ -242,7 +242,6 @@ impl<T: Config> SubstrateWeight<T> {
 		(match sig {
 			SigValue::Sr25519(_) => Self::remove_public_sr25519,
 			SigValue::Ed25519(_) => Self::remove_public_ed25519,
-			SigValue::Secp256k1(_) => Self::remove_public_secp256k1,
 		}())
 	}
 }

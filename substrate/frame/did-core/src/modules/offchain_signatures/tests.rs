@@ -8,6 +8,7 @@ use crate::{
 };
 use alloc::collections::BTreeMap;
 use frame_support::assert_err;
+use frame_system::Origin;
 use sp_core::{sr25519, H256};
 use sp_runtime::traits::CheckedConversion;
 
@@ -142,7 +143,7 @@ with_each_scheme! {
 			};
 			let sig = sign_add_params::<Test>(&author_kp, &ap, author, 1);
 			SignatureMod::add_params(
-				Origin::signed(1),
+				RuntimeOrigin::signed(1),
 				AddOffchainSignatureParams {
 					params: params.clone().into(),
 					nonce: next_nonce,
@@ -181,7 +182,7 @@ with_each_scheme! {
 			};
 			let sig = sign_add_params::<Test>(&author_kp, &ap, author, 1);
 			SignatureMod::add_params(
-				Origin::signed(1),
+				RuntimeOrigin::signed(1),
 				AddOffchainSignatureParams {
 					params: params_1.clone().into(),
 					nonce: next_nonce,
@@ -224,7 +225,7 @@ with_each_scheme! {
 				None
 			);
 			SignatureMod::add_params(
-				Origin::signed(1),
+				RuntimeOrigin::signed(1),
 				AddOffchainSignatureParams {
 					params: params_2.clone().into(),
 					nonce: next_nonce_1,
@@ -266,7 +267,7 @@ with_each_scheme! {
 			};
 			let sig = sign_add_params::<Test>(&author_kp, &ap, author, 1);
 			SignatureMod::add_params(
-				Origin::signed(1),
+				RuntimeOrigin::signed(1),
 				AddOffchainSignatureParams {
 					params: params_3.clone().into(),
 					nonce: next_nonce,
@@ -298,7 +299,7 @@ with_each_scheme! {
 			};
 			let sig = sign_remove_params::<Test>(&author_kp, &rp, author, 1);
 			assert_err!(
-				SignatureMod::remove_params(Origin::signed(1), rp, sig),
+				SignatureMod::remove_params(RuntimeOrigin::signed(1), rp, sig),
 				Error::<Test>::ParamsDontExist
 			);
 			check_nonce(&author, next_nonce - 1);
@@ -311,14 +312,14 @@ with_each_scheme! {
 
 			let sig = sign_remove_params::<Test>(&author_1_kp, &rp, author_1, 1);
 			assert_err!(
-				SignatureMod::remove_params(Origin::signed(1), rp.clone(), sig),
+				SignatureMod::remove_params(RuntimeOrigin::signed(1), rp.clone(), sig),
 				Error::<Test>::NotOwner
 			);
 			check_nonce(&author_1, next_nonce_1 - 1);
 
 			rp.nonce = next_nonce;
 			let sig = sign_remove_params::<Test>(&author_kp, &rp, author, 1);
-			SignatureMod::remove_params(Origin::signed(1), rp, sig).unwrap();
+			SignatureMod::remove_params(RuntimeOrigin::signed(1), rp, sig).unwrap();
 			check_nonce(&author, next_nonce);
 			next_nonce += 1;
 			// Counter doesn't go back
@@ -359,7 +360,7 @@ with_each_scheme! {
 			// Cannot remove as already removed
 			assert_err!(
 				SignatureMod::remove_params(
-					Origin::signed(1),
+					RuntimeOrigin::signed(1),
 					RemoveOffchainSignatureParams {
 						params_ref: rf,
 						nonce: next_nonce
@@ -376,7 +377,7 @@ with_each_scheme! {
 				nonce: next_nonce_1,
 			};
 			let sig = sign_remove_params::<Test>(&author_1_kp, &rp, author_1, 1);
-			SignatureMod::remove_params(Origin::signed(1), rp, sig).unwrap();
+			SignatureMod::remove_params(RuntimeOrigin::signed(1), rp, sig).unwrap();
 			check_nonce(&author_1, next_nonce_1);
 			next_nonce_1 += 1;
 			// Counter doesn't go back
@@ -413,7 +414,7 @@ with_each_scheme! {
 			// Cannot remove as already removed
 			assert_err!(
 				SignatureMod::remove_params(
-					Origin::signed(1),
+					RuntimeOrigin::signed(1),
 					RemoveOffchainSignatureParams {
 						params_ref: rf,
 						nonce: next_nonce_1
@@ -430,7 +431,7 @@ with_each_scheme! {
 				nonce: next_nonce,
 			};
 			let sig = sign_remove_params::<Test>(&author_kp, &rp, author, 1);
-			SignatureMod::remove_params(Origin::signed(1), rp, sig).unwrap();
+			SignatureMod::remove_params(RuntimeOrigin::signed(1), rp, sig).unwrap();
 			check_nonce(&author, next_nonce);
 			next_nonce += 1;
 			// Counter doesn't go back
@@ -461,7 +462,7 @@ with_each_scheme! {
 				nonce: next_nonce,
 			};
 			let sig = sign_remove_params::<Test>(&author_kp, &rp, author, 1);
-			SignatureMod::remove_params(Origin::signed(1), rp, sig).unwrap();
+			SignatureMod::remove_params(RuntimeOrigin::signed(1), rp, sig).unwrap();
 			check_nonce(&author, next_nonce);
 			// Counter doesn't go back
 			assert_eq!(
@@ -531,7 +532,7 @@ with_each_scheme! {
 			run_to_block(35);
 
 			let sig = sign_add_key(&author_kp, &ak, author, 1);
-			SignatureMod::add_public_key(Origin::signed(1), ak, sig).unwrap();
+			SignatureMod::add_public_key(RuntimeOrigin::signed(1), ak, sig).unwrap();
 			check_nonce(&author, next_nonce);
 			next_nonce += 1;
 			assert_eq!(
@@ -555,7 +556,7 @@ with_each_scheme! {
 				nonce: next_nonce,
 			};
 			let sig = sign_add_key(&author_kp, &ak, author, 1);
-			SignatureMod::add_public_key(Origin::signed(1), ak, sig).unwrap();
+			SignatureMod::add_public_key(RuntimeOrigin::signed(1), ak, sig).unwrap();
 			check_nonce(&author, next_nonce);
 			next_nonce += 1;
 			assert_eq!(
@@ -590,7 +591,7 @@ with_each_scheme! {
 			);
 			assert_eq!(PublicKeys::<Test>::get(author_1, IncId::from(1u8)), None);
 			assert_eq!(PublicKeys::<Test>::get(author_1, IncId::from(2u8)), None);
-			SignatureMod::add_public_key(Origin::signed(1), ak, sig).unwrap();
+			SignatureMod::add_public_key(RuntimeOrigin::signed(1), ak, sig).unwrap();
 			check_nonce(&author_1, next_nonce_1);
 			next_nonce_1 += 1;
 			assert_eq!(
@@ -622,7 +623,7 @@ with_each_scheme! {
 				nonce: next_nonce,
 			};
 			let sig = sign_add_key(&author_kp, &ak, author, 1);
-			SignatureMod::add_public_key(Origin::signed(1), ak, sig).unwrap();
+			SignatureMod::add_public_key(RuntimeOrigin::signed(1), ak, sig).unwrap();
 			check_nonce(&author, next_nonce);
 			next_nonce += 1;
 			assert_eq!(
@@ -647,7 +648,7 @@ with_each_scheme! {
 			};
 			let sig = sign_remove_key(&author_kp, &rk, author, 1);
 			assert_err!(
-				SignatureMod::remove_public_key(Origin::signed(1), rk, sig),
+				SignatureMod::remove_public_key(RuntimeOrigin::signed(1), rk, sig),
 				Error::<Test>::PublicKeyDoesntExist
 			);
 			check_nonce(&author, next_nonce - 1);
@@ -660,7 +661,7 @@ with_each_scheme! {
 			};
 			let sig = sign_remove_key(&author_kp_1, &rk, author_1, 1);
 			assert_err!(
-				SignatureMod::remove_public_key(Origin::signed(1), rk, sig),
+				SignatureMod::remove_public_key(RuntimeOrigin::signed(1), rk, sig),
 				Error::<Test>::NotOwner
 			);
 
@@ -671,7 +672,7 @@ with_each_scheme! {
 				nonce: next_nonce,
 			};
 			let sig = sign_remove_key(&author_kp, &rk, author, 1);
-			SignatureMod::remove_public_key(Origin::signed(1), rk, sig).unwrap();
+			SignatureMod::remove_public_key(RuntimeOrigin::signed(1), rk, sig).unwrap();
 			check_nonce(&author, next_nonce);
 			next_nonce += 1;
 
@@ -705,7 +706,7 @@ with_each_scheme! {
 			let sig = sign_remove_key(&author_kp, &rk, author, 1);
 			// Cannot remove as already removed
 			assert_err!(
-				SignatureMod::remove_public_key(Origin::signed(1), rk, sig),
+				SignatureMod::remove_public_key(RuntimeOrigin::signed(1), rk, sig),
 				Error::<Test>::PublicKeyDoesntExist
 			);
 			check_nonce(&author, next_nonce - 1);
@@ -719,7 +720,7 @@ with_each_scheme! {
 				nonce: next_nonce_1,
 			};
 			let sig = sign_remove_key(&author_kp_1, &rk, author_1, 1);
-			SignatureMod::remove_public_key(Origin::signed(1), rk, sig).unwrap();
+			SignatureMod::remove_public_key(RuntimeOrigin::signed(1), rk, sig).unwrap();
 			check_nonce(&author_1, next_nonce_1);
 			next_nonce_1 += 1;
 			// Counter doesn't go back
@@ -753,7 +754,7 @@ with_each_scheme! {
 			let sig = sign_remove_key(&author_kp_1, &rk, author_1, 1);
 			// Cannot remove as already removed
 			assert_err!(
-				SignatureMod::remove_public_key(Origin::signed(1), rk, sig),
+				SignatureMod::remove_public_key(RuntimeOrigin::signed(1), rk, sig),
 				Error::<Test>::PublicKeyDoesntExist
 			);
 			check_nonce(&author_1, next_nonce_1 - 1);
@@ -765,7 +766,7 @@ with_each_scheme! {
 				nonce: next_nonce,
 			};
 			let sig = sign_remove_key(&author_kp, &rk, author, 1);
-			SignatureMod::remove_public_key(Origin::signed(1), rk, sig).unwrap();
+			SignatureMod::remove_public_key(RuntimeOrigin::signed(1), rk, sig).unwrap();
 			check_nonce(&author, next_nonce);
 			next_nonce += 1;
 			// Counter doesn't go back
@@ -788,7 +789,7 @@ with_each_scheme! {
 				nonce: next_nonce,
 			};
 			let sig = sign_remove_key(&author_kp, &rk, author, 1);
-			SignatureMod::remove_public_key(Origin::signed(1), rk, sig).unwrap();
+			SignatureMod::remove_public_key(RuntimeOrigin::signed(1), rk, sig).unwrap();
 			check_nonce(&author, next_nonce);
 			next_nonce += 1;
 			// Counter doesn't go back
@@ -812,7 +813,7 @@ with_each_scheme! {
 			};
 			let sig = sign_add_params::<Test>(&author_kp, &ap, author, 1);
 			SignatureMod::add_params(
-				Origin::signed(1),
+				RuntimeOrigin::signed(1),
 				AddOffchainSignatureParams {
 					params: params.clone().into(),
 					nonce: next_nonce,
@@ -844,7 +845,7 @@ with_each_scheme! {
 			};
 			let sig = sign_add_key(&author_kp_1, &ak, author_1, 1);
 			assert_err!(
-				SignatureMod::add_public_key(Origin::signed(1), ak, sig),
+				SignatureMod::add_public_key(RuntimeOrigin::signed(1), ak, sig),
 				Error::<Test>::ParamsDontExist
 			);
 			check_nonce(&author_1, next_nonce_1 - 1);
@@ -865,7 +866,7 @@ with_each_scheme! {
 				nonce: next_nonce_1,
 			};
 			let sig = sign_add_key(&author_kp_1, &ak, author_1, 1);
-			SignatureMod::add_public_key(Origin::signed(1), ak, sig).unwrap();
+			SignatureMod::add_public_key(RuntimeOrigin::signed(1), ak, sig).unwrap();
 			check_nonce(&author_1, next_nonce_1);
 			assert_eq!(
 				ParamsCounter::<Test>::get(SignatureParamsOwner(author_1)),
@@ -885,7 +886,7 @@ with_each_scheme! {
 				nonce: next_nonce,
 			};
 			let sig = sign_add_key(&author_kp, &ak, author, 1);
-			SignatureMod::add_public_key(Origin::signed(1), ak, sig).unwrap();
+			SignatureMod::add_public_key(RuntimeOrigin::signed(1), ak, sig).unwrap();
 			check_nonce(&author, next_nonce);
 			assert_eq!(
 				ParamsCounter::<Test>::get(SignatureParamsOwner(author)),
@@ -924,7 +925,7 @@ with_each_scheme! {
 				nonce: next_nonce_1,
 			};
 			let sig = did_sig::<_, _, _>(&add_controllers, &did_1_kp, Controller(did_1), 1);
-			DIDModule::add_controllers(Origin::signed(1), add_controllers, sig).unwrap();
+			DIDModule::add_controllers(RuntimeOrigin::signed(1), add_controllers, sig).unwrap();
 			assert!(DIDModule::is_controller(&did_1, &Controller(did)));
 			check_did_detail(&did_1, 1, 1, 2, next_nonce_1);
 			check_did_detail(&did, 1, 1, 1, next_nonce - 1);
@@ -937,7 +938,7 @@ with_each_scheme! {
 				nonce: next_nonce,
 			};
 			let sig = sign_add_key(&did_kp, &ak, did, 1);
-			SignatureMod::add_public_key(Origin::signed(1), ak, sig).unwrap();
+			SignatureMod::add_public_key(RuntimeOrigin::signed(1), ak, sig).unwrap();
 
 			check_did_detail(&did_1, 2, 1, 2, next_nonce_1 - 1);
 			check_did_detail(&did, 1, 1, 1, next_nonce);
@@ -960,7 +961,7 @@ with_each_scheme! {
 				nonce: next_nonce,
 			};
 			let sig = sign_remove_key(&did_kp, &rk, did, 1);
-			SignatureMod::remove_public_key(Origin::signed(1), rk, sig).unwrap();
+			SignatureMod::remove_public_key(RuntimeOrigin::signed(1), rk, sig).unwrap();
 
 			check_did_detail(&did_1, 2, 1, 2, next_nonce_1 - 1);
 			check_did_detail(&did, 1, 1, 1, next_nonce);

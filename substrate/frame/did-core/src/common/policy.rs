@@ -1,7 +1,7 @@
 use frame_support::{CloneNoBound, DebugNoBound, EqNoBound, PartialEqNoBound};
 use sp_std::{borrow::Borrow, fmt::Debug};
 
-use super::{Limits, SigValue, ToStateChange, ED25519_WEIGHT, SECP256K1_WEIGHT, SR25519_WEIGHT};
+use super::{Limits, SigValue, ToStateChange, ED25519_WEIGHT, SR25519_WEIGHT};
 #[cfg(feature = "serde")]
 use crate::util::btree_set;
 use crate::{
@@ -208,12 +208,11 @@ where
 struct SigTypes<V> {
 	sr: V,
 	ed: V,
-	secp: V,
 }
 
 impl<T: Types> DidSignatureWithNonce<T> {
 	/// Return counts of different signature types in given `DidSignatureWithNonce` as 3-Tuple as
-	/// (no. of Sr22519 sigs, no. of Ed25519 Sigs, no. of Secp256k1 sigs). Useful for weight
+	/// (no. of Sr22519 sigs, no. of Ed25519 Sigs). Useful for weight
 	/// calculation and thus the return type is in `Weight` but realistically, it should fit in a u8
 	fn count_sig_types(
 		auths: impl IntoIterator<Item = impl Borrow<DidSignatureWithNonce<T>>>,
@@ -224,7 +223,6 @@ impl<T: Types> DidSignatureWithNonce<T> {
 			let counter = match auth.borrow().sig.sig {
 				SigValue::Sr25519(_) => &mut counts.sr,
 				SigValue::Ed25519(_) => &mut counts.ed,
-				SigValue::Secp256k1(_) => &mut counts.secp,
 			};
 
 			*counter += 1;
@@ -241,13 +239,12 @@ impl<T: Types> DidSignatureWithNonce<T> {
 		auths: impl IntoIterator<Item = impl Borrow<DidSignatureWithNonce<T>>>,
 		db_weights: RuntimeDbWeight,
 	) -> Weight {
-		let SigTypes { sr, ed, secp } = Self::count_sig_types(auths);
+		let SigTypes { sr, ed } = Self::count_sig_types(auths);
 
 		db_weights
-			.reads(sr + ed + secp)
+			.reads(sr + ed)
 			.saturating_add(SR25519_WEIGHT.saturating_mul(sr))
 			.saturating_add(ED25519_WEIGHT.saturating_mul(ed))
-			.saturating_add(SECP256K1_WEIGHT.saturating_mul(secp))
 	}
 }
 

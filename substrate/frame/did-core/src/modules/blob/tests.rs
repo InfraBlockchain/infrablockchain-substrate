@@ -1,5 +1,6 @@
 use super::{did, Blob, BlobId, BlobOwner, Blobs, DispatchResult, Error};
 use crate::{blob::AddBlob, common::Limits, did::Did, tests::common::*};
+use frame_system::Origin;
 use sp_core::{sr25519, Pair};
 
 fn create_blob(
@@ -16,7 +17,7 @@ fn create_blob(
 	println!("content: {:?}", content);
 
 	BlobMod::new(
-		Origin::signed(ABBA),
+		RuntimeOrigin::signed(ABBA),
 		AddBlob { blob: bl.clone(), nonce },
 		did_sig::<Test, _, _>(&AddBlob { blob: bl, nonce }, &author_kp, author, 1),
 	)
@@ -125,7 +126,7 @@ fn err_invalid_sig() {
 			};
 			check_nonce(&author, 10);
 			let err = BlobMod::new(
-				Origin::signed(ABBA),
+				RuntimeOrigin::signed(ABBA),
 				AddBlob { blob: bl, nonce: 10 + 1 },
 				did_sig(&att, &author_kp, BlobOwner(author), 1),
 			)
@@ -143,7 +144,7 @@ fn err_invalid_sig() {
 			let bl = Blob { id: rand::random(), blob: random_bytes(10).try_into().unwrap() };
 			check_nonce(&author, 20);
 			let err = BlobMod::new(
-				Origin::signed(ABBA),
+				RuntimeOrigin::signed(ABBA),
 				AddBlob { blob: bl.clone(), nonce: 20 + 1 },
 				did_sig::<Test, _, _>(
 					&AddBlob { blob: bl, nonce: 20 + 1 },
