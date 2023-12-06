@@ -9,6 +9,7 @@ use crate::{
 };
 use alloc::collections::BTreeMap;
 use frame_support::{assert_noop, assert_ok};
+use frame_system::Origin;
 use sp_core::sr25519;
 use sp_runtime::{traits::TryCollect, DispatchError};
 use sp_std::{iter::empty, marker::PhantomData};
@@ -148,7 +149,7 @@ fn create_status_list_credential() {
 
 		assert_noop!(
 			Mod::create(
-				Origin::signed(ABBA),
+				RuntimeOrigin::signed(ABBA),
 				id,
 				StatusListCredentialWithPolicy {
 					status_list_credential: StatusListCredential::RevocationList2020Credential(
@@ -161,7 +162,7 @@ fn create_status_list_credential() {
 		);
 		assert_noop!(
 			Mod::create(
-				Origin::signed(ABBA),
+				RuntimeOrigin::signed(ABBA),
 				id,
 				StatusListCredentialWithPolicy {
 					status_list_credential: StatusListCredential::StatusList2021Credential(
@@ -197,7 +198,7 @@ fn create_status_list_credential() {
 
 		assert_noop!(
 			Mod::create(
-				Origin::signed(ABBA),
+				RuntimeOrigin::signed(ABBA),
 				id,
 				StatusListCredentialWithPolicy {
 					status_list_credential: StatusListCredential::StatusList2021Credential(
@@ -249,7 +250,7 @@ fn update_status_list_credential() {
 		};
 		let auth = get_pauth(&update, &[(did, &keypair)][..]);
 
-		assert_ok!(Mod::update(Origin::signed(ABBA), update, auth));
+		assert_ok!(Mod::update(RuntimeOrigin::signed(ABBA), update, auth));
 		assert_eq!(
 			Mod::status_list_credential(id).unwrap(),
 			StatusListCredentialWithPolicy {
@@ -269,7 +270,7 @@ fn update_status_list_credential() {
 		};
 		let auth = get_pauth(&update, &[(did, &keypair)][..]);
 		assert_noop!(
-			Mod::update(Origin::signed(ABBA), update, auth),
+			Mod::update(RuntimeOrigin::signed(ABBA), update, auth),
 			Error::<Test>::StatusListCredentialTooSmall
 		);
 	});
@@ -307,13 +308,13 @@ fn remove_status_list_credential() {
 		let remove = RemoveStatusListCredentialRaw { id, _marker: PhantomData };
 		let auth = get_pauth(&remove, &[(did, &keypair)][..]);
 
-		assert_ok!(Mod::remove(Origin::signed(ABBA), remove, auth));
+		assert_ok!(Mod::remove(RuntimeOrigin::signed(ABBA), remove, auth));
 		assert_eq!(Mod::status_list_credential(id), None);
 
 		let remove = RemoveStatusListCredentialRaw { id, _marker: PhantomData };
 		let auth = get_pauth(&remove, &[(did, &keypair)][..]);
 		assert_noop!(
-			Mod::remove(Origin::signed(ABBA), remove, auth),
+			Mod::remove(RuntimeOrigin::signed(ABBA), remove, auth),
 			PolicyExecutionError::NoEntity
 		);
 	});

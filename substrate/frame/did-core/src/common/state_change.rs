@@ -34,7 +34,12 @@ crate::def_state_change! {
 		accumulator::UpdateAccumulator,
 		accumulator::RemoveAccumulator,
 		status_list_credential::UpdateStatusListCredential,
-		status_list_credential::RemoveStatusListCredential
+		status_list_credential::RemoveStatusListCredential,
+		trusted_entity::AddIssuer,
+		trusted_entity::RemoveIssuer,
+		trusted_entity::AddVerifier,
+		trusted_entity::RemoveVerifier,
+		trusted_entity::RemoveAuthorizer
 }
 
 /// Converts the given entity to the state change.

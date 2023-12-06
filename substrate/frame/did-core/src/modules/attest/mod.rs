@@ -80,7 +80,6 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
 
 	#[pallet::config]
@@ -127,6 +126,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::weight(SubstrateWeight::<T>::set_claim(attests, signature))]
+		#[pallet::call_index(0)]
 		pub fn set_claim(
 			origin: OriginFor<T>,
 			attests: SetAttestationClaim<T>,
@@ -166,7 +166,6 @@ impl<T: Config> SubstrateWeight<T> {
 		(match sig {
 			SigValue::Sr25519(_) => Self::set_claim_sr25519,
 			SigValue::Ed25519(_) => Self::set_claim_ed25519,
-			SigValue::Secp256k1(_) => Self::set_claim_secp256k1,
 		}(attest.iri.as_ref().map_or(0, |v| v.len()) as u32))
 	}
 }

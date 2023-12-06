@@ -1,6 +1,7 @@
 use super::*;
 use crate::tests::common::*;
 use frame_support::assert_err;
+use frame_system::Origin;
 use sp_core::{sr25519, Hasher, H256};
 
 fn sign_add_params<T: Config>(
@@ -117,7 +118,7 @@ fn accumulator_errors() {
 		let add_accum = AddAccumulator { id, accumulator, nonce: next_nonce };
 		let sig = sign_add_accum(&author_kp, &add_accum, author, 1);
 		assert_err!(
-			AccumMod::add_accumulator(Origin::signed(1), add_accum, sig),
+			AccumMod::add_accumulator(RuntimeOrigin::signed(1), add_accum, sig),
 			Error::<Test>::PublicKeyDoesntExist
 		);
 		check_nonce(&author, next_nonce - 1);
@@ -131,7 +132,7 @@ fn accumulator_errors() {
 		};
 		let ap = AddAccumulatorParams { params, nonce: next_nonce };
 		let sig = sign_add_params::<Test>(&author_kp, &ap, author, 1);
-		AccumMod::add_params(Origin::signed(1), ap, sig).unwrap();
+		AccumMod::add_params(RuntimeOrigin::signed(1), ap, sig).unwrap();
 		check_nonce(&author, next_nonce);
 		next_nonce += 1;
 
@@ -144,7 +145,7 @@ fn accumulator_errors() {
 		};
 		let ak = AddAccumulatorPublicKey { public_key: key, nonce: next_nonce };
 		let sig = sign_add_key::<Test>(&author_kp, &ak, author, 1);
-		AccumMod::add_public_key(Origin::signed(1), ak, sig).unwrap();
+		AccumMod::add_public_key(RuntimeOrigin::signed(1), ak, sig).unwrap();
 		check_nonce(&author, next_nonce);
 		next_nonce += 1;
 
@@ -157,7 +158,7 @@ fn accumulator_errors() {
 		});
 		let add_accum = AddAccumulator { id, accumulator: accumulator.clone(), nonce: next_nonce };
 		let sig = sign_add_accum(&author_kp, &add_accum, author, 1);
-		AccumMod::add_accumulator(Origin::signed(1), add_accum, sig).unwrap();
+		AccumMod::add_accumulator(RuntimeOrigin::signed(1), add_accum, sig).unwrap();
 		check_nonce(&author, next_nonce);
 		next_nonce += 1;
 
@@ -165,7 +166,7 @@ fn accumulator_errors() {
 		let add_accum = AddAccumulator { id, accumulator, nonce: next_nonce };
 		let sig = sign_add_accum(&author_kp, &add_accum, author, 1);
 		assert_err!(
-			AccumMod::add_accumulator(Origin::signed(1), add_accum, sig),
+			AccumMod::add_accumulator(RuntimeOrigin::signed(1), add_accum, sig),
 			Error::<Test>::AccumulatorAlreadyExists
 		);
 		check_nonce(&author, next_nonce - 1);
@@ -182,13 +183,13 @@ fn accumulator_errors() {
 		};
 		let sig = sign_update_accum(&author_kp, &update_accum, author, 1);
 		assert_err!(
-			AccumMod::update_accumulator(Origin::signed(1), update_accum.clone(), sig),
+			AccumMod::update_accumulator(RuntimeOrigin::signed(1), update_accum.clone(), sig),
 			Error::<Test>::AccumulatorDoesntExist
 		);
 
 		update_accum.id = id;
 		let sig = sign_update_accum(&author_kp, &update_accum, author, 1);
-		AccumMod::update_accumulator(Origin::signed(1), update_accum, sig).unwrap();
+		AccumMod::update_accumulator(RuntimeOrigin::signed(1), update_accum, sig).unwrap();
 		check_nonce(&author, next_nonce);
 		next_nonce += 1;
 
@@ -204,7 +205,7 @@ fn accumulator_errors() {
 		};
 		let sig = sign_update_accum(&author_kp, &update_accum, author, 1);
 		assert_err!(
-			AccumMod::update_accumulator(Origin::signed(1), update_accum.clone(), sig),
+			AccumMod::update_accumulator(RuntimeOrigin::signed(1), update_accum.clone(), sig),
 			Error::<Test>::AccumulatedTooBig
 		);
 		check_nonce(&author, next_nonce - 1);
@@ -226,7 +227,7 @@ fn accumulator_errors() {
 		update_accum.removals = None;
 		update_accum.witness_update_info = Some(vec![11, 12, 21, 23, 35, 50].into());
 		let sig = sign_update_accum(&author_kp, &update_accum, author, 1);
-		AccumMod::update_accumulator(Origin::signed(1), update_accum.clone(), sig).unwrap();
+		AccumMod::update_accumulator(RuntimeOrigin::signed(1), update_accum.clone(), sig).unwrap();
 		check_nonce(&author, next_nonce);
 		next_nonce += 1;
 
@@ -235,14 +236,14 @@ fn accumulator_errors() {
 		update_accum.nonce = next_nonce - 1;
 		let sig = sign_update_accum(&author_kp, &update_accum, author, 1);
 		assert_err!(
-			AccumMod::update_accumulator(Origin::signed(1), update_accum.clone(), sig),
+			AccumMod::update_accumulator(RuntimeOrigin::signed(1), update_accum.clone(), sig),
 			sp_runtime::DispatchError::Other("Incorrect nonce")
 		);
 		check_nonce(&author, next_nonce - 1);
 
 		update_accum.nonce = next_nonce;
 		let sig = sign_update_accum(&author_kp, &update_accum, author, 1);
-		AccumMod::update_accumulator(Origin::signed(1), update_accum.clone(), sig).unwrap();
+		AccumMod::update_accumulator(RuntimeOrigin::signed(1), update_accum.clone(), sig).unwrap();
 		check_nonce(&author, next_nonce);
 		next_nonce += 1;
 
@@ -250,7 +251,7 @@ fn accumulator_errors() {
 
 		update_accum.nonce = next_nonce;
 		let sig = sign_update_accum(&author_kp, &update_accum, author, 1);
-		AccumMod::update_accumulator(Origin::signed(1), update_accum.clone(), sig).unwrap();
+		AccumMod::update_accumulator(RuntimeOrigin::signed(1), update_accum.clone(), sig).unwrap();
 		check_nonce(&author, next_nonce);
 		next_nonce += 1;
 
@@ -258,13 +259,13 @@ fn accumulator_errors() {
 		update_accum.nonce = next_nonce_1;
 		let sig = sign_update_accum(&author_1_kp, &update_accum, author_1, 1);
 		assert_err!(
-			AccumMod::update_accumulator(Origin::signed(1), update_accum.clone(), sig),
+			AccumMod::update_accumulator(RuntimeOrigin::signed(1), update_accum.clone(), sig),
 			Error::<Test>::NotAccumulatorOwner
 		);
 		check_nonce(&author_1, next_nonce_1 - 1);
 		update_accum.nonce = next_nonce;
 		let sig = sign_update_accum(&author_kp, &update_accum, author, 1);
-		AccumMod::update_accumulator(Origin::signed(1), update_accum, sig).unwrap();
+		AccumMod::update_accumulator(RuntimeOrigin::signed(1), update_accum, sig).unwrap();
 		check_nonce(&author, next_nonce);
 		next_nonce += 1;
 
@@ -272,13 +273,13 @@ fn accumulator_errors() {
 		let rem_accum = RemoveAccumulator { id, nonce: next_nonce_1 };
 		let sig = sign_remove_accum(&author_1_kp, &rem_accum, author_1, 1);
 		assert_err!(
-			AccumMod::remove_accumulator(Origin::signed(1), rem_accum, sig),
+			AccumMod::remove_accumulator(RuntimeOrigin::signed(1), rem_accum, sig),
 			Error::<Test>::NotAccumulatorOwner
 		);
 		check_nonce(&author_1, next_nonce_1 - 1);
 		let rem_accum = RemoveAccumulator { id, nonce: next_nonce };
 		let sig = sign_remove_accum(&author_kp, &rem_accum, author, 1);
-		AccumMod::remove_accumulator(Origin::signed(1), rem_accum, sig).unwrap();
+		AccumMod::remove_accumulator(RuntimeOrigin::signed(1), rem_accum, sig).unwrap();
 		check_nonce(&author, next_nonce);
 		next_nonce += 1;
 
@@ -286,13 +287,13 @@ fn accumulator_errors() {
 		let rem = RemoveAccumulatorPublicKey { key_ref: (author, 1u8.into()), nonce: next_nonce_1 };
 		let sig = sign_remove_key(&author_1_kp, &rem, author_1, 1);
 		assert_err!(
-			AccumMod::remove_public_key(Origin::signed(1), rem, sig),
+			AccumMod::remove_public_key(RuntimeOrigin::signed(1), rem, sig),
 			Error::<Test>::NotAccumulatorOwner
 		);
 		check_nonce(&author_1, next_nonce_1 - 1);
 		let rem = RemoveAccumulatorPublicKey { key_ref: (author, 1u8.into()), nonce: next_nonce };
 		let sig = sign_remove_key(&author_kp, &rem, author, 1);
-		AccumMod::remove_public_key(Origin::signed(1), rem, sig).unwrap();
+		AccumMod::remove_public_key(RuntimeOrigin::signed(1), rem, sig).unwrap();
 		check_nonce(&author, next_nonce);
 		next_nonce += 1;
 
@@ -300,14 +301,14 @@ fn accumulator_errors() {
 		let rem = RemoveAccumulatorParams { params_ref: (author, 1u8.into()), nonce: next_nonce_1 };
 		let sig = sign_remove_params(&author_1_kp, &rem, author_1, 1);
 		assert_err!(
-			AccumMod::remove_params(Origin::signed(1), rem, sig),
+			AccumMod::remove_params(RuntimeOrigin::signed(1), rem, sig),
 			Error::<Test>::NotAccumulatorOwner
 		);
 		check_nonce(&author_1, next_nonce_1 - 1);
 
 		let rem = RemoveAccumulatorParams { params_ref: (author, 1u8.into()), nonce: next_nonce };
 		let sig = sign_remove_params(&author_kp, &rem, author, 1);
-		AccumMod::remove_params(Origin::signed(1), rem, sig).unwrap();
+		AccumMod::remove_params(RuntimeOrigin::signed(1), rem, sig).unwrap();
 		check_nonce(&author, next_nonce);
 	});
 }
@@ -331,7 +332,7 @@ fn add_remove_accumulator() {
 		let ap = AddAccumulatorParams { params: params.clone(), nonce: next_nonce };
 		let sig = sign_add_params::<Test>(&author_kp, &ap, author, 1);
 		AccumMod::add_params(
-			Origin::signed(1),
+			RuntimeOrigin::signed(1),
 			AddAccumulatorParams { params: params.clone(), nonce: next_nonce },
 			sig,
 		)
@@ -353,7 +354,7 @@ fn add_remove_accumulator() {
 		let ak = AddAccumulatorPublicKey { public_key: key.clone(), nonce: next_nonce };
 		let sig = sign_add_key::<Test>(&author_kp, &ak, author, 1);
 		AccumMod::add_public_key(
-			Origin::signed(1),
+			RuntimeOrigin::signed(1),
 			AddAccumulatorPublicKey { public_key: key.clone(), nonce: next_nonce },
 			sig,
 		)
@@ -374,7 +375,7 @@ fn add_remove_accumulator() {
 		});
 		let add_accum = AddAccumulator { id, accumulator: accumulator.clone(), nonce: next_nonce };
 		let sig = sign_add_accum(&author_kp, &add_accum, author, 1);
-		AccumMod::add_accumulator(Origin::signed(1), add_accum, sig).unwrap();
+		AccumMod::add_accumulator(RuntimeOrigin::signed(1), add_accum, sig).unwrap();
 		check_nonce(&author, next_nonce);
 		next_nonce += 1;
 		assert_eq!(
@@ -398,7 +399,7 @@ fn add_remove_accumulator() {
 		};
 		let sig = sign_update_accum(&author_kp, &update_accum, author, 1);
 		assert_err!(
-			AccumMod::update_accumulator(Origin::signed(1), update_accum.clone(), sig),
+			AccumMod::update_accumulator(RuntimeOrigin::signed(1), update_accum.clone(), sig),
 			sp_runtime::DispatchError::Other("Incorrect nonce")
 		);
 		check_nonce(&author, next_nonce - 1);
@@ -406,14 +407,14 @@ fn add_remove_accumulator() {
 		update_accum.nonce = next_nonce - 1;
 		let sig = sign_update_accum(&author_kp, &update_accum, author, 1);
 		assert_err!(
-			AccumMod::update_accumulator(Origin::signed(1), update_accum.clone(), sig),
+			AccumMod::update_accumulator(RuntimeOrigin::signed(1), update_accum.clone(), sig),
 			sp_runtime::DispatchError::Other("Incorrect nonce")
 		);
 		check_nonce(&author, next_nonce - 1);
 
 		update_accum.nonce = next_nonce;
 		let sig = sign_update_accum(&author_kp, &update_accum, author, 1);
-		AccumMod::update_accumulator(Origin::signed(1), update_accum, sig).unwrap();
+		AccumMod::update_accumulator(RuntimeOrigin::signed(1), update_accum, sig).unwrap();
 		check_nonce(&author, next_nonce);
 		next_nonce += 1;
 
@@ -445,7 +446,7 @@ fn add_remove_accumulator() {
 			nonce: next_nonce,
 		};
 		let sig = sign_update_accum(&author_kp, &update_accum, author, 1);
-		AccumMod::update_accumulator(Origin::signed(1), update_accum, sig).unwrap();
+		AccumMod::update_accumulator(RuntimeOrigin::signed(1), update_accum, sig).unwrap();
 		check_nonce(&author, next_nonce);
 		next_nonce += 1;
 
@@ -471,7 +472,7 @@ fn add_remove_accumulator() {
 		let mut rem_accum = RemoveAccumulator { id, nonce: next_nonce - 1 };
 		let sig = sign_remove_accum(&author_kp, &rem_accum, author, 1);
 		assert_err!(
-			AccumMod::remove_accumulator(Origin::signed(1), rem_accum.clone(), sig),
+			AccumMod::remove_accumulator(RuntimeOrigin::signed(1), rem_accum.clone(), sig),
 			sp_runtime::DispatchError::Other("Incorrect nonce")
 		);
 		check_nonce(&author, next_nonce - 1);
@@ -479,14 +480,14 @@ fn add_remove_accumulator() {
 		rem_accum.nonce = next_nonce + 1;
 		let sig = sign_remove_accum(&author_kp, &rem_accum, author, 1);
 		assert_err!(
-			AccumMod::remove_accumulator(Origin::signed(1), rem_accum.clone(), sig),
+			AccumMod::remove_accumulator(RuntimeOrigin::signed(1), rem_accum.clone(), sig),
 			sp_runtime::DispatchError::Other("Incorrect nonce")
 		);
 		check_nonce(&author, next_nonce - 1);
 
 		rem_accum.nonce = next_nonce;
 		let sig = sign_remove_accum(&author_kp, &rem_accum, author, 1);
-		AccumMod::remove_accumulator(Origin::signed(1), rem_accum, sig).unwrap();
+		AccumMod::remove_accumulator(RuntimeOrigin::signed(1), rem_accum, sig).unwrap();
 		check_nonce(&author, next_nonce);
 		assert_eq!(Accumulators::<Test>::get(id), None);
 		assert!(accumulator_events().contains(&(

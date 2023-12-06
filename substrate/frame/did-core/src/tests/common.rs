@@ -4,51 +4,49 @@ use crate::{
 	accumulator, anchor, attest, blob,
 	common::{self, StateChange, ToStateChange},
 	did::{self, Did, DidKey, DidSignature},
-	master, offchain_signatures, revoke, status_list_credential,
+	offchain_signatures, revoke, status_list_credential, trusted_entity,
 };
 
 use crate::{
 	common::SigValue,
 	revoke::{RegistryId, RevokeId},
+	trusted_entity::{AuthorizerId, TrustedEntityId},
 };
 use codec::{Decode, Encode};
 use frame_support::{
-	parameter_types,
+	construct_runtime, parameter_types,
 	traits::{Contains, OnFinalize, OnInitialize},
 	weights::Weight,
 };
-use frame_system::RawOrigin;
-use pallet_evm::EnsureAddressOrigin;
+
+use frame_system::{Origin, RawOrigin};
 pub use rand::random;
 use sp_core::{sr25519, Pair, H160, H256};
 use sp_runtime::{
 	testing::Header,
-	traits::{BlakeTwo256, ConstU32, IdentityLookup},
+	traits::{BlakeTwo256, ConstU32, ConstU64, IdentityLookup},
+	BuildStorage,
 };
 pub use std::iter::once;
 
 // Configure a mock runtime to test the pallet.
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
-frame_support::construct_runtime!(
-	pub enum Test where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
+
+construct_runtime!(
+	pub enum Test
 	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
-		DIDModule: did::{Pallet, Call, Storage, Event<T>, Config<T>},
-		RevoMod: revoke::{Pallet, Call, Storage, Event},
-		BlobMod: blob::{Pallet, Call, Storage},
-		MasterMod: master::{Pallet, Call, Storage, Event<T>, Config<T>},
-		AnchorMod: anchor::{Pallet, Call, Storage, Event<T>},
-		AttestMod: attest::{Pallet, Call, Storage},
-		SignatureMod: offchain_signatures::{Pallet, Call, Storage, Event},
-		AccumMod: accumulator::{Pallet, Call, Storage, Event},
-		StatusListCredentialMod: status_list_credential::{Pallet, Call, Storage, Event},
-		EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>},
+		System: frame_system,
+		Balances: pallet_balances,
+		Timestamp: pallet_timestamp,
+		DIDModule: did,
+		RevoMod: revoke,
+		TrustedEntityMod: trusted_entity,
+		BlobMod: blob,
+		AnchorMod: anchor,
+		AttestMod: attest,
+		SignatureMod: offchain_signatures,
+		AccumMod: accumulator,
+		StatusListCredentialMod: status_list_credential,
 	}
 );
 
@@ -56,12 +54,12 @@ frame_support::construct_runtime!(
 pub enum TestEvent {
 	Did(crate::did::Event<Test>),
 	Revoke(crate::revoke::Event),
-	Master(crate::master::Event<Test>),
 	Anchor(crate::anchor::Event<Test>),
 	Unknown,
 	OffchainSignature(offchain_signatures::Event),
 	Accum(accumulator::Event),
 	StatusListCredential(status_list_credential::Event),
+	TrustedEntity(trusted_entity::Event),
 }
 
 impl From<frame_system::Event<Test>> for TestEvent {
@@ -72,12 +70,6 @@ impl From<frame_system::Event<Test>> for TestEvent {
 
 impl From<pallet_balances::Event<Test>> for TestEvent {
 	fn from(_: pallet_balances::Event<Test>) -> Self {
-		unimplemented!()
-	}
-}
-
-impl From<pallet_evm::Event<Test>> for TestEvent {
-	fn from(_: pallet_evm::Event<Test>) -> Self {
 		unimplemented!()
 	}
 }
@@ -106,12 +98,6 @@ impl From<crate::anchor::Event<Test>> for TestEvent {
 	}
 }
 
-impl From<crate::master::Event<Test>> for TestEvent {
-	fn from(other: crate::master::Event<Test>) -> Self {
-		Self::Master(other)
-	}
-}
-
 impl From<crate::status_list_credential::Event> for TestEvent {
 	fn from(other: crate::status_list_credential::Event) -> Self {
 		Self::StatusListCredential(other)
@@ -130,6 +116,12 @@ impl From<accumulator::Event> for TestEvent {
 	}
 }
 
+impl From<trusted_entity::Event> for TestEvent {
+	fn from(other: trusted_entity::Event) -> Self {
+		Self::TrustedEntity(other)
+	}
+}
+
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
 	pub const MaxPolicyControllers: u32 = 15;
@@ -139,37 +131,36 @@ parameter_types! {
 }
 
 pub struct BaseFilter;
-impl Contains<Call> for BaseFilter {
-	fn contains(_call: &Call) -> bool {
+impl Contains<RuntimeCall> for BaseFilter {
+	fn contains(_call: &RuntimeCall) -> bool {
 		true
 	}
 }
 
 impl frame_system::Config for Test {
-	type OnSetCode = ();
-	type MaxConsumers = ConstU32<10>;
-	type BaseCallFilter = BaseFilter;
-	type Origin = Origin;
-	type Call = Call;
-	type Index = u64;
-	type BlockNumber = u64;
+	type RuntimeOrigin = RuntimeOrigin;
+	type Nonce = u64;
+	type RuntimeCall = RuntimeCall;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type AccountId = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
-	type Header = Header;
-	type Event = TestEvent;
-	type BlockHashCount = BlockHashCount;
-	type DbWeight = ();
-	type BlockWeights = ();
-	type BlockLength = ();
+	type Block = Block;
+	type RuntimeEvent = TestEvent;
+	type BlockHashCount = ConstU64<250>;
 	type Version = ();
 	type PalletInfo = PalletInfo;
 	type AccountData = pallet_balances::AccountData<u64>;
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
+	type BaseCallFilter = frame_support::traits::Everything;
 	type SystemWeightInfo = ();
+	type DbWeight = ();
+	type BlockWeights = ();
+	type BlockLength = ();
 	type SS58Prefix = ();
+	type OnSetCode = ();
+	type MaxConsumers = ConstU32<16>;
 }
 
 impl pallet_timestamp::Config for Test {
@@ -179,55 +170,25 @@ impl pallet_timestamp::Config for Test {
 	type WeightInfo = ();
 }
 
-pub struct DummyCallOrigin;
-impl<OuterOrigin> EnsureAddressOrigin<OuterOrigin> for DummyCallOrigin
-where
-	OuterOrigin: Into<Result<RawOrigin<u64>, OuterOrigin>> + From<RawOrigin<u64>>,
-{
-	type Success = u64;
-
-	fn try_address_origin(_: &H160, _: OuterOrigin) -> Result<u64, OuterOrigin> {
-		unimplemented!()
-	}
-}
-
-/// Identity address mapping.
-pub struct DummyAddressMapping;
-impl pallet_evm::AddressMapping<u64> for DummyAddressMapping {
-	fn into_account_id(_: H160) -> u64 {
-		unimplemented!()
-	}
-}
-
-impl pallet_evm::Config for Test {
-	type FeeCalculator = ();
-	type GasWeightMapping = ();
-	type BlockHashMapping = pallet_evm::SubstrateBlockHashMapping<Self>;
-	type CallOrigin = DummyCallOrigin;
-	type WithdrawOrigin = DummyCallOrigin;
-	type AddressMapping = DummyAddressMapping;
-	type Currency = Balances;
-	type Event = TestEvent;
-	type Runner = pallet_evm::runner::stack::Runner<Self>;
-	type ByteReadWeight = ByteReadWeight;
-	type PrecompilesType = ();
-	type PrecompilesValue = ();
-	type ChainId = ();
-	type BlockGasLimit = ();
-	type OnChargeTransaction = ();
-	type FindAuthor = ();
+parameter_types! {
+	pub const ExistentialDeposit: u64 = 5;
+	pub const MaxReserves: u32 = 50;
 }
 
 impl pallet_balances::Config for Test {
-	type ReserveIdentifier = ();
-	type MaxReserves = ();
-	type MaxLocks = ();
 	type Balance = u64;
-	type Event = TestEvent;
+	type RuntimeEvent = TestEvent;
 	type DustRemoval = ();
-	type ExistentialDeposit = ();
-	type AccountStore = System;
+	type ExistentialDeposit = ExistentialDeposit;
+	type AccountStore = frame_system::Pallet<Test>;
 	type WeightInfo = ();
+	type MaxLocks = ();
+	type MaxReserves = MaxReserves;
+	type ReserveIdentifier = [u8; 8];
+	type RuntimeHoldReason = RuntimeHoldReason;
+	type FreezeIdentifier = ();
+	type MaxHolds = ConstU32<0>;
+	type MaxFreezes = ConstU32<0>;
 }
 
 parameter_types! {
@@ -262,15 +223,18 @@ impl crate::common::Limits for Test {
 }
 
 impl crate::did::Config for Test {
-	type Event = TestEvent;
+	type RuntimeEvent = TestEvent;
 	type OnDidRemoval = SignatureMod;
 }
 
 impl crate::revoke::Config for Test {
-	type Event = TestEvent;
+	type RuntimeEvent = TestEvent;
+}
+impl crate::trusted_entity::Config for Test {
+	type RuntimeEvent = TestEvent;
 }
 impl crate::status_list_credential::Config for Test {
-	type Event = TestEvent;
+	type RuntimeEvent = TestEvent;
 }
 impl crate::blob::Config for Test {}
 impl crate::attest::Config for Test {}
@@ -290,20 +254,15 @@ parameter_types! {
 }
 
 impl crate::anchor::Config for Test {
-	type Event = TestEvent;
-}
-
-impl crate::master::Config for Test {
-	type Event = TestEvent;
-	type Call = Call;
+	type RuntimeEvent = TestEvent;
 }
 
 impl offchain_signatures::Config for Test {
-	type Event = TestEvent;
+	type RuntimeEvent = TestEvent;
 }
 
 impl accumulator::Config for Test {
-	type Event = TestEvent;
+	type RuntimeEvent = TestEvent;
 }
 
 pub const ABBA: u64 = 0;
@@ -314,6 +273,10 @@ pub const RGA: RegistryId = RegistryId([0u8; 32]);
 pub const RA: RevokeId = RevokeId([0u8; 32]);
 pub const RB: RevokeId = RevokeId([1u8; 32]);
 pub const RC: RevokeId = RevokeId([2u8; 32]);
+pub const AUA: AuthorizerId = AuthorizerId([0u8; 32]);
+pub const TEA: TrustedEntityId = TrustedEntityId([0u8; 32]);
+pub const TEB: TrustedEntityId = TrustedEntityId([1u8; 32]);
+pub const TEC: TrustedEntityId = TrustedEntityId([2u8; 32]);
 
 /// check whether test externalities are available
 pub fn in_ext() -> bool {
@@ -328,7 +291,7 @@ pub fn meta_in_ext() {
 
 pub fn ext() -> sp_io::TestExternalities {
 	let mut ret: sp_io::TestExternalities =
-		frame_system::GenesisConfig::default().build_storage::<Test>().unwrap().into();
+		frame_system::GenesisConfig::<Test>::default().build_storage().unwrap().into();
 	ret.execute_with(|| {
 		frame_system::Pallet::<Test>::initialize(
 			&1, // system module will not store events if block_number == 0
@@ -351,7 +314,7 @@ pub fn create_did(did: did::Did) -> sr25519::Pair {
 	let kp = gen_kp();
 	println!("did pk: {:?}", kp.public().0);
 	did::Pallet::<Test>::new_onchain(
-		Origin::signed(ABBA),
+		RuntimeOrigin::signed(ABBA),
 		did,
 		vec![DidKey::new_with_all_relationships(common::PublicKey::Sr25519(kp.public().0.into()))
 			.into()],

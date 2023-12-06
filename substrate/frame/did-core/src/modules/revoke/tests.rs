@@ -9,6 +9,7 @@ use crate::{
 };
 use alloc::collections::BTreeMap;
 use frame_support::assert_noop;
+use frame_system::Origin;
 use sp_core::{sr25519, U256};
 use sp_std::{iter::once, marker::PhantomData};
 
@@ -61,7 +62,7 @@ mod errors {
 	// `tests::common`
 	use super::*;
 	use alloc::collections::BTreeSet;
-	use frame_support::dispatch::DispatchError;
+	use sp_runtime::DispatchError;
 
 	#[test]
 	fn invalidpolicy() {
@@ -77,7 +78,7 @@ mod errors {
 			},
 		};
 
-		let err = RevoMod::new_registry(Origin::signed(ABBA), ar).unwrap_err();
+		let err = RevoMod::new_registry(RuntimeOrigin::signed(ABBA), ar).unwrap_err();
 		assert_eq!(err, PolicyValidationError::Empty.into());
 	}
 
@@ -94,7 +95,7 @@ mod errors {
 		) -> DispatchError {
 			let regid: RegistryId = RegistryId(random());
 			let ar = AddRegistry { id: regid, new_registry: Registry { policy, add_only: false } };
-			RevoMod::new_registry(Origin::signed(ABBA), ar).unwrap();
+			RevoMod::new_registry(RuntimeOrigin::signed(ABBA), ar).unwrap();
 
 			let rev = RevokeRaw {
 				_marker: PhantomData,
@@ -104,7 +105,7 @@ mod errors {
 			let pauth = get_pauth(&rev, signers);
 			dbg!(&rev);
 			dbg!(&pauth);
-			RevoMod::revoke(Origin::signed(ABBA), rev, pauth).unwrap_err()
+			RevoMod::revoke(RuntimeOrigin::signed(ABBA), rev, pauth).unwrap_err()
 		}
 
 		run_to_block(10);
@@ -151,7 +152,7 @@ mod errors {
 		let reg = Registry { policy, add_only };
 
 		let ar = AddRegistry { id: registry_id, new_registry: reg };
-		RevoMod::new_registry(Origin::signed(ABBA), ar).unwrap();
+		RevoMod::new_registry(RuntimeOrigin::signed(ABBA), ar).unwrap();
 
 		let unrevoke = UnRevokeRaw {
 			_marker: PhantomData,
@@ -159,7 +160,7 @@ mod errors {
 			revoke_ids: once(RevokeId(Default::default())).collect(),
 		};
 		let ur_proof = get_pauth(&unrevoke, &[(DIDA, &kpa)]);
-		RevoMod::unrevoke(Origin::signed(ABBA), unrevoke.clone(), ur_proof).unwrap();
+		RevoMod::unrevoke(RuntimeOrigin::signed(ABBA), unrevoke.clone(), ur_proof).unwrap();
 
 		let rev = RevokeRaw {
 			_marker: PhantomData,
@@ -168,12 +169,12 @@ mod errors {
 		};
 		let ur_proof = get_pauth(&unrevoke, &[(DIDA, &kpa)]);
 		assert_eq!(
-			RevoMod::revoke(Origin::signed(ABBA), rev, ur_proof).unwrap_err(),
+			RevoMod::revoke(RuntimeOrigin::signed(ABBA), rev, ur_proof).unwrap_err(),
 			PolicyExecutionError::NotAuthorized.into()
 		);
 
 		let ur_proof = get_pauth(&unrevoke, &[(DIDA, &kpa)]);
-		RevoMod::unrevoke(Origin::signed(ABBA), unrevoke, ur_proof).unwrap();
+		RevoMod::unrevoke(RuntimeOrigin::signed(ABBA), unrevoke, ur_proof).unwrap();
 	}
 
 	#[test]
@@ -184,8 +185,8 @@ mod errors {
 
 		let reg = Registry { policy: Policy::one_of([DIDA]).unwrap(), add_only: false };
 		let ar = AddRegistry { id: RGA, new_registry: reg };
-		RevoMod::new_registry(Origin::signed(ABBA), ar.clone()).unwrap();
-		let err = RevoMod::new_registry(Origin::signed(ABBA), ar).unwrap_err();
+		RevoMod::new_registry(RuntimeOrigin::signed(ABBA), ar.clone()).unwrap();
+		let err = RevoMod::new_registry(RuntimeOrigin::signed(ABBA), ar).unwrap_err();
 		assert_eq!(err, Error::<Test>::RegExists.into());
 	}
 
@@ -201,7 +202,7 @@ mod errors {
 
 		assert_eq!(
 			RevoMod::revoke(
-				Origin::signed(ABBA),
+				RuntimeOrigin::signed(ABBA),
 				RevokeRaw {
 					_marker: PhantomData,
 					registry_id,
@@ -213,7 +214,7 @@ mod errors {
 		);
 		assert_eq!(
 			RevoMod::unrevoke(
-				Origin::signed(ABBA),
+				RuntimeOrigin::signed(ABBA),
 				UnRevokeRaw {
 					_marker: PhantomData,
 					registry_id,
@@ -225,7 +226,7 @@ mod errors {
 		);
 		assert_eq!(
 			RevoMod::remove_registry(
-				Origin::signed(ABBA),
+				RuntimeOrigin::signed(ABBA),
 				RemoveRegistryRaw { _marker: PhantomData, registry_id },
 				vec![],
 			),
@@ -250,7 +251,7 @@ mod errors {
 			},
 		};
 
-		assert_noop!(RevoMod::new_registry(Origin::signed(ABBA), ar), err);
+		assert_noop!(RevoMod::new_registry(RuntimeOrigin::signed(ABBA), ar), err);
 	}
 
 	#[test]
@@ -264,12 +265,12 @@ mod errors {
 		let registry_id = RGA;
 		let reg = Registry { policy: Policy::one_of([DIDA]).unwrap(), add_only: false };
 		let ar = AddRegistry { id: RGA, new_registry: reg };
-		RevoMod::new_registry(Origin::signed(ABBA), ar).unwrap();
+		RevoMod::new_registry(RuntimeOrigin::signed(ABBA), ar).unwrap();
 		let revoke_raw =
 			RevokeRaw { _marker: PhantomData, registry_id, revoke_ids: Default::default() };
 		let proof = get_pauth(&revoke_raw, &[(DIDA, &kpa)]);
 
-		assert_noop!(RevoMod::revoke(Origin::signed(ABBA), revoke_raw, proof), err);
+		assert_noop!(RevoMod::revoke(RuntimeOrigin::signed(ABBA), revoke_raw, proof), err);
 	}
 
 	#[test]
@@ -290,7 +291,7 @@ mod errors {
 			new_registry: Registry { policy: Policy::one_of([DIDA]).unwrap(), add_only: false },
 		};
 
-		RevoMod::new_registry(Origin::signed(ABBA), ar).unwrap();
+		RevoMod::new_registry(RuntimeOrigin::signed(ABBA), ar).unwrap();
 
 		let rev = RevokeRaw {
 			_marker: PhantomData,
@@ -301,7 +302,7 @@ mod errors {
 
 		// Increase nonce to make the auth chekc fail
 		inc_nonce(&DIDA);
-		assert_eq!(RevoMod::revoke(Origin::signed(ABBA), rev, proof), err);
+		assert_eq!(RevoMod::revoke(RuntimeOrigin::signed(ABBA), rev, proof), err);
 
 		let unrevoke = UnRevokeRaw {
 			_marker: PhantomData,
@@ -312,14 +313,14 @@ mod errors {
 
 		// Increase nonce to make the auth check fail
 		inc_nonce(&DIDA);
-		assert_eq!(RevoMod::unrevoke(Origin::signed(ABBA), unrevoke, proof,), err);
+		assert_eq!(RevoMod::unrevoke(RuntimeOrigin::signed(ABBA), unrevoke, proof,), err);
 
 		let remove = RemoveRegistryRaw { _marker: PhantomData, registry_id };
 		let proof = get_pauth(&remove, &[(DIDA, &kpa)]);
 
 		// Increase nonce to make the auth check fail
 		inc_nonce(&DIDA);
-		assert_eq!(RevoMod::remove_registry(Origin::signed(ABBA), remove, proof,), err);
+		assert_eq!(RevoMod::remove_registry(RuntimeOrigin::signed(ABBA), remove, proof,), err);
 	}
 
 	#[test]
@@ -341,15 +342,15 @@ mod errors {
 			new_registry: Registry { policy: Policy::one_of([DIDA]).unwrap(), add_only: true },
 		};
 
-		RevoMod::new_registry(Origin::signed(ABBA), ar).unwrap();
+		RevoMod::new_registry(RuntimeOrigin::signed(ABBA), ar).unwrap();
 
 		let unrevoke = UnRevokeRaw { _marker: PhantomData, registry_id, revoke_ids };
 		let proof = get_pauth(&unrevoke, &[(DIDA, &kpa)]);
-		assert_eq!(RevoMod::unrevoke(Origin::signed(ABBA), unrevoke, proof), err);
+		assert_eq!(RevoMod::unrevoke(RuntimeOrigin::signed(ABBA), unrevoke, proof), err);
 
 		let remove = RemoveRegistryRaw { _marker: PhantomData, registry_id };
 		let proof = get_pauth(&remove, &[(DIDA, &kpa)]);
-		assert_eq!(RevoMod::remove_registry(Origin::signed(ABBA), remove, proof), err);
+		assert_eq!(RevoMod::remove_registry(RuntimeOrigin::signed(ABBA), remove, proof), err);
 	}
 
 	// Untested variants will be a match error.
@@ -396,7 +397,7 @@ mod calls {
 			let reg = Registry { policy, add_only };
 			let ar = AddRegistry { id: reg_id, new_registry: reg.clone() };
 			assert!(!Registries::<Test>::contains_key(reg_id));
-			RevoMod::new_registry(Origin::signed(ABBA), ar).unwrap();
+			RevoMod::new_registry(RuntimeOrigin::signed(ABBA), ar).unwrap();
 			assert!(Registries::<Test>::contains_key(reg_id));
 			assert_eq!(Registries::<Test>::get(reg_id).unwrap(), reg);
 		}
@@ -418,7 +419,7 @@ mod calls {
 
 		let ar = AddRegistry { id: registry_id, new_registry: Registry { policy, add_only } };
 
-		RevoMod::new_registry(Origin::signed(ABBA), ar).unwrap();
+		RevoMod::new_registry(RuntimeOrigin::signed(ABBA), ar).unwrap();
 
 		let cases: &[&[RevokeId]] = &[
 			// &[],
@@ -437,7 +438,7 @@ mod calls {
 			};
 			let proof = get_pauth(&revoke, &[(DIDA, &kpa)]);
 			let old_nonces = get_nonces(&[(DIDA, &kpa)]);
-			RevoMod::revoke(Origin::signed(ABBA), revoke, proof).unwrap();
+			RevoMod::revoke(RuntimeOrigin::signed(ABBA), revoke, proof).unwrap();
 			assert!(ids.iter().all(|id| Revocations::<Test>::contains_key(registry_id, id)));
 			check_nonce_increase(old_nonces, &[(DIDA, &kpa)]);
 			run_to_block(1 + 1 + i as u64);
@@ -467,7 +468,7 @@ mod calls {
 
 		let ar = AddRegistry { id: registry_id, new_registry: Registry { policy, add_only } };
 
-		RevoMod::new_registry(Origin::signed(ABBA), ar).unwrap();
+		RevoMod::new_registry(RuntimeOrigin::signed(ABBA), ar).unwrap();
 
 		let cases: &[(Action, &[RevokeId], u32)] = &[
 			//(Action::UnRevo, &[], line!()),
@@ -498,7 +499,7 @@ mod calls {
 					let revoke = RevokeRaw { _marker: PhantomData, registry_id, revoke_ids };
 					let proof = get_pauth(&revoke, &[(DIDA, &kpa)]);
 					let old_nonces = get_nonces(&[(DIDA, &kpa)]);
-					RevoMod::revoke(Origin::signed(ABBA), revoke, proof).unwrap();
+					RevoMod::revoke(RuntimeOrigin::signed(ABBA), revoke, proof).unwrap();
 					check_nonce_increase(old_nonces, &[(DIDA, &kpa)]);
 				},
 				Action::UnRevo => {
@@ -509,7 +510,7 @@ mod calls {
 					};
 					let old_nonces = get_nonces(&[(DIDA, &kpa)]);
 					let proof = get_pauth(&unrevoke, &[(DIDA, &kpa)]);
-					RevoMod::unrevoke(Origin::signed(ABBA), unrevoke, proof).unwrap();
+					RevoMod::unrevoke(RuntimeOrigin::signed(ABBA), unrevoke, proof).unwrap();
 					check_nonce_increase(old_nonces, &[(DIDA, &kpa)]);
 				},
 				Action::AsrtRv => {
@@ -541,14 +542,14 @@ mod calls {
 		let reg = Registry { policy, add_only };
 		let ar = AddRegistry { id: registry_id, new_registry: reg };
 
-		RevoMod::new_registry(Origin::signed(ABBA), ar).unwrap();
+		RevoMod::new_registry(RuntimeOrigin::signed(ABBA), ar).unwrap();
 		assert!(Registries::<Test>::contains_key(registry_id));
 
 		// destroy reg
 		let rem = RemoveRegistryRaw { _marker: PhantomData, registry_id };
 		let proof = get_pauth(&rem, &[(DIDA, &kpa)]);
 		let old_nonces = get_nonces(&[(DIDA, &kpa)]);
-		RevoMod::remove_registry(Origin::signed(ABBA), rem, proof).unwrap();
+		RevoMod::remove_registry(RuntimeOrigin::signed(ABBA), rem, proof).unwrap();
 		check_nonce_increase(old_nonces, &[(DIDA, &kpa)]);
 
 		// assert not exists
@@ -641,7 +642,7 @@ mod test {
 		let ar = AddRegistry { id: registry_id, new_registry: reg.clone() };
 
 		assert_eq!(RevoMod::get_revocation_registry(registry_id), None);
-		RevoMod::new_registry(Origin::signed(ABBA), ar).unwrap();
+		RevoMod::new_registry(RuntimeOrigin::signed(ABBA), ar).unwrap();
 		assert_eq!(RevoMod::get_revocation_registry(registry_id), Some(reg));
 	}
 
@@ -661,13 +662,13 @@ mod test {
 
 		let ar = AddRegistry { id: registry_id, new_registry: reg };
 
-		RevoMod::new_registry(Origin::signed(ABBA), ar).unwrap();
+		RevoMod::new_registry(RuntimeOrigin::signed(ABBA), ar).unwrap();
 		let revoke =
 			RevokeRaw { _marker: PhantomData, registry_id, revoke_ids: once(revid).collect() };
 		let proof = get_pauth(&revoke, &[(DIDA, &kpa)]);
 
 		assert_eq!(RevoMod::get_revocation_status(registry_id, revid), None);
-		RevoMod::revoke(Origin::signed(ABBA), revoke, proof).unwrap();
+		RevoMod::revoke(RuntimeOrigin::signed(ABBA), revoke, proof).unwrap();
 		assert_eq!(RevoMod::get_revocation_status(registry_id, revid), Some(()));
 	}
 }
