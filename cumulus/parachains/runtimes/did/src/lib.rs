@@ -81,7 +81,7 @@ use sp_runtime::{
 pub use did_core::{
 	accumulator, anchor, attest, blob, common, did,
 	offchain_signatures::{self, BBSPlusPublicKey, OffchainPublicKey, PSPublicKey},
-	revoke, status_list_credential,
+	revoke, status_list_credential, trusted_entity,
 };
 
 use sp_std::prelude::*;
@@ -723,6 +723,7 @@ construct_runtime!(
 		Accumulator: accumulator::{Pallet, Call, Storage, Event} = 66,
 		OffchainSignatures: offchain_signatures::{Pallet, Call, Storage, Event} = 67,
 		StatusListCredential: status_list_credential::{Pallet, Call, Storage, Event} = 68,
+		TrustedEntity: trusted_entity::{Pallet, Call, Storage, Event} = 69,
 	}
 );
 
@@ -802,6 +803,10 @@ impl did::Config for Runtime {
 }
 
 impl revoke::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+}
+
+impl trusted_entity::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 }
 
