@@ -64,7 +64,7 @@ pub struct Cli {
 
 impl SubstrateCli for Cli {
 	fn impl_name() -> String {
-		"Parity Polkadot".into()
+		"blockchainlabs' InfraBlockchain".into()
 	}
 
 	fn impl_version() -> String {
@@ -80,7 +80,7 @@ impl SubstrateCli for Cli {
 	}
 
 	fn support_url() -> String {
-		"https://github.com/paritytech/polkadot-sdk/issues/new".into()
+		"https://github.com/InfraBlockchain/infrablockspace-sdk/issues/new".into()
 	}
 
 	fn copyright_start_year() -> i32 {

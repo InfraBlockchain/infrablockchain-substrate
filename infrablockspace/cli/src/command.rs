@@ -45,7 +45,7 @@ fn get_exec_name() -> Option<String> {
 
 impl SubstrateCli for Cli {
 	fn impl_name() -> String {
-		"Parity Polkadot".into()
+		"blockchain labs' InfraBlockchain".into()
 	}
 
 	fn impl_version() -> String {
@@ -62,7 +62,7 @@ impl SubstrateCli for Cli {
 	}
 
 	fn support_url() -> String {
-		"https://github.com/paritytech/polkadot-sdk/issues/new".into()
+		"https://github.com/InfraBlockchain/infrablockspace-sdk/issues/new".into()
 	}
 
 	fn copyright_start_year() -> i32 {
@@ -70,7 +70,7 @@ impl SubstrateCli for Cli {
 	}
 
 	fn executable_name() -> String {
-		"polkadot".into()
+		"infrablockchain".into()
 	}
 
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {

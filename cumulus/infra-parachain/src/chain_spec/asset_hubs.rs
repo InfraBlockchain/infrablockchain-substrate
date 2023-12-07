@@ -45,9 +45,9 @@ pub fn asset_hub_development_config() -> AssetHubChainSpec {
 
 	AssetHubChainSpec::from_genesis(
 		// Name
-		"Asset Hub Development",
+		"InfraBlockchain Asset Hub Dev",
 		// ID
-		"asset-hub-dev",
+		"asset-hub-infra-dev",
 		ChainType::Local,
 		move || {
 			asset_hub_genesis(
@@ -82,9 +82,9 @@ pub fn asset_hub_local_config() -> AssetHubChainSpec {
 
 	AssetHubChainSpec::from_genesis(
 		// Name
-		"Asset Hub Local",
+		"InfraBlockchain Asset Hub Local",
 		// ID
-		"asset-hub-local",
+		"asset-hub-infra-local",
 		ChainType::Local,
 		move || {
 			asset_hub_genesis(
@@ -134,9 +134,9 @@ pub fn asset_hub_config() -> AssetHubChainSpec {
 
 	AssetHubChainSpec::from_genesis(
 		// Name
-		"Asset Hub",
+		"InfraBlockchain Asset Hub Main",
 		// ID
-		"asset-hub",
+		"asset-hub-infra",
 		ChainType::Live,
 		move || {
 			asset_hub_genesis(

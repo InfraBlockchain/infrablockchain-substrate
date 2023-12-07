@@ -160,8 +160,8 @@ mod wasm_handlers {
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("Asset Hub"),
-	impl_name: create_runtime_str!("Infra Asset Hub"),
+	spec_name: create_runtime_str!("InfraBlockchain DID Hub"),
+	impl_name: create_runtime_str!("InfraBlockchain DID Hub"),
 	authoring_version: 1,
 	spec_version: 10000,
 	impl_version: 0,

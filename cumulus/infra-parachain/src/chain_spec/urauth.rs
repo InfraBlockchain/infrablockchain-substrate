@@ -47,9 +47,9 @@ pub fn urauth_development_config() -> URAuthChainSpec {
 
 	URAuthChainSpec::from_genesis(
 		// Name
-		"URAuth Development",
+		"InfraBlockchain URAuth Dev",
 		// ID
-		"urauth-dev",
+		"urauth-infra-dev",
 		ChainType::Local,
 		move || {
 			urauth_genesis(
@@ -86,9 +86,9 @@ pub fn urauth_local_config() -> URAuthChainSpec {
 
 	URAuthChainSpec::from_genesis(
 		// Name
-		"URAuth Local",
+		"InfraBlockchain URAuth Local",
 		// ID
-		"urauth-local",
+		"urauth-infra-local",
 		ChainType::Local,
 		move || {
 			urauth_genesis(
@@ -140,9 +140,9 @@ pub fn urauth_config() -> URAuthChainSpec {
 
 	URAuthChainSpec::from_genesis(
 		// Name
-		"URAuth",
+		"InfraBlockchain URAuth Main",
 		// ID
-		"URAuth",
+		"urauth-infra",
 		ChainType::Live,
 		move || {
 			urauth_genesis(

@@ -40,9 +40,9 @@ pub fn contracts_infra_development_config() -> ContractsInfraChainSpec {
 
 	ContractsInfraChainSpec::from_genesis(
 		// Name
-		"Contracts on Infra Relay Development",
+		"InfraBlockchain Contracts Hub Dev",
 		// ID
-		"contracts-infra-dev",
+		"contracts-hub-infra-dev",
 		ChainType::Development,
 		move || {
 			contracts_infra_genesis(
@@ -93,9 +93,9 @@ pub fn contracts_infra_local_config() -> ContractsInfraChainSpec {
 
 	ContractsInfraChainSpec::from_genesis(
 		// Name
-		"Contracts on Infra Relay",
+		"InfraBlockchain Contracts Hub Local",
 		// ID
-		"contracts-infra-local",
+		"contracts-hub-infra-local",
 		ChainType::Local,
 		move || {
 			contracts_infra_genesis(
@@ -153,9 +153,9 @@ pub fn contracts_infra_config() -> ContractsInfraChainSpec {
 
 	ContractsInfraChainSpec::from_genesis(
 		// Name
-		"Contracts on Infra Relay",
+		"InfraBlockchain Contracts Hub Main",
 		// ID
-		"contracts-infra",
+		"contracts-hub-infra",
 		ChainType::Live,
 		move || {
 			contracts_infra_genesis(

@@ -135,8 +135,8 @@ impl_opaque_keys! {
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("contracts-infra"),
-	impl_name: create_runtime_str!("contracts-infra"),
+	spec_name: create_runtime_str!("InfraBlockchain Contracts Hub"),
+	impl_name: create_runtime_str!("InfraBlockchain Contracts Hub"),
 	authoring_version: 1,
 	spec_version: 10000,
 	impl_version: 0,
