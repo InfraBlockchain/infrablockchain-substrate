@@ -13,6 +13,7 @@
 *.orig
 *.rej
 *.swp
+*.json
 **/._*
 **/.criterion/
 **/*.rs.bk
