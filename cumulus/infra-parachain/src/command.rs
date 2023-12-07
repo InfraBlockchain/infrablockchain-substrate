@@ -77,12 +77,12 @@ fn runtime(id: &str) -> Runtime {
 
 	if id.starts_with("asset-hub-infra") {
 		Runtime::AssetHubInfra
-	} else if id.starts_with("contracts-infra") {
+	} else if id.starts_with("contracts-hub-infra") {
 		Runtime::ContractsInfra
-	} else if id.starts_with("urauth") {
-		Runtime::URAuth
-	} else if id.starts_with("did-infra") {
+	} else if id.starts_with("did-hub-infra") {
 		Runtime::DidInfra
+	} else if id.starts_with("urauth-infra") {
+		Runtime::URAuth
 	} else {
 		log::warn!("No specific runtime was recognized for ChainSpec's id: '{}', so Runtime::default() will be used", id);
 		Runtime::default()
@@ -100,20 +100,19 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		"asset-hub-infra" => Box::new(chain_spec::asset_hubs::AssetHubChainSpec::from_json_bytes(
 			&include_bytes!("../chain-specs/asset-hub-polkadot.json")[..],
 		)?),
-		"contracts-infra-dev" =>
+		"contracts-hub-infra-dev" =>
 			Box::new(chain_spec::contracts::contracts_infra_development_config()),
-		"contracts-infra-local" => Box::new(chain_spec::contracts::contracts_infra_local_config()),
-		"contracts-infra" => Box::new(chain_spec::contracts::contracts_infra_config()),
+		"contracts-hub-infra-local" => Box::new(chain_spec::contracts::contracts_infra_local_config()),
+		"contracts-hub-infra" => Box::new(chain_spec::contracts::contracts_infra_config()),
 		// ToDo: chain-spec file for `ContractsInfra`
-		"urauth-dev" => Box::new(chain_spec::urauth::urauth_development_config()),
-		"urauth-local" => Box::new(chain_spec::urauth::urauth_local_config()),
-		"urauth" => Box::new(chain_spec::urauth::urauth_config()),
-		// ToDo: chain-spec file for `URAuth`
-		"did-infra-dev" => Box::new(chain_spec::did::did_development_config()),
-		"did-infra-local" => Box::new(chain_spec::did::did_local_config()),
-		"did-infra" => Box::new(chain_spec::did::did_config()),
+		"did-hub-infra-dev" => Box::new(chain_spec::did::did_development_config()),
+		"did-hub-infra-local" => Box::new(chain_spec::did::did_local_config()),
+		"did-hub-infra" => Box::new(chain_spec::did::did_config()),
 		// ToDo: chain-spec file for `DidInfra`
-
+		"urauth-infra-dev" => Box::new(chain_spec::urauth::urauth_development_config()),
+		"urauth-infra-local" => Box::new(chain_spec::urauth::urauth_local_config()),
+		"urauth-infra" => Box::new(chain_spec::urauth::urauth_config()),
+		// ToDo: chain-spec file for `URAuth`
 		// -- Fallback (generic chainspec)
 		"" => {
 			log::warn!("No ChainSpec.id specified, so using default one, based on rococo-parachain runtime");
@@ -173,7 +172,7 @@ fn extract_parachain_id(id: &str) -> (&str, &str, Option<ParaId>) {
 
 impl SubstrateCli for Cli {
 	fn impl_name() -> String {
-		"Polkadot parachain".into()
+		"InfraBlockchain parachain".into()
 	}
 
 	fn impl_version() -> String {
@@ -182,7 +181,7 @@ impl SubstrateCli for Cli {
 
 	fn description() -> String {
 		format!(
-			"Polkadot parachain\n\nThe command-line arguments provided first will be \
+			"InfraBlockchain parachain\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relaychain node.\n\n\
 		{} [parachain-args] -- [relaychain-args]",
@@ -195,7 +194,7 @@ impl SubstrateCli for Cli {
 	}
 
 	fn support_url() -> String {
-		"https://github.com/paritytech/polkadot-sdk/issues/new".into()
+		"https://github.com/InfraBlockchain/infrablockspace-sdk/issues/new".into()
 	}
 
 	fn copyright_start_year() -> i32 {
@@ -209,7 +208,7 @@ impl SubstrateCli for Cli {
 
 impl SubstrateCli for RelayChainCli {
 	fn impl_name() -> String {
-		"Infra Relay parachain".into()
+		"InfraBlockchain parachain".into()
 	}
 
 	fn impl_version() -> String {
@@ -218,7 +217,7 @@ impl SubstrateCli for RelayChainCli {
 
 	fn description() -> String {
 		format!(
-			"Polkadot parachain\n\nThe command-line arguments provided first will be \
+			"InfraBlockchain parachain\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relay chain node.\n\n\
 		{} [parachain-args] -- [relay_chain-args]",
@@ -231,7 +230,7 @@ impl SubstrateCli for RelayChainCli {
 	}
 
 	fn support_url() -> String {
-		"https://github.com/paritytech/polkadot-sdk/issues/new".into()
+		"https://github.com/InfraBlockchain/infrablockspace-sdk/issues/new".into()
 	}
 
 	fn copyright_start_year() -> i32 {

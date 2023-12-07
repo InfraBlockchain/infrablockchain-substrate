@@ -44,9 +44,9 @@ pub fn did_development_config() -> DidChainSpec {
 
 	DidChainSpec::from_genesis(
 		// Name
-		"DID Development",
+		"InfraBlockchain DID Hub Dev",
 		// ID
-		"did-infra-dev",
+		"did-hub-infra-dev",
 		ChainType::Local,
 		move || {
 			did_genesis(
@@ -81,9 +81,9 @@ pub fn did_local_config() -> DidChainSpec {
 
 	DidChainSpec::from_genesis(
 		// Name
-		"DID Local",
+		"InfraBlockchain DID Hub Local",
 		// ID
-		"did-infra-local",
+		"did-hub-infra-local",
 		ChainType::Local,
 		move || {
 			did_genesis(
@@ -133,9 +133,9 @@ pub fn did_config() -> DidChainSpec {
 
 	DidChainSpec::from_genesis(
 		// Name
-		"DID",
+		"InfraBlockchain DID Hub Main",
 		// ID
-		"did-infra",
+		"did-hub-infra",
 		ChainType::Live,
 		move || {
 			did_genesis(

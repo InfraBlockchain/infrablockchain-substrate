@@ -112,8 +112,8 @@ impl_opaque_keys! {
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("URAuth"),
-	impl_name: create_runtime_str!("urauth-infra"),
+	spec_name: create_runtime_str!("InfraBlockchain URAuth"),
+	impl_name: create_runtime_str!("InfraBlockchain URAuth"),
 	authoring_version: 1,
 	spec_version: 10_000,
 	impl_version: 0,

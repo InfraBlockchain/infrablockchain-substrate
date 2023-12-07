@@ -117,10 +117,10 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 /// Runtime version (infra-relay).
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("infra-relay"),
-	impl_name: create_runtime_str!("bclabs-infra-relay"),
+	spec_name: create_runtime_str!("InfraRelayChain"),
+	impl_name: create_runtime_str!("InfraRelayChain"),
 	authoring_version: 0,
-	spec_version: 10_000,
+	spec_version: 10000,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 24,
