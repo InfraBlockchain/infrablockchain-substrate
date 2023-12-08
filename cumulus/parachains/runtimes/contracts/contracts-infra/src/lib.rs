@@ -427,12 +427,14 @@ impl pallet_asset_link::Config for Runtime {
 
 parameter_types! {
 	pub const AggregatedPeriod: BlockNumber = 10;
+	pub const IsPara: bool = true;
 }
 
 impl system_token_aggregator::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Period = AggregatedPeriod;
 	type AssetMultiLocationGetter = AssetLink;
+	type IsPara = IsPara;
 }
 
 parameter_types! {
