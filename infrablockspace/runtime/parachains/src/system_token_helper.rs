@@ -106,6 +106,7 @@ pub fn do_teleport_asset<T>(
 	beneficiary: T::AccountId,
 	amount: &T::Balance,
 	asset_multi_loc: MultiLocation,
+	is_relay: bool,
 ) where
 	T: pallet_xcm::Config + pallet_assets::Config,
 	u32: From<BlockNumberFor<T>>,
@@ -117,10 +118,11 @@ pub fn do_teleport_asset<T>(
 		X3(Junction::Parachain(para_id), _, _) => *para_id,
 		_ => 1000,
 	};
+	let parents: u8 = if is_relay { 0 } else { 1 };
 	let _ = pallet_xcm::Pallet::<T>::limited_teleport_assets(
 		<T as frame_system::Config>::RuntimeOrigin::signed(beneficiary.clone().into()),
 		Box::new(xcm::VersionedMultiLocation::V3(MultiLocation {
-			parents: 1,
+			parents,
 			interior: X1(Junction::Parachain(dest_para_id)),
 		})),
 		Box::new(

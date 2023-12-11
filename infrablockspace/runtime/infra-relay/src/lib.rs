@@ -1345,12 +1345,14 @@ impl pallet_assets::Config for Runtime {
 
 parameter_types! {
 	pub const Period: BlockNumber = 10;
+	pub const IsRelay: bool = true;
 }
 
 impl system_token_aggregator::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Period = Period;
 	type AssetMultiLocationGetter = AssetLink;
+	type IsRelay = IsRelay;
 }
 
 construct_runtime! {

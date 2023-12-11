@@ -102,7 +102,8 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		)?),
 		"contracts-hub-infra-dev" =>
 			Box::new(chain_spec::contracts::contracts_infra_development_config()),
-		"contracts-hub-infra-local" => Box::new(chain_spec::contracts::contracts_infra_local_config()),
+		"contracts-hub-infra-local" =>
+			Box::new(chain_spec::contracts::contracts_infra_local_config()),
 		"contracts-hub-infra" => Box::new(chain_spec::contracts::contracts_infra_config()),
 		// ToDo: chain-spec file for `ContractsInfra`
 		"did-hub-infra-dev" => Box::new(chain_spec::did::did_development_config()),
