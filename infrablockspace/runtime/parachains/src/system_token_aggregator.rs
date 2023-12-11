@@ -60,7 +60,7 @@ pub mod pallet {
 		#[pallet::constant]
 		type Period: Get<BlockNumberFor<Self>>;
 		type AssetMultiLocationGetter: AssetMultiLocationGetter<AssetId>;
-		type IsPara: Get<bool>;
+		type IsRelay: Get<bool>;
 	}
 
 	#[pallet::event]
@@ -87,8 +87,8 @@ pub mod pallet {
 	{
 		fn on_initialize(n: BlockNumberFor<T>) -> Weight {
 			if n % T::Period::get() == Zero::zero() {
-				let is_para = T::IsPara::get();
-				Self::do_aggregate_system_token(is_para);
+				let is_relay = T::IsRelay::get();
+				Self::do_aggregate_system_token(is_relay);
 				T::DbWeight::get().reads(3)
 			} else {
 				T::DbWeight::get().reads(0)
@@ -98,7 +98,7 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
-	pub(crate) fn do_aggregate_system_token(is_para: bool)
+	pub(crate) fn do_aggregate_system_token(is_relay: bool)
 	where
 		u32: From<BlockNumberFor<T>>,
 		<<T as frame_system::Config>::RuntimeOrigin as OriginTrait>::AccountId:
@@ -124,7 +124,7 @@ impl<T: Config> Pallet<T> {
 					fee_account.clone(),
 					amount,
 					asset_multilocation.clone(),
-					is_para,
+					is_relay,
 				);
 
 				Self::deposit_event(Event::<T>::SystemTokenAggregated {
