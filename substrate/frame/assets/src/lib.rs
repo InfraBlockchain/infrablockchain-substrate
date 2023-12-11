@@ -545,7 +545,8 @@ pub mod pallet {
 		/// The is_sufficient of an asset has been updated by the asset owner.
 		AssetSystemTokenWeightChanged {
 			asset_id: T::AssetId,
-			system_token_weight: SystemTokenWeight,
+			original_system_token_weight: SystemTokenWeight,
+			new_system_token_weight: SystemTokenWeight,
 		},
 		/// No sufficient token to pay the transaciton fee
 		NoSufficientTokenToPay,
@@ -1831,11 +1832,17 @@ pub mod pallet {
 			system_token_weight: SystemTokenWeight,
 		) -> DispatchResult {
 			T::ForceOrigin::ensure_origin(origin)?;
-			Self::do_update_system_token_weight(id, system_token_weight)?;
 
+			let asset_id: T::AssetId = id.into();
+
+			let asset = Asset::<T, I>::get(asset_id).ok_or(Error::<T, I>::Unknown)?;
+			let original_system_token_weight = asset.system_token_weight;
+
+			Self::do_update_system_token_weight(id, system_token_weight)?;
 			Self::deposit_event(Event::AssetSystemTokenWeightChanged {
 				asset_id: id.into(),
-				system_token_weight,
+				original_system_token_weight,
+				new_system_token_weight: system_token_weight,
 			});
 			Ok(())
 		}
