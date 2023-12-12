@@ -18,8 +18,6 @@ RUN useradd -m -u 1000 -U -s /bin/sh -d /infrablockspace infrablockspace && \
 	mkdir -p /data /infrablockspace/.local/share && \
 	chown -R infrablockspace:infrablockspace /data && \
 	ln -s /data /infrablockspace/.local/share/infrablockspace && \
-# unclutter and minimize the attack surface
-	rm -rf /usr/bin /usr/sbin && \
 # check if executable works in this container
 	/usr/local/bin/infrablockspace --version
 
