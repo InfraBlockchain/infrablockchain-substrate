@@ -20,7 +20,11 @@
 **/hfuzz_target/
 **/hfuzz_workspace/
 **/node_modules
-**/target/
+target
+!target/release/infrablockspace
+!target/release/infrablockspace-execute-worker
+!target/release/infrablockspace-prepare-worker
+!target/release/infra-parachain
 **/wip/*.stderr
 /.cargo/config
 /.envrc
