@@ -90,7 +90,7 @@ pub trait VotingInterface<T> {
 	fn update_vote_status(who: VoteAccountId, weight: VoteWeight);
 }
 
-impl<T: Config> VotingInterface<T> for Pallet<T> 
+impl<T: Config> VotingInterface<T> for Pallet<T>
 where
 	T::AccountId: From<VoteAccountId>,
 {
@@ -238,10 +238,7 @@ impl<T: Config> Pallet<T> {
 		let mut maybe_new_validators: Vec<T::AccountId> =
 			Self::do_elect_seed_trust_validators(seed_trust_slots);
 		if Self::is_pot_enabled(num_pot) {
-			let mut pot_validators = Self::do_elect_pot_validators(
-				era_index, 
-				num_pot
-			);
+			let mut pot_validators = Self::do_elect_pot_validators(era_index, num_pot);
 			pot_enabled = true;
 			maybe_new_validators.append(&mut pot_validators);
 		}
@@ -310,22 +307,25 @@ impl<T: Config> Pallet<T> {
 		maybe_new_seed_trust_slots: Option<u32>,
 	) -> sp_runtime::DispatchResult {
 		let current_seed_trust_slots = SeedTrustSlots::<T>::get();
-		// 1. Check if 'new_total_slots' is smaller than 'current_seed_trust_slots', 'new_seed_trust_slots' should be provided
+		// 1. Check if 'new_total_slots' is smaller than 'current_seed_trust_slots',
+		//    'new_seed_trust_slots' should be provided
 		if new_total_slots < current_seed_trust_slots {
-			frame_support::ensure!(!maybe_new_seed_trust_slots.is_none(), Error::<T>::SeedTrustSlotsShouldBeProvided);
+			frame_support::ensure!(
+				!maybe_new_seed_trust_slots.is_none(),
+				Error::<T>::SeedTrustSlotsShouldBeProvided
+			);
 		}
 		// 2. Set 'total_validator_slots'
 		TotalValidatorSlots::<T>::put(new_total_slots);
-		Self::deposit_event(Event::<T>::TotalValidatorSlotsChanged {
-			new: new_total_slots,
-		});
+		Self::deposit_event(Event::<T>::TotalValidatorSlotsChanged { new: new_total_slots });
 		// 3. Do something if `new_seed_trust_slots` is provided
 		if let Some(new_seed_trust_slots) = maybe_new_seed_trust_slots {
-			frame_support::ensure!(new_total_slots >= new_seed_trust_slots, Error::<T>::SeedTrustExceedMaxValidators);
+			frame_support::ensure!(
+				new_total_slots >= new_seed_trust_slots,
+				Error::<T>::SeedTrustExceedMaxValidators
+			);
 			SeedTrustSlots::<T>::put(new_seed_trust_slots);
-			Self::deposit_event(Event::<T>::SeedTrustSlotsChanged {
-				new: new_seed_trust_slots,
-			});
+			Self::deposit_event(Event::<T>::SeedTrustSlotsChanged { new: new_seed_trust_slots });
 		}
 		Ok(())
 	}
@@ -333,7 +333,7 @@ impl<T: Config> Pallet<T> {
 	fn is_pot_enabled(num_pot: u32) -> bool {
 		if num_pot > 0 && Self::pool_status() == Pool::All {
 			return true
-		} 
+		}
 		false
 	}
 }

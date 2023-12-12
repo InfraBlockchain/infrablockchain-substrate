@@ -8,7 +8,7 @@ use sp_keyring::Sr25519Keyring::*;
 use sp_runtime::{
 	traits::{BlakeTwo256, Convert, IdentityLookup},
 	types::{VoteAccountId, VoteWeight},
-	AccountId32, BuildStorage
+	AccountId32, BuildStorage,
 };
 use std::collections::BTreeMap;
 
@@ -23,7 +23,7 @@ pub(crate) type Balance = u128;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
 frame_support::construct_runtime!(
-	pub enum TestRuntime 
+	pub enum TestRuntime
 	{
 		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>},
@@ -309,11 +309,7 @@ impl MockVoteStatus {
 		let mut mock_pot = vec![];
 		let mock_accounts = Self::create_mock_account(num);
 		mock_accounts.into_iter().for_each(|acc| {
-			let vote_point = if acc == Dave.to_account_id() {
-				2
-			} else {
-				3
-			};
+			let vote_point = if acc == Dave.to_account_id() { 2 } else { 3 };
 			mock_pot.push((acc, vote_point as VoteWeight));
 		});
 		Self(mock_pot)
@@ -337,6 +333,8 @@ pub(crate) fn validator_election_events() -> Vec<crate::Event<TestRuntime>> {
 	System::events()
 		.into_iter()
 		.map(|r| r.event)
-		.filter_map(|e| if let RuntimeEvent::ValidatorElection(inner) = e { Some(inner) } else { None })
+		.filter_map(
+			|e| if let RuntimeEvent::ValidatorElection(inner) = e { Some(inner) } else { None },
+		)
 		.collect()
 }
