@@ -205,7 +205,8 @@ pub mod pallet {
 			+ MaxEncodedLen
 			+ From<VoteWeight>;
 
-		/// Something that can estimate the next session change, accurately or as a best effort guess.
+		/// Something that can estimate the next session change, accurately or as a best effort
+		/// guess.
 		type NextNewSession: EstimateNextNewSession<BlockNumberFor<Self>>;
 
 		/// Interface for interacting with a session pallet.
@@ -304,7 +305,7 @@ pub mod pallet {
 		/// Some parameters for transaction are bad
 		BadTransactionParams,
 		/// New number of Seed Trust slots should be provided
-		SeedTrustSlotsShouldBeProvided
+		SeedTrustSlotsShouldBeProvided,
 	}
 
 	/// The current era index.
@@ -371,10 +372,7 @@ pub mod pallet {
 			new_seed_trust_slots: Option<u32>,
 		) -> DispatchResult {
 			ensure_root(origin)?;
-			Self::try_set_number_of_validator(
-				new_total_slots,
-				new_seed_trust_slots,
-			)?;
+			Self::try_set_number_of_validator(new_total_slots, new_seed_trust_slots)?;
 
 			Ok(())
 		}
