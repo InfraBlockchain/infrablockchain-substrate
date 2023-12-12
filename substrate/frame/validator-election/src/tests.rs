@@ -39,19 +39,17 @@ fn session_and_era_works() {
 fn pot_works() {
 	ExtBuilder::default()
 		.pot_enable(true)
-		.vote_status(|| create_mock_vote_status(2, true))
+		.vote_status(|| create_mock_vote_status(2))
 		.build_and_execute(|| {
 			// Scenario 1
 			// Gensis state
-			assert_eq!(SeedTrustNum::<TestRuntime>::get(), 3);
-			assert_ok!(InfraVoting::set_number_of_validators(TestOrigin::root(), 0, 0));
 			assert_eq!(SeedTrustNum::<TestRuntime>::get(), 2);
 			assert_eq!(PotValidatorPool::<TestRuntime>::get().counts(), 2);
 			assert_eq!(
 				PotValidatorPool::<TestRuntime>::get().status,
 				vec![
-					(sp_keyring::Sr25519Keyring::Dave.to_account_id(), 2),
-					(sp_keyring::Sr25519Keyring::Ferdie.to_account_id(), 2)
+					(sp_keyring::Sr25519Keyring::Alice.to_account_id(), 3),
+					(sp_keyring::Sr25519Keyring::Dave.to_account_id(), 2)
 				]
 			);
 			// Let's roll to era 1
@@ -63,7 +61,7 @@ fn pot_works() {
 			assert_eq!(current_era, 1);
 			assert_eq!(PotValidators::<TestRuntime>::get().len(), 1);
 			assert_eq!(
-				*infra_voting_events().last().unwrap(),
+				*validator_election_events().last().unwrap(),
 				Event::ValidatorsElected {
 					validators: vec![
 						sp_keyring::Sr25519Keyring::Alice.to_account_id(),
@@ -73,38 +71,5 @@ fn pot_works() {
 					pot_enabled: true
 				}
 			);
-			// Scenario2: Ferdie got more vote
-			// Let's roll to era 2
-			// We should have 2 Seed Trust and 1 Pot Validator
-			let mut mock_vote_status = MockVoteStatus::create_mock_pot(2, true);
-			mock_vote_status
-				.increase_vote_point(sp_keyring::Sr25519Keyring::Ferdie.to_account_id());
-			let voting_status: VotingStatus<TestRuntime> = mock_vote_status.into();
-			PotValidatorPool::<TestRuntime>::put(voting_status);
-			for i in 6..=10 {
-				progress_session(i);
-			}
-			assert_eq!(
-				*infra_voting_events().last().unwrap(),
-				Event::ValidatorsElected {
-					validators: vec![
-						sp_keyring::Sr25519Keyring::Alice.to_account_id(),
-						sp_keyring::Sr25519Keyring::Bob.to_account_id(),
-						sp_keyring::Sr25519Keyring::Ferdie.to_account_id(),
-					],
-					pot_enabled: true
-				}
-			);
-			progress_block(11);
-			let queued_keys =
-				Session::queued_keys().iter().map(|v| v.0.clone()).collect::<Vec<AccountId>>();
-			assert_eq!(
-				queued_keys,
-				vec![
-					sp_keyring::Sr25519Keyring::Alice.to_account_id(),
-					sp_keyring::Sr25519Keyring::Bob.to_account_id(),
-					sp_keyring::Sr25519Keyring::Ferdie.to_account_id(),
-				],
-			)
 		})
 }

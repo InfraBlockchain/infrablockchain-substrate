@@ -86,11 +86,19 @@ impl<AccountId> SessionInterface<AccountId> for () {
 }
 
 pub trait VotingInterface<T> {
+	/// Update the vote status for the given account.
 	fn update_vote_status(who: VoteAccountId, weight: VoteWeight);
 }
 
-impl<T: Config> VotingInterface<T> for Pallet<T> {
+impl<T: Config> VotingInterface<T> for Pallet<T> 
+where
+	T::AccountId: From<VoteAccountId>,
+{
 	fn update_vote_status(who: VoteAccountId, weight: VoteWeight) {
+		// Return if vote candidate is in SeedTrustValidatorPool
+		if SeedTrustValidatorPool::<T>::get().contains(&who.clone().into()) {
+			return
+		}
 		let vote_account_id: T::InfraVoteAccountId = who.into();
 		let vote_points: T::InfraVotePoints = weight.into();
 
@@ -223,36 +231,39 @@ impl<T: Config> Pallet<T> {
 	/// `SeedTrustValidatorPool::<T>`. Otherwise, remain number of validators are elected from
 	/// `PotValidatorPool::<T>`.
 	pub fn elect_validators(era_index: EraIndex) -> Vec<T::AccountId> {
-		let total_num_validators = TotalNumberOfValidators::<T>::get();
-		let num_seed_trust = NumberOfSeedTrustValidators::<T>::get();
-		let num_pot = total_num_validators - num_seed_trust;
+		let total_num_validators = TotalValidatorSlots::<T>::get();
+		let seed_trust_slots = SeedTrustSlots::<T>::get();
+		let num_pot = total_num_validators - seed_trust_slots;
 		let mut pot_enabled = false;
-		let mut new_validators: Vec<T::AccountId> =
-			Self::do_elect_seed_trust_validators(num_seed_trust);
-		if num_pot != 0 && matches!(Self::pool_status(), Pool::All) {
-			let mut pot_validators = Self::do_elect_pot_validators(era_index, num_pot);
+		let mut maybe_new_validators: Vec<T::AccountId> =
+			Self::do_elect_seed_trust_validators(seed_trust_slots);
+		if Self::is_pot_enabled(num_pot) {
+			let mut pot_validators = Self::do_elect_pot_validators(
+				era_index, 
+				num_pot
+			);
 			pot_enabled = true;
-			new_validators.append(&mut pot_validators);
+			maybe_new_validators.append(&mut pot_validators);
 		}
 		let old_validators = T::SessionInterface::validators();
-		if old_validators == new_validators {
+		if old_validators == maybe_new_validators {
 			Self::deposit_event(Event::<T>::ValidatorsNotChanged);
 			return old_validators
 		}
 		Self::deposit_event(Event::<T>::ValidatorsElected {
-			validators: new_validators.clone(),
+			validators: maybe_new_validators.clone(),
 			pot_enabled,
 		});
-		T::CollectiveInterface::set_new_members(new_validators.clone());
-		new_validators
+		T::CollectiveInterface::set_new_members(maybe_new_validators.clone());
+		maybe_new_validators
 	}
 
-	fn do_elect_seed_trust_validators(num_seed_trust: u32) -> Vec<T::AccountId> {
+	fn do_elect_seed_trust_validators(seed_trust_slots: u32) -> Vec<T::AccountId> {
 		log!(trace, "Elect seed trust validators");
 		let seed_trust_validators = SeedTrustValidatorPool::<T>::get();
 		let new = seed_trust_validators
 			.iter()
-			.take(num_seed_trust as usize)
+			.take(seed_trust_slots as usize)
 			.cloned()
 			.collect::<Vec<_>>();
 		let old = SeedTrustValidators::<T>::get();
@@ -294,33 +305,35 @@ impl<T: Config> Pallet<T> {
 		Self::deposit_event(Event::<T>::ForceEra { mode });
 	}
 
-	pub fn do_set_number_of_validator(
-		old_total: u32,
-		new_total: u32,
-		old_seed_trust: u32,
-		new_seed_trust: u32,
-	) {
-		let mut is_total_num_changed: bool = false;
-		let mut is_seed_trust_num_changed: bool = false;
-		if new_total != old_total {
-			is_total_num_changed = true;
+	pub fn try_set_number_of_validator(
+		new_total_slots: u32,
+		maybe_new_seed_trust_slots: Option<u32>,
+	) -> sp_runtime::DispatchResult {
+		let current_seed_trust_slots = SeedTrustSlots::<T>::get();
+		// 1. Check if 'new_total_slots' is smaller than 'current_seed_trust_slots', 'new_seed_trust_slots' should be provided
+		if new_total_slots < current_seed_trust_slots {
+			frame_support::ensure!(!maybe_new_seed_trust_slots.is_none(), Error::<T>::SeedTrustSlotsShouldBeProvided);
 		}
-		if new_seed_trust != old_seed_trust {
-			is_seed_trust_num_changed = true;
-		}
-		if is_seed_trust_num_changed {
-			NumberOfSeedTrustValidators::<T>::put(new_seed_trust);
-			Self::deposit_event(Event::<T>::SeedTrustNumChanged {
-				old: old_seed_trust,
-				new: new_seed_trust,
+		// 2. Set 'total_validator_slots'
+		TotalValidatorSlots::<T>::put(new_total_slots);
+		Self::deposit_event(Event::<T>::TotalValidatorSlotsChanged {
+			new: new_total_slots,
+		});
+		// 3. Do something if `new_seed_trust_slots` is provided
+		if let Some(new_seed_trust_slots) = maybe_new_seed_trust_slots {
+			frame_support::ensure!(new_total_slots >= new_seed_trust_slots, Error::<T>::SeedTrustExceedMaxValidators);
+			SeedTrustSlots::<T>::put(new_seed_trust_slots);
+			Self::deposit_event(Event::<T>::SeedTrustSlotsChanged {
+				new: new_seed_trust_slots,
 			});
 		}
-		if is_total_num_changed {
-			TotalNumberOfValidators::<T>::put(new_total);
-			Self::deposit_event(Event::<T>::TotalValidatorsNumChanged {
-				old: old_total,
-				new: new_total,
-			});
-		}
+		Ok(())
+	}
+
+	fn is_pot_enabled(num_pot: u32) -> bool {
+		if num_pot > 0 && Self::pool_status() == Pool::All {
+			return true
+		} 
+		false
 	}
 }
