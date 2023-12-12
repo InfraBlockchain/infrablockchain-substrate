@@ -16,8 +16,6 @@ RUN useradd -m -u 1000 -U -s /bin/sh -d /cumulus infra-parachain && \
     mkdir -p /data /cumulus/.local/share && \
     chown -R infra-parachain:infra-parachain /data && \
     ln -s /data /cumulus/.local/share/infra-parachain && \
-# unclutter and minimize the attack surface
-    rm -rf /usr/bin /usr/sbin && \
 # check if executable works in this container
     /usr/local/bin/infra-parachain --version
 
