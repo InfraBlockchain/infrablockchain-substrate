@@ -294,8 +294,8 @@ fn infra_relay_staging_testnet_config_genesis(
 		xcm_pallet: Default::default(),
 		validator_election: infra_relay::ValidatorElectionConfig {
 			seed_trust_validators: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
-			total_number_of_validators: 2,
-			number_of_seed_trust_validators: 2,
+			total_validator_slots: 2,
+			seed_trust_slots: 2,
 			..Default::default()
 		},
 	}
@@ -607,8 +607,8 @@ fn rococo_staging_testnet_config_genesis(
 		assigned_slots: Default::default(),
 		validator_election: rococo_runtime::ValidatorElectionConfig {
 			seed_trust_validators: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
-			total_number_of_validators: 2,
-			number_of_seed_trust_validators: 2,
+			total_validator_slots: 2,
+			seed_trust_slots: 2,
 			..Default::default()
 		},
 	}
@@ -829,8 +829,8 @@ pub fn infra_relay_testnet_genesis(
 		xcm_pallet: Default::default(),
 		validator_election: infra_relay::ValidatorElectionConfig {
 			seed_trust_validators: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
-			total_number_of_validators: 6,
-			number_of_seed_trust_validators: 6,
+			total_validator_slots: 6,
+			seed_trust_slots: 6,
 			..Default::default()
 		},
 	}
@@ -917,8 +917,8 @@ pub fn rococo_testnet_genesis(
 		assigned_slots: Default::default(),
 		validator_election: rococo_runtime::ValidatorElectionConfig {
 			seed_trust_validators: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
-			total_number_of_validators: 2,
-			number_of_seed_trust_validators: 2,
+			total_validator_slots: 2,
+			seed_trust_slots: 2,
 			..Default::default()
 		},
 	}

@@ -1,15 +1,14 @@
-use crate::{self as pallet_infra_voting, *};
+use crate::{self as pallet_validator_election, *};
 use frame_support::{
 	parameter_types,
-	traits::{ConstU32, ConstU64, GenesisBuild, Hooks, OneSessionHandler},
+	traits::{ConstU32, ConstU64, Hooks, OneSessionHandler},
 };
 use sp_core::{ByteArray, H256};
 use sp_keyring::Sr25519Keyring::*;
 use sp_runtime::{
-	testing::Header,
 	traits::{BlakeTwo256, Convert, IdentityLookup},
 	types::{VoteAccountId, VoteWeight},
-	AccountId32,
+	AccountId32, BuildStorage,
 };
 use std::collections::BTreeMap;
 
@@ -24,14 +23,11 @@ pub(crate) type Balance = u128;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
 frame_support::construct_runtime!(
-	pub enum TestRuntime where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
+	pub enum TestRuntime
 	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>},
-		InfraVoting: pallet_infra_voting::{Pallet, Call, Storage, Config<T>, Event<T>},
+		ValidatorElection: pallet_validator_election::{Pallet, Call, Storage, Config<T>, Event<T>},
 	}
 );
 
@@ -41,14 +37,13 @@ impl frame_system::Config for TestRuntime {
 	type BlockLength = ();
 	type DbWeight = ();
 	type RuntimeOrigin = RuntimeOrigin;
-	type Index = AccountIndex;
-	type BlockNumber = BlockNumber;
+	type Nonce = u64;
 	type RuntimeCall = RuntimeCall;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type AccountId = AccountId;
 	type Lookup = IdentityLookup<Self::AccountId>;
-	type Header = Header;
+	type Block = Block;
 	type RuntimeEvent = RuntimeEvent;
 	type BlockHashCount = ConstU64<250>;
 	type Version = ();
@@ -68,7 +63,7 @@ parameter_types! {
 	pub static SessionsPerEra: u32 = 5;
 }
 
-impl pallet_infra_voting::Config for TestRuntime {
+impl pallet_validator_election::Config for TestRuntime {
 	type RuntimeEvent = RuntimeEvent;
 	type SessionsPerEra = SessionsPerEra;
 	type InfraVoteAccountId = VoteAccountId;
@@ -146,7 +141,7 @@ impl pallet_session::Config for TestRuntime {
 	type RuntimeEvent = RuntimeEvent;
 	type Keys = SessionKeys;
 	type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
-	type SessionManager = InfraVoting;
+	type SessionManager = ValidatorElection;
 	type SessionHandler = (OtherSessionHandler,);
 	type ValidatorId = AccountId;
 	type ValidatorIdOf = TestValidatorIdOf;
@@ -167,7 +162,7 @@ impl Default for ExtBuilder {
 	fn default() -> Self {
 		Self {
 			total_number_of_validators: 3,
-			number_of_seed_trust_validators: 3,
+			number_of_seed_trust_validators: 2,
 			seed_trust_validators: vec![],
 			initialize_first_session: true,
 			is_pot_enable_at_genesis: false,
@@ -222,16 +217,16 @@ impl ExtBuilder {
 
 	fn build(self) -> sp_io::TestExternalities {
 		let mut storage =
-			frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
+			frame_system::GenesisConfig::<TestRuntime>::default().build_storage().unwrap();
 
 		let seed_trust_validators =
 			vec![Alice.to_account_id(), Bob.to_account_id(), Charlie.to_account_id()];
 		let account_keyring = vec![Alice, Bob, Charlie, Dave, Eve, Ferdie];
 
-		let _ = pallet_infra_voting::GenesisConfig::<TestRuntime> {
+		let _ = pallet_validator_election::GenesisConfig::<TestRuntime> {
 			seed_trust_validators: seed_trust_validators.clone(),
-			total_number_of_validators: self.total_number_of_validators,
-			number_of_seed_trust_validators: self.number_of_seed_trust_validators,
+			total_validator_slots: self.total_number_of_validators,
+			seed_trust_slots: self.number_of_seed_trust_validators,
 			is_pot_enable_at_genesis: self.is_pot_enable_at_genesis,
 			vote_status_at_genesis: self.vote_status,
 			..Default::default()
@@ -303,23 +298,18 @@ impl From<MockVoteStatus> for VotingStatus<TestRuntime> {
 impl MockVoteStatus {
 	fn create_mock_account(num: usize) -> Vec<VoteAccountId> {
 		let mut mock_accounts = vec![];
-		let accounts = vec![Dave, Ferdie, Eve];
+		let accounts = vec![Alice, Dave, Ferdie, Eve];
 		for i in 0..num {
 			mock_accounts.push(accounts[i].to_account_id());
 		}
 		mock_accounts
 	}
 
-	pub fn create_mock_pot(num: usize, is_over_min: bool) -> Self {
+	pub fn create_mock_pot(num: usize) -> Self {
 		let mut mock_pot = vec![];
 		let mock_accounts = Self::create_mock_account(num);
 		mock_accounts.into_iter().for_each(|acc| {
-			let min_threshold = MinVotePointsThreshold::get();
-			let vote_point = if !is_over_min && acc == Dave.to_account_id() {
-				min_threshold - 1
-			} else {
-				min_threshold + 1
-			};
+			let vote_point = if acc == Dave.to_account_id() { 2 } else { 3 };
 			mock_pot.push((acc, vote_point as VoteWeight));
 		});
 		Self(mock_pot)
@@ -335,14 +325,16 @@ impl MockVoteStatus {
 }
 /// There will be three candidates for testing
 /// Dave, Eve, Ferdie
-pub(crate) fn create_mock_vote_status(num: usize, is_over_min: bool) -> MockVoteStatus {
-	MockVoteStatus::create_mock_pot(num, is_over_min)
+pub(crate) fn create_mock_vote_status(num: usize) -> MockVoteStatus {
+	MockVoteStatus::create_mock_pot(num)
 }
 
-pub(crate) fn infra_voting_events() -> Vec<crate::Event<TestRuntime>> {
+pub(crate) fn validator_election_events() -> Vec<crate::Event<TestRuntime>> {
 	System::events()
 		.into_iter()
 		.map(|r| r.event)
-		.filter_map(|e| if let RuntimeEvent::InfraVoting(inner) = e { Some(inner) } else { None })
+		.filter_map(
+			|e| if let RuntimeEvent::ValidatorElection(inner) = e { Some(inner) } else { None },
+		)
 		.collect()
 }

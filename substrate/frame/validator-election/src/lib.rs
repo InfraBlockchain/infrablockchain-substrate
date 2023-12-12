@@ -222,8 +222,8 @@ pub mod pallet {
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
 		pub seed_trust_validators: Vec<T::AccountId>,
-		pub total_number_of_validators: u32,
-		pub number_of_seed_trust_validators: u32,
+		pub total_validator_slots: u32,
+		pub seed_trust_slots: u32,
 		pub force_era: Forcing,
 		pub pool_status: Pool,
 		pub is_pot_enable_at_genesis: bool,
@@ -234,9 +234,9 @@ pub mod pallet {
 		fn default() -> Self {
 			GenesisConfig {
 				is_pot_enable_at_genesis: false,
+				total_validator_slots: Default::default(),
 				seed_trust_validators: Default::default(),
-				total_number_of_validators: Default::default(),
-				number_of_seed_trust_validators: Default::default(),
+				seed_trust_slots: Default::default(),
 				force_era: Default::default(),
 				pool_status: Default::default(),
 				vote_status_at_genesis: Default::default(),
@@ -247,10 +247,10 @@ pub mod pallet {
 	#[pallet::genesis_build]
 	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
-			assert!(self.total_number_of_validators <= self.number_of_seed_trust_validators);
+			assert!(self.seed_trust_slots <= self.total_validator_slots);
 			SeedTrustValidatorPool::<T>::put(self.seed_trust_validators.clone());
-			TotalNumberOfValidators::<T>::put(self.total_number_of_validators.clone());
-			NumberOfSeedTrustValidators::<T>::put(self.number_of_seed_trust_validators.clone());
+			TotalValidatorSlots::<T>::put(self.total_validator_slots.clone());
+			SeedTrustSlots::<T>::put(self.seed_trust_slots.clone());
 			ForceEra::<T>::put(self.force_era);
 			PoolStatus::<T>::put(self.pool_status);
 			if self.is_pot_enable_at_genesis {
@@ -270,9 +270,9 @@ pub mod pallet {
 		/// Points has been added for candidate validator
 		VotePointsAdded { who: T::InfraVoteAccountId },
 		/// Total number of validators has been changed
-		TotalValidatorsNumChanged { old: u32, new: u32 },
+		TotalValidatorSlotsChanged { new: u32 },
 		/// Number of seed trust validators has been changed
-		SeedTrustNumChanged { old: u32, new: u32 },
+		SeedTrustSlotsChanged { new: u32 },
 		/// Seed trust validator has been added to the pool
 		SeedTrustAdded { who: T::AccountId },
 		/// Validator have been elected
@@ -304,6 +304,8 @@ pub mod pallet {
 		SeedTrustExceedMaxValidators,
 		/// Some parameters for transaction are bad
 		BadTransactionParams,
+		/// New number of Seed Trust slots should be provided
+		SeedTrustSlotsShouldBeProvided,
 	}
 
 	/// The current era index.
@@ -328,19 +330,19 @@ pub mod pallet {
 	#[pallet::unbounded]
 	pub type SeedTrustValidators<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
 
-	/// Validators which have been elected by PoT
+	/// Cuurent validators which have been elected by PoT
 	#[pallet::storage]
 	#[pallet::unbounded]
 	pub type PotValidators<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
 
 	/// Number of seed trust validators that can be elected
 	#[pallet::storage]
-	pub type NumberOfSeedTrustValidators<T: Config> = StorageValue<_, u32, ValueQuery>;
+	pub type SeedTrustSlots<T: Config> = StorageValue<_, u32, ValueQuery>;
 
 	/// Total Number of validators that can be elected,
 	/// which is composed of seed trust validators and pot validators
 	#[pallet::storage]
-	pub type TotalNumberOfValidators<T: Config> = StorageValue<_, u32, ValueQuery>;
+	pub type TotalValidatorSlots<T: Config> = StorageValue<_, u32, ValueQuery>;
 
 	#[pallet::storage]
 	pub type MinVotePointsThreshold<T: Config> = StorageValue<_, T::InfraVotePoints, ValueQuery>;
@@ -366,23 +368,11 @@ pub mod pallet {
 		#[pallet::weight(0)]
 		pub fn set_number_of_validators(
 			origin: OriginFor<T>,
-			new_total: u32,
-			new_seed_trust_num: u32,
+			new_total_slots: u32,
+			new_seed_trust_slots: Option<u32>,
 		) -> DispatchResult {
 			ensure_root(origin)?;
-			ensure!(new_total >= new_seed_trust_num, Error::<T>::SeedTrustExceedMaxValidators);
-			ensure!(
-				new_total >= T::SessionInterface::validators().len() as u32,
-				Error::<T>::LessThanCurrentValidatorsNum
-			);
-			let total_num = TotalNumberOfValidators::<T>::get();
-			let seed_trust_num = NumberOfSeedTrustValidators::<T>::get();
-			Self::do_set_number_of_validator(
-				total_num,
-				new_total,
-				seed_trust_num,
-				new_seed_trust_num,
-			);
+			Self::try_set_number_of_validator(new_total_slots, new_seed_trust_slots)?;
 
 			Ok(())
 		}
