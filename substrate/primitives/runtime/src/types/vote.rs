@@ -7,8 +7,6 @@ use bounded_collections::{BoundedVec, ConstU32};
 use sp_core::crypto::AccountId32;
 use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 
-use serde::{Deserialize, Serialize};
-
 /// Account Id type of vote candidate. Should be equal to the AccountId type of the Relay Chain
 pub type VoteAccountId = AccountId32;
 /// Weight of vote which is weight of transaction and asset id

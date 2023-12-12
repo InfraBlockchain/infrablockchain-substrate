@@ -22,14 +22,12 @@ pub mod sin;
 pub mod sqrt;
 pub mod trunc;
 
-#[derive(
-	Default, Copy, Clone, Decode, Debug, Encode, TypeInfo, MaxEncodedLen, PartialEq, Eq,
-)]
+#[derive(Default, Copy, Clone, Decode, Debug, Encode, TypeInfo, MaxEncodedLen, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Hash))]
 #[repr(transparent)]
 struct Bits64(u64);
 
-/// A pure software implementation of `f64`.	
+/// A pure software implementation of `f64`.
 #[derive(Default, Copy, Clone, Decode, Debug, Encode, TypeInfo, MaxEncodedLen, Eq)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Hash))]
 #[repr(transparent)]
@@ -148,6 +146,42 @@ impl F64 {
 
 	pub const fn is_sign_negative(self) -> bool {
 		self.to_bits() & 0x8000_0000_0000_0000 != 0
+	}
+}
+
+impl From<F64> for usize {
+	fn from(x: F64) -> Self {
+		x.to_i32() as usize
+	}
+}
+
+impl From<F64> for u8 {
+	fn from(x: F64) -> Self {
+		x.to_i32() as u8
+	}
+}
+
+impl From<F64> for u16 {
+	fn from(x: F64) -> Self {
+		x.to_i32() as u16
+	}
+}
+
+impl From<F64> for u32 {
+	fn from(x: F64) -> Self {
+		x.to_i32() as u32
+	}
+}
+
+impl From<F64> for u64 {
+	fn from(x: F64) -> Self {
+		x.to_i32() as u64
+	}
+}
+
+impl From<F64> for u128 {
+	fn from(x: F64) -> Self {
+		x.to_i32() as u128
 	}
 }
 

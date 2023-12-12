@@ -167,20 +167,21 @@ pub mod pallet {
 				rewards.iter_mut().find(|ar| ar.system_token_id == system_token_id)
 			{
 				let SystemTokenId { para_id, pallet_id, asset_id } = system_token_id;
+				let amount: u128 = reward.amount.to_i32() as u128;
 				let encoded_call: Vec<u8> = pallet_assets::Call::<T>::force_transfer2 {
 					id: asset_id.into(),
 					source: T::Lookup::unlookup(sovereign.clone()),
 					dest: T::Lookup::unlookup(validator.clone()),
-					amount: <T as pallet_assets::Config>::Balance::from(reward.amount),
+					amount: <T as pallet_assets::Config>::Balance::from(amount),
 				}
 				.encode();
 				system_token_helper::try_queue_dmp::<T>(para_id, pallet_id, encoded_call)?;
 				Self::deposit_event(Event::ValidatorRewarded {
 					stash: who.clone().into(),
 					system_token_id,
-					amount: reward.amount,
+					amount,
 				});
-				reward.amount = 0;
+				reward.amount = F64::from_i32(0);
 			}
 			ValidatorRewards::<T>::insert(who.clone(), rewards.clone());
 
@@ -224,6 +225,7 @@ impl<T: Config> Pallet<T> {
 	fn distribute_reward(session_index: SessionIndex) {
 		let current_validators = T::ValidatorSet::validators();
 		let aggregated_rewards = TotalSessionRewards::<T>::get(session_index).unwrap_or_default();
+		let soft_current_validators = F64::from_i32(current_validators.len() as i32);
 
 		if aggregated_rewards.is_empty() {
 			return
@@ -232,18 +234,17 @@ impl<T: Config> Pallet<T> {
 		for validator in current_validators.iter() {
 			if ValidatorRewards::<T>::contains_key(validator) {
 				let mut rewards = ValidatorRewards::<T>::get(validator.clone()).unwrap_or_default();
+
 				for aggregated_reward in aggregated_rewards.iter() {
 					if let Some(reward) = rewards
 						.iter_mut()
 						.find(|ar| ar.system_token_id == aggregated_reward.system_token_id)
 					{
-						reward.amount +=
-							(aggregated_reward.amount / current_validators.len() as u128) as u128;
+						reward.amount += aggregated_reward.amount.div(soft_current_validators)
 					} else {
 						let new_reward = ValidatorReward::new(
 							aggregated_reward.clone().system_token_id,
-							(aggregated_reward.clone().amount / current_validators.len() as u128)
-								as u128,
+							aggregated_reward.clone().amount.div(soft_current_validators),
 						);
 						rewards.push(new_reward);
 					}
@@ -254,8 +255,7 @@ impl<T: Config> Pallet<T> {
 				for aggregated_reward in aggregated_rewards.iter() {
 					let reward = ValidatorReward::new(
 						aggregated_reward.clone().system_token_id,
-						(aggregated_reward.clone().amount / current_validators.len() as u128)
-							as u128,
+						aggregated_reward.amount.div(soft_current_validators),
 					);
 					rewards.push(reward);
 				}
