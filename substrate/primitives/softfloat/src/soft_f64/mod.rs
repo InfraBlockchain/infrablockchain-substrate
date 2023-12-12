@@ -27,7 +27,7 @@ pub mod trunc;
 #[repr(transparent)]
 struct Bits64(u64);
 
-/// A pure software implementation of `f64`.	
+/// A pure software implementation of `f64`.
 #[derive(Default, Copy, Clone, Decode, Debug, Encode, TypeInfo, MaxEncodedLen, Eq)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Hash))]
 #[repr(transparent)]
