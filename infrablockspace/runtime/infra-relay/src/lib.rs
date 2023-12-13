@@ -1481,7 +1481,14 @@ pub type SignedExtra = (
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Should be cleared after every release.
-pub type Migrations = ();
+pub type Migrations = migrations::Upgrades;
+
+#[allow(missing_docs)]
+pub mod migrations {
+	use super::*;
+	// Put any migrations
+	pub type Upgrades = pallet_validator_election::migrations::v1::MigrationToV1<Runtime>;
+}
 
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic =

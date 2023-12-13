@@ -17,6 +17,8 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+pub mod migrations;
+
 pub mod impls;
 pub use impls::*;
 
@@ -171,7 +173,11 @@ pub mod pallet {
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
+	/// The current storage version.
+	const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+
 	#[pallet::pallet]
+	#[pallet::storage_version(STORAGE_VERSION)]
 	pub struct Pallet<T>(_);
 
 	#[pallet::config]
@@ -337,7 +343,16 @@ pub mod pallet {
 
 	/// Number of seed trust validators that can be elected
 	#[pallet::storage]
+	pub type NumberOfSeedTrustValidators<T: Config> = StorageValue<_, u32, ValueQuery>;
+
+	/// Number of seed trust validators that can be elected
+	#[pallet::storage]
 	pub type SeedTrustSlots<T: Config> = StorageValue<_, u32, ValueQuery>;
+
+	/// Total Number of validators that can be elected,
+	/// which is composed of seed trust validators and pot validators
+	#[pallet::storage]
+	pub type TotalNumberOfValidators<T: Config> = StorageValue<_, u32, ValueQuery>;
 
 	/// Total Number of validators that can be elected,
 	/// which is composed of seed trust validators and pot validators
