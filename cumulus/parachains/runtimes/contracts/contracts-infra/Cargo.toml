@@ -24,7 +24,7 @@ smallvec = "1.11.0"
 pallet-system-token = { path = "../../../../../substrate/frame/system-token", default-features = false }
 pallet-system-token-tx-payment = { path = "../../../../../substrate/frame/transaction-payment/system-token-tx-payment", default-features = false }
 pallet-assets = { path = "../../../../../substrate/frame/assets", default-features = false }
-pallet-asset-link = { package = "infra-asset-link", path = "../../../../../infrablockspace/xcm/infra-asset-link", default-features = false }
+pallet-asset-link = { package = "infra-asset-link", path = "../../../../../infrablockchain/xcm/infra-asset-link", default-features = false }
 pallet-uniques = { path = "../../../../../substrate/frame/uniques", default-features = false }
 assets-common = { path = "../../assets/common", default-features = false }
 
@@ -64,15 +64,15 @@ pallet-contracts = { path = "../../../../../substrate/frame/contracts", default-
 pallet-contracts-primitives = { path = "../../../../../substrate/frame/contracts/primitives", default-features = false }
 
 # Infra Relay
-pallet-xcm = { path = "../../../../../infrablockspace/xcm/pallet-xcm", default-features = false }
-infrablockspace-core-primitives = { path = "../../../../../infrablockspace/core-primitives", default-features = false }
-parachain-primitives = { path = "../../../../../infrablockspace/parachain", default-features = false }
-runtime-common = { path = "../../../../../infrablockspace/runtime/common", default-features = false }
-infra-relay-runtime-constants = { path = "../../../../../infrablockspace/runtime/infra-relay/constants", default-features = false }
-xcm = { package = "staging-xcm", path = "../../../../../infrablockspace/xcm", default-features = false }
-xcm-builder = { package = "staging-xcm-builder", path = "../../../../../infrablockspace/xcm/xcm-builder", default-features = false }
-xcm-executor = { package = "staging-xcm-executor", path = "../../../../../infrablockspace/xcm/xcm-executor", default-features = false }
-runtime-parachains = { path = "../../../../../infrablockspace/runtime/parachains", default-features = false }
+pallet-xcm = { path = "../../../../../infrablockchain/xcm/pallet-xcm", default-features = false }
+infrablockchain-core-primitives = { path = "../../../../../infrablockchain/core-primitives", default-features = false }
+parachain-primitives = { path = "../../../../../infrablockchain/parachain", default-features = false }
+runtime-common = { path = "../../../../../infrablockchain/runtime/common", default-features = false }
+infra-relay-runtime-constants = { path = "../../../../../infrablockchain/runtime/infra-relay/constants", default-features = false }
+xcm = { package = "staging-xcm", path = "../../../../../infrablockchain/xcm", default-features = false }
+xcm-builder = { package = "staging-xcm-builder", path = "../../../../../infrablockchain/xcm/xcm-builder", default-features = false }
+xcm-executor = { package = "staging-xcm-executor", path = "../../../../../infrablockchain/xcm/xcm-executor", default-features = false }
+runtime-parachains = { path = "../../../../../infrablockchain/runtime/parachains", default-features = false }
 
 # Cumulus
 cumulus-pallet-aura-ext = { path = "../../../../pallets/aura-ext", default-features = false }
@@ -132,7 +132,7 @@ std = [
 	"pallet-xcm/std",
 	"parachain-info/std",
 	"parachains-common/std",
-	"infrablockspace-core-primitives/std",
+	"infrablockchain-core-primitives/std",
 	"parachain-primitives/std",
 	"runtime-common/std",
 	"infra-relay-runtime-constants/std",

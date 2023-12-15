@@ -19,11 +19,11 @@ sp-consensus = { path = "../../../substrate/primitives/consensus/common" }
 sp-maybe-compressed-blob = { path = "../../../substrate/primitives/maybe-compressed-blob" }
 sp-runtime = { path = "../../../substrate/primitives/runtime" }
 
-# infrablockspace
-node-primitives = { path = "../../../infrablockspace/node/primitives" }
-node-subsystem = { path = "../../../infrablockspace/node/subsystem" }
-infrablockspace-overseer = { path = "../../../infrablockspace/node/overseer" }
-primitives = { path = "../../../infrablockspace/primitives" }
+# InfraBlockchain
+node-primitives = { path = "../../../infrablockchain/node/primitives" }
+node-subsystem = { path = "../../../infrablockchain/node/subsystem" }
+infrablockchain-overseer = { path = "../../../infrablockchain/node/overseer" }
+primitives = { path = "../../../infrablockchain/primitives" }
 
 # Cumulus
 cumulus-primitives-core = { path = "../../primitives/core" }

@@ -33,8 +33,8 @@ cumulus-test-relay-sproof-builder = { path = "../../test/relay-sproof-builder" }
 parachains-common = { path = "../../parachains/common" }
 
 # Polkadot
-xcm = { package = "staging-xcm", path = "../../../infrablockspace/xcm" }
-xcm-executor = { package = "staging-xcm-executor", path = "../../../infrablockspace/xcm/xcm-executor" }
-primitives = { path = "../../../infrablockspace/primitives" }
-parachain-primitives = { path = "../../../infrablockspace/parachain" }
-runtime-parachains = { path = "../../../infrablockspace/runtime/parachains" }
+xcm = { package = "staging-xcm", path = "../../../infrablockchain/xcm" }
+xcm-executor = { package = "staging-xcm-executor", path = "../../../infrablockchain/xcm/xcm-executor" }
+primitives = { path = "../../../infrablockchain/primitives" }
+parachain-primitives = { path = "../../../infrablockchain/parachain" }
+runtime-parachains = { path = "../../../infrablockchain/runtime/parachains" }

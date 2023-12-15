@@ -66,13 +66,13 @@ pallet-transaction-payment-rpc = { path = "../../substrate/frame/transaction-pay
 substrate-state-trie-migration-rpc = { path = "../../substrate/utils/frame/rpc/state-trie-migration-rpc" }
 
 # Infr Relay
-polkadot-cli = { path = "../../infrablockspace/cli", features = [
+polkadot-cli = { path = "../../infrablockchain/cli", features = [
 	"rococo-native",
 	"infra-relay-native",
 ] }
-primitives = { path = "../../infrablockspace/primitives" }
-infrablockspace-service = { path = "../../infrablockspace/node/service" }
-xcm = { package = "staging-xcm", path = "../../infrablockspace/xcm" }
+primitives = { path = "../../infrablockchain/primitives" }
+infrablockchain-service = { path = "../../infrablockchain/node/service" }
+xcm = { package = "staging-xcm", path = "../../infrablockchain/xcm" }
 
 # Cumulus
 cumulus-client-cli = { path = "../client/cli" }
@@ -106,12 +106,12 @@ runtime-benchmarks = [
 	"parachains-common/runtime-benchmarks",
 	"polkadot-cli/runtime-benchmarks",
 	"primitives/runtime-benchmarks",
-	"infrablockspace-service/runtime-benchmarks",
+	"infrablockchain-service/runtime-benchmarks",
 	"sc-service/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 ]
 try-runtime = [
 	"polkadot-cli/try-runtime",
-	"infrablockspace-service/try-runtime",
+	"infrablockchain-service/try-runtime",
 	"sp-runtime/try-runtime",
 ]

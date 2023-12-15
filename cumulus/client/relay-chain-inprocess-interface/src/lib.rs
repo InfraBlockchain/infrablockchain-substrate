@@ -27,7 +27,7 @@ use cumulus_primitives_core::{
 };
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
 use futures::{FutureExt, Stream, StreamExt};
-use infrablockspace_service::{
+use infrablockchain_service::{
 	CollatorPair, Configuration, FullBackend, FullClient, Handle, NewFull, TaskManager,
 };
 use sc_cli::SubstrateCli;
@@ -271,20 +271,20 @@ fn build_polkadot_full_node(
 	parachain_config: &Configuration,
 	telemetry_worker_handle: Option<TelemetryWorkerHandle>,
 	hwbench: Option<sc_sysinfo::HwBench>,
-) -> Result<(NewFull, Option<CollatorPair>), infrablockspace_service::Error> {
+) -> Result<(NewFull, Option<CollatorPair>), infrablockchain_service::Error> {
 	let (is_parachain_node, maybe_collator_key) = if parachain_config.role.is_authority() {
 		let collator_key = CollatorPair::generate().0;
 		(
-			infrablockspace_service::IsParachainNode::Collator(collator_key.clone()),
+			infrablockchain_service::IsParachainNode::Collator(collator_key.clone()),
 			Some(collator_key),
 		)
 	} else {
-		(infrablockspace_service::IsParachainNode::FullNode, None)
+		(infrablockchain_service::IsParachainNode::FullNode, None)
 	};
 
-	let relay_chain_full_node = infrablockspace_service::build_full(
+	let relay_chain_full_node = infrablockchain_service::build_full(
 		config,
-		infrablockspace_service::NewFullParams {
+		infrablockchain_service::NewFullParams {
 			is_parachain_node,
 			grandpa_pause: None,
 			// Disable BEEFY. It should not be required by the internal relay chain node.
@@ -297,7 +297,7 @@ fn build_polkadot_full_node(
 			workers_path: None,
 			workers_names: None,
 
-			overseer_gen: infrablockspace_service::RealOverseerGen,
+			overseer_gen: infrablockchain_service::RealOverseerGen,
 			overseer_message_channel_capacity_override: None,
 			malus_finality_delay: None,
 			hwbench,

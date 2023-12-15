@@ -1,0 +1,33 @@
+[package]
+name = "network-bridge"
+version = "1.0.0"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+always-assert = "0.1"
+async-trait = "0.1.57"
+futures = "0.3.21"
+gum = { package = "tracing-gum", path = "../../gum" }
+primitives = { path = "../../../primitives" }
+parity-scale-codec = { version = "3.6.1", default-features = false, features = ["derive"] }
+sc-network = { path = "../../../../substrate/client/network" }
+sp-consensus = { path = "../../../../substrate/primitives/consensus/common" }
+node-metrics = { path = "../../metrics" }
+node-network-protocol = { path = "../protocol" }
+node-subsystem = { path = "../../subsystem" }
+infrablockchain-overseer = { path = "../../overseer" }
+parking_lot = "0.12.0"
+bytes = "1"
+fatality = "0.0.6"
+thiserror = "1"
+
+[dev-dependencies]
+assert_matches = "1.4.0"
+node-subsystem-test-helpers = { path = "../../subsystem-test-helpers" }
+node-subsystem-util = { path = "../../subsystem-util" }
+sp-core = { path = "../../../../substrate/primitives/core" }
+sp-keyring = { path = "../../../../substrate/primitives/keyring" }
+futures-timer = "3"
+polkadot-primitives-test-helpers = { path = "../../../primitives/test-helpers" }

@@ -16,7 +16,7 @@
 
 use std::{net::SocketAddr, path::PathBuf};
 
-use infrablockspace_service::{ChainSpec, ParaId, PrometheusConfig};
+use infrablockchain_service::{ChainSpec, ParaId, PrometheusConfig};
 use sc_cli::{
 	CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams, NetworkParams,
 	Result as CliResult, SharedParams, SubstrateCli,

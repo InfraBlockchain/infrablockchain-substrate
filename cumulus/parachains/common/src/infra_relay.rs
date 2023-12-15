@@ -47,7 +47,7 @@ pub mod consensus {
 
 /// Constants relating to monetary.
 pub mod currency {
-	use infrablockspace_core_primitives::Balance;
+	use infrablockchain_core_primitives::Balance;
 
 	/// The existential deposit. Set to 1/10 of its parent Relay Chain.
 	pub const EXISTENTIAL_DEPOSIT: Balance = 100 * CENTS / 10;
@@ -73,7 +73,7 @@ pub mod fee {
 			WeightToFeeCoefficients, WeightToFeePolynomial,
 		},
 	};
-	use infrablockspace_core_primitives::Balance;
+	use infrablockchain_core_primitives::Balance;
 	use smallvec::smallvec;
 	pub use sp_runtime::Perbill;
 

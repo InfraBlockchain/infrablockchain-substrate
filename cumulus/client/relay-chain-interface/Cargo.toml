@@ -5,7 +5,7 @@ version = "0.1.0"
 edition.workspace = true
 
 [dependencies]
-infrablockspace-overseer = { path = "../../../infrablockspace/node/overseer" }
+infrablockchain-overseer = { path = "../../../infrablockchain/node/overseer" }
 
 cumulus-primitives-core = { path = "../../primitives/core" }
 

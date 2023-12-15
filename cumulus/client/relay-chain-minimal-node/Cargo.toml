@@ -6,17 +6,17 @@ edition.workspace = true
 
 [dependencies]
 # polkadot deps
-primitives = { path = "../../../infrablockspace/primitives" }
-infrablockspace-core-primitives = { path = "../../../infrablockspace/core-primitives" }
-infrablockspace-overseer = { path = "../../../infrablockspace/node/overseer" }
-node-subsystem-util = { path = "../../../infrablockspace/node/subsystem-util" }
-node-network-protocol = { path = "../../../infrablockspace/node/network/protocol" }
+primitives = { path = "../../../infrablockchain/primitives" }
+infrablockchain-core-primitives = { path = "../../../infrablockchain/core-primitives" }
+infrablockchain-overseer = { path = "../../../infrablockchain/node/overseer" }
+node-subsystem-util = { path = "../../../infrablockchain/node/subsystem-util" }
+node-network-protocol = { path = "../../../infrablockchain/node/network/protocol" }
 
-availability-recovery = { path = "../../../infrablockspace/node/network/availability-recovery" }
-collator-protocol = { path = "../../../infrablockspace/node/network/collator-protocol" }
-network-bridge = { path = "../../../infrablockspace/node/network/bridge" }
-node-collation-generation = { path = "../../../infrablockspace/node/collation-generation" }
-node-core-runtime-api = { path = "../../../infrablockspace/node/core/runtime-api" }
+availability-recovery = { path = "../../../infrablockchain/node/network/availability-recovery" }
+collator-protocol = { path = "../../../infrablockchain/node/network/collator-protocol" }
+network-bridge = { path = "../../../infrablockchain/node/network/bridge" }
+node-collation-generation = { path = "../../../infrablockchain/node/collation-generation" }
+node-core-runtime-api = { path = "../../../infrablockchain/node/core/runtime-api" }
 
 # substrate deps
 sc-authority-discovery = { path = "../../../substrate/client/authority-discovery" }

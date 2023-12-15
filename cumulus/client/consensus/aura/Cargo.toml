@@ -43,7 +43,7 @@ cumulus-primitives-parachain-inherent = { path = "../../../primitives/parachain-
 cumulus-client-collator = { path = "../../collator" }
 
 # Polkadot
-primitives = { path = "../../../../infrablockspace/primitives" }
-node-primitives = { path = "../../../../infrablockspace/node/primitives" }
-node-subsystem = { path = "../../../../infrablockspace/node/subsystem" }
-infrablockspace-overseer = { path = "../../../../infrablockspace/node/overseer" }
+primitives = { path = "../../../../infrablockchain/primitives" }
+node-primitives = { path = "../../../../infrablockchain/node/primitives" }
+node-subsystem = { path = "../../../../infrablockchain/node/subsystem" }
+infrablockchain-overseer = { path = "../../../../infrablockchain/node/overseer" }

@@ -27,7 +27,7 @@ sp-runtime = { path = "../../../substrate/primitives/runtime" }
 sp-transaction-pool = { path = "../../../substrate/primitives/transaction-pool" }
 
 # Polkadot
-primitives = { path = "../../../infrablockspace/primitives" }
+primitives = { path = "../../../infrablockchain/primitives" }
 
 # Cumulus
 cumulus-client-cli = { path = "../cli" }

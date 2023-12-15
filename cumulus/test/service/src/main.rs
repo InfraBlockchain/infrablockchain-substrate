@@ -22,7 +22,7 @@ use cli::{RelayChainCli, Subcommand, TestCollatorCli};
 use cumulus_client_cli::generate_genesis_block;
 use cumulus_primitives_core::{relay_chain::CollatorPair, ParaId};
 use cumulus_test_service::AnnounceBlockFn;
-use infrablockspace_service::runtime_traits::AccountIdConversion;
+use infrablockchain_service::runtime_traits::AccountIdConversion;
 use sc_cli::{CliConfiguration, SubstrateCli};
 use sp_core::{hexdisplay::HexDisplay, Encode, Pair};
 use sp_runtime::traits::Block;

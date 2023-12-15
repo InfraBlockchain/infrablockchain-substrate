@@ -20,7 +20,7 @@ use std::sync::Arc;
 
 use availability_recovery::AvailabilityRecoverySubsystem;
 use collator_protocol::{CollatorProtocolSubsystem, ProtocolSide};
-use infrablockspace_overseer::{
+use infrablockchain_overseer::{
 	BlockInfo, DummySubsystem, Handle, Overseer, OverseerConnector, OverseerHandle, SpawnGlue,
 	UnpinHandle, KNOWN_LEAVES_CACHE_SIZE,
 };
@@ -170,7 +170,7 @@ pub(crate) fn spawn_overseer(
 	overseer_args: CollatorOverseerGenArgs,
 	task_manager: &TaskManager,
 	relay_chain_rpc_client: Arc<BlockChainRpcClient>,
-) -> Result<infrablockspace_overseer::Handle, RelayChainError> {
+) -> Result<infrablockchain_overseer::Handle, RelayChainError> {
 	let (overseer, overseer_handle) = build_overseer(OverseerConnector::default(), overseer_args)
 		.map_err(|e| {
 		tracing::error!("Failed to initialize overseer: {}", e);
