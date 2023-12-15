@@ -10,51 +10,33 @@
 // ====================================================
 
 use super::{
-    helpers::{gt, lt, scalbn},
-    F64,
+	helpers::{gt, lt, scalbn},
+	F64,
 };
 
 // exp(x)
 // Returns the exponential of x.
 //
 // Method
-//   1. Argument reduction:
-//      Reduce x to an r so that |r| <= 0.5*ln2 ~ 0.34658.
-//      Given x, find r and integer k such that
+//   1. Argument reduction: Reduce x to an r so that |r| <= 0.5*ln2 ~ 0.34658. Given x, find r and
+//      integer k such that
 //
 //               x = k*ln2 + r,  |r| <= 0.5*ln2.
 //
 //      Here r will be represented as r = hi-lo for better
 //      accuracy.
 //
-//   2. Approximation of exp(r) by a special rational function on
-//      the interval [0,0.34658]:
-//      Write
-//          R(r**2) = r*(exp(r)+1)/(exp(r)-1) = 2 + r*r/6 - r**4/360 + ...
-//      We use a special Remez algorithm on [0,0.34658] to generate
-//      a polynomial of degree 5 to approximate R. The maximum error
-//      of this polynomial approximation is bounded by 2**-59. In
-//      other words,
-//          R(z) ~ 2.0 + P1*z + P2*z**2 + P3*z**3 + P4*z**4 + P5*z**5
-//      (where z=r*r, and the values of P1 to P5 are listed below)
-//      and
-//          |                  5          |     -59
-//          | 2.0+P1*z+...+P5*z   -  R(z) | <= 2
-//          |                             |
-//      The computation of exp(r) thus becomes
-//                              2*r
-//              exp(r) = 1 + ----------
-//                            R(r) - r
-//                                 r*c(r)
-//                     = 1 + r + ----------- (for better accuracy)
-//                                2 - c(r)
-//      where
-//                              2       4             10
-//              c(r) = r - (P1*r  + P2*r  + ... + P5*r   ).
+//   2. Approximation of exp(r) by a special rational function on the interval [0,0.34658]: Write
+//      R(r**2) = r*(exp(r)+1)/(exp(r)-1) = 2 + r*r/6 - r**4/360 + ... We use a special Remez
+//      algorithm on [0,0.34658] to generate a polynomial of degree 5 to approximate R. The maximum
+//      error of this polynomial approximation is bounded by 2**-59. In other words, R(z) ~ 2.0 +
+//      P1*z + P2*z**2 + P3*z**3 + P4*z**4 + P5*z**5 (where z=r*r, and the values of P1 to P5 are
+//      listed below) and |                  5          |     -59 | 2.0+P1*z+...+P5*z   -  R(z) | <=
+//      2 |                             | The computation of exp(r) thus becomes 2*r exp(r) = 1 +
+//      ---------- R(r) - r r*c(r) = 1 + r + ----------- (for better accuracy) 2 - c(r) where 2
+//      4             10 c(r) = r - (P1*r  + P2*r  + ... + P5*r   ).
 //
-//   3. Scale back to obtain exp(x):
-//      From step 1, we have
-//         exp(x) = 2^k * exp(r)
+//   3. Scale back to obtain exp(x): From step 1, we have exp(x) = 2^k * exp(r)
 //
 // Special cases:
 //      exp(INF) is INF, exp(NaN) is NaN;
@@ -86,74 +68,74 @@ const P5: F64 = f64!(4.13813679705723846039e-08); /* 0x3E663769, 0x72BEA4D0 */
 /// (where *e* is the base of the natural system of logarithms, approximately 2.71828).
 #[cfg_attr(all(test, assert_no_panic), no_panic::no_panic)]
 pub(crate) const fn exp(mut x: F64) -> F64 {
-    let x1p1023 = F64::from_bits(0x7fe0000000000000); // 0x1p1023 === 2 ^ 1023
-                                                      // let x1p_149 = F64::from_bits(0x36a0000000000000); // 0x1p-149 === 2 ^ -149
+	let x1p1023 = F64::from_bits(0x7fe0000000000000); // 0x1p1023 === 2 ^ 1023
+												  // let x1p_149 = F64::from_bits(0x36a0000000000000); // 0x1p-149 === 2 ^ -149
 
-    let hi: F64;
-    let lo: F64;
-    let c: F64;
-    let xx: F64;
-    let y: F64;
-    let k: i32;
-    let sign: i32;
-    let mut hx: u32;
+	let hi: F64;
+	let lo: F64;
+	let c: F64;
+	let xx: F64;
+	let y: F64;
+	let k: i32;
+	let sign: i32;
+	let mut hx: u32;
 
-    let abs_mask = F64::SIGN_MASK - 1;
+	let abs_mask = F64::SIGN_MASK - 1;
 
-    let x_bits = x.to_bits();
+	let x_bits = x.to_bits();
 
-    hx = (x_bits >> 32) as u32;
-    sign = (hx >> 31) as i32;
-    hx &= 0x7fffffff; /* high word of |x| */
+	hx = (x_bits >> 32) as u32;
+	sign = (hx >> 31) as i32;
+	hx &= 0x7fffffff; /* high word of |x| */
 
-    /* special cases */
-    if hx >= 0x4086232b {
-        /* if |x| >= 708.39... */
-        if x_bits & abs_mask > F64::EXPONENT_MASK {
-            return x;
-        }
-        if gt(x, f64!(709.782712893383973096)) {
-            /* overflow if x!=inf */
-            x = x.mul(x1p1023);
-            return x;
-        }
-        if lt(x, f64!(-708.39641853226410622)) {
-            /* underflow if x!=-inf */
-            if lt(x, f64!(-745.13321910194110842)) {
-                return f64!(0.);
-            }
-        }
-    }
+	/* special cases */
+	if hx >= 0x4086232b {
+		/* if |x| >= 708.39... */
+		if x_bits & abs_mask > F64::EXPONENT_MASK {
+			return x;
+		}
+		if gt(x, f64!(709.782712893383973096)) {
+			/* overflow if x!=inf */
+			x = x.mul(x1p1023);
+			return x;
+		}
+		if lt(x, f64!(-708.39641853226410622)) {
+			/* underflow if x!=-inf */
+			if lt(x, f64!(-745.13321910194110842)) {
+				return f64!(0.);
+			}
+		}
+	}
 
-    /* argument reduction */
-    if hx > 0x3fd62e42 {
-        /* if |x| > 0.5 ln2 */
-        if hx >= 0x3ff0a2b2 {
-            /* if |x| >= 1.5 ln2 */
-            k = INVLN2.mul(x).add(HALF[sign as usize]).to_i32();
-        } else {
-            k = 1 - sign - sign;
-        }
-        hi = x.sub(F64::from_i32(k).mul(LN2HI)); /* k*ln2hi is exact here */
-        lo = F64::from_i32(k).mul(LN2LO);
-        x = hi.sub(lo);
-    } else if hx > 0x3e300000 {
-        /* if |x| > 2**-28 */
-        k = 0;
-        hi = x;
-        lo = f64!(0.);
-    } else {
-        /* inexact if x!=0 */
-        return f64!(1.).add(x);
-    }
+	/* argument reduction */
+	if hx > 0x3fd62e42 {
+		/* if |x| > 0.5 ln2 */
+		if hx >= 0x3ff0a2b2 {
+			/* if |x| >= 1.5 ln2 */
+			k = INVLN2.mul(x).add(HALF[sign as usize]).to_i32();
+		} else {
+			k = 1 - sign - sign;
+		}
+		hi = x.sub(F64::from_i32(k).mul(LN2HI)); /* k*ln2hi is exact here */
+		lo = F64::from_i32(k).mul(LN2LO);
+		x = hi.sub(lo);
+	} else if hx > 0x3e300000 {
+		/* if |x| > 2**-28 */
+		k = 0;
+		hi = x;
+		lo = f64!(0.);
+	} else {
+		/* inexact if x!=0 */
+		return f64!(1.).add(x);
+	}
 
-    /* x is now in primary range */
-    xx = x.mul(x);
-    c = x.sub(xx.mul(P1.add(xx.mul(P2.add(xx.mul(P3.add(xx.mul(P4.add(xx.mul(P5))))))))));
-    y = f64!(1.).add(x.mul(c).div(f64!(2.).sub(c)).sub(lo).add(hi));
-    if k == 0 {
-        y
-    } else {
-        scalbn(y, k)
-    }
+	/* x is now in primary range */
+	xx = x.mul(x);
+	c = x.sub(xx.mul(P1.add(xx.mul(P2.add(xx.mul(P3.add(xx.mul(P4.add(xx.mul(P5))))))))));
+	y = f64!(1.).add(x.mul(c).div(f64!(2.).sub(c)).sub(lo).add(hi));
+	if k == 0 {
+		y
+	} else {
+		scalbn(y, k)
+	}
 }

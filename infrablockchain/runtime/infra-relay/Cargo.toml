@@ -10,13 +10,17 @@ license.workspace = true
 static_assertions = "1.1.0"
 smallvec = "1.8.0"
 bitvec = { version = "1.0.0", default-features = false, features = ["alloc"] }
-parity-scale-codec = { version = "3.6.1", default-features = false, features = ["derive", "max-encoded-len"] }
+parity-scale-codec = { version = "3.6.1", default-features = false, features = [
+	"derive",
+	"max-encoded-len",
+] }
 scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
 log = { version = "0.4.17", default-features = false }
 rustc-hex = { version = "2.1.0", default-features = false }
 serde = { version = "1.0.188", default-features = false }
 serde_derive = { version = "1.0.117", optional = true }
 hex-literal = { version = "0.4.1", optional = true }
+softfloat = { path = "../../../substrate/primitives/softfloat", default-features = false }
 
 # Infra
 pallet-validator-election = { path = "../../../substrate/frame/validator-election", default-features = false }
@@ -55,7 +59,7 @@ pallet-system-token-tx-payment = { path = "../../../substrate/frame/transaction-
 pallet-collective = { path = "../../../substrate/frame/collective", default-features = false }
 pallet-democracy = { path = "../../../substrate/frame/democracy", default-features = false }
 pallet-elections-phragmen = { path = "../../../substrate/frame/elections-phragmen", default-features = false }
-pallet-asset-rate = {  path = "../../../substrate/frame/asset-rate", default-features = false }
+pallet-asset-rate = { path = "../../../substrate/frame/asset-rate", default-features = false }
 pallet-grandpa = { path = "../../../substrate/frame/grandpa", default-features = false }
 pallet-identity = { path = "../../../substrate/frame/identity", default-features = false }
 pallet-im-online = { path = "../../../substrate/frame/im-online", default-features = false }
@@ -109,7 +113,7 @@ separator = "0.4.1"
 tiny-keccak = { version = "2.0.2", features = ["keccak"] }
 keyring = { package = "sp-keyring", path = "../../../substrate/primitives/keyring" }
 sp-trie = { path = "../../../substrate/primitives/trie" }
-remote-externalities = { package = "frame-remote-externalities" , path = "../../../substrate/utils/frame/remote-externalities" }
+remote-externalities = { package = "frame-remote-externalities", path = "../../../substrate/utils/frame/remote-externalities" }
 tokio = { version = "1.24.2", features = ["macros"] }
 sp-tracing = { path = "../../../substrate/primitives/tracing", default-features = false }
 

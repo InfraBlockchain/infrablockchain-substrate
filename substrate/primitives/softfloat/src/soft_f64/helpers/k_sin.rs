@@ -26,37 +26,28 @@ const S6: F64 = f64!(1.58969099521155010221e-10); /* 0x3DE5D93A, 0x5ACFD57C */
 //
 // Algorithm
 //      1. Since sin(-x) = -sin(x), we need only to consider positive x.
-//      2. Callers must return sin(-0) = -0 without calling here since our
-//         odd polynomial is not evaluated in a way that preserves -0.
-//         Callers may do the optimization sin(x) ~ x for tiny x.
-//      3. sin(x) is approximated by a polynomial of degree 13 on
-//         [0,pi/4]
-//                               3            13
-//              sin(x) ~ x + S1*x + ... + S6*x
-//         where
+//      2. Callers must return sin(-0) = -0 without calling here since our odd polynomial is not
+//         evaluated in a way that preserves -0. Callers may do the optimization sin(x) ~ x for tiny
+//         x.
+//      3. sin(x) is approximated by a polynomial of degree 13 on [0,pi/4] 3            13 sin(x) ~
+//         x + S1*x + ... + S6*x where
 //
 //      |sin(x)         2     4     6     8     10     12  |     -58
 //      |----- - (1+S1*x +S2*x +S3*x +S4*x +S5*x  +S6*x   )| <= 2
 //      |  x                                               |
 //
-//      4. sin(x+y) = sin(x) + sin'(x')*y
-//                  ~ sin(x) + (1-x*x/2)*y
-//         For better accuracy, let
-//                   3      2      2      2      2
-//              r = x *(S2+x *(S3+x *(S4+x *(S5+x *S6))))
-//         then                   3    2
-//              sin(x) = x + (S1*x + (x *(r-y/2)+y))
+//      4. sin(x+y) = sin(x) + sin'(x')*y ~ sin(x) + (1-x*x/2)*y For better accuracy, let 3      2
+//         2      2      2 r = x *(S2+x *(S3+x *(S4+x *(S5+x *S6)))) then                   3    2
+//         sin(x) = x + (S1*x + (x *(r-y/2)+y))
 #[cfg_attr(all(test, assert_no_panic), no_panic::no_panic)]
 pub(crate) const fn k_sin(x: F64, y: F64, iy: i32) -> F64 {
-    let z = x.mul(x);
-    let w = z.mul(z);
-    let r = S2
-        .add(z.mul(S3.add(z.mul(S4))))
-        .add(z.mul(w.mul(S5.add(z.mul(S6)))));
-    let v = z.mul(x);
-    if iy == 0 {
-        x.add(v.mul(S1.add(z.mul(r))))
-    } else {
-        x.sub((z.mul(f64!(0.5).mul(y).sub(v.mul(r))).sub(y)).sub(v.mul(S1)))
-    }
+	let z = x.mul(x);
+	let w = z.mul(z);
+	let r = S2.add(z.mul(S3.add(z.mul(S4)))).add(z.mul(w.mul(S5.add(z.mul(S6)))));
+	let v = z.mul(x);
+	if iy == 0 {
+		x.add(v.mul(S1.add(z.mul(r))))
+	} else {
+		x.sub((z.mul(f64!(0.5).mul(y).sub(v.mul(r))).sub(y)).sub(v.mul(S1)))
+	}
 }

@@ -22,7 +22,7 @@ mod conv;
 mod soft_f32;
 mod soft_f64;
 
-pub use crate::{soft_f32::F32, soft_f64::F64};
+pub use crate::{soft_f32::F32, soft_f64::F64, soft_f64::IsType};
 
 const fn abs_diff(a: i32, b: i32) -> u32 {
 	a.wrapping_sub(b).wrapping_abs() as u32

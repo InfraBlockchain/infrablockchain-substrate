@@ -4,6 +4,7 @@ use scale_info::TypeInfo;
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
+// use crate::runtime::primitives::IsType;
 
 pub(crate) mod helpers;
 
@@ -182,6 +183,83 @@ impl From<F64> for u64 {
 impl From<F64> for u128 {
 	fn from(x: F64) -> Self {
 		x.to_i32() as u128
+	}
+}
+
+impl From<usize> for F64 {
+	fn from(x: usize) -> Self {
+		let a = x as i32;
+		Self::from_i32(a)
+	}
+}
+impl From<u8> for F64 {
+	fn from(x: u8) -> Self {
+		let a = x as i32;
+		Self::from_i32(a)
+	}
+}
+
+impl From<u16> for F64 {
+	fn from(x: u16) -> Self {
+		let a = x as i32;
+		Self::from_i32(a)
+	}
+}
+
+impl From<u32> for F64 {
+	fn from(x: u32) -> Self {
+		let a = x as i32;
+		Self::from_i32(a)
+	}
+}
+
+impl From<u64> for F64 {
+	fn from(x: u64) -> Self {
+		let a = x as i32;
+		Self::from_i32(a)
+	}
+}
+
+impl From<u128> for F64 {
+	fn from(x: u128) -> Self {
+		let a = x as i32;
+		Self::from_i32(a)
+	}
+}
+
+pub trait IsType<T>: Into<T> + From<T> {
+	/// Cast reference.
+	fn from_ref(t: &T) -> &Self;
+
+	/// Cast reference.
+	fn into_ref(&self) -> &T;
+
+	/// Cast mutable reference.
+	fn from_mut(t: &mut T) -> &mut Self;
+
+	/// Cast mutable reference.
+	fn into_mut(&mut self) -> &mut T;
+}
+
+impl IsType<F64> for u128 {
+	fn from_ref(t: &F64) -> &Self {
+		// Convert F64 reference to u128 and then get a reference to it
+		unsafe { &*(t as *const F64 as *const Self) }
+	}
+
+	fn into_ref(&self) -> &F64 {
+		// Convert u128 reference to F64 and then get a reference to it
+		unsafe { &*(self as *const u128 as *const F64) }
+	}
+
+	fn from_mut(t: &mut F64) -> &mut Self {
+		// Convert mutable F64 reference to mutable u128 reference
+		unsafe { &mut *(t as *mut F64 as *mut Self) }
+	}
+
+	fn into_mut(&mut self) -> &mut F64 {
+		// Convert mutable u128 reference to mutable F64 reference
+		unsafe { &mut *(self as *mut u128 as *mut F64) }
 	}
 }
 

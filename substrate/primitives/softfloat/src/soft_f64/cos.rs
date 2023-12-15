@@ -11,8 +11,8 @@
 // ====================================================
 
 use super::{
-    helpers::{k_cos, k_sin, rem_pio2},
-    F64,
+	helpers::{k_cos, k_sin, rem_pio2},
+	F64,
 };
 
 // cos(x)
@@ -46,42 +46,39 @@ use super::{
 //      TRIG(x) returns trig(x) nearly rounded
 //
 pub(crate) const fn cos(x: F64) -> F64 {
-    let ix = (F64::to_bits(x) >> 32) as u32 & 0x7fffffff;
+	let ix = (F64::to_bits(x) >> 32) as u32 & 0x7fffffff;
 
-    /* |x| ~< pi/4 */
-    if ix <= 0x3fe921fb {
-        if ix < 0x3e46a09e {
-            /* if x < 2**-27 * sqrt(2) */
-            /* raise inexact if x != 0 */
-            if x.to_i32() == 0 {
-                return F64::ONE;
-            }
-        }
-        return k_cos(x, F64::ZERO);
-    }
+	/* |x| ~< pi/4 */
+	if ix <= 0x3fe921fb {
+		if ix < 0x3e46a09e {
+			/* if x < 2**-27 * sqrt(2) */
+			/* raise inexact if x != 0 */
+			if x.to_i32() == 0 {
+				return F64::ONE;
+			}
+		}
+		return k_cos(x, F64::ZERO);
+	}
 
-    /* cos(Inf or NaN) is NaN */
-    if ix >= 0x7ff00000 {
-        return x.sub(x);
-    }
+	/* cos(Inf or NaN) is NaN */
+	if ix >= 0x7ff00000 {
+		return x.sub(x);
+	}
 
-    /* argument reduction needed */
-    let (n, y0, y1) = rem_pio2(x);
-    match n & 3 {
-        0 => k_cos(y0, y1),
-        1 => k_sin(y0, y1, 1).neg(),
-        2 => k_cos(y0, y1).neg(),
-        _ => k_sin(y0, y1, 1),
-    }
+	/* argument reduction needed */
+	let (n, y0, y1) = rem_pio2(x);
+	match n & 3 {
+		0 => k_cos(y0, y1),
+		1 => k_sin(y0, y1, 1).neg(),
+		2 => k_cos(y0, y1).neg(),
+		_ => k_sin(y0, y1, 1),
+	}
 }
 
 #[cfg(test)]
 mod test {
-    #[test]
-    fn test_large_neg() {
-        assert_eq!(
-            f64!(-1647101.0).cos().to_native_f64(),
-            (-1647101.0_f64).cos()
-        )
-    }
+	#[test]
+	fn test_large_neg() {
+		assert_eq!(f64!(-1647101.0).cos().to_native_f64(), (-1647101.0_f64).cos())
+	}
 }

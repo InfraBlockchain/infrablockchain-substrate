@@ -15,8 +15,8 @@
  */
 
 use crate::{
-    soft_f32::F32,
-    soft_f64::{helpers::rem_pio2_large, F64},
+	soft_f32::F32,
+	soft_f64::{helpers::rem_pio2_large, F64},
 };
 
 const TOINT: F64 = f64!(1.5).div(f64!(f64::EPSILON));
@@ -34,32 +34,32 @@ const PIO2_1T: F64 = f64!(1.58932547735281966916e-08); /* 0x3E5110b4, 0x611A6263
 /// use __rem_pio2_large() for large x
 #[cfg_attr(all(test, assert_no_panic), no_panic::no_panic)]
 pub(crate) const fn rem_pio2f(x: F32) -> (i32, F64) {
-    let x64 = x.to_f64();
+	let x64 = x.to_f64();
 
-    let mut tx: [F64; 1] = [f64!(0.0)];
-    let ty: [F64; 1] = [f64!(0.0)];
+	let mut tx: [F64; 1] = [f64!(0.0)];
+	let ty: [F64; 1] = [f64!(0.0)];
 
-    let ix = x.to_bits() & 0x7fffffff;
-    /* 25+53 bit pi is good enough for medium size */
-    if ix < 0x4dc90fdb {
-        /* |x| ~< 2^28*(pi/2), medium size */
-        /* Use a specialized rint() to get fn.  Assume round-to-nearest. */
-        let tmp = x64.mul(INV_PIO2).add(TOINT);
+	let ix = x.to_bits() & 0x7fffffff;
+	/* 25+53 bit pi is good enough for medium size */
+	if ix < 0x4dc90fdb {
+		/* |x| ~< 2^28*(pi/2), medium size */
+		/* Use a specialized rint() to get fn.  Assume round-to-nearest. */
+		let tmp = x64.mul(INV_PIO2).add(TOINT);
 
-        let f_n = tmp.sub(TOINT);
-        return (f_n.to_i32(), x64.sub(f_n.mul(PIO2_1)).sub(f_n.mul(PIO2_1T)));
-    }
-    if ix >= 0x7f800000 {
-        /* x is inf or NaN */
-        return (0, x64.sub(x64));
-    }
-    /* scale x into [2^23, 2^24-1] */
-    let sign = (x.to_bits() >> 31) != 0;
-    let e0 = ((ix >> 23) - (0x7f + 23)) as i32; /* e0 = ilogb(|x|)-23, positive */
-    tx[0] = F32::from_bits(ix - (e0 << 23) as u32).to_f64();
-    let (n, ty) = rem_pio2_large(&tx, &ty, e0, 0);
-    if sign {
-        return (-n, ty[0].neg());
-    }
-    (n, ty[0])
+		let f_n = tmp.sub(TOINT);
+		return (f_n.to_i32(), x64.sub(f_n.mul(PIO2_1)).sub(f_n.mul(PIO2_1T)));
+	}
+	if ix >= 0x7f800000 {
+		/* x is inf or NaN */
+		return (0, x64.sub(x64));
+	}
+	/* scale x into [2^23, 2^24-1] */
+	let sign = (x.to_bits() >> 31) != 0;
+	let e0 = ((ix >> 23) - (0x7f + 23)) as i32; /* e0 = ilogb(|x|)-23, positive */
+	tx[0] = F32::from_bits(ix - (e0 << 23) as u32).to_f64();
+	let (n, ty) = rem_pio2_large(&tx, &ty, e0, 0);
+	if sign {
+		return (-n, ty[0].neg());
+	}
+	(n, ty[0])
 }

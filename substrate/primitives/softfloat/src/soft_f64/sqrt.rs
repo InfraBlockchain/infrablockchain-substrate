@@ -16,16 +16,11 @@
  *           ------------------------------------------
  * Method:
  *   Bit by bit method using integer arithmetic. (Slow, but portable)
- *   1. Normalization
- *      Scale x to y in [1,4) with even powers of 2:
- *      find an integer k such that  1 <= (y=x*2^(2k)) < 4, then
- *              sqrt(x) = 2^k * sqrt(y)
- *   2. Bit by bit computation
- *      Let q  = sqrt(y) truncated to i bit after binary point (q = 1),
- *           i                                                   0
- *                                     i+1         2
- *          s  = 2*q , and      y  =  2   * ( y - q  ).         (1)
- *           i      i            i                 i
+ *   1. Normalization Scale x to y in [1,4) with even powers of 2: find an integer k such that  1
+ *      <= (y=x*2^(2k)) < 4, then sqrt(x) = 2^k * sqrt(y)
+ *   2. Bit by bit computation Let q  = sqrt(y) truncated to i bit after binary point (q = 1), i
+ *      0 i+1         2 s  = 2*q , and      y  =  2   * ( y - q  ).         (1) i      i
+ *      i                 i
  *
  *      To compute q    from q , one checks whether
  *                  i+1       i
@@ -60,14 +55,11 @@
  *      Note. Since the left hand side of (3) contain only i+2 bits,
  *            it does not necessary to do a full (53-bit) comparison
  *            in (3).
- *   3. Final rounding
- *      After generating the 53 bits result, we compute one more bit.
- *      Together with the remainder, we can decide whether the
- *      result is exact, bigger than 1/2ulp, or less than 1/2ulp
- *      (it will never equal to 1/2ulp).
- *      The rounding mode can be detected by checking whether
- *      huge + tiny is equal to huge, and whether huge - tiny is
- *      equal to huge for some floating point number "huge" and "tiny".
+ *   3. Final rounding After generating the 53 bits result, we compute one more bit. Together
+ *      with the remainder, we can decide whether the result is exact, bigger than 1/2ulp, or
+ *      less than 1/2ulp (it will never equal to 1/2ulp). The rounding mode can be detected by
+ *      checking whether huge + tiny is equal to huge, and whether huge - tiny is equal to huge
+ *      for some floating point number "huge" and "tiny".
  *
  * Special cases:
  *      sqrt(+-0) = +-0         ... exact
@@ -77,163 +69,163 @@
  */
 
 use crate::soft_f64::{
-    helpers::{ge, gt},
-    F64,
+	helpers::{ge, gt},
+	F64,
 };
 
 type F = F64;
 
 pub(crate) const fn sqrt(x: F) -> F {
-    const TINY: F = f64!(1.0e-300);
+	const TINY: F = f64!(1.0e-300);
 
-    let mut z: F;
-    let sign: u32 = 0x80000000;
-    let mut ix0: i32;
-    let mut s0: i32;
-    let mut q: i32;
-    let mut m: i32;
-    let mut t: i32;
-    let mut i: i32;
-    let mut r: u32;
-    let mut t1: u32;
-    let mut s1: u32;
-    let mut ix1: u32;
-    let mut q1: u32;
+	let mut z: F;
+	let sign: u32 = 0x80000000;
+	let mut ix0: i32;
+	let mut s0: i32;
+	let mut q: i32;
+	let mut m: i32;
+	let mut t: i32;
+	let mut i: i32;
+	let mut r: u32;
+	let mut t1: u32;
+	let mut s1: u32;
+	let mut ix1: u32;
+	let mut q1: u32;
 
-    ix0 = (x.to_bits() >> 32) as i32;
-    ix1 = x.to_bits() as u32;
+	ix0 = (x.to_bits() >> 32) as i32;
+	ix1 = x.to_bits() as u32;
 
-    /* take care of Inf and NaN */
-    if (ix0 & 0x7ff00000) == 0x7ff00000 {
-        return x.mul(x).add(x); /* sqrt(NaN)=NaN, sqrt(+inf)=+inf, sqrt(-inf)=sNaN */
-    }
-    /* take care of zero */
-    if ix0 <= 0 {
-        if ((ix0 & !(sign as i32)) | ix1 as i32) == 0 {
-            return x; /* sqrt(+-0) = +-0 */
-        }
-        if ix0 < 0 {
-            return (x.sub(x)).div(x.sub(x)); /* sqrt(-ve) = sNaN */
-        }
-    }
-    /* normalize x */
-    m = ix0 >> 20;
-    if m == 0 {
-        /* subnormal x */
-        while ix0 == 0 {
-            m -= 21;
-            ix0 |= (ix1 >> 11) as i32;
-            ix1 <<= 21;
-        }
-        i = 0;
-        while (ix0 & 0x00100000) == 0 {
-            i += 1;
-            ix0 <<= 1;
-        }
-        m -= i - 1;
-        ix0 |= (ix1 as usize >> (32 - i) as usize) as i32;
-        ix1 = ix1 << i as usize;
-    }
-    m -= 1023; /* unbias exponent */
-    ix0 = (ix0 & 0x000fffff) | 0x00100000;
-    if (m & 1) == 1 {
-        /* odd m, double x to make it even */
-        ix0 += ix0 + ((ix1 & sign) >> 31) as i32;
-        ix1 = ix1.wrapping_add(ix1);
-    }
-    m >>= 1; /* m = [m/2] */
+	/* take care of Inf and NaN */
+	if (ix0 & 0x7ff00000) == 0x7ff00000 {
+		return x.mul(x).add(x); /* sqrt(NaN)=NaN, sqrt(+inf)=+inf, sqrt(-inf)=sNaN */
+	}
+	/* take care of zero */
+	if ix0 <= 0 {
+		if ((ix0 & !(sign as i32)) | ix1 as i32) == 0 {
+			return x; /* sqrt(+-0) = +-0 */
+		}
+		if ix0 < 0 {
+			return (x.sub(x)).div(x.sub(x)); /* sqrt(-ve) = sNaN */
+		}
+	}
+	/* normalize x */
+	m = ix0 >> 20;
+	if m == 0 {
+		/* subnormal x */
+		while ix0 == 0 {
+			m -= 21;
+			ix0 |= (ix1 >> 11) as i32;
+			ix1 <<= 21;
+		}
+		i = 0;
+		while (ix0 & 0x00100000) == 0 {
+			i += 1;
+			ix0 <<= 1;
+		}
+		m -= i - 1;
+		ix0 |= (ix1 as usize >> (32 - i) as usize) as i32;
+		ix1 = ix1 << i as usize;
+	}
+	m -= 1023; /* unbias exponent */
+	ix0 = (ix0 & 0x000fffff) | 0x00100000;
+	if (m & 1) == 1 {
+		/* odd m, double x to make it even */
+		ix0 += ix0 + ((ix1 & sign) >> 31) as i32;
+		ix1 = ix1.wrapping_add(ix1);
+	}
+	m >>= 1; /* m = [m/2] */
 
-    /* generate sqrt(x) bit by bit */
-    ix0 += ix0 + ((ix1 & sign) >> 31) as i32;
-    ix1 = ix1.wrapping_add(ix1);
-    q = 0; /* [q,q1] = sqrt(x) */
-    q1 = 0;
-    s0 = 0;
-    s1 = 0;
-    r = 0x00200000; /* r = moving bit from right to left */
+	/* generate sqrt(x) bit by bit */
+	ix0 += ix0 + ((ix1 & sign) >> 31) as i32;
+	ix1 = ix1.wrapping_add(ix1);
+	q = 0; /* [q,q1] = sqrt(x) */
+	q1 = 0;
+	s0 = 0;
+	s1 = 0;
+	r = 0x00200000; /* r = moving bit from right to left */
 
-    while r != 0 {
-        t = s0 + r as i32;
-        if t <= ix0 {
-            s0 = t + r as i32;
-            ix0 -= t;
-            q += r as i32;
-        }
-        ix0 += ix0 + ((ix1 & sign) >> 31) as i32;
-        ix1 = ix1.wrapping_add(ix1);
-        r >>= 1;
-    }
+	while r != 0 {
+		t = s0 + r as i32;
+		if t <= ix0 {
+			s0 = t + r as i32;
+			ix0 -= t;
+			q += r as i32;
+		}
+		ix0 += ix0 + ((ix1 & sign) >> 31) as i32;
+		ix1 = ix1.wrapping_add(ix1);
+		r >>= 1;
+	}
 
-    r = sign;
-    while r != 0 {
-        t1 = s1.wrapping_add(r);
-        t = s0;
-        if t < ix0 || (t == ix0 && t1 <= ix1) {
-            s1 = t1.wrapping_add(r);
-            if (t1 & sign) == sign && (s1 & sign) == 0 {
-                s0 += 1;
-            }
-            ix0 -= t;
-            if ix1 < t1 {
-                ix0 -= 1;
-            }
-            ix1 = ix1.wrapping_sub(t1);
-            q1 += r;
-        }
-        ix0 += ix0 + ((ix1 & sign) >> 31) as i32;
-        ix1 = ix1.wrapping_add(ix1);
-        r >>= 1;
-    }
+	r = sign;
+	while r != 0 {
+		t1 = s1.wrapping_add(r);
+		t = s0;
+		if t < ix0 || (t == ix0 && t1 <= ix1) {
+			s1 = t1.wrapping_add(r);
+			if (t1 & sign) == sign && (s1 & sign) == 0 {
+				s0 += 1;
+			}
+			ix0 -= t;
+			if ix1 < t1 {
+				ix0 -= 1;
+			}
+			ix1 = ix1.wrapping_sub(t1);
+			q1 += r;
+		}
+		ix0 += ix0 + ((ix1 & sign) >> 31) as i32;
+		ix1 = ix1.wrapping_add(ix1);
+		r >>= 1;
+	}
 
-    /* use floating add to find out rounding direction */
-    if (ix0 as u32 | ix1) != 0 {
-        z = f64!(1.0).sub(TINY); /* raise inexact flag */
-        if ge(z, F64::ONE) {
-            z = F64::ONE.add(TINY);
-            if q1 == 0xffffffff {
-                q1 = 0;
-                q += 1;
-            } else if gt(z, F64::ONE) {
-                if q1 == 0xfffffffe {
-                    q += 1;
-                }
-                q1 = q1.wrapping_add(2);
-            } else {
-                q1 += q1 & 1;
-            }
-        }
-    }
-    ix0 = (q >> 1) + 0x3fe00000;
-    ix1 = q1 >> 1;
-    if (q & 1) == 1 {
-        ix1 |= sign;
-    }
-    ix0 += m << 20;
-    F64::from_bits((ix0 as u64) << 32 | ix1 as u64)
+	/* use floating add to find out rounding direction */
+	if (ix0 as u32 | ix1) != 0 {
+		z = f64!(1.0).sub(TINY); /* raise inexact flag */
+		if ge(z, F64::ONE) {
+			z = F64::ONE.add(TINY);
+			if q1 == 0xffffffff {
+				q1 = 0;
+				q += 1;
+			} else if gt(z, F64::ONE) {
+				if q1 == 0xfffffffe {
+					q += 1;
+				}
+				q1 = q1.wrapping_add(2);
+			} else {
+				q1 += q1 & 1;
+			}
+		}
+	}
+	ix0 = (q >> 1) + 0x3fe00000;
+	ix1 = q1 >> 1;
+	if (q & 1) == 1 {
+		ix1 |= sign;
+	}
+	ix0 += m << 20;
+	F64::from_bits((ix0 as u64) << 32 | ix1 as u64)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    //  use core::f64::*;
+	use super::*;
+	//  use core::f64::*;
 
-    #[test]
-    fn sanity_check() {
-        const SQRT_100: F64 = sqrt(f64!(100.0));
-        assert_eq!(SQRT_100, f64!(10.0));
+	#[test]
+	fn sanity_check() {
+		const SQRT_100: F64 = sqrt(f64!(100.0));
+		assert_eq!(SQRT_100, f64!(10.0));
 
-        const SQRT_4: F64 = sqrt(f64!(4.0));
-        assert_eq!(SQRT_4, f64!(2.0));
-    }
+		const SQRT_4: F64 = sqrt(f64!(4.0));
+		assert_eq!(SQRT_4, f64!(2.0));
+	}
 
-    /// The spec: https://en.cppreference.com/w/cpp/numeric/math/sqrt
-    #[test]
-    fn spec_tests() {
-        // Not Asserted: FE_INVALID exception is raised if argument is negative.
-        assert!(sqrt(f64!(-1.0)).to_native_f64().is_nan());
-        assert!(sqrt(f64!(f64::NAN)).to_native_f64().is_nan());
-        for f in [0.0, -0.0, f64::INFINITY].iter().copied() {
-            assert_eq!(sqrt(F64::from_native_f64(f)).to_native_f64(), f);
-        }
-    }
+	/// The spec: https://en.cppreference.com/w/cpp/numeric/math/sqrt
+	#[test]
+	fn spec_tests() {
+		// Not Asserted: FE_INVALID exception is raised if argument is negative.
+		assert!(sqrt(f64!(-1.0)).to_native_f64().is_nan());
+		assert!(sqrt(f64!(f64::NAN)).to_native_f64().is_nan());
+		for f in [0.0, -0.0, f64::INFINITY].iter().copied() {
+			assert_eq!(sqrt(F64::from_native_f64(f)).to_native_f64(), f);
+		}
+	}
 }

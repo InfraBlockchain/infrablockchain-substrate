@@ -19,13 +19,13 @@
 use bitvec::vec::BitVec;
 use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
+use softfloat::F64;
 use sp_std::{
 	marker::PhantomData,
 	prelude::*,
 	slice::{Iter, IterMut},
 	vec::IntoIter,
 };
-use softfloat::F64;
 
 use application_crypto::KeyTypeId;
 use inherents::InherentIdentifier;

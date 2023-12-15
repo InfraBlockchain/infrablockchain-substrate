@@ -33,6 +33,7 @@ use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use pallet_system_token_tx_payment::{CreditToBucket, TransactionFeeCharger};
 use pallet_xcm::{EnsureXcm, IsMajorityOfBody};
 use runtime_parachains::system_token_aggregator;
+use softfloat::IsType;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{

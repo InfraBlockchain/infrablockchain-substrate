@@ -19,14 +19,7 @@ hex-literal = { version = "0.4.1", optional = true }
 log = { version = "0.4.20", default-features = false }
 scale-info = { version = "2.9.0", default-features = false, features = ["derive"] }
 smallvec = "1.11.0"
-
-# InfraBlockchain
-pallet-system-token = { path = "../../../../../substrate/frame/system-token", default-features = false }
-pallet-system-token-tx-payment = { path = "../../../../../substrate/frame/transaction-payment/system-token-tx-payment", default-features = false }
-pallet-assets = { path = "../../../../../substrate/frame/assets", default-features = false }
-pallet-asset-link = { package = "infra-asset-link", path = "../../../../../infrablockchain/xcm/infra-asset-link", default-features = false }
-pallet-uniques = { path = "../../../../../substrate/frame/uniques", default-features = false }
-assets-common = { path = "../../assets/common", default-features = false }
+softfloat = { path = "../../../../../substrate/primitives/softfloat", default-features = false }
 
 # Substrate
 sp-api = { path = "../../../../../substrate/primitives/api", default-features = false }

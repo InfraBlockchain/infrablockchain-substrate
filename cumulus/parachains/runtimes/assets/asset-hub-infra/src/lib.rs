@@ -56,6 +56,7 @@ pub mod constants;
 use constants::{currency::*, fee::WeightToFee};
 mod weights;
 pub mod xcm_config;
+use softfloat::IsType;
 
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use sp_api::impl_runtime_apis;

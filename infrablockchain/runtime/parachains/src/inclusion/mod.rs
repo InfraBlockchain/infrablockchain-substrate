@@ -42,8 +42,8 @@ use primitives::{
 	effective_minimum_backing_votes, supermajority_threshold, well_known_keys,
 	AvailabilityBitfield, BackedCandidate, CandidateCommitments, CandidateDescriptor,
 	CandidateHash, CandidateReceipt, CommittedCandidateReceipt, CoreIndex, GroupIndex, Hash,
-	HeadData, Id as ParaId, SignedAvailabilityBitfields, SigningContext,
-	UpwardMessage, ValidatorId, ValidatorIndex, ValidityAttestation, BLOCKS_PER_YEAR,
+	HeadData, Id as ParaId, SignedAvailabilityBitfields, SigningContext, UpwardMessage,
+	ValidatorId, ValidatorIndex, ValidityAttestation, BLOCKS_PER_YEAR,
 };
 use scale_info::TypeInfo;
 use softfloat::F64;
@@ -924,7 +924,8 @@ impl<T: Config> Pallet<T> {
 			// x = current block number / BLOCKS_PER_YEAR
 			let block_number: u32 = relay_parent_number.saturated_into();
 			// ln2 * x
-			let pow: F64 = F64::from_i32(2).ln() * F64::from_i32(block_number as i32).div(BLOCKS_PER_YEAR);
+			let pow: F64 =
+				F64::from_i32(2).ln() * F64::from_i32(block_number as i32).div(BLOCKS_PER_YEAR);
 			// 2 ^ x = exp ^ (ln2 * x)
 			let block_time_weight = pow.exp();
 			block_time_weight
