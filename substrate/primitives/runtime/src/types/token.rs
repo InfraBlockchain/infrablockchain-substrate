@@ -56,6 +56,7 @@ impl SystemTokenId {
 		Self { para_id, pallet_id, asset_id }
 	}
 
+	/// Check if it is boot system token
 	pub fn is_boot(&self) -> bool {
 		self.asset_id == BOOTSTRAP_SYSTEM_TOKEN_ID
 	}

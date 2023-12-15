@@ -1089,20 +1089,20 @@ where
 }
 
 impl<T: Config> SystemTokenInterface for Pallet<T> {
-	fn is_system_token(original: SystemTokenId) -> bool {
+	fn is_system_token(original: &SystemTokenId) -> bool {
 		<OriginalSystemTokenMetadata<T>>::get(original).is_some()
 	}
-	fn convert_to_original_system_token(wrapped: SystemTokenId) -> Option<SystemTokenId> {
-		if let Some(original) = <OriginalSystemTokenConverter<T>>::get(&wrapped) {
+	fn convert_to_original_system_token(wrapped: &SystemTokenId) -> Option<SystemTokenId> {
+		if let Some(original) = <OriginalSystemTokenConverter<T>>::get(wrapped) {
 			Self::deposit_event(Event::<T>::SystemTokenConverted {
-				from: wrapped,
+				from: wrapped.clone(),
 				to: original.clone(),
 			});
 			return Some(original)
 		}
 		None
 	}
-	fn adjusted_weight(original: SystemTokenId, vote_weight: VoteWeight) -> VoteWeight {
+	fn adjusted_weight(original: &SystemTokenId, vote_weight: VoteWeight) -> VoteWeight {
 		// updated_vote_weight = vote_weight * system_token_weight / base_system_token_weight
 		if let Some(p) = <SystemTokenProperties<T>>::get(original) {
 			let system_token_weight = p.system_token_weight.map_or(BASE_SYSTEM_TOKEN_WEIGHT, |w| w);

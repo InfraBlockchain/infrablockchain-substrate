@@ -42,12 +42,12 @@ use primitives::{
 	effective_minimum_backing_votes, supermajority_threshold, well_known_keys,
 	AvailabilityBitfield, BackedCandidate, CandidateCommitments, CandidateDescriptor,
 	CandidateHash, CandidateReceipt, CommittedCandidateReceipt, CoreIndex, GroupIndex, Hash,
-	HeadData, Id as ParaId, MilliBlockTimeWeight, SignedAvailabilityBitfields, SigningContext,
+	HeadData, Id as ParaId, SignedAvailabilityBitfields, SigningContext,
 	UpwardMessage, ValidatorId, ValidatorIndex, ValidityAttestation, BLOCKS_PER_YEAR,
 };
 use scale_info::TypeInfo;
 use sp_runtime::{
-	traits::One, types::{PotVotesResult, BOOTSTRAP_SYSTEM_TOKEN_ID}, DispatchError, SaturatedConversion, Saturating,
+	traits::One, types::{PotVote, VoteWeight, VoteAccountId}, DispatchError, SaturatedConversion, Saturating,
 };
 #[cfg(feature = "std")]
 use sp_std::fmt;
@@ -305,7 +305,7 @@ pub mod pallet {
 		/// Some upward messages have been received and will be processed.
 		UpwardMessagesReceived { from: ParaId, count: u32 },
 		/// Pot Vote has been collected
-		VoteCollected(ParaId, PotVotesResult, MilliBlockTimeWeight),
+		VoteCollected { from: ParaId, collected: Vec<(VoteAccountId, VoteWeight)> },
 	}
 
 	#[pallet::error]
@@ -917,8 +917,6 @@ impl<T: Config> Pallet<T> {
 			commitments.horizontal_messages,
 		));
 
-		let mut is_collected: bool = false;
-
 		let milli_block_time_weight: u128 = {
 			let exp: u32 = relay_parent_number.saturated_into();
 			let base: f32 = 2.0;
@@ -926,48 +924,46 @@ impl<T: Config> Pallet<T> {
 			(block_time_weight * 1_000.0) as u128
 		};
 
+		let mut collected_votes: Vec<(VoteAccountId, VoteWeight)> = Vec::new();
+
 		if let Some(vote_result) = commitments.vote_result {
 			let session_index = shared::Pallet::<T>::session_index();
-			for vote in vote_result.clone().into_iter() {
-				if let Some(system_token_id) =
+			for vote in vote_result.into_iter() {
+				if let Some(original) =
+					T::SystemTokenManager::convert_to_original_system_token(
+						&vote.system_token_id,
+					) {
+					
+					let PotVote { system_token_id, account_id, mut vote_weight} = vote;
+					let vote_system_token = system_token_id;
 					// We don't collect vote if it is boot system token
-					if system_token_id.is_boot() {
+					if vote_system_token.is_boot() {
 						continue
 					}
-					T::SystemTokenManager::convert_to_original_system_token(
-						vote.clone().system_token_id,
-					) {
-					if !is_collected {
-						is_collected = true;
-					}
-					let who = vote.clone().account_id;
-					let weight = vote.clone().vote_weight;
 
-					let adjusted_weight = {
+					vote_weight = {
 						let res = milli_block_time_weight.saturating_mul(
-							T::SystemTokenManager::adjusted_weight(system_token_id.clone(), weight),
+							T::SystemTokenManager::adjusted_weight(&original, vote_weight),
 						);
-
 						// correction for consideration of milli_block_time_weight
 						res.saturating_div(1_000)
 					};
 
-					T::VotingManager::update_vote_status(who, adjusted_weight);
+					if T::VotingManager::update_vote_status(account_id.clone(), vote_weight) {
+						collected_votes.push((account_id, vote_weight));
+					}
 					T::RewardInterface::aggregate_reward(
 						session_index,
-						vote.clone().system_token_id.para_id,
-						system_token_id.clone(),
-						weight,
+						vote_system_token.para_id,
+						original.clone(),
+						vote_weight,
 					);
 				};
 			}
-			if is_collected {
-				Self::deposit_event(Event::<T>::VoteCollected(
-					receipt.descriptor.para_id,
-					vote_result,
-					milli_block_time_weight,
-				));
-			}
+			Self::deposit_event(Event::<T>::VoteCollected {
+				from: receipt.descriptor.para_id,
+				collected: collected_votes
+			});
 		};
 
 		Self::deposit_event(Event::<T>::CandidateIncluded(
