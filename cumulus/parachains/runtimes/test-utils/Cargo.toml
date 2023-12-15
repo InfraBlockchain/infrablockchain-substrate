@@ -34,10 +34,10 @@ cumulus-test-relay-sproof-builder = { path = "../../../test/relay-sproof-builder
 parachain-info = { path = "../../pallets/parachain-info", default-features = false }
 
 # Polkadot
-xcm = { package = "staging-xcm", path = "../../../../infrablockspace/xcm", default-features = false}
-xcm-executor = { package = "staging-xcm-executor", path = "../../../../infrablockspace/xcm/xcm-executor", default-features = false}
-pallet-xcm = { path = "../../../../infrablockspace/xcm/pallet-xcm", default-features = false}
-parachain-primitives = { path = "../../../../infrablockspace/parachain", default-features = false}
+xcm = { package = "staging-xcm", path = "../../../../infrablockchain/xcm", default-features = false}
+xcm-executor = { package = "staging-xcm-executor", path = "../../../../infrablockchain/xcm/xcm-executor", default-features = false}
+pallet-xcm = { path = "../../../../infrablockchain/xcm/pallet-xcm", default-features = false}
+parachain-primitives = { path = "../../../../infrablockchain/parachain", default-features = false}
 
 [dev-dependencies]
 hex-literal = "0.4.1"

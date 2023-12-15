@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 services:
   infrablockspace:
     image: infrablockchain/infrablockspace:latest
@@ -10,7 +10,7 @@ services:
       - "127.0.0.1:9615:9615/tcp"
 
     volumes:
-      - "infrablockspace-data:/data"
+      - "infrablockchain-data:/data"
 
     command: |
       --unsafe-rpc-external
@@ -19,4 +19,4 @@ services:
       --prometheus-external
 
 volumes:
-  infrablockspace-data:
+  infrablockchain-data:

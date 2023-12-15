@@ -29,7 +29,7 @@ use cumulus_client_consensus_proposer::ProposerInterface;
 use cumulus_primitives_core::{relay_chain::BlockId as RBlockId, CollectCollationInfo};
 use cumulus_relay_chain_interface::RelayChainInterface;
 
-use infrablockspace_overseer::Handle as OverseerHandle;
+use infrablockchain_overseer::Handle as OverseerHandle;
 use node_primitives::CollationResult;
 use primitives::{CollatorPair, Id as ParaId};
 

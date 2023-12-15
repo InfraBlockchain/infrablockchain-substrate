@@ -24,7 +24,7 @@ use scale_info::TypeInfo;
 use sp_runtime::{types::PotVotesResult, RuntimeDebug};
 use sp_std::prelude::*;
 
-pub use infrablockspace_core_primitives::InboundDownwardMessage;
+pub use infrablockchain_core_primitives::InboundDownwardMessage;
 pub use parachain_primitives::primitives::{
 	DmpMessageHandler, Id as ParaId, IsSystem, UpwardMessage, ValidationParams, XcmpMessageFormat,
 	XcmpMessageHandler,
@@ -41,7 +41,7 @@ pub use xcm::latest::prelude::*;
 
 /// A module that re-exports relevant relay chain definitions.
 pub mod relay_chain {
-	pub use infrablockspace_core_primitives::*;
+	pub use infrablockchain_core_primitives::*;
 	pub use primitives::*;
 }
 

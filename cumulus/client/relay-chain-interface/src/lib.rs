@@ -16,7 +16,7 @@
 
 use std::{collections::BTreeMap, pin::Pin, sync::Arc};
 
-use infrablockspace_overseer::prometheus::PrometheusError;
+use infrablockchain_overseer::prometheus::PrometheusError;
 use sc_client_api::StorageProof;
 
 use futures::Stream;
@@ -34,7 +34,7 @@ pub use cumulus_primitives_core::{
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
-pub use infrablockspace_overseer::Handle as OverseerHandle;
+pub use infrablockchain_overseer::Handle as OverseerHandle;
 pub use sp_state_machine::StorageValue;
 
 pub type RelayChainResult<T> = Result<T, RelayChainError>;

@@ -14,14 +14,14 @@ sp-runtime = { path = "../../../substrate/primitives/runtime", default-features 
 sp-std = { path = "../../../substrate/primitives/std", default-features = false}
 
 # Polkadot
-infrablockspace-core-primitives = { path = "../../../infrablockspace/core-primitives", default-features = false}
-primitives = { path = "../../../infrablockspace/primitives", default-features = false}
+infrablockchain-core-primitives = { path = "../../../infrablockchain/core-primitives", default-features = false}
+primitives = { path = "../../../infrablockchain/primitives", default-features = false}
 
 [features]
 default = [ "std" ]
 std = [
 	"codec/std",
-	"infrablockspace-core-primitives/std",
+	"infrablockchain-core-primitives/std",
 	"primitives/std",
 	"sp-api/std",
 	"sp-consensus-aura/std",

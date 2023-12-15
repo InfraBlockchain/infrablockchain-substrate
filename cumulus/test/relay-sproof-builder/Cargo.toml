@@ -14,7 +14,7 @@ sp-trie = { path = "../../../substrate/primitives/trie", default-features = fals
 sp-std = { path = "../../../substrate/primitives/std", default-features = false}
 
 # Polkadot
-primitives = { path = "../../../infrablockspace/primitives", default-features = false}
+primitives = { path = "../../../infrablockchain/primitives", default-features = false}
 
 # Cumulus
 cumulus-primitives-core = { path = "../../primitives/core", default-features = false }

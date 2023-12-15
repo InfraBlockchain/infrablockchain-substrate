@@ -27,7 +27,7 @@ sp-trie = { path = "../../../../substrate/primitives/trie" }
 substrate-prometheus-endpoint = { path = "../../../../substrate/utils/prometheus" }
 
 # Polkadot
-primitives = { path = "../../../../infrablockspace/primitives" }
+primitives = { path = "../../../../infrablockchain/primitives" }
 
 # Cumulus
 cumulus-primitives-core = { path = "../../../primitives/core" }

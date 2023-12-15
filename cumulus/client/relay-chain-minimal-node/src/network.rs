@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-use infrablockspace_core_primitives::{Block, Hash, Header};
+use infrablockchain_core_primitives::{Block, Hash, Header};
 use sp_runtime::traits::{Block as BlockT, NumberFor};
 
 use sc_network::{

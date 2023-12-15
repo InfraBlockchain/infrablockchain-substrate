@@ -15,10 +15,10 @@ sp-runtime = { path = "../../../substrate/primitives/runtime", default-features 
 sp-std = { path = "../../../substrate/primitives/std", default-features = false}
 
 # Polkadot
-runtime-common = { path = "../../../infrablockspace/runtime/common", default-features = false}
-xcm = { package = "staging-xcm", path = "../../../infrablockspace/xcm", default-features = false}
-xcm-executor = { package = "staging-xcm-executor", path = "../../../infrablockspace/xcm/xcm-executor", default-features = false}
-xcm-builder = { package = "staging-xcm-builder", path = "../../../infrablockspace/xcm/xcm-builder", default-features = false}
+runtime-common = { path = "../../../infrablockchain/runtime/common", default-features = false}
+xcm = { package = "staging-xcm", path = "../../../infrablockchain/xcm", default-features = false}
+xcm-executor = { package = "staging-xcm-executor", path = "../../../infrablockchain/xcm/xcm-executor", default-features = false}
+xcm-builder = { package = "staging-xcm-builder", path = "../../../infrablockchain/xcm/xcm-builder", default-features = false}
 
 
 # Cumulus

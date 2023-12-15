@@ -22,9 +22,9 @@ sp-runtime = { path = "../../../substrate/primitives/runtime" }
 sp-state-machine = { path = "../../../substrate/primitives/state-machine" }
 
 # Polkadot
-node-primitives = { path = "../../../infrablockspace/node/primitives" }
-parachain-primitives = { path = "../../../infrablockspace/parachain" }
-primitives = { path = "../../../infrablockspace/primitives" }
+node-primitives = { path = "../../../infrablockchain/node/primitives" }
+parachain-primitives = { path = "../../../infrablockchain/parachain" }
+primitives = { path = "../../../infrablockchain/primitives" }
 
 # Cumulus
 cumulus-relay-chain-interface = { path = "../relay-chain-interface" }
@@ -44,7 +44,7 @@ sp-keystore = { path = "../../../substrate/primitives/keystore" }
 substrate-test-utils = { path = "../../../substrate/test-utils" }
 
 # Polkadot
-polkadot-test-client = { path = "../../../infrablockspace/node/test/client" }
+polkadot-test-client = { path = "../../../infrablockchain/node/test/client" }
 
 # Cumulus
 cumulus-primitives-core = { path = "../../primitives/core" }

@@ -29,12 +29,12 @@ sp-runtime = { path = "../../../substrate/primitives/runtime", default-features 
 sp-std = { path = "../../../substrate/primitives/std", default-features = false }
 
 # Polkadot
-rococo-runtime-constants = { path = "../../../infrablockspace/runtime/rococo/constants", default-features = false}
-infrablockspace-core-primitives = { path = "../../../infrablockspace/core-primitives", default-features = false}
-primitives = { path = "../../../infrablockspace/primitives", default-features = false}
-xcm = { package = "staging-xcm", path = "../../../infrablockspace/xcm", default-features = false}
-xcm-builder = { package = "staging-xcm-builder", path = "../../../infrablockspace/xcm/xcm-builder", default-features = false}
-xcm-executor = { package = "staging-xcm-executor", path = "../../../infrablockspace/xcm/xcm-executor", default-features = false}
+rococo-runtime-constants = { path = "../../../infrablockchain/runtime/rococo/constants", default-features = false}
+infrablockchain-core-primitives = { path = "../../../infrablockchain/core-primitives", default-features = false}
+primitives = { path = "../../../infrablockchain/primitives", default-features = false}
+xcm = { package = "staging-xcm", path = "../../../infrablockchain/xcm", default-features = false}
+xcm-builder = { package = "staging-xcm-builder", path = "../../../infrablockchain/xcm/xcm-builder", default-features = false}
+xcm-executor = { package = "staging-xcm-executor", path = "../../../infrablockchain/xcm/xcm-executor", default-features = false}
 
 # Cumulus
 pallet-collator-selection = { path = "../../pallets/collator-selection", default-features = false }
@@ -61,7 +61,7 @@ std = [
 	"pallet-authorship/std",
 	"pallet-balances/std",
 	"pallet-collator-selection/std",
-	"infrablockspace-core-primitives/std",
+	"infrablockchain-core-primitives/std",
 	"primitives/std",
 	"rococo-runtime-constants/std",
 	"sp-consensus-aura/std",

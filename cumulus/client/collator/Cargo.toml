@@ -18,10 +18,10 @@ sp-core = { path = "../../../substrate/primitives/core" }
 sp-runtime = { path = "../../../substrate/primitives/runtime" }
 
 # Polkadot
-node-primitives = { path = "../../../infrablockspace/node/primitives" }
-node-subsystem = { path = "../../../infrablockspace/node/subsystem" }
-infrablockspace-overseer = { path = "../../../infrablockspace/node/overseer" }
-primitives = { path = "../../../infrablockspace/primitives" }
+node-primitives = { path = "../../../infrablockchain/node/primitives" }
+node-subsystem = { path = "../../../infrablockchain/node/subsystem" }
+infrablockchain-overseer = { path = "../../../infrablockchain/node/overseer" }
+primitives = { path = "../../../infrablockchain/primitives" }
 
 # Cumulus
 cumulus-client-consensus-common = { path = "../consensus/common" }
@@ -37,7 +37,7 @@ sp-state-machine = { path = "../../../substrate/primitives/state-machine" }
 sp-tracing = { path = "../../../substrate/primitives/tracing" }
 
 # Polkadot
-node-subsystem-test-helpers = { path = "../../../infrablockspace/node/subsystem-test-helpers" }
+node-subsystem-test-helpers = { path = "../../../infrablockchain/node/subsystem-test-helpers" }
 
 # Cumulus
 cumulus-test-client = { path = "../../test/client" }

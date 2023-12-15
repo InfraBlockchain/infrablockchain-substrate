@@ -27,7 +27,7 @@ use cumulus_relay_chain_interface::{
 	PHeader, RelayChainError, RelayChainInterface, RelayChainResult,
 };
 use futures::{FutureExt, Stream, StreamExt};
-use infrablockspace_overseer::Handle;
+use infrablockchain_overseer::Handle;
 
 use sc_client_api::StorageProof;
 use sp_core::sp_std::collections::btree_map::BTreeMap;

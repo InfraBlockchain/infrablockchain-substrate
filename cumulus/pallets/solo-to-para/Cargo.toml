@@ -17,7 +17,7 @@ sp-runtime = { path = "../../../substrate/primitives/runtime", default-features 
 sp-std = { path = "../../../substrate/primitives/std", default-features = false}
 
 # Polkadot
-primitives = { path = "../../../infrablockspace/primitives", default-features = false}
+primitives = { path = "../../../infrablockchain/primitives", default-features = false}
 
 # Cumulus
 cumulus-pallet-parachain-system = { path = "../parachain-system", default-features = false}

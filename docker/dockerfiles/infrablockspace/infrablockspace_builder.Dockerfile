@@ -11,8 +11,8 @@ RUN cargo build --release --locked
 FROM docker.io/library/ubuntu:20.04
 
 COPY --from=builder /infrablockspace/target/release/infrablockspace /usr/local/bin
-COPY --from=builder /infrablockspace/target/release/infrablockspace-execute-worker /usr/local/bin
-COPY --from=builder /infrablockspace/target/release/infrablockspace-prepare-worker /usr/local/bin
+COPY --from=builder /infrablockspace/target/release/infrablockchain-execute-worker /usr/local/bin
+COPY --from=builder /infrablockspace/target/release/infrablockchain-prepare-worker /usr/local/bin
 
 RUN useradd -m -u 1000 -U -s /bin/sh -d /infrablockspace infrablockspace && \
 	mkdir -p /data /infrablockspace/.local/share && \
