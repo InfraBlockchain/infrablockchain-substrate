@@ -58,7 +58,7 @@ pub mod pallet {
 		/// Max number of system tokens that can be used on parachain.
 		#[pallet::constant]
 		type MaxSystemTokens: Get<u32>;
-		/// Max number of `para ids` that are using `original` system token
+		/// Max number of `paraId` that are using `original` system token
 		#[pallet::constant]
 		type MaxOriginalUsedParaIds: Get<u32>;
 	}

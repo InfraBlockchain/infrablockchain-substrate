@@ -47,7 +47,7 @@ use primitives::{
 };
 use scale_info::TypeInfo;
 use sp_runtime::{
-	traits::One, types::PotVotesResult, DispatchError, SaturatedConversion, Saturating,
+	traits::One, types::{PotVotesResult, BOOTSTRAP_SYSTEM_TOKEN_ID}, DispatchError, SaturatedConversion, Saturating,
 };
 #[cfg(feature = "std")]
 use sp_std::fmt;
@@ -930,6 +930,10 @@ impl<T: Config> Pallet<T> {
 			let session_index = shared::Pallet::<T>::session_index();
 			for vote in vote_result.clone().into_iter() {
 				if let Some(system_token_id) =
+					// We don't collect vote if it is boot system token
+					if system_token_id.is_boot() {
+						continue
+					}
 					T::SystemTokenManager::convert_to_original_system_token(
 						vote.clone().system_token_id,
 					) {

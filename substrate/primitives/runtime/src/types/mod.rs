@@ -8,6 +8,7 @@ pub use self::{
 	fee::ExtrinsicMetadata,
 	token::{
 		AssetId, PalletId, ParaId, SystemTokenId, SystemTokenLocalAssetProvider, SystemTokenWeight,
+		BOOTSTRAP_SYSTEM_TOKEN_ID,
 	},
 	vote::{PotVote, PotVotes, PotVotesResult, VoteAccountId, VoteAssetId, VoteWeight},
 };
