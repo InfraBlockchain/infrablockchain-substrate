@@ -1,8 +1,11 @@
-use sp_runtime::types::{SystemTokenId, VoteWeight};
+use sp_runtime::types::{SystemTokenId, VoteWeight, ParaId};
 type WrappedSystemTokenId = SystemTokenId;
 
 /// System tokens API.
 pub trait SystemTokenInterface {
+
+	/// Check whether it is bootstrap system token.
+	fn is_boot(id: ParaId) -> bool;
 	/// Check the system token is registered.
 	fn is_system_token(system_token: &SystemTokenId) -> bool;
 	/// Convert para system token to original system token.
@@ -14,6 +17,11 @@ pub trait SystemTokenInterface {
 }
 
 impl SystemTokenInterface for () {
+
+	fn is_boot(_id: ParaId) -> bool {
+		false
+	}
+
 	fn is_system_token(_system_token: &SystemTokenId) -> bool {
 		false
 	}

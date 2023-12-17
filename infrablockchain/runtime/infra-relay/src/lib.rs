@@ -361,7 +361,7 @@ impl pallet_system_token_tx_payment::Config for Runtime {
 impl relay_pot::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type VotingHandler = ValidatorElection;
-	type SystemTokenManager = SystemTokenManager;
+	type SystemTokenInterface = SystemTokenManager;
 }
 
 parameter_types! {
@@ -1057,8 +1057,8 @@ impl parachains_inclusion::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type DisputesHandler = ParasDisputes;
 	type RewardValidators = RewardValidators;
-	type VotingManager = ValidatorElection;
-	type SystemTokenManager = SystemTokenManager;
+	type VotingInterface = ValidatorElection;
+	type SystemTokenInterface = SystemTokenManager;
 	type RewardInterface = ValidatorRewardManager;
 	type MessageQueue = MessageQueue;
 	type WeightInfo = weights::runtime_parachains_inclusion::WeightInfo<Runtime>;

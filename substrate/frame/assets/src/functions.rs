@@ -410,6 +410,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		amount: T::Balance,
 		maybe_check_issuer: Option<T::AccountId>,
 	) -> DispatchResult {
+		ensure!(id.ne(&BOOTSTRAP_SYSTEM_TOKEN_ID.into()), Error::<T, I>::InvalidAssetId);
 		Self::increase_balance(id.clone(), beneficiary, amount, |details| -> DispatchResult {
 			if let Some(check_issuer) = maybe_check_issuer {
 				ensure!(check_issuer == details.issuer, Error::<T, I>::NoPermission);
@@ -584,6 +585,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		maybe_need_admin: Option<T::AccountId>,
 		f: TransferFlags,
 	) -> Result<T::Balance, DispatchError> {
+		ensure!(id.ne(&BOOTSTRAP_SYSTEM_TOKEN_ID.into()), Error::<T, I>::InvalidAssetId);
 		let (balance, died) =
 			Self::transfer_and_die(id.clone(), source, dest, amount, maybe_need_admin, f)?;
 		if let Some(Remove) = died {
@@ -702,6 +704,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		is_sufficient: bool,
 		min_balance: T::Balance,
 	) -> DispatchResult {
+		ensure!(id.ne(&BOOTSTRAP_SYSTEM_TOKEN_ID.into()), Error::<T, I>::InvalidAssetId);
 		ensure!(!Asset::<T, I>::contains_key(&id), Error::<T, I>::InUse);
 		ensure!(!min_balance.is_zero(), Error::<T, I>::MinBalanceZero);
 
@@ -1040,6 +1043,17 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		Asset::<T, I>::get(asset_id)
 	}
 
+	pub fn do_destory_bootstrap_asset() {
+		let bootstrap_system_token_id: T::AssetId = BOOTSTRAP_SYSTEM_TOKEN_ID.into();
+		if Asset::<T, I>::contains_key(&bootstrap_system_token_id) {
+			// Asset::<T, I>::remove(&bootstrap_system_token_id);
+			// Metadata::<T, I>::remove(&bootstrap_system_token_id);
+			Self::deposit_event(Event::BootstrapSystemTokenRemoved);
+		} else {
+			return
+		}
+	}
+
 	pub fn do_create_asset_with_metadata(
 		id: T::AssetIdParameter,
 		owner: AccountIdLookupOf<T>,
@@ -1069,8 +1083,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 		let mut details = Asset::<T, I>::get(&id).ok_or(Error::<T, I>::Unknown)?;
 		details.system_token_weight = system_token_weight;
+		// Remove bootstrap system token
+		Self::do_destory_bootstrap_asset();
 		Asset::<T, I>::insert(&id, details);
-		Metadata::<T, I>::try_mutate_exists(&id, |metadata| {
+		Metadata::<T, I>::try_mutate_exists(&id, |metadata| -> DispatchResult {
 			let deposit = metadata.take().map_or(Zero::zero(), |m| m.deposit);
 			*metadata = Some(AssetMetadata {
 				deposit,
@@ -1089,7 +1105,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			});
 
 			Ok(())
-		})
+		})?;
+		Ok(())
 	}
 
 	pub fn do_update_system_token_weight(

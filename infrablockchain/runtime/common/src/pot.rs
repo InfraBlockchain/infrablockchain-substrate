@@ -1,4 +1,4 @@
-use frame_support::traits::ibs_support::pot::VotingHandler;
+use frame_support::traits::infra_support::pot::VotingHandler;
 pub use pallet::*;
 use pallet_validator_election::VotingInterface;
 use runtime_parachains::system_token_manager::SystemTokenInterface;
@@ -21,7 +21,7 @@ pub mod pallet {
 		/// Updating vote type
 		type VotingHandler: VotingInterface<Self>;
 		/// Managing System Token
-		type SystemTokenManager: SystemTokenInterface;
+		type SystemTokenInterface: SystemTokenInterface;
 	}
 
 	#[pallet::event]
@@ -49,17 +49,21 @@ impl<T: Config> Pallet<T> {
 		candidate: VoteAccountId,
 		vote_weight: VoteWeight,
 	) {
-		// ToDo: Should check whether this is system token or not
-		let weight =
-			T::SystemTokenManager::adjusted_weight(&vote_system_token, vote_weight);
-		if vote_system_token.is_boot() {
-			return
+		// Validity Check
+		// 1. Check whether it is boot system token
+		// 2. Check whether it is registered system token
+		if T::SystemTokenInterface::is_boot(vote_system_token.para_id) || 
+		!T::SystemTokenInterface::is_system_token(&vote_system_token)
+		{
+			return;
 		}
+		let weight =
+			T::SystemTokenInterface::adjusted_weight(&vote_system_token, vote_weight);
 		T::VotingHandler::update_vote_status(candidate.clone(), weight);
 		Self::deposit_event(Event::<T>::Voted {
 			candidate,
 			vote_system_token,
 			weight,
-		})
+		});
 	}
 }

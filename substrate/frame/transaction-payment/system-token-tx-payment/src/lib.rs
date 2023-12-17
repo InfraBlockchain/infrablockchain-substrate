@@ -30,7 +30,7 @@ use frame_support::{
 	dispatch::{DispatchInfo, DispatchResult, PostDispatchInfo},
 	pallet_prelude::*,
 	traits::{
-		ibs_support::{fee::FeeTableProvider, pot::VotingHandler},
+		infra_support::{fee::FeeTableProvider, pot::VotingHandler},
 		tokens::{
 			fungibles::{Balanced, Credit, Inspect},
 			WithdrawConsequence,
@@ -88,11 +88,9 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		/// A transaction fee `actual_fee`, of which `tip` was added to the minimum inclusion fee,
 		/// has been paid by `who` in an asset `asset_id`.
-		AssetTxFeePaid {
+		SystemTokenTxFeePaid {
 			fee_payer: T::AccountId,
-			actual_fee: BalanceOf<T>,
-			fee_detail: FeeDetail<SystemTokenId, AssetBalanceOf<T>>,
-			tip: Option<AssetBalanceOf<T>>,
+			detail: Detail<T>,
 			vote_candidate: Option<VoteAccountId>,
 		},
 	}
@@ -203,6 +201,7 @@ where
 	T::RuntimeCall:
 		Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo> + GetCallMetadata,
 	AssetBalanceOf<T>: Send + Sync + FixedPointOperand + IsType<VoteWeight>,
+	AssetIdOf<T>: Send + Sync + IsType<ChargeSystemTokenAssetIdOf<T>>,
 	BalanceOf<T>: Send + Sync + From<u64> + FixedPointOperand + IsType<ChargeAssetBalanceOf<T>>,
 	ChargeSystemTokenAssetIdOf<T>: Send + Sync,
 	Credit<T::AccountId, T::Assets>: IsType<ChargeAssetLiquidityOf<T>>,
@@ -294,7 +293,7 @@ where
 								len as u32, info, post_info, tip,
 								)
 						};
-
+					let paid_asset_id = already_withdrawn.asset();
 					let (converted_fee, converted_tip) =
 						T::OnChargeSystemToken::correct_and_deposit_fee(
 							&who,
@@ -312,14 +311,14 @@ where
 					match (&vote_candidate, &system_token_id) {
 						// Case: Voting and system token has clarified
 						(Some(vote_candidate), Some(system_token_id)) => {
-							Pallet::<T>::deposit_event(Event::<T>::AssetTxFeePaid {
+							Pallet::<T>::deposit_event(Event::<T>::SystemTokenTxFeePaid {
 								fee_payer: who,
-								actual_fee,
-								fee_detail: FeeDetail::<SystemTokenId, AssetBalanceOf<T>>::new(
-									system_token_id.clone(),
+								detail: Detail::<T> {
+									paid_asset_id: paid_asset_id.into(),
+									actual_fee,
 									converted_fee,
-								),
-								tip,
+									tip,
+								},
 								vote_candidate: Some(vote_candidate.clone()),
 							});
 							// Update vote
@@ -329,19 +328,18 @@ where
 								converted_fee.into(),
 							);
 						},
-						// Case: No voting but system token id has clarified.
-						(None, Some(system_token_id)) =>
-							Pallet::<T>::deposit_event(Event::<T>::AssetTxFeePaid {
+						_ => {
+							Pallet::<T>::deposit_event(Event::<T>::SystemTokenTxFeePaid {
 								fee_payer: who,
-								actual_fee,
-								fee_detail: FeeDetail::<SystemTokenId, AssetBalanceOf<T>>::new(
-									system_token_id.clone(),
+								detail: Detail::<T> {
+									paid_asset_id: paid_asset_id.into(),
+									actual_fee,
 									converted_fee,
-								),
-								tip,
+									tip,
+								},
 								vote_candidate: None,
-							}),
-						_ => {},
+							});
+						}
 					}
 				},
 				InitialPayment::Nothing => {

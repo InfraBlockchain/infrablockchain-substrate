@@ -24,7 +24,7 @@
 
 use node_subsystem::SpawnGlue;
 use node_subsystem_types::DefaultSubsystemClient;
-use polkadot_cli::{
+use infrablockchain_cli::{
 	prepared_overseer_builder,
 	service::{
 		AuthorityDiscoveryApi, AuxStore, BabeApi, Block, Error, HeaderBackend, Overseer,

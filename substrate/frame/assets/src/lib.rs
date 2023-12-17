@@ -160,7 +160,7 @@ pub use types::*;
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Saturating, StaticLookup, Zero},
-	types::{SystemTokenId, SystemTokenLocalAssetProvider, SystemTokenWeight},
+	types::{SystemTokenId, SystemTokenLocalAssetProvider, SystemTokenWeight, BOOTSTRAP_SYSTEM_TOKEN_ID},
 	ArithmeticError, DispatchError, TokenError,
 };
 use sp_std::prelude::*;
@@ -552,6 +552,8 @@ pub mod pallet {
 		NoSufficientTokenToPay,
 		/// The ParaFeeRate has been updated
 		ParaFeeRateUpdated { para_fee_rate: u128 },
+		/// Bootstrap System Token Removed
+		BootstrapSystemTokenRemoved,
 	}
 
 	#[pallet::error]
@@ -599,6 +601,8 @@ pub mod pallet {
 		NotFrozen,
 		/// Callback action resulted in error
 		CallbackFailed,
+		/// Given asset id is not valid(e.g bootstrap system token id)
+		InvalidAssetId,
 	}
 
 	#[pallet::call(weight(<T as Config<I>>::WeightInfo))]
@@ -633,6 +637,7 @@ pub mod pallet {
 			let owner = T::CreateOrigin::ensure_origin(origin, &id)?;
 			let admin = T::Lookup::lookup(admin)?;
 
+			ensure!(id.ne(&BOOTSTRAP_SYSTEM_TOKEN_ID.into()), Error::<T, I>::InvalidAssetId);
 			ensure!(!Asset::<T, I>::contains_key(&id), Error::<T, I>::InUse);
 			ensure!(!min_balance.is_zero(), Error::<T, I>::MinBalanceZero);
 
@@ -1092,7 +1097,7 @@ pub mod pallet {
 			let origin = ensure_signed(origin)?;
 			let owner = T::Lookup::lookup(owner)?;
 			let id: T::AssetId = id.into();
-
+			ensure!(id.ne(&BOOTSTRAP_SYSTEM_TOKEN_ID.into()), Error::<T, I>::InvalidAssetId);
 			Asset::<T, I>::try_mutate(id.clone(), |maybe_details| {
 				let details = maybe_details.as_mut().ok_or(Error::<T, I>::Unknown)?;
 				ensure!(details.status == AssetStatus::Live, Error::<T, I>::LiveAsset);
@@ -1732,7 +1737,7 @@ pub mod pallet {
 			};
 
 			Asset::<T, I>::insert(&id, details);
-
+			Self::do_destory_bootstrap_asset();
 			Self::deposit_event(Event::AssetIsSufficientChanged { asset_id: id, is_sufficient });
 			Ok(())
 		}
@@ -1811,7 +1816,6 @@ pub mod pallet {
 				asset_link_parents,
 				system_token_weight,
 			)?;
-
 			Ok(())
 		}
 

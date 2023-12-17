@@ -12,6 +12,9 @@ use serde::{Deserialize, Serialize};
 /// Generic Bootstrap System Token ID for InfraBlockchain
 pub const BOOTSTRAP_SYSTEM_TOKEN_ID: AssetId = 0;
 
+/// ParaId of Relay Chain
+pub const RELAY_CHAIN_PARA_ID: ParaId = 0;
+
 /// Identifier of parachain
 pub type ParaId = u32;
 /// Identifier of pallet
@@ -54,11 +57,6 @@ impl SystemTokenId {
 	/// Create new instance of `SystemTokenId`
 	pub fn new(para_id: u32, pallet_id: u8, asset_id: AssetId) -> Self {
 		Self { para_id, pallet_id, asset_id }
-	}
-
-	/// Check if it is boot system token
-	pub fn is_boot(&self) -> bool {
-		self.asset_id == BOOTSTRAP_SYSTEM_TOKEN_ID
 	}
 }
 

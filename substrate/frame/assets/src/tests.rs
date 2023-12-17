@@ -1775,3 +1775,5 @@ fn asset_destroy_refund_existence_deposit() {
 		assert_eq!(Balances::reserved_balance(&admin), 0);
 	});
 }
+
+

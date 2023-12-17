@@ -17,7 +17,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::traits::ibs_support::fee::FeeTableProvider;
+use frame_support::traits::infra_support::fee::FeeTableProvider;
 pub use pallet::*;
 use sp_runtime::types::ExtrinsicMetadata;
 use sp_std::vec::Vec;

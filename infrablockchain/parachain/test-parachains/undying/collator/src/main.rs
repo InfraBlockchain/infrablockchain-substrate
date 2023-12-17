@@ -18,7 +18,7 @@
 
 use node_primitives::CollationGenerationConfig;
 use node_subsystem::messages::{CollationGenerationMessage, CollatorProtocolMessage};
-use polkadot_cli::{Error, Result};
+use infrablockchain_cli::{Error, Result};
 use primitives::Id as ParaId;
 use sc_cli::{Error as SubstrateCliError, SubstrateCli};
 use sp_core::hexdisplay::HexDisplay;

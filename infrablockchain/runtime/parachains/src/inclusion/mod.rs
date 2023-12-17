@@ -23,14 +23,13 @@ use crate::{
 	configuration::{self, HostConfiguration},
 	disputes, dmp, hrmp, paras,
 	scheduler::{self, AvailabilityTimeoutStatus},
-	shared::{self, AllowedRelayParentsTracker},
-	system_token_manager::SystemTokenInterface,
+	shared::{self, AllowedRelayParentsTracker}
 };
 use bitvec::{order::Lsb0 as BitOrderLsb0, vec::BitVec};
 use frame_support::{
 	defensive,
 	pallet_prelude::*,
-	traits::{Defensive, EnqueueMessage},
+	traits::{Defensive, EnqueueMessage, infra_support::system_token::SystemTokenInterface},
 	BoundedSlice,
 };
 use frame_system::pallet_prelude::*;
@@ -285,8 +284,8 @@ pub mod pallet {
 		/// adding new variants to `AggregateMessageOrigin`.
 		type MessageQueue: EnqueueMessage<AggregateMessageOrigin>;
 
-		type VotingManager: VotingInterface<Self>;
-		type SystemTokenManager: SystemTokenInterface;
+		type VotingInterface: VotingInterface<Self>;
+		type SystemTokenInterface: SystemTokenInterface;
 		type RewardInterface: RewardInterface;
 
 		/// Weight info for the calls of this pallet.
@@ -925,31 +924,28 @@ impl<T: Config> Pallet<T> {
 		};
 
 		let mut collected_votes: Vec<(VoteAccountId, VoteWeight)> = Vec::new();
-
 		if let Some(vote_result) = commitments.vote_result {
 			let session_index = shared::Pallet::<T>::session_index();
 			for vote in vote_result.into_iter() {
 				if let Some(original) =
-					T::SystemTokenManager::convert_to_original_system_token(
+					T::SystemTokenInterface::convert_to_original_system_token(
 						&vote.system_token_id,
 					) {
-					
 					let PotVote { system_token_id, account_id, mut vote_weight} = vote;
 					let vote_system_token = system_token_id;
 					// We don't collect vote if it is boot system token
-					if vote_system_token.is_boot() {
-						continue
+					if T::SystemTokenInterface::is_boot(vote_system_token.para_id) {
+						continue;
 					}
-
 					vote_weight = {
 						let res = milli_block_time_weight.saturating_mul(
-							T::SystemTokenManager::adjusted_weight(&original, vote_weight),
+							T::SystemTokenInterface::adjusted_weight(&original, vote_weight),
 						);
 						// correction for consideration of milli_block_time_weight
 						res.saturating_div(1_000)
 					};
 
-					if T::VotingManager::update_vote_status(account_id.clone(), vote_weight) {
+					if T::VotingInterface::update_vote_status(account_id.clone(), vote_weight) {
 						collected_votes.push((account_id, vote_weight));
 					}
 					T::RewardInterface::aggregate_reward(
