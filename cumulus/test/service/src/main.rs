@@ -93,7 +93,7 @@ fn main() -> Result<(), sc_cli::Error> {
 				.expect("Should be able to generate config");
 
 			let parachain_id = ParaId::from(cli.parachain_id);
-			let polkadot_cli = RelayChainCli::new(
+			let infrablockchain_cli = RelayChainCli::new(
 				&config,
 				[RelayChainCli::executable_name()].iter().chain(cli.relaychain_args.iter()),
 			);
@@ -105,7 +105,7 @@ fn main() -> Result<(), sc_cli::Error> {
 
 			let tokio_handle = config.tokio_handle.clone();
 			let polkadot_config =
-				SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, tokio_handle)
+				SubstrateCli::create_configuration(&infrablockchain_cli, &infrablockchain_cli, tokio_handle)
 					.map_err(|err| format!("Relay chain argument error: {}", err))?;
 
 			tracing::info!("Parachain id: {:?}", parachain_id);

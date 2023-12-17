@@ -102,7 +102,7 @@ pub struct Cli {
 #[derive(Debug)]
 pub struct RelayChainCli {
 	/// The actual relay chain cli object.
-	pub base: polkadot_cli::RunCmd,
+	pub base: infrablockchain_cli::RunCmd,
 
 	/// Optional chain id that should be passed to the relay chain.
 	pub chain_id: Option<String>,

@@ -22,7 +22,7 @@ sp-runtime = { path = "../../../substrate/primitives/runtime" }
 sp-state-machine = { path = "../../../substrate/primitives/state-machine" }
 
 # Polkadot
-polkadot-cli = { path = "../../../infrablockchain/cli", default-features = false, features = ["cli"] }
+infrablockchain-cli = { path = "../../../infrablockchain/cli", default-features = false, features = ["cli"] }
 infrablockchain-service = { path = "../../../infrablockchain/node/service" }
 
 # Cumulus
