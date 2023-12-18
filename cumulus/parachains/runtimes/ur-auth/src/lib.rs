@@ -15,7 +15,6 @@ use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 pub use parachains_common::{
 	constants::*, impls::DealWithFees, infra_relay::consensus::*, opaque::*, types::*,
 };
-use softfloat::IsType;
 
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};

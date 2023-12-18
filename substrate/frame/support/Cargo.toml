@@ -48,6 +48,7 @@ sp-genesis-builder = { path = "../../primitives/genesis-builder", default-featur
 serde_json = { version = "1.0.107", default-features = false, features = ["alloc"] }
 docify = "0.2.4"
 static_assertions = "1.1.0"
+softfloat = { path = "../../primitives/softfloat", default-features = false }
 
 aquamarine = { version = "0.3.2" }
 

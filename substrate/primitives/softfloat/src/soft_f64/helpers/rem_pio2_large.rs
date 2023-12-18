@@ -319,7 +319,7 @@ pub(crate) const fn rem_pio2_large<const Y: usize>(
 			ih = iq[jz - 1] >> (23 - q0);
 		} else if q0 == 0 {
 			ih = iq[jz - 1] >> 23;
-		} else if ge(z, f64!(0.5)) {
+		} else if ge(&z, &f64!(0.5)) {
 			ih = 2;
 		}
 
@@ -364,7 +364,7 @@ pub(crate) const fn rem_pio2_large<const Y: usize>(
 		}
 
 		/* check if recomputation is needed */
-		if eq(z, F64::ZERO) {
+		if eq(&z, &F64::ZERO) {
 			let mut j = 0;
 			{
 				let mut i = jz - 1;
@@ -407,7 +407,7 @@ pub(crate) const fn rem_pio2_large<const Y: usize>(
 	}
 
 	/* chop off zero terms */
-	if eq(z, F64::ZERO) {
+	if eq(&z, &F64::ZERO) {
 		jz -= 1;
 		q0 -= 24;
 		while iq[jz] == 0 {
@@ -417,7 +417,7 @@ pub(crate) const fn rem_pio2_large<const Y: usize>(
 	} else {
 		/* break z into 24-bit if necessary */
 		z = scalbn(z, -q0);
-		if ge(z, x1p24) {
+		if ge(&z, &x1p24) {
 			fw = F64::from_i32(x1p_24.mul(z).to_i32());
 			iq[jz] = z.sub(x1p24.mul(fw)).to_i32();
 			jz += 1;

@@ -181,7 +181,7 @@ pub(crate) const fn rem_pio2(x: F64) -> (i32, F64, F64) {
 	tx[2] = z;
 	/* skip zero terms, first term is non-zero */
 	let mut i = 2;
-	while i != 0 && eq(tx[i], F64::ZERO) {
+	while i != 0 && eq(&tx[i], &F64::ZERO) {
 		i -= 1;
 	}
 	let ty = [F64::ZERO; 3];

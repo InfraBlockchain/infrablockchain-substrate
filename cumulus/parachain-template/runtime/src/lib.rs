@@ -19,7 +19,6 @@ use sp_runtime::{
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, MultiSignature,
 };
-use softfloat::IsType;
 
 use sp_std::prelude::*;
 #[cfg(feature = "std")]

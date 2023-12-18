@@ -19,8 +19,7 @@
  *   1. Normalization Scale x to y in [1,4) with even powers of 2: find an integer k such that  1
  *      <= (y=x*2^(2k)) < 4, then sqrt(x) = 2^k * sqrt(y)
  *   2. Bit by bit computation Let q  = sqrt(y) truncated to i bit after binary point (q = 1), i
- *      0 i+1         2 s  = 2*q , and      y  =  2   * ( y - q  ).         (1) i      i
- *      i                 i
+ *      0 i+1         2 s  = 2*q , and      y  =  2   * ( y - q  ).         (1) i      i i i
  *
  *      To compute q    from q , one checks whether
  *                  i+1       i
@@ -180,12 +179,12 @@ pub(crate) const fn sqrt(x: F) -> F {
 	/* use floating add to find out rounding direction */
 	if (ix0 as u32 | ix1) != 0 {
 		z = f64!(1.0).sub(TINY); /* raise inexact flag */
-		if ge(z, F64::ONE) {
+		if ge(&z, &F64::ONE) {
 			z = F64::ONE.add(TINY);
 			if q1 == 0xffffffff {
 				q1 = 0;
 				q += 1;
-			} else if gt(z, F64::ONE) {
+			} else if gt(&z, &F64::ONE) {
 				if q1 == 0xfffffffe {
 					q += 1;
 				}

@@ -11,7 +11,7 @@ const EQUAL: Option<Ordering> = Some(Ordering::Equal);
 const GREATER: Option<Ordering> = Some(Ordering::Greater);
 const LESS: Option<Ordering> = Some(Ordering::Less);
 
-pub(crate) const fn cmp(a: F, b: F) -> Option<Ordering> {
+pub(crate) const fn cmp(a: &F, &b: &F) -> Option<Ordering> {
 	let one: FInt = 1;
 	let zero: FInt = 0;
 	let szero: FSignedInt = 0;
@@ -49,10 +49,10 @@ pub(crate) const fn cmp(a: F, b: F) -> Option<Ordering> {
 		} else {
 			GREATER
 		}
-		// Otherwise, both are negative, so we need to flip the sense of the
-		// comparison to get the correct result.  (This assumes a twos- or ones-
-		// complement integer representation; if integers are represented in a
-		// sign-magnitude representation, then this flip is incorrect).
+	// Otherwise, both are negative, so we need to flip the sense of the
+	// comparison to get the correct result.  (This assumes a twos- or ones-
+	// complement integer representation; if integers are represented in a
+	// sign-magnitude representation, then this flip is incorrect).
 	} else if a_srep > b_srep {
 		LESS
 	} else if a_srep == b_srep {

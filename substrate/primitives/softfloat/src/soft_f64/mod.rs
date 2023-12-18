@@ -2,9 +2,7 @@ use crate::soft_f32::F32;
 use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 
-#[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-// use crate::runtime::primitives::IsType;
 
 pub(crate) mod helpers;
 
@@ -23,14 +21,42 @@ pub mod sin;
 pub mod sqrt;
 pub mod trunc;
 
-#[derive(Default, Copy, Clone, Decode, Debug, Encode, TypeInfo, MaxEncodedLen, PartialEq, Eq)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Hash))]
+#[derive(
+	Default,
+	Copy,
+	Clone,
+	Decode,
+	Debug,
+	Encode,
+	TypeInfo,
+	MaxEncodedLen,
+	PartialEq,
+	Eq,
+	Serialize,
+	Deserialize,
+	Ord,
+	PartialOrd,
+)]
+#[cfg_attr(feature = "std", derive(Hash))]
 #[repr(transparent)]
 struct Bits64(u64);
 
 /// A pure software implementation of `f64`.
-#[derive(Default, Copy, Clone, Decode, Debug, Encode, TypeInfo, MaxEncodedLen, Eq)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Hash))]
+#[derive(
+	Default,
+	Copy,
+	Clone,
+	Decode,
+	Debug,
+	Encode,
+	TypeInfo,
+	MaxEncodedLen,
+	Eq,
+	Serialize,
+	Deserialize,
+	Ord,
+)]
+#[cfg_attr(feature = "std", derive(Hash))]
 #[repr(transparent)]
 pub struct F64(Bits64);
 
@@ -79,7 +105,7 @@ impl F64 {
 		div::div(self, rhs)
 	}
 
-	pub const fn cmp(self, rhs: Self) -> Option<core::cmp::Ordering> {
+	pub const fn cmp(&self, rhs: &Self) -> Option<core::cmp::Ordering> {
 		cmp::cmp(self, rhs)
 	}
 
@@ -124,16 +150,16 @@ impl F64 {
 	}
 
 	pub const fn is_nan(self) -> bool {
-		!matches!(self.cmp(self), Some(core::cmp::Ordering::Equal))
+		!matches!(&self.cmp(&self), Some(core::cmp::Ordering::Equal))
 	}
 
 	pub const fn max(self, other: Self) -> Self {
-		let cond = self.is_nan() || matches!(self.cmp(other), Some(core::cmp::Ordering::Less));
+		let cond = self.is_nan() || matches!(&self.cmp(&other), Some(core::cmp::Ordering::Less));
 		(if cond { other } else { self }).mul(Self::ONE)
 	}
 
 	pub const fn min(self, other: Self) -> Self {
-		let cond = other.is_nan() || matches!(self.cmp(other), Some(core::cmp::Ordering::Less));
+		let cond = other.is_nan() || matches!(&self.cmp(&other), Some(core::cmp::Ordering::Less));
 		(if cond { self } else { other }).mul(Self::ONE)
 	}
 
@@ -224,42 +250,6 @@ impl From<u128> for F64 {
 	fn from(x: u128) -> Self {
 		let a = x as i32;
 		Self::from_i32(a)
-	}
-}
-
-pub trait IsType<T>: Into<T> + From<T> {
-	/// Cast reference.
-	fn from_ref(t: &T) -> &Self;
-
-	/// Cast reference.
-	fn into_ref(&self) -> &T;
-
-	/// Cast mutable reference.
-	fn from_mut(t: &mut T) -> &mut Self;
-
-	/// Cast mutable reference.
-	fn into_mut(&mut self) -> &mut T;
-}
-
-impl IsType<F64> for u128 {
-	fn from_ref(t: &F64) -> &Self {
-		// Convert F64 reference to u128 and then get a reference to it
-		unsafe { &*(t as *const F64 as *const Self) }
-	}
-
-	fn into_ref(&self) -> &F64 {
-		// Convert u128 reference to F64 and then get a reference to it
-		unsafe { &*(self as *const u128 as *const F64) }
-	}
-
-	fn from_mut(t: &mut F64) -> &mut Self {
-		// Convert mutable F64 reference to mutable u128 reference
-		unsafe { &mut *(t as *mut F64 as *mut Self) }
-	}
-
-	fn into_mut(&mut self) -> &mut F64 {
-		// Convert mutable u128 reference to mutable F64 reference
-		unsafe { &mut *(self as *mut u128 as *mut F64) }
 	}
 }
 

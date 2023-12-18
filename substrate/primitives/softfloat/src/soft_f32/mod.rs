@@ -71,7 +71,7 @@ impl F32 {
 		div::div(self, rhs)
 	}
 
-	pub const fn cmp(self, rhs: Self) -> Option<core::cmp::Ordering> {
+	pub const fn cmp(&self, rhs: &Self) -> Option<core::cmp::Ordering> {
 		cmp::cmp(self, rhs)
 	}
 

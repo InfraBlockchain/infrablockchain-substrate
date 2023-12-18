@@ -22,4 +22,4 @@ cfg-if = "1"
 
 [features]
 default = ["std"]
-std = ["serde/std"]
+std = []

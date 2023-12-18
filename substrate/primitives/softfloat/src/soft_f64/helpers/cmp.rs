@@ -2,7 +2,7 @@ use core::cmp::Ordering;
 
 use crate::soft_f64::F64;
 
-pub(crate) const fn eq(l: F64, r: F64) -> bool {
+pub(crate) const fn eq(l: &F64, r: &F64) -> bool {
 	if let Some(ord) = l.cmp(r) {
 		match ord {
 			Ordering::Equal => true,
@@ -13,7 +13,7 @@ pub(crate) const fn eq(l: F64, r: F64) -> bool {
 	}
 }
 
-pub(crate) const fn gt(l: F64, r: F64) -> bool {
+pub(crate) const fn gt(l: &F64, r: &F64) -> bool {
 	if let Some(ord) = l.cmp(r) {
 		match ord {
 			Ordering::Greater => true,
@@ -24,7 +24,7 @@ pub(crate) const fn gt(l: F64, r: F64) -> bool {
 	}
 }
 
-pub(crate) const fn ge(l: F64, r: F64) -> bool {
+pub(crate) const fn ge(l: &F64, r: &F64) -> bool {
 	if let Some(ord) = l.cmp(r) {
 		match ord {
 			Ordering::Less => false,
@@ -35,7 +35,7 @@ pub(crate) const fn ge(l: F64, r: F64) -> bool {
 	}
 }
 
-pub(crate) const fn lt(l: F64, r: F64) -> bool {
+pub(crate) const fn lt(l: &F64, r: &F64) -> bool {
 	if let Some(ord) = l.cmp(r) {
 		match ord {
 			Ordering::Less => true,

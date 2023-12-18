@@ -67,10 +67,10 @@ command = "../target/release/infra-parachain"
 rpc_port = 9600
 ws_port = 9601
 
-# [[parachains]]
-# id = 1001
-# chain = "contracts-infra-local"
-# cumulus_based = true
+[[parachains]]
+id = 1001
+chain = "contracts-infra-local"
+cumulus_based = true
 
 [[parachains.collators]]
 name = "contracts-infra-alice"

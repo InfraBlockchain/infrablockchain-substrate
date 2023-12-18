@@ -76,9 +76,9 @@ pub(crate) const fn sqrtf(x: F32) -> F32 {
 	/* use floating add to find out rounding direction */
 	if ix != 0 {
 		z = f32!(1.0).sub(TINY); /* raise inexact flag */
-		if ge(z, f32!(1.0)) {
+		if ge(&z, &f32!(1.0)) {
 			z = f32!(1.0).add(TINY);
-			if gt(z, f32!(1.0)) {
+			if gt(&z, &f32!(1.0)) {
 				q += 2;
 			} else {
 				q += q & 1;
@@ -91,7 +91,7 @@ pub(crate) const fn sqrtf(x: F32) -> F32 {
 	F32::from_bits(ix as u32)
 }
 
-const fn gt(l: F32, r: F32) -> bool {
+const fn gt(l: &F32, r: &F32) -> bool {
 	if let Some(ord) = l.cmp(r) {
 		match ord {
 			Ordering::Greater => true,
@@ -102,7 +102,7 @@ const fn gt(l: F32, r: F32) -> bool {
 	}
 }
 
-const fn ge(l: F32, r: F32) -> bool {
+const fn ge(l: &F32, r: &F32) -> bool {
 	if let Some(ord) = l.cmp(r) {
 		match ord {
 			Ordering::Less => false,

@@ -22,7 +22,7 @@ mod conv;
 mod soft_f32;
 mod soft_f64;
 
-pub use crate::{soft_f32::F32, soft_f64::F64, soft_f64::IsType};
+pub use crate::{soft_f32::F32, soft_f64::F64};
 
 const fn abs_diff(a: i32, b: i32) -> u32 {
 	a.wrapping_sub(b).wrapping_abs() as u32
@@ -44,7 +44,7 @@ macro_rules! impl_traits {
 
 		impl PartialEq<Self> for $ty {
 			fn eq(&self, other: &Self) -> bool {
-				match self.cmp(*other) {
+				match self.cmp(other) {
 					Some(core::cmp::Ordering::Equal) => true,
 					_ => false,
 				}
@@ -53,7 +53,7 @@ macro_rules! impl_traits {
 
 		impl PartialOrd for $ty {
 			fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
-				self.cmp(*other)
+				self.cmp(other)
 			}
 		}
 

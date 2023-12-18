@@ -12,7 +12,7 @@ pub const fn floor(x: F64) -> F64 {
 	let ui = x.to_bits();
 	let e = ((ui >> 52) & 0x7ff) as i32;
 
-	if (e >= 0x3ff + 52) || eq(x, F64::ZERO) {
+	if (e >= 0x3ff + 52) || eq(&x, &F64::ZERO) {
 		return x;
 	}
 	/* y = int(x) - x, where int(x) is an integer neighbor of x */
@@ -25,7 +25,7 @@ pub const fn floor(x: F64) -> F64 {
 	if e < 0x3ff {
 		return if (ui >> 63) != 0 { f64!(-1.0) } else { F64::ZERO };
 	}
-	if gt(y, F64::ZERO) {
+	if gt(&y, &F64::ZERO) {
 		x.add(y).sub(F64::ONE)
 	} else {
 		x.add(y)

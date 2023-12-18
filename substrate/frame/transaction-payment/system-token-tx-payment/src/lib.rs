@@ -41,15 +41,14 @@ use frame_support::{
 };
 use pallet_transaction_payment::OnChargeTransaction;
 use scale_info::TypeInfo;
+use softfloat::F64;
 use sp_runtime::{
 	traits::{
 		AccountIdConversion, DispatchInfoOf, Dispatchable, PostDispatchInfoOf, SignedExtension,
 		Zero,
 	},
 	transaction_validity::{TransactionValidity, TransactionValidityError, ValidTransaction},
-	types::{
-		ExtrinsicMetadata, SystemTokenId, SystemTokenLocalAssetProvider, VoteAccountId, VoteWeight,
-	},
+	types::{ExtrinsicMetadata, SystemTokenId, SystemTokenLocalAssetProvider, VoteAccountId},
 	FixedPointOperand,
 };
 
@@ -202,7 +201,7 @@ impl<T: Config> SignedExtension for ChargeSystemToken<T>
 where
 	T::RuntimeCall:
 		Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo> + GetCallMetadata,
-	AssetBalanceOf<T>: Send + Sync + FixedPointOperand + IsType<VoteWeight>,
+	AssetBalanceOf<T>: Send + Sync + FixedPointOperand + IsType<u128>,
 	BalanceOf<T>: Send + Sync + From<u64> + FixedPointOperand + IsType<ChargeAssetBalanceOf<T>>,
 	ChargeSystemTokenAssetIdOf<T>: Send + Sync,
 	Credit<T::AccountId, T::Assets>: IsType<ChargeAssetLiquidityOf<T>>,
@@ -323,10 +322,12 @@ where
 								vote_candidate: Some(vote_candidate.clone()),
 							});
 							// Update vote
+							let a: u128 = converted_fee.into();
+							let vote_weight = F64::from_i32(a as i32);
 							T::VotingHandler::update_pot_vote(
 								vote_candidate.clone().into(),
 								system_token_id.clone(),
-								converted_fee.into(),
+								vote_weight,
 							);
 						},
 						// Case: No voting but system token id has clarified.

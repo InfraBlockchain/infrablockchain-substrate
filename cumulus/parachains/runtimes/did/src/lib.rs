@@ -105,7 +105,6 @@ use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot, EnsureSigned,
 };
-use softfloat::IsType;
 
 use pallet_system_token_tx_payment::{CreditToBucket, TransactionFeeCharger};
 use parachains_common::{

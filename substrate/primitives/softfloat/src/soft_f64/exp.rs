@@ -33,8 +33,8 @@ use super::{
 //      P1*z + P2*z**2 + P3*z**3 + P4*z**4 + P5*z**5 (where z=r*r, and the values of P1 to P5 are
 //      listed below) and |                  5          |     -59 | 2.0+P1*z+...+P5*z   -  R(z) | <=
 //      2 |                             | The computation of exp(r) thus becomes 2*r exp(r) = 1 +
-//      ---------- R(r) - r r*c(r) = 1 + r + ----------- (for better accuracy) 2 - c(r) where 2
-//      4             10 c(r) = r - (P1*r  + P2*r  + ... + P5*r   ).
+//      ---------- R(r) - r r*c(r) = 1 + r + ----------- (for better accuracy) 2 - c(r) where 2 4 10
+//      c(r) = r - (P1*r  + P2*r  + ... + P5*r   ).
 //
 //   3. Scale back to obtain exp(x): From step 1, we have exp(x) = 2^k * exp(r)
 //
@@ -94,14 +94,14 @@ pub(crate) const fn exp(mut x: F64) -> F64 {
 		if x_bits & abs_mask > F64::EXPONENT_MASK {
 			return x;
 		}
-		if gt(x, f64!(709.782712893383973096)) {
+		if gt(&x, &f64!(709.782712893383973096)) {
 			/* overflow if x!=inf */
 			x = x.mul(x1p1023);
 			return x;
 		}
-		if lt(x, f64!(-708.39641853226410622)) {
+		if lt(&x, &f64!(-708.39641853226410622)) {
 			/* underflow if x!=-inf */
-			if lt(x, f64!(-745.13321910194110842)) {
+			if lt(&x, &f64!(-745.13321910194110842)) {
 				return f64!(0.);
 			}
 		}
