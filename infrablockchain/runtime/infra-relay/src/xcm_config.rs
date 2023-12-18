@@ -316,11 +316,6 @@ impl xcm_executor::Config for XcmConfig {
 	type UniversalLocation = UniversalLocation;
 	type Barrier = Barrier;
 	type Weigher = FixedWeightBounds<BaseXcmWeight, RuntimeCall, MaxInstructions>;
-	// type Weigher = WeightInfoBounds<
-	// 	crate::weights::xcm::InfraBlockspaceXcmWeight<RuntimeCall>,
-	// 	RuntimeCall,
-	// 	MaxInstructions,
-	// >;
 	// The weight trader piggybacks on the existing transaction-fee conversion logic.
 	type Trader = (
 		cumulus_primitives_utility::TakeFirstAssetTrader<
@@ -395,11 +390,6 @@ impl pallet_xcm::Config for Runtime {
 	type XcmTeleportFilter = Everything; // == Allow All
 	type XcmReserveTransferFilter = Everything; // == Allow All
 	type Weigher = FixedWeightBounds<BaseXcmWeight, RuntimeCall, MaxInstructions>;
-	// type Weigher = WeightInfoBounds<
-	// 	crate::weights::xcm::InfraBlockspaceXcmWeight<RuntimeCall>,
-	// 	RuntimeCall,
-	// 	MaxInstructions,
-	// >;
 	type UniversalLocation = UniversalLocation;
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeCall = RuntimeCall;
