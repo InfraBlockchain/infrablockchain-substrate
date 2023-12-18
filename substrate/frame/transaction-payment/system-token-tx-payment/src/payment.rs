@@ -135,10 +135,10 @@ where
 		let system_token_asset_id = if let Some(asset_id) = system_token_asset_id {
 			asset_id
 		} else {
-			let system_token_asset_list = T::Assets::token_list()
+			let l = T::Assets::system_token_list()
 				.ok_or(TransactionValidityError::from(InvalidTransaction::SystemTokenMissing))?;
-			pallet_assets::Pallet::<T>::get_most_account_balance(
-				system_token_asset_list,
+			T::Assets::get_most_account_system_token_balance(
+				l,
 				who.clone(),
 			)
 			.into()

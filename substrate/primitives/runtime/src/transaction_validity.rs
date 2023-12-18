@@ -84,6 +84,8 @@ pub enum InvalidTransaction {
 	BadSigner,
 	/// System Token is not registered yet
 	SystemTokenMissing,
+	/// The bootstrapping process is not finished yet.
+	InvalidBootstrappingCall
 }
 
 impl InvalidTransaction {
@@ -116,6 +118,7 @@ impl From<InvalidTransaction> for &'static str {
 			InvalidTransaction::Custom(_) => "InvalidTransaction custom error",
 			InvalidTransaction::BadSigner => "Invalid signing address",
 			InvalidTransaction::SystemTokenMissing => "System Token is not existed",
+			InvalidTransaction::InvalidBootstrappingCall => "Unexpected bootstrapping call",
 		}
 	}
 }

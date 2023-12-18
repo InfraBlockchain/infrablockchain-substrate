@@ -15,7 +15,7 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::chain_spec::{
-	get_account_id_from_seed, get_collator_keys_from_seed, Extensions, SAFE_XCM_VERSION, BOOTSTRAP_SYSTEM_TOKEN_ID
+	get_account_id_from_seed, get_collator_keys_from_seed, Extensions, SAFE_XCM_VERSION
 };
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
@@ -262,20 +262,6 @@ fn contracts_infra_genesis(
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
 			..Default::default()
 		},
-		assets: contracts_infra_runtime::AssetsConfig {
-			assets: vec![(
-				BOOTSTRAP_SYSTEM_TOKEN_ID,                                                   // asset_id
-				get_account_id_from_seed::<sr25519::Public>("Alice"), // owner
-				true,                                                 // is_sufficient
-				10_000,                                                 // min_balance
-			)],
-			metadata: vec![(BOOTSTRAP_SYSTEM_TOKEN_ID, "iBOOT".into(), "iBOOT".into(), 4)],
-			accounts: vec![(
-				BOOTSTRAP_SYSTEM_TOKEN_ID,
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
-				1_000_000_000, 
-			)],
-			..Default::default()
-		},
+		assets: Default::default(),
 	}
 }

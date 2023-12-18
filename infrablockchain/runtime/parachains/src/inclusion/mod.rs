@@ -46,7 +46,7 @@ use primitives::{
 };
 use scale_info::TypeInfo;
 use sp_runtime::{
-	traits::One, types::{PotVote, VoteWeight, VoteAccountId}, DispatchError, SaturatedConversion, Saturating,
+	traits::One, types::{PotVote, VoteWeight, VoteAccountId}, DispatchError, SaturatedConversion, Saturating
 };
 #[cfg(feature = "std")]
 use sp_std::fmt;
@@ -257,6 +257,7 @@ pub type MaxUmpMessageLenOf<T> =
 
 #[frame_support::pallet]
 pub mod pallet {
+
 	use super::*;
 
 	#[pallet::pallet]
@@ -276,18 +277,15 @@ pub mod pallet {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		type DisputesHandler: disputes::DisputesHandler<BlockNumberFor<Self>>;
 		type RewardValidators: RewardValidators;
-
 		/// The system message queue.
 		///
 		/// The message queue provides general queueing and processing functionality. Currently it
 		/// replaces the old `UMP` dispatch queue. Other use-cases can be implemented as well by
 		/// adding new variants to `AggregateMessageOrigin`.
 		type MessageQueue: EnqueueMessage<AggregateMessageOrigin>;
-
 		type VotingInterface: VotingInterface<Self>;
 		type SystemTokenInterface: SystemTokenInterface;
 		type RewardInterface: RewardInterface;
-
 		/// Weight info for the calls of this pallet.
 		type WeightInfo: WeightInfo;
 	}

@@ -229,13 +229,13 @@ impl pallet_scheduler::Config for Runtime {
 	type MaxScheduledPerBlock = MaxScheduledPerBlock;
 	type WeightInfo = weights::pallet_scheduler::WeightInfo<Runtime>;
 	type OriginPrivilegeCmp = OriginPrivilegeCmp;
-	type Preimages = Preimage;
+	type Preimages = PreImage;
 }
 
 parameter_types! {
 	pub const PreimageBaseDeposit: Balance = deposit(2, 64);
 	pub const PreimageByteDeposit: Balance = deposit(0, 1);
-	pub const PreimageHoldReason: RuntimeHoldReason = RuntimeHoldReason::Preimage(pallet_preimage::HoldReason::Preimage);
+	pub const PreimageHoldReason: RuntimeHoldReason = RuntimeHoldReason::PreImage(pallet_preimage::HoldReason::Preimage);
 }
 
 impl pallet_preimage::Config for Runtime {
@@ -346,6 +346,27 @@ impl HandleCredit<AccountId, Assets> for CreditToBucket {
 	}
 }
 
+pub struct BootstrapCallFilter;
+impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
+	fn contains(call: &RuntimeCall) -> bool {
+		match call {
+			RuntimeCall::SystemTokenManager(
+				system_token_manager::Call::register_system_token { .. } |
+				system_token_manager::Call::deregister_system_token { .. } 
+			) | 
+			RuntimeCall::Council(
+				pallet_collective::Call::propose { .. } |
+				pallet_collective::Call::vote { .. } |
+				pallet_collective::Call::close { .. }
+			) |
+			RuntimeCall::Democracy(pallet_democracy::Call::external_propose_majority { .. }) |
+			RuntimeCall::PreImage(pallet_preimage::Call::note_preimage { .. }) 
+			=> true,
+			_ => false,
+		}
+	}
+}
+
 impl pallet_system_token_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Assets = Assets;
@@ -355,6 +376,7 @@ impl pallet_system_token_tx_payment::Config for Runtime {
 	>;
 	type FeeTableProvider = ();
 	type VotingHandler = Pot;
+	type BootstrapCallFilter = BootstrapCallFilter;
 	type PalletId = FeeTreasuryId;
 }
 
@@ -520,7 +542,7 @@ impl pallet_democracy::Config for Runtime {
 	type MaxVotes = MaxVotes;
 	type WeightInfo = weights::pallet_democracy::WeightInfo<Runtime>;
 	type MaxProposals = MaxProposals;
-	type Preimages = Preimage;
+	type Preimages = PreImage;
 	type MaxDeposits = ConstU32<100>;
 	type MaxBlacklisted = ConstU32<100>;
 }
@@ -1361,7 +1383,7 @@ construct_runtime! {
 		// Basic stuff; balances is uncallable initially.
 		System: frame_system::{Pallet, Call, Storage, Config<T>, Event<T>} = 0,
 		Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 1,
-		Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>, HoldReason} = 10,
+		PreImage: pallet_preimage::{Pallet, Call, Storage, Event<T>, HoldReason} = 10,
 		// Asset rate.
 		AssetRate: pallet_asset_rate::{Pallet, Call, Storage, Event<T>} = 39,
 

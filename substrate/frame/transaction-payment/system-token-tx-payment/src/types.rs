@@ -35,6 +35,8 @@ pub enum InitialPayment<T: Config> {
 	/// No initial fee was payed.
 	#[default]
 	Nothing,
+	/// Runtime is in bootstrap mode.
+	Bootstrap,
 	/// The initial fee was payed in the native currency.
 	Native(LiquidityInfoOf<T>),
 	/// The initial fee was payed in an asset.

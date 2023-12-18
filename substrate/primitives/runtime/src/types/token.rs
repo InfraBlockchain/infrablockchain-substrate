@@ -2,15 +2,12 @@
 
 use crate::{
 	codec::{Decode, Encode, MaxEncodedLen},
-	scale_info::TypeInfo,
+	scale_info::TypeInfo, RuntimeDebug
 };
 use sp_std::prelude::*;
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-
-/// Generic Bootstrap System Token ID for InfraBlockchain
-pub const BOOTSTRAP_SYSTEM_TOKEN_ID: AssetId = 0;
 
 /// ParaId of Relay Chain
 pub const RELAY_CHAIN_PARA_ID: ParaId = 0;
@@ -35,7 +32,7 @@ pub type SystemTokenWeight = u128;
 	PartialEq,
 	PartialOrd,
 	Ord,
-	sp_core::RuntimeDebug,
+	RuntimeDebug,
 	Default,
 	TypeInfo,
 	MaxEncodedLen,
@@ -60,8 +57,24 @@ impl SystemTokenId {
 	}
 }
 
+#[allow(missing_docs)]
+#[derive(Encode, Decode, Eq, PartialEq, RuntimeDebug, MaxEncodedLen, TypeInfo, Default)]
+pub enum RuntimeState {
+	#[default]
+	Bootstrap,
+	Normal
+}
+
+#[allow(missing_docs)]
 /// API for local asset
-pub trait SystemTokenLocalAssetProvider {
+pub trait SystemTokenLocalAssetProvider<Asset, Account> {
+
+	fn runtime_state() -> RuntimeState;
 	/// Get a list of local assets created on local chain
-	fn token_list() -> Option<Vec<AssetId>>;
+	fn system_token_list() -> Option<Vec<Asset>>;
+	/// Get the most account balance
+	fn get_most_account_system_token_balance(
+		asset_ids: impl IntoIterator<Item = Asset>,
+		account: Account
+	) -> Asset;
 }

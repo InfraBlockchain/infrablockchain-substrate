@@ -36,10 +36,7 @@ use sc_chain_spec::ChainSpecExtension;
 use sc_chain_spec::ChainType;
 use serde::{Deserialize, Serialize};
 use sp_core::{sr25519, Pair, Public};
-use sp_runtime::{
-	traits::IdentifyAccount,
-	types::BOOTSTRAP_SYSTEM_TOKEN_ID,
-};
+use sp_runtime::traits::IdentifyAccount;
 #[cfg(any(feature = "rococo-native", feature = "infra-relay-native"))]
 use telemetry::TelemetryEndpoints;
 // ToDo: Should change
@@ -239,21 +236,7 @@ fn infra_relay_staging_testnet_config_genesis(
 				.chain(initial_authorities.iter().map(|x| (x.0.clone(), STASH)))
 				.collect(),
 		},
-		assets: infra_relay::AssetsConfig {
-			assets: vec![(
-				BOOTSTRAP_SYSTEM_TOKEN_ID,                          	// asset_id
-				get_account_id_from_seed::<sr25519::Public>("Alice"), 	// owner
-				true,                                               	// is_sufficient
-				1,                                                  	// min_balance
-			)],
-			metadata: vec![(BOOTSTRAP_SYSTEM_TOKEN_ID, "iBOOT".into(), "iBOOT".into(), 4)],
-			accounts: vec![(
-				BOOTSTRAP_SYSTEM_TOKEN_ID,
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
-				10_000_000, 
-			)],
-			..Default::default()
-		},
+		assets: Default::default(),
 		indices: infra_relay::IndicesConfig { indices: vec![] },
 		session: infra_relay::SessionConfig {
 			keys: initial_authorities
@@ -778,21 +761,7 @@ pub fn infra_relay_testnet_genesis(
 		balances: infra_relay::BalancesConfig {
 			balances: endowed_accounts.iter().map(|k| (k.clone(), ENDOWMENT)).collect(),
 		},
-		assets: infra_relay::AssetsConfig {
-			assets: vec![(
-				BOOTSTRAP_SYSTEM_TOKEN_ID,                          	// asset_id
-				get_account_id_from_seed::<sr25519::Public>("Alice"), 	// owner
-				true,                                               	// is_sufficient
-				1,                                                  	// min_balance
-			)],
-			metadata: vec![(BOOTSTRAP_SYSTEM_TOKEN_ID, "iBOOT".into(), "iBOOT".into(), 4)],
-			accounts: vec![(
-				BOOTSTRAP_SYSTEM_TOKEN_ID,
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
-				10_000_000, 
-			)],
-			..Default::default()
-		},
+		assets: Default::default(),
 		session: infra_relay::SessionConfig {
 			keys: initial_authorities
 				.iter()

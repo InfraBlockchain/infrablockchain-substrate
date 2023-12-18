@@ -410,7 +410,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		amount: T::Balance,
 		maybe_check_issuer: Option<T::AccountId>,
 	) -> DispatchResult {
-		ensure!(id.ne(&BOOTSTRAP_SYSTEM_TOKEN_ID.into()), Error::<T, I>::InvalidAssetId);
 		Self::increase_balance(id.clone(), beneficiary, amount, |details| -> DispatchResult {
 			if let Some(check_issuer) = maybe_check_issuer {
 				ensure!(check_issuer == details.issuer, Error::<T, I>::NoPermission);
@@ -585,7 +584,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		maybe_need_admin: Option<T::AccountId>,
 		f: TransferFlags,
 	) -> Result<T::Balance, DispatchError> {
-		ensure!(id.ne(&BOOTSTRAP_SYSTEM_TOKEN_ID.into()), Error::<T, I>::InvalidAssetId);
 		let (balance, died) =
 			Self::transfer_and_die(id.clone(), source, dest, amount, maybe_need_admin, f)?;
 		if let Some(Remove) = died {
@@ -704,7 +702,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		is_sufficient: bool,
 		min_balance: T::Balance,
 	) -> DispatchResult {
-		ensure!(id.ne(&BOOTSTRAP_SYSTEM_TOKEN_ID.into()), Error::<T, I>::InvalidAssetId);
 		ensure!(!Asset::<T, I>::contains_key(&id), Error::<T, I>::InUse);
 		ensure!(!min_balance.is_zero(), Error::<T, I>::MinBalanceZero);
 
@@ -1017,22 +1014,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			})
 			.collect::<Vec<_>>()
 	}
-
-	/// Returns most balance for the given asset id.
-	pub fn get_most_account_balance(
-		asset_ids: impl IntoIterator<Item = sp_runtime::types::AssetId>,
-		account: T::AccountId,
-	) -> sp_runtime::types::AssetId {
-		let mut most_balance: (sp_runtime::types::AssetId, T::Balance) = Default::default();
-		for asset_id in asset_ids {
-			if let Some(balance) = Self::maybe_balance(asset_id.into(), account.clone()) {
-				if most_balance.1 < balance {
-					most_balance = (asset_id, balance);
-				}
-			}
-		}
-		most_balance.0
-	}
 }
 
 // Custom impl
@@ -1041,17 +1022,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		asset_id: &T::AssetId,
 	) -> Option<AssetDetails<T::Balance, T::AccountId, DepositBalanceOf<T, I>>> {
 		Asset::<T, I>::get(asset_id)
-	}
-
-	pub fn do_destory_bootstrap_asset() {
-		let bootstrap_system_token_id: T::AssetId = BOOTSTRAP_SYSTEM_TOKEN_ID.into();
-		if Asset::<T, I>::contains_key(&bootstrap_system_token_id) {
-			// Asset::<T, I>::remove(&bootstrap_system_token_id);
-			// Metadata::<T, I>::remove(&bootstrap_system_token_id);
-			Self::deposit_event(Event::BootstrapSystemTokenRemoved);
-		} else {
-			return
-		}
 	}
 
 	pub fn do_create_asset_with_metadata(
@@ -1067,24 +1037,17 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		asset_link_parents: u8,
 		system_token_weight: SystemTokenWeight,
 	) -> DispatchResult {
-		let owner = T::Lookup::lookup(owner)?;
 		let id: T::AssetId = id.into();
-
+		ensure!(!Asset::<T, I>::contains_key(&id), Error::<T, I>::InUse);
+		let owner = T::Lookup::lookup(owner)?;
 		let bounded_name: BoundedVec<u8, T::StringLimit> =
 			name.clone().try_into().map_err(|_| Error::<T, I>::BadMetadata)?;
-
 		let bounded_symbol: BoundedVec<u8, T::StringLimit> =
 			symbol.clone().try_into().map_err(|_| Error::<T, I>::BadMetadata)?;
-
 		Self::do_force_create(id.clone(), owner, is_sufficient, min_balance)?;
-		ensure!(Asset::<T, I>::contains_key(&id), Error::<T, I>::Unknown);
-
 		T::AssetLink::link_system_token(asset_link_parents, &id, system_token_id)?;
-
 		let mut details = Asset::<T, I>::get(&id).ok_or(Error::<T, I>::Unknown)?;
 		details.system_token_weight = system_token_weight;
-		// Remove bootstrap system token
-		Self::do_destory_bootstrap_asset();
 		Asset::<T, I>::insert(&id, details);
 		Metadata::<T, I>::try_mutate_exists(&id, |metadata| -> DispatchResult {
 			let deposit = metadata.take().map_or(Zero::zero(), |m| m.deposit);
@@ -1095,7 +1058,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 				decimals,
 				is_frozen,
 			});
-
 			Self::deposit_event(Event::MetadataSet {
 				asset_id: id.clone(),
 				name,
@@ -1140,10 +1102,33 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 		Ok(())
 	}
+
+	pub fn do_set_runtime_state() -> DispatchResult {
+		ensure!(State::<T, I>::get() == RuntimeState::Bootstrap, Error::<T, I>::NotInBootstrap);
+		let l = <Pallet<T, I> as SystemTokenLocalAssetProvider<sp_runtime::types::AssetId, T::AccountId>>::system_token_list()
+			.ok_or(Error::<T, I>::NotAllowedToChangeState)?;
+		let mut is_payable: bool = false;
+		for id in l {
+			if let Some(ad) = Self::asset_detail(&id.into()) {
+				if ad.supply.ge(&ad.min_balance) && ad.is_sufficient {
+					is_payable = true;
+					break;
+				}
+			}
+		}
+		ensure!(is_payable, Error::<T, I>::NotAllowedToChangeState);
+		State::<T, I>::put(RuntimeState::Normal);
+		Ok(())
+	}
 }
 
-impl<T: Config<I>, I: 'static> SystemTokenLocalAssetProvider for Pallet<T, I> {
-	fn token_list() -> Option<Vec<sp_runtime::types::AssetId>> {
+impl<T: Config<I>, I: 'static> SystemTokenLocalAssetProvider<sp_runtime::types::AssetId, T::AccountId> for Pallet<T, I> {
+
+	fn runtime_state() -> RuntimeState {
+		State::<T, I>::get()
+	}
+
+	fn system_token_list() -> Option<Vec<sp_runtime::types::AssetId>> {
 		let assets = Asset::<T, I>::iter_keys();
 		let token_list = assets
 			.into_iter()
@@ -1159,5 +1144,21 @@ impl<T: Config<I>, I: 'static> SystemTokenLocalAssetProvider for Pallet<T, I> {
 		} else {
 			Some(token_list)
 		}
+	}
+
+	/// Returns most balance for the given asset id.
+	fn get_most_account_system_token_balance(
+		asset_ids: impl IntoIterator<Item = sp_runtime::types::AssetId>,
+		account: T::AccountId,
+	) -> sp_runtime::types::AssetId {
+		let mut most_balance: (sp_runtime::types::AssetId, T::Balance) = Default::default();
+		for asset_id in asset_ids {
+			if let Some(balance) = Self::maybe_balance(asset_id.into(), account.clone()) {
+				if most_balance.1 < balance {
+					most_balance = (asset_id, balance);
+				}
+			}
+		}
+		most_balance.0
 	}
 }
