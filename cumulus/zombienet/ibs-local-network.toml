@@ -1,5 +1,5 @@
 [relaychain]
-default_command = "./target/release/infrablockspace"
+default_command = "./target/release/infrablockchain"
 default_args = ["-lparachain=debug", "-l=xcm=trace"]
 chain = "infra-relay-local"
 
@@ -109,7 +109,7 @@ rpc_port = 10000
 ws_port = 10001
 
 [[parachains]]
-id = 9999
+id = 2000
 chain = "urauth-infra-local"
 cumulus_based = true
 

@@ -15,11 +15,20 @@ pub type VoteWeight = softfloat::F64;
 pub type VoteAssetId = u32;
 
 pub const MAX_VOTE_NUM: u32 = 16 * 1024;
+use serde::{Deserialize, Serialize};
 
 /// Aggregated votes with maximum amount `MAX_VOTE_NUM`
 pub type PotVotesResult = BoundedVec<PotVote, ConstU32<MAX_VOTE_NUM>>;
+pub type PotVotesU128Result = Vec<PotVoteU128>;
 
-#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
+/// Convert pot votes to PotVotesU128Result
+pub fn convert_pot_votes(votes: PotVotesResult) -> PotVotesU128Result {
+	let converted_votes: Vec<PotVoteU128> = votes.into_iter().map(|vote| vote.to_u128()).collect();
+
+	converted_votes
+}
+
+#[derive(Encode, Decode, Clone, PartialEq, Eq, sp_core::RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Default, Hash))]
 /// Single Pot vote type
 pub struct PotVote {
@@ -42,8 +51,28 @@ impl PotVote {
 	}
 }
 
+impl PotVote {
+	/// Type cast from PotVote to PotVoteU128
+	pub fn to_u128(&self) -> PotVoteU128 {
+		let vote_weight = self.vote_weight.to_i32() as u128;
+		PotVoteU128 {
+			system_token_id: self.system_token_id.clone(),
+			account_id: self.account_id.clone(),
+			vote_weight,
+		}
+	}
+}
+
+#[derive(Encode, Decode, Clone, PartialEq, Eq, sp_core::RuntimeDebug, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Default, Hash))]
+pub struct PotVoteU128 {
+	pub system_token_id: SystemTokenId,
+	pub account_id: VoteAccountId,
+	pub vote_weight: u128,
+}
+
 #[derive(Encode, Decode, PartialEq, Eq, Clone, Debug, TypeInfo)]
-// #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 /// Transaction-as-a-Vote
 ///
 /// Vote is included in transaction and send to blockchain.
@@ -131,7 +160,7 @@ mod tests {
 	fn do_not_insert_value_if_exceeds_works() {
 		let candidate: VoteAccountId = AccountId32::new([0u8; 32]);
 		let system_token_id = SystemTokenId::new(2000, 50, 99);
-		let vote_weight: VoteWeight = 1;
+		let vote_weight: VoteWeight = F64::from_i32(1);
 		let mut pot_votes = new_pot_votes(system_token_id.clone(), candidate.clone(), vote_weight);
 		for _ in 1..MAX_VOTE_NUM + 1 {
 			pot_votes.update_vote_weight(system_token_id, candidate.clone(), 1);
@@ -142,7 +171,7 @@ mod tests {
 	#[test]
 	fn get_votes_works() {
 		let candidate: VoteAccountId = AccountId32::new([0u8; 32]);
-		let vote_weight: VoteWeight = 1;
+		let vote_weight: VoteWeight = F64::from_i32(1);
 		let mut pot_votes =
 			new_pot_votes(SystemTokenId::new(2000, 50, 99), candidate.clone(), vote_weight);
 		pot_votes.update_vote_weight(

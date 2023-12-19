@@ -48,7 +48,9 @@ use primitives::{
 use scale_info::TypeInfo;
 use softfloat::F64;
 use sp_runtime::{
-	traits::One, types::PotVotesResult, DispatchError, SaturatedConversion, Saturating,
+	traits::One,
+	types::{convert_pot_votes, PotVotesU128Result},
+	DispatchError, SaturatedConversion, Saturating,
 };
 #[cfg(feature = "std")]
 use sp_std::fmt;
@@ -306,7 +308,7 @@ pub mod pallet {
 		/// Some upward messages have been received and will be processed.
 		UpwardMessagesReceived { from: ParaId, count: u32 },
 		/// Pot Vote has been collected
-		VoteCollected(ParaId, PotVotesResult, F64),
+		VoteCollected(ParaId, PotVotesU128Result, u128),
 	}
 
 	#[pallet::error]
@@ -921,12 +923,11 @@ impl<T: Config> Pallet<T> {
 		let mut is_collected: bool = false;
 
 		let block_time_weight: F64 = {
-			// x = current block number / BLOCKS_PER_YEAR
-			let block_number: u32 = relay_parent_number.saturated_into();
-			// ln2 * x
-			let pow: F64 =
-				F64::from_i32(2).ln() * F64::from_i32(block_number as i32).div(BLOCKS_PER_YEAR);
-			// 2 ^ x = exp ^ (ln2 * x)
+			let current_block_number: u32 = relay_parent_number.saturated_into();
+			// pow = ln2 * current block number / BLOCKS_PER_YEAR
+			let pow: F64 = F64::from_i32(2).ln() *
+				F64::from_i32(current_block_number as i32).div(BLOCKS_PER_YEAR);
+			// block_time_weight = 2 ^ x = exp ^ (pow)
 			let block_time_weight = pow.exp();
 			block_time_weight
 		};
@@ -963,10 +964,13 @@ impl<T: Config> Pallet<T> {
 				};
 			}
 			if is_collected {
+				let vote_result_u128 = convert_pot_votes(vote_result);
+				let block_time_weight_u128 = block_time_weight.to_i32() as u128;
+
 				Self::deposit_event(Event::<T>::VoteCollected(
 					receipt.descriptor.para_id,
-					vote_result,
-					block_time_weight,
+					vote_result_u128,
+					block_time_weight_u128,
 				));
 			}
 		};

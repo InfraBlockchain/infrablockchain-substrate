@@ -9,5 +9,8 @@ pub use self::{
 	token::{
 		AssetId, PalletId, ParaId, SystemTokenId, SystemTokenLocalAssetProvider, SystemTokenWeight,
 	},
-	vote::{PotVote, PotVotes, PotVotesResult, VoteAccountId, VoteAssetId, VoteWeight},
+	vote::{
+		convert_pot_votes, PotVote, PotVotes, PotVotesResult, PotVotesU128Result, VoteAccountId,
+		VoteAssetId, VoteWeight,
+	},
 };
