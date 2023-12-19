@@ -152,11 +152,24 @@ pub mod weights;
 mod extra_mutator;
 pub use extra_mutator::*;
 mod functions;
+
 mod impl_fungibles;
 mod impl_stored_map;
 pub mod types;
 pub use types::*;
 
+use frame_support::{
+	pallet_prelude::*,
+	traits::{
+		tokens::{fungibles, DepositConsequence, WithdrawConsequence},
+		Currency, EnsureOriginWithArg, ReservableCurrency, StoredMap, ContainsPair, AccountTouch,
+		BalanceStatus::Reserved
+	},
+	storage::KeyPrefixIterator
+};
+use frame_system::pallet_prelude::*;
+
+use core::marker::PhantomData;
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Saturating, StaticLookup, Zero},
@@ -165,17 +178,6 @@ use sp_runtime::{
 };
 use sp_std::prelude::*;
 
-use frame_support::{
-	dispatch::DispatchResult,
-	ensure,
-	pallet_prelude::DispatchResultWithPostInfo,
-	storage::KeyPrefixIterator,
-	traits::{
-		tokens::{fungibles, DepositConsequence, WithdrawConsequence},
-		BalanceStatus::Reserved,
-		Currency, EnsureOriginWithArg, ReservableCurrency, StoredMap,
-	},
-};
 use frame_system::Config as SystemConfig;
 
 pub use pallet::*;
@@ -183,6 +185,14 @@ pub use weights::WeightInfo;
 
 type AccountIdLookupOf<T> = <<T as frame_system::Config>::Lookup as StaticLookup>::Source;
 const LOG_TARGET: &str = "runtime::assets";
+
+/// Origin for the parachains module.
+#[derive(PartialEq, Eq, Clone, Encode, Decode, TypeInfo, RuntimeDebug, MaxEncodedLen)]
+#[scale_info(skip_type_params(I))]
+pub enum RawOrigin<T, I> {
+	Relay,
+	_Phantom(PhantomData<(T, I)>),
+}
 
 /// Trait with callbacks that are executed after successfull asset creation or destruction.
 pub trait AssetsCallback<AssetId, AccountId> {
@@ -203,11 +213,7 @@ impl<AssetId, AccountId> AssetsCallback<AssetId, AccountId> for () {}
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use frame_support::{
-		pallet_prelude::*,
-		traits::{AccountTouch, ContainsPair},
-	};
-	use frame_system::pallet_prelude::*;
+	use functions::ensure_dispatch_from_relay;
 
 	/// The current storage version.
 	const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -233,6 +239,10 @@ pub mod pallet {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self, I>>
 			+ IsType<<Self as frame_system::Config>::RuntimeEvent>;
+
+		// type RuntimeOrigin: From<RawOrigin<Self, I>>
+		// 	+ From<<Self as frame_system::Config>::RuntimeOrigin>
+		// 	+ Into<Result<RawOrigin<Self, I>, <Self as Config<I>>::RuntimeOrigin>>;
 
 		/// The units in which we record balances.
 		type Balance: Member
@@ -280,14 +290,14 @@ pub mod pallet {
 		/// Standard asset class creation is only allowed if the origin attempting it and the
 		/// asset class are in this set.
 		type CreateOrigin: EnsureOriginWithArg<
-			Self::RuntimeOrigin,
+			<Self as frame_system::Config>::RuntimeOrigin,
 			Self::AssetId,
 			Success = Self::AccountId,
 		>;
 
 		/// The origin which may forcibly create or destroy an asset or otherwise alter privileged
 		/// attributes.
-		type ForceOrigin: EnsureOrigin<Self::RuntimeOrigin>;
+		type ForceOrigin: EnsureOrigin<<Self as frame_system::Config>::RuntimeOrigin>;
 
 		/// The basic amount of funds that must be reserved for an asset.
 		#[pallet::constant]
@@ -459,6 +469,9 @@ pub mod pallet {
 		}
 	}
 
+	// #[pallet::origin]
+	// pub type Origin<T, I = ()> = RawOrigin<T, I>;
+
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
@@ -554,6 +567,8 @@ pub mod pallet {
 		NoSufficientTokenToPay,
 		/// The ParaFeeRate has been updated
 		ParaFeeRateUpdated { para_fee_rate: u128 },
+		/// Runtime state has been changed to Normal state
+		RuntimeStateUpdated { from: RuntimeState, to: RuntimeState }
 	}
 
 	#[pallet::error]
@@ -1873,7 +1888,8 @@ pub mod pallet {
 		#[pallet::call_index(38)]
 		#[pallet::weight(T::WeightInfo::block())]
 		pub fn set_runtime_state(origin: OriginFor<T>) -> DispatchResult {
-			T::ForceOrigin::ensure_origin(origin)?;
+			// ensure_dispatch_from_relay(<T as Config<I>>::RuntimeOrigin::from(origin))?;
+			ensure_root(origin)?;
 			Self::do_set_runtime_state()?;
 			Ok(())
 		}

@@ -27,6 +27,7 @@ pub(super) enum DeadConsequence {
 }
 
 use DeadConsequence::*;
+use sp_runtime::traits::BadOrigin;
 
 // The main implementation block for the module.
 impl<T: Config<I>, I: 'static> Pallet<T, I> {
@@ -1105,8 +1106,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 	pub fn do_set_runtime_state() -> DispatchResult {
 		ensure!(State::<T, I>::get() == RuntimeState::Bootstrap, Error::<T, I>::NotInBootstrap);
-		let l = <Pallet<T, I> as SystemTokenLocalAssetProvider<sp_runtime::types::AssetId, T::AccountId>>::system_token_list()
-			.ok_or(Error::<T, I>::NotAllowedToChangeState)?;
+		let l = <Pallet<T, I> as SystemTokenLocalAssetProvider<sp_runtime::types::AssetId, T::AccountId>>::system_token_list();
+		ensure!(!l.is_empty(), Error::<T, I>::NotAllowedToChangeState);
 		let mut is_payable: bool = false;
 		for id in l {
 			if let Some(ad) = Self::asset_detail(&id.into()) {
@@ -1118,6 +1119,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		}
 		ensure!(is_payable, Error::<T, I>::NotAllowedToChangeState);
 		State::<T, I>::put(RuntimeState::Normal);
+		Self::deposit_event(Event::<T, I>::RuntimeStateUpdated { 
+			from: RuntimeState::Bootstrap, 
+			to: RuntimeState::Normal
+		});
 		Ok(())
 	}
 }
@@ -1128,7 +1133,7 @@ impl<T: Config<I>, I: 'static> SystemTokenLocalAssetProvider<sp_runtime::types::
 		State::<T, I>::get()
 	}
 
-	fn system_token_list() -> Option<Vec<sp_runtime::types::AssetId>> {
+	fn system_token_list() -> Vec<sp_runtime::types::AssetId> {
 		let assets = Asset::<T, I>::iter_keys();
 		let token_list = assets
 			.into_iter()
@@ -1138,12 +1143,10 @@ impl<T: Config<I>, I: 'static> SystemTokenLocalAssetProvider<sp_runtime::types::
 					.map(|_| asset.into())
 			})
 			.collect::<Vec<sp_runtime::types::AssetId>>();
-		if token_list.is_empty() {
+		if State::<T, I>::get() != RuntimeState::Bootstrap && token_list.is_empty() {
 			Self::deposit_event(Event::<T, I>::NoSufficientTokenToPay);
-			None
-		} else {
-			Some(token_list)
 		}
+		token_list
 	}
 
 	/// Returns most balance for the given asset id.
@@ -1160,5 +1163,15 @@ impl<T: Config<I>, I: 'static> SystemTokenLocalAssetProvider<sp_runtime::types::
 			}
 		}
 		most_balance.0
+	}
+}
+
+pub fn ensure_dispatch_from_relay<OuterOrigin, T, I>(o: OuterOrigin) -> Result<(), BadOrigin> 
+where
+	OuterOrigin: Into<Result<RawOrigin<T, I>, OuterOrigin>>,
+{
+	match o.into() {
+		Ok(RawOrigin::<T, I>::Relay) => Ok(()),
+		_ => Err(BadOrigin),
 	}
 }

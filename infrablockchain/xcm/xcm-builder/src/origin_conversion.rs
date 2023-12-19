@@ -177,7 +177,7 @@ impl<RelayOrigin: Get<RuntimeOrigin>, RuntimeOrigin> ConvertOrigin<RuntimeOrigin
 		kind: OriginKind,
 	) -> Result<RuntimeOrigin, MultiLocation> {
 		let origin = origin.into();
-		log::trace!(target: "xcm::origin_conversion", "RelayChainAsNative origin: {:?}, kind: {:?}", origin, kind);
+		log::debug!(target: "xcm::origin_conversion", "RelayChainAsNative origin: {:?}, kind: {:?}", origin, kind);
 		if kind == OriginKind::Native && origin.contains_parents_only(1) {
 			Ok(RelayOrigin::get())
 		} else {

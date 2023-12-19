@@ -810,8 +810,8 @@ pub fn infra_relay_testnet_genesis(
 		xcm_pallet: Default::default(),
 		validator_election: infra_relay::ValidatorElectionConfig {
 			seed_trust_validators: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
-			total_validator_slots: 6,
-			seed_trust_slots: 6,
+			total_validator_slots: 2,
+			seed_trust_slots: 2,
 			..Default::default()
 		},
 	}

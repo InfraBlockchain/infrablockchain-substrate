@@ -33,7 +33,7 @@ pub mod pallet {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Some authorized origins(e.g Relay Chain) to do some action
-		type AuthorizedOrigin: EnsureOrigin<Self::RuntimeOrigin>;
+		type AuthorizedOrigin: EnsureOrigin<<Self as frame_system::Config>::RuntimeOrigin>;
 	}
 
 	#[pallet::event]
