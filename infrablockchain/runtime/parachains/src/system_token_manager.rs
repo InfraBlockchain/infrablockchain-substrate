@@ -1109,12 +1109,12 @@ impl<T: Config> SystemTokenInterface for Pallet<T> {
 	fn adjusted_weight(original: SystemTokenId, vote_weight: VoteWeight) -> VoteWeight {
 		if let Some(p) = <SystemTokenProperties<T>>::get(original) {
 			let system_token_weight = {
-				let w = p.system_token_weight.map_or(BASE_WEIGHT, |w| w as u32);
+				let w: u128 = p.system_token_weight.map_or(BASE_WEIGHT, |w| w);
 				let system_token_weight = F64::from_i32(w as i32);
 				system_token_weight
 			};
 			let base_weight = F64::from_i32(BASE_WEIGHT as i32);
-			return vote_weight.mul(system_token_weight) / base_weight
+			return vote_weight.mul(system_token_weight).div(base_weight)
 		}
 		vote_weight
 	}
@@ -1148,7 +1148,7 @@ pub mod types {
 		Pending,
 	}
 
-	pub const BASE_WEIGHT: u32 = 1_000_000;
+	pub const BASE_WEIGHT: u128 = 1_000_000;
 
 	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, Default, TypeInfo)]
 	pub struct ParaCallMetadata {

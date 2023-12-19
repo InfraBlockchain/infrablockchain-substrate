@@ -225,7 +225,7 @@ impl<T: Config> Pallet<T> {
 	fn distribute_reward(session_index: SessionIndex) {
 		let current_validators = T::ValidatorSet::validators();
 		let aggregated_rewards = TotalSessionRewards::<T>::get(session_index).unwrap_or_default();
-		let soft_current_validators = F64::from_i32(current_validators.len() as i32);
+		let len_current_validators = F64::from_i32(current_validators.len() as i32);
 
 		if aggregated_rewards.is_empty() {
 			return
@@ -240,11 +240,11 @@ impl<T: Config> Pallet<T> {
 						.iter_mut()
 						.find(|ar| ar.system_token_id == aggregated_reward.system_token_id)
 					{
-						reward.amount += aggregated_reward.amount.div(soft_current_validators)
+						reward.amount += aggregated_reward.amount.div(len_current_validators)
 					} else {
 						let new_reward = ValidatorReward::new(
 							aggregated_reward.clone().system_token_id,
-							aggregated_reward.clone().amount.div(soft_current_validators),
+							aggregated_reward.clone().amount.div(len_current_validators),
 						);
 						rewards.push(new_reward);
 					}
@@ -255,7 +255,7 @@ impl<T: Config> Pallet<T> {
 				for aggregated_reward in aggregated_rewards.iter() {
 					let reward = ValidatorReward::new(
 						aggregated_reward.clone().system_token_id,
-						aggregated_reward.amount.div(soft_current_validators),
+						aggregated_reward.amount.div(len_current_validators),
 					);
 					rewards.push(reward);
 				}

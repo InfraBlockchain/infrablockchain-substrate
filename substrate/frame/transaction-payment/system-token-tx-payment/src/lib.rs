@@ -321,9 +321,9 @@ where
 								tip,
 								vote_candidate: Some(vote_candidate.clone()),
 							});
+
 							// Update vote
-							let a: u128 = converted_fee.into();
-							let vote_weight = F64::from_i32(a as i32);
+							let vote_weight = F64::from_i32(converted_fee.into() as i32);
 							T::VotingHandler::update_pot_vote(
 								vote_candidate.clone().into(),
 								system_token_id.clone(),

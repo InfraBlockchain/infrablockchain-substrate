@@ -29,10 +29,8 @@ use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::MaybeDisplay,
 	types::{ParaId, SystemTokenId, VoteAccountId, VoteWeight},
-	RuntimeDebug, Saturating,
+	RuntimeDebug,
 };
-
-use softfloat::F64;
 
 #[cfg(test)]
 mod tests;
@@ -138,11 +136,10 @@ impl<T: Config> VotingStatus<T> {
 	pub fn add_points(&mut self, who: &T::InfraVoteAccountId, vote_points: T::InfraVotePoints) {
 		for s in self.status.iter_mut() {
 			if &s.0 == who {
-				let a: VoteWeight = s.1.clone().into();
-				let b: VoteWeight = vote_points.into();
-				let res = a.add(b);
-				s.1 = res.into();
-				return
+				let current_vote_weight: VoteWeight = s.1.clone().into();
+				let additional_vote_weight: VoteWeight = vote_points.into();
+				s.1 = current_vote_weight.add(additional_vote_weight).into();
+				return;
 			}
 		}
 		self.status.push((who.clone(), vote_points));
@@ -152,10 +149,10 @@ impl<T: Config> VotingStatus<T> {
 		self.status.len()
 	}
 
-	// /// Sort vote status for decreasing order
-	// pub fn sort_by_vote_points(&mut self) {
-	// 	self.status.sort_by(|x, y| y.1.cmp(&x.1));
-	// }
+	/// Sort vote status for decreasing order
+	pub fn sort_by_vote_points(&mut self) {
+		self.status.sort_by(|x, y| y.1.cmp(&x.1));
+	}
 
 	/// Get top validators for given vote status.
 	/// We elect validators based on PoT which has exceeded the minimum vote points.

@@ -39,7 +39,7 @@ use xcm_builder::{
 	AllowTopLevelPaidExecutionFrom, BackingToPlurality, ChildParachainAsNative,
 	ChildParachainConvertsVia, FixedWeightBounds, FungiblesAdapter, LocalMint, NonLocalMint,
 	ParentIsPreset, SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-	SovereignSignedViaLocation, TakeWeightCredit, WeightInfoBounds,
+	SovereignSignedViaLocation, TakeWeightCredit,
 };
 use xcm_executor::traits::WithOriginFilter;
 use xcm_primitives::TrappistDropAssets;

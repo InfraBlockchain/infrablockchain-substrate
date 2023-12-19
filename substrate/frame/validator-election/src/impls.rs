@@ -278,7 +278,7 @@ impl<T: Config> Pallet<T> {
 		// PoT election phase
 		log!(trace, "Elect pot validators at era {:?}", era_index);
 		let mut voting_status = PotValidatorPool::<T>::get();
-		// voting_status.sort_by_vote_points();
+		voting_status.sort_by_vote_points();
 		let new = voting_status.top_validators(num_pot).clone();
 		let old = PotValidators::<T>::get();
 		if new.is_empty() {
