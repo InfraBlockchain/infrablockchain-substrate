@@ -3295,8 +3295,8 @@ dependencies = [
  "cumulus-test-service",
  "futures",
  "futures-timer",
+ "infrablockchain-cli",
  "infrablockchain-service",
- "polkadot-cli",
  "polkadot-test-client",
  "primitives",
  "prioritized-metered-channel",
@@ -3500,6 +3500,7 @@ dependencies = [
  "frame-system",
  "frame-system-rpc-runtime-api",
  "futures",
+ "infrablockchain-cli",
  "infrablockchain-overseer",
  "infrablockchain-service",
  "jsonrpsee",
@@ -3509,7 +3510,6 @@ dependencies = [
  "pallet-transaction-payment",
  "parachains-common",
  "parity-scale-codec",
- "polkadot-cli",
  "polkadot-test-service",
  "portpicker",
  "primitives",
@@ -5988,6 +5988,7 @@ dependencies = [
  "frame-benchmarking-cli",
  "futures",
  "hex-literal 0.4.1",
+ "infrablockchain-cli",
  "infrablockchain-service",
  "jsonrpsee",
  "log",
@@ -5995,7 +5996,6 @@ dependencies = [
  "pallet-transaction-payment-rpc",
  "parachains-common",
  "parity-scale-codec",
- "polkadot-cli",
  "primitives",
  "sc-basic-authorship",
  "sc-chain-spec",
@@ -6154,6 +6154,7 @@ version = "1.1.0"
 dependencies = [
  "assert_cmd",
  "color-eyre",
+ "infrablockchain-cli",
  "infrablockchain-core-primitives",
  "infrablockchain-overseer",
  "nix 0.26.4",
@@ -6161,12 +6162,38 @@ dependencies = [
  "node-core-pvf-common",
  "node-core-pvf-execute-worker",
  "node-core-pvf-prepare-worker",
- "polkadot-cli",
  "substrate-build-script-utils",
  "substrate-rpc-client",
  "tempfile",
  "tikv-jemallocator",
  "tokio",
+]
+
+[[package]]
+name = "infrablockchain-cli"
+version = "1.1.0"
+dependencies = [
+ "clap 4.4.11",
+ "frame-benchmarking-cli",
+ "futures",
+ "infrablockchain-service",
+ "log",
+ "node-metrics",
+ "pyroscope",
+ "pyroscope_pprofrs",
+ "sc-cli",
+ "sc-executor",
+ "sc-service",
+ "sc-storage-monitor",
+ "sc-sysinfo",
+ "sc-tracing",
+ "sp-core",
+ "sp-io",
+ "sp-keyring",
+ "sp-maybe-compressed-blob",
+ "substrate-build-script-utils",
+ "thiserror",
+ "try-runtime-cli",
 ]
 
 [[package]]
@@ -11555,12 +11582,12 @@ dependencies = [
  "frame-benchmarking",
  "frame-benchmarking-cli",
  "futures",
+ "infrablockchain-cli",
  "jsonrpsee",
  "log",
  "pallet-transaction-payment-rpc",
  "parachain-template-runtime",
  "parity-scale-codec",
- "polkadot-cli",
  "primitives",
  "sc-basic-authorship",
  "sc-chain-spec",
@@ -12074,33 +12101,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "polkadot-cli"
-version = "1.1.0"
-dependencies = [
- "clap 4.4.11",
- "frame-benchmarking-cli",
- "futures",
- "infrablockchain-service",
- "log",
- "node-metrics",
- "pyroscope",
- "pyroscope_pprofrs",
- "sc-cli",
- "sc-executor",
- "sc-service",
- "sc-storage-monitor",
- "sc-sysinfo",
- "sc-tracing",
- "sp-core",
- "sp-io",
- "sp-keyring",
- "sp-maybe-compressed-blob",
- "substrate-build-script-utils",
- "thiserror",
- "try-runtime-cli",
-]
-
-[[package]]
 name = "polkadot-primitives-test-helpers"
 version = "1.0.0"
 dependencies = [
@@ -12203,6 +12203,7 @@ dependencies = [
  "color-eyre",
  "futures",
  "futures-timer",
+ "infrablockchain-cli",
  "infrablockchain-erasure-coding",
  "node-core-backing",
  "node-core-candidate-validation",
@@ -12215,7 +12216,6 @@ dependencies = [
  "node-subsystem-test-helpers",
  "node-subsystem-types",
  "node-subsystem-util",
- "polkadot-cli",
  "primitives",
  "rand 0.8.5",
  "sp-core",
@@ -17666,6 +17666,7 @@ dependencies = [
  "clap 4.4.11",
  "futures",
  "futures-timer",
+ "infrablockchain-cli",
  "infrablockchain-service",
  "log",
  "node-core-pvf",
@@ -17673,7 +17674,6 @@ dependencies = [
  "node-subsystem",
  "parachain-primitives",
  "parity-scale-codec",
- "polkadot-cli",
  "polkadot-test-service",
  "primitives",
  "sc-cli",
@@ -17714,6 +17714,7 @@ dependencies = [
  "clap 4.4.11",
  "futures",
  "futures-timer",
+ "infrablockchain-cli",
  "infrablockchain-service",
  "log",
  "node-core-pvf",
@@ -17721,7 +17722,6 @@ dependencies = [
  "node-subsystem",
  "parachain-primitives",
  "parity-scale-codec",
- "polkadot-cli",
  "polkadot-test-service",
  "primitives",
  "sc-cli",

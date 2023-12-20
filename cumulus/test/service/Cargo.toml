@@ -58,7 +58,7 @@ sc-executor-common = { path = "../../../substrate/client/executor/common" }
 primitives = { path = "../../../infrablockchain/primitives" }
 infrablockchain-service = { path = "../../../infrablockchain/node/service" }
 polkadot-test-service = { path = "../../../infrablockchain/node/test/service" }
-polkadot-cli = { path = "../../../infrablockchain/cli" }
+infrablockchain-cli = { path = "../../../infrablockchain/cli" }
 node-subsystem = { path = "../../../infrablockchain/node/subsystem" }
 infrablockchain-overseer = { path = "../../../infrablockchain/node/overseer" }
 
@@ -101,7 +101,7 @@ runtime-benchmarks = [
 	"pallet-im-online/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 	"parachains-common/runtime-benchmarks",
-	"polkadot-cli/runtime-benchmarks",
+	"infrablockchain-cli/runtime-benchmarks",
 	"primitives/runtime-benchmarks",
 	"infrablockchain-service/runtime-benchmarks",
 	"polkadot-test-service/runtime-benchmarks",

@@ -107,8 +107,7 @@ impl<T: Config> Pallet<T> {
 		u128: From<<T as pallet_assets::Config>::Balance>,
 	{
 		let fee_account = system_token_helper::sovereign_account::<T>();
-		let system_token_asset_list =
-			pallet_assets::Pallet::<T>::token_list().map_or(Default::default(), |l| l);
+		let system_token_asset_list = pallet_assets::Pallet::<T>::system_token_list();
 		let balances = pallet_assets::Pallet::<T>::account_balances(fee_account.clone());
 		for (asset_id, amount) in balances.iter() {
 			if !system_token_helper::inspect_account_and_check_is_owner::<T>(&asset_id) ||

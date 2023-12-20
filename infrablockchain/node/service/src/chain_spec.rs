@@ -236,12 +236,7 @@ fn infra_relay_staging_testnet_config_genesis(
 				.chain(initial_authorities.iter().map(|x| (x.0.clone(), STASH)))
 				.collect(),
 		},
-		assets: infra_relay::AssetsConfig {
-			assets: vec![],
-			metadata: vec![],
-			accounts: vec![],
-			..Default::default()
-		},
+		assets: Default::default(),
 		indices: infra_relay::IndicesConfig { indices: vec![] },
 		session: infra_relay::SessionConfig {
 			keys: initial_authorities
@@ -262,6 +257,7 @@ fn infra_relay_staging_testnet_config_genesis(
 				})
 				.collect::<Vec<_>>(),
 		},
+		#[cfg(feature = "fast-runtime")]
 		sudo: infra_relay::SudoConfig { key: Some(root_key) },
 		phragmen_election: Default::default(),
 		democracy: Default::default(),
@@ -617,12 +613,12 @@ fn rococo_staging_testnet_config_genesis(
 #[cfg(feature = "infra-relay-native")]
 pub fn infra_relay_staging_testnet_config() -> Result<InfraRelayChainSpec, String> {
 	let wasm_binary =
-		infra_relay::WASM_BINARY.ok_or("Infra Relay development wasm not available")?;
+		infra_relay::WASM_BINARY.ok_or("InfraRelayChain-staging wasm not available")?;
 	let boot_nodes = vec![];
 
 	Ok(InfraRelayChainSpec::from_genesis(
-		"Infra Relay Staging Testnet",
-		"infra_relay_staging_testnet",
+		"InfraRelayChain-Staging",
+		"infra_relay_chain_staging",
 		ChainType::Live,
 		move || InfraRelayGenesisExt {
 			runtime_genesis_config: infra_relay_staging_testnet_config_genesis(wasm_binary),
@@ -631,7 +627,7 @@ pub fn infra_relay_staging_testnet_config() -> Result<InfraRelayChainSpec, Strin
 		boot_nodes,
 		Some(
 			TelemetryEndpoints::new(vec![(INFRA_RELAY_STAGING_TELEMETRY_URL.to_string(), 0)])
-				.expect("Westend Staging telemetry url is valid; qed"),
+				.expect("InfraRelayChain-Staging telemetry url is valid; qed"),
 		),
 		Some(DEFAULT_INFRA_PROTOCOL_ID),
 		None,
@@ -766,21 +762,7 @@ pub fn infra_relay_testnet_genesis(
 		balances: infra_relay::BalancesConfig {
 			balances: endowed_accounts.iter().map(|k| (k.clone(), ENDOWMENT)).collect(),
 		},
-		assets: infra_relay::AssetsConfig {
-			assets: vec![(
-				99,                                                 // asset_id
-				get_account_id_from_seed::<sr25519::Public>("Bob"), // owner
-				true,                                               // is_sufficient
-				1,                                                  // min_balance
-			)],
-			metadata: vec![(99, "iTEST".into(), "iTEST".into(), 12)],
-			accounts: vec![(
-				99,
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
-				1_000_000_000_000, // endow only 1 iTest for test
-			)],
-			..Default::default()
-		},
+		assets: Default::default(),
 		session: infra_relay::SessionConfig {
 			keys: initial_authorities
 				.iter()
@@ -800,6 +782,7 @@ pub fn infra_relay_testnet_genesis(
 				})
 				.collect::<Vec<_>>(),
 		},
+		#[cfg(feature = "fast-runtime")]
 		sudo: infra_relay::SudoConfig { key: Some(root_key) },
 		phragmen_election: Default::default(),
 		democracy: infra_relay::DemocracyConfig::default(),
@@ -829,8 +812,8 @@ pub fn infra_relay_testnet_genesis(
 		xcm_pallet: Default::default(),
 		validator_election: infra_relay::ValidatorElectionConfig {
 			seed_trust_validators: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
-			total_validator_slots: 6,
-			seed_trust_slots: 6,
+			total_validator_slots: 2,
+			seed_trust_slots: 2,
 			..Default::default()
 		},
 	}
@@ -944,7 +927,7 @@ fn infra_relay_development_config_genesis(wasm_binary: &[u8]) -> infra_relay::Ru
 /// Returns the properties for the [`InfraBlockspaceChainSpec`].
 pub fn infra_relay_chain_spec_properties() -> serde_json::map::Map<String, serde_json::Value> {
 	serde_json::json!({
-		"tokenDecimals": 10,
+		"tokenDecimals": 4,
 	})
 	.as_object()
 	.expect("Map given; qed")
@@ -954,12 +937,11 @@ pub fn infra_relay_chain_spec_properties() -> serde_json::map::Map<String, serde
 /// Infra Relay development config
 #[cfg(feature = "infra-relay-native")]
 pub fn infra_relay_development_config() -> Result<InfraRelayChainSpec, String> {
-	let wasm_binary =
-		infra_relay::WASM_BINARY.ok_or("Infra Relay development wasm not available")?;
+	let wasm_binary = infra_relay::WASM_BINARY.ok_or("InfraRelayChain-Dev wasm not available")?;
 
 	Ok(InfraRelayChainSpec::from_genesis(
-		"Infra Relay Devnet",
-		"infra_relay_devnet",
+		"InfraRelayChain-Dev",
+		"infra_relay_chain-dev",
 		ChainType::Development,
 		move || InfraRelayGenesisExt {
 			runtime_genesis_config: infra_relay_development_config_genesis(wasm_binary),

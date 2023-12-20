@@ -257,7 +257,7 @@ where
 					} else {
 						// This point is reached if the network has shut down, at which point there is not
 						// much else to do than to shut down the authority discovery as well.
-						return;
+						return
 					}
 				},
 				// Handle messages from [`Service`]. Ignore if sender side is closed.

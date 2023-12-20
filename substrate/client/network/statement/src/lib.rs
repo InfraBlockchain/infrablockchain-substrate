@@ -268,7 +268,7 @@ where
 						self.handle_network_event(network_event).await;
 					} else {
 						// Networking has seemingly closed. Closing as well.
-						return;
+						return
 					}
 				},
 				sync_event = self.sync_event_stream.next() => {
@@ -276,7 +276,7 @@ where
 						self.handle_sync_event(sync_event);
 					} else {
 						// Syncing has seemingly closed. Closing as well.
-						return;
+						return
 					}
 				}
 			}

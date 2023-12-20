@@ -20,7 +20,7 @@ log = "0.4.17"
 
 test-parachain-undying = { path = ".." }
 primitives = { path = "../../../../primitives" }
-polkadot-cli = { path = "../../../../cli" }
+infrablockchain-cli = { path = "../../../../cli" }
 infrablockchain-service = { path = "../../../../node/service", features = ["rococo-native"] }
 node-primitives = { path = "../../../../node/primitives" }
 node-subsystem = { path = "../../../../node/subsystem" }

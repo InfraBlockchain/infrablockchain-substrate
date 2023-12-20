@@ -55,12 +55,16 @@ impl MalusCli {
 			NemesisVariant::BackGarbageCandidate(opts) => {
 				let BackGarbageCandidateOptions { percentage, cli } = opts;
 
-				polkadot_cli::run_node(cli, BackGarbageCandidates { percentage }, finality_delay)?
+				infrablockchain_cli::run_node(
+					cli,
+					BackGarbageCandidates { percentage },
+					finality_delay,
+				)?
 			},
 			NemesisVariant::SuggestGarbageCandidate(opts) => {
 				let SuggestGarbageCandidateOptions { percentage, cli } = opts;
 
-				polkadot_cli::run_node(
+				infrablockchain_cli::run_node(
 					cli,
 					SuggestGarbageCandidates { percentage },
 					finality_delay,
@@ -74,7 +78,7 @@ impl MalusCli {
 					cli,
 				} = opts;
 
-				polkadot_cli::run_node(
+				infrablockchain_cli::run_node(
 					cli,
 					DisputeValidCandidates { fake_validation, fake_validation_error, percentage },
 					finality_delay,

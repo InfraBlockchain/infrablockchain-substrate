@@ -152,30 +152,33 @@ pub mod weights;
 mod extra_mutator;
 pub use extra_mutator::*;
 mod functions;
+
 mod impl_fungibles;
 mod impl_stored_map;
 pub mod types;
 pub use types::*;
 
+use frame_support::{
+	pallet_prelude::*,
+	storage::KeyPrefixIterator,
+	traits::{
+		tokens::{fungibles, DepositConsequence, WithdrawConsequence},
+		AccountTouch,
+		BalanceStatus::Reserved,
+		ContainsPair, Currency, EnsureOriginWithArg, ReservableCurrency, StoredMap,
+	},
+};
+use frame_system::pallet_prelude::*;
+
+use core::marker::PhantomData;
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Saturating, StaticLookup, Zero},
-	types::{SystemTokenId, SystemTokenLocalAssetProvider, SystemTokenWeight},
+	types::{RuntimeState, SystemTokenId, SystemTokenLocalAssetProvider, SystemTokenWeight},
 	ArithmeticError, DispatchError, TokenError,
 };
 use sp_std::prelude::*;
 
-use frame_support::{
-	dispatch::DispatchResult,
-	ensure,
-	pallet_prelude::DispatchResultWithPostInfo,
-	storage::KeyPrefixIterator,
-	traits::{
-		tokens::{fungibles, DepositConsequence, WithdrawConsequence},
-		BalanceStatus::Reserved,
-		Currency, EnsureOriginWithArg, ReservableCurrency, StoredMap,
-	},
-};
 use frame_system::Config as SystemConfig;
 
 pub use pallet::*;
@@ -183,6 +186,14 @@ pub use weights::WeightInfo;
 
 type AccountIdLookupOf<T> = <<T as frame_system::Config>::Lookup as StaticLookup>::Source;
 const LOG_TARGET: &str = "runtime::assets";
+
+/// Origin for the parachains module.
+#[derive(PartialEq, Eq, Clone, Encode, Decode, TypeInfo, RuntimeDebug, MaxEncodedLen)]
+#[scale_info(skip_type_params(I))]
+pub enum RawOrigin<T, I> {
+	Relay,
+	_Phantom(PhantomData<(T, I)>),
+}
 
 /// Trait with callbacks that are executed after successfull asset creation or destruction.
 pub trait AssetsCallback<AssetId, AccountId> {
@@ -203,11 +214,6 @@ impl<AssetId, AccountId> AssetsCallback<AssetId, AccountId> for () {}
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use frame_support::{
-		pallet_prelude::*,
-		traits::{AccountTouch, ContainsPair},
-	};
-	use frame_system::pallet_prelude::*;
 
 	/// The current storage version.
 	const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -280,14 +286,14 @@ pub mod pallet {
 		/// Standard asset class creation is only allowed if the origin attempting it and the
 		/// asset class are in this set.
 		type CreateOrigin: EnsureOriginWithArg<
-			Self::RuntimeOrigin,
+			<Self as frame_system::Config>::RuntimeOrigin,
 			Self::AssetId,
 			Success = Self::AccountId,
 		>;
 
 		/// The origin which may forcibly create or destroy an asset or otherwise alter privileged
 		/// attributes.
-		type ForceOrigin: EnsureOrigin<Self::RuntimeOrigin>;
+		type ForceOrigin: EnsureOrigin<<Self as frame_system::Config>::RuntimeOrigin>;
 
 		/// The basic amount of funds that must be reserved for an asset.
 		#[pallet::constant]
@@ -382,6 +388,9 @@ pub mod pallet {
 	/// It is initilzed as 1_000(1.0), then it SHOULD be only set by a dmp call from RELAY CHAIN.
 	pub(super) type ParaFeeRate<T: Config<I>, I: 'static = ()> = StorageValue<_, u128, OptionQuery>;
 
+	#[pallet::storage]
+	pub(super) type State<T: Config<I>, I: 'static = ()> =
+		StorageValue<_, RuntimeState, ValueQuery>;
 	#[pallet::genesis_config]
 	#[derive(frame_support::DefaultNoBound)]
 	pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
@@ -456,6 +465,9 @@ pub mod pallet {
 			}
 		}
 	}
+
+	// #[pallet::origin]
+	// pub type Origin<T, I = ()> = RawOrigin<T, I>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -552,6 +564,8 @@ pub mod pallet {
 		NoSufficientTokenToPay,
 		/// The ParaFeeRate has been updated
 		ParaFeeRateUpdated { para_fee_rate: u128 },
+		/// Runtime state has been changed to Normal state
+		RuntimeStateUpdated { from: RuntimeState, to: RuntimeState },
 	}
 
 	#[pallet::error]
@@ -599,6 +613,10 @@ pub mod pallet {
 		NotFrozen,
 		/// Callback action resulted in error
 		CallbackFailed,
+		/// Currently, there is not system token to pay tx fee.
+		NotAllowedToChangeState,
+		/// Current Runtime is not in bootstrap mode
+		NotInBootstrap,
 	}
 
 	#[pallet::call(weight(<T as Config<I>>::WeightInfo))]
@@ -1092,7 +1110,6 @@ pub mod pallet {
 			let origin = ensure_signed(origin)?;
 			let owner = T::Lookup::lookup(owner)?;
 			let id: T::AssetId = id.into();
-
 			Asset::<T, I>::try_mutate(id.clone(), |maybe_details| {
 				let details = maybe_details.as_mut().ok_or(Error::<T, I>::Unknown)?;
 				ensure!(details.status == AssetStatus::Live, Error::<T, I>::LiveAsset);
@@ -1732,7 +1749,6 @@ pub mod pallet {
 			};
 
 			Asset::<T, I>::insert(&id, details);
-
 			Self::deposit_event(Event::AssetIsSufficientChanged { asset_id: id, is_sufficient });
 			Ok(())
 		}
@@ -1811,7 +1827,6 @@ pub mod pallet {
 				asset_link_parents,
 				system_token_weight,
 			)?;
-
 			Ok(())
 		}
 
@@ -1864,6 +1879,14 @@ pub mod pallet {
 			ParaFeeRate::<T, I>::set(Some(para_fee_rate));
 
 			Self::deposit_event(Event::ParaFeeRateUpdated { para_fee_rate });
+			Ok(())
+		}
+
+		#[pallet::call_index(38)]
+		#[pallet::weight(T::WeightInfo::block())]
+		pub fn set_runtime_state(origin: OriginFor<T>) -> DispatchResult {
+			ensure_root(origin)?;
+			Self::do_set_runtime_state()?;
 			Ok(())
 		}
 	}

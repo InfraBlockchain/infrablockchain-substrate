@@ -1,5 +1,5 @@
 [relaychain]
-default_command = "../target/release/infrablockspace"
+default_command = "../target/release/infrablockchain"
 default_args = ["-lparachain=debug", "-l=xcm=trace"]
 chain = "infra-relay-local"
 # "/Users/bclabs-raf/downloads/archive/infrablockspace"

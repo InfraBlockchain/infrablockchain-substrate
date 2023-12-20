@@ -272,7 +272,7 @@ impl LightClientRpcWorker {
 					},
 					None => {
 						tracing::error!(target: LOG_TARGET, "RPC client receiver closed. Stopping RPC Worker.");
-						return;
+						return
 					}
 				},
 				_ = pending_requests.next(), if !pending_requests.is_empty() => {},

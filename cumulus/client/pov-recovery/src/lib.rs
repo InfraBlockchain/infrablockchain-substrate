@@ -563,7 +563,7 @@ where
 						self.handle_pending_candidate(receipt, session_index);
 					} else {
 						tracing::debug!(target: LOG_TARGET, "Pending candidates stream ended");
-						return;
+						return
 					}
 				},
 				recovery_req = self.recovery_chan_rx.next() => {
@@ -571,7 +571,7 @@ where
 						self.recover(req);
 					} else {
 						tracing::debug!(target: LOG_TARGET, "Recovery channel stream ended");
-						return;
+						return
 					}
 				},
 				imported = imported_blocks.next() => {
@@ -579,7 +579,7 @@ where
 						self.clear_waiting_recovery(&imported.hash);
 					} else {
 						tracing::debug!(target: LOG_TARGET,	"Imported blocks stream ended");
-						return;
+						return
 					}
 				},
 				finalized = finalized_blocks.next() => {
@@ -587,7 +587,7 @@ where
 						self.handle_block_finalized(*finalized.header.number());
 					} else {
 						tracing::debug!(target: LOG_TARGET,	"Finalized blocks stream ended");
-						return;
+						return
 					}
 				},
 				next_to_recover = self.candidate_recovery_queue.next_recovery().fuse() => {

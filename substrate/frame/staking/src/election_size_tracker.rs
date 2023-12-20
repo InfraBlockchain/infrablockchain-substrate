@@ -47,7 +47,7 @@
 //!     let voter = (v, weight_of(&v), targets_of(&v));
 //!     if size_tracker.try_register_voter(&voter, &voter_bounds).is_err() {
 //!         // voter bounds size exhausted
-//!         break;
+//!         break
 //!     }
 //!     selected_voters.push(voter);
 //! }

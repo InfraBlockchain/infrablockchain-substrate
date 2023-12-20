@@ -1052,9 +1052,6 @@ pub enum CandidateEvent<H = Hash> {
 	/// This includes the core index the candidate was occupying.
 	#[codec(index = 2)]
 	CandidateTimedOut(CandidateReceipt<H>, HeadData, CoreIndex),
-	/// Collecting vote for each parachain
-	#[codec(index = 3)]
-	VoteCollected(Id, PotVotesResult, MilliBlockTimeWeight),
 }
 
 /// Scraped runtime backing votes and resolved disputes.

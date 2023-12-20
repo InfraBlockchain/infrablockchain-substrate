@@ -87,17 +87,17 @@ impl<AccountId> SessionInterface<AccountId> for () {
 
 pub trait VotingInterface<T> {
 	/// Update the vote status for the given account.
-	fn update_vote_status(who: VoteAccountId, weight: VoteWeight);
+	fn update_vote_status(who: VoteAccountId, weight: VoteWeight) -> bool;
 }
 
 impl<T: Config> VotingInterface<T> for Pallet<T>
 where
 	T::AccountId: From<VoteAccountId>,
 {
-	fn update_vote_status(who: VoteAccountId, weight: VoteWeight) {
+	fn update_vote_status(who: VoteAccountId, weight: VoteWeight) -> bool {
 		// Return if vote candidate is in SeedTrustValidatorPool
 		if SeedTrustValidatorPool::<T>::get().contains(&who.clone().into()) {
-			return
+			return false
 		}
 		let vote_account_id: T::InfraVoteAccountId = who.into();
 		let vote_points: T::InfraVotePoints = weight.into();
@@ -105,11 +105,14 @@ where
 		let mut vote_status = PotValidatorPool::<T>::get();
 		vote_status.add_points(&vote_account_id, vote_points);
 		PotValidatorPool::<T>::put(vote_status);
+		true
 	}
 }
 
 impl<T: Config> VotingInterface<T> for () {
-	fn update_vote_status(_: VoteAccountId, _: VoteWeight) {}
+	fn update_vote_status(_: VoteAccountId, _: VoteWeight) -> bool {
+		false
+	}
 }
 
 // Session Pallet Rotate Order
