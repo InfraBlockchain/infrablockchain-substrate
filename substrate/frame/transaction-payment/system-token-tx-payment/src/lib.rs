@@ -382,7 +382,7 @@ where
 					Pallet::<T>::deposit_event(Event::<T>::OnBootstrapping);
 				},
 				_ => {
-					return Err(TransactionValidityError::Invalid(InvalidTransaction::Payment));
+					return Err(TransactionValidityError::Invalid(InvalidTransaction::Payment))
 				},
 			}
 		}
