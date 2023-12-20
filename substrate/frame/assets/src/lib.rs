@@ -160,12 +160,13 @@ pub use types::*;
 
 use frame_support::{
 	pallet_prelude::*,
+	storage::KeyPrefixIterator,
 	traits::{
 		tokens::{fungibles, DepositConsequence, WithdrawConsequence},
-		Currency, EnsureOriginWithArg, ReservableCurrency, StoredMap, ContainsPair, AccountTouch,
-		BalanceStatus::Reserved
+		AccountTouch,
+		BalanceStatus::Reserved,
+		ContainsPair, Currency, EnsureOriginWithArg, ReservableCurrency, StoredMap,
 	},
-	storage::KeyPrefixIterator
 };
 use frame_system::pallet_prelude::*;
 
@@ -173,7 +174,7 @@ use core::marker::PhantomData;
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Saturating, StaticLookup, Zero},
-	types::{SystemTokenId, SystemTokenLocalAssetProvider, SystemTokenWeight, RuntimeState},
+	types::{RuntimeState, SystemTokenId, SystemTokenLocalAssetProvider, SystemTokenWeight},
 	ArithmeticError, DispatchError, TokenError,
 };
 use sp_std::prelude::*;
@@ -393,7 +394,8 @@ pub mod pallet {
 	pub(super) type ParaFeeRate<T: Config<I>, I: 'static = ()> = StorageValue<_, u128, OptionQuery>;
 
 	#[pallet::storage]
-	pub(super) type State<T: Config<I>, I: 'static = ()> = StorageValue<_, RuntimeState, ValueQuery>;
+	pub(super) type State<T: Config<I>, I: 'static = ()> =
+		StorageValue<_, RuntimeState, ValueQuery>;
 	#[pallet::genesis_config]
 	#[derive(frame_support::DefaultNoBound)]
 	pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
@@ -568,7 +570,7 @@ pub mod pallet {
 		/// The ParaFeeRate has been updated
 		ParaFeeRateUpdated { para_fee_rate: u128 },
 		/// Runtime state has been changed to Normal state
-		RuntimeStateUpdated { from: RuntimeState, to: RuntimeState }
+		RuntimeStateUpdated { from: RuntimeState, to: RuntimeState },
 	}
 
 	#[pallet::error]
@@ -619,7 +621,7 @@ pub mod pallet {
 		/// Currently, there is not system token to pay tx fee.
 		NotAllowedToChangeState,
 		/// Current Runtime is not in bootstrap mode
-		NotInBootstrap
+		NotInBootstrap,
 	}
 
 	#[pallet::call(weight(<T as Config<I>>::WeightInfo))]

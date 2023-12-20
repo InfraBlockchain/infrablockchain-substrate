@@ -36,7 +36,7 @@ use frame_support::{
 			fungibles::{Balanced, Credit, Inspect},
 			WithdrawConsequence,
 		},
-		CallMetadata, GetCallMetadata, IsType, Contains
+		CallMetadata, Contains, GetCallMetadata, IsType,
 	},
 	DefaultNoBound, PalletId,
 };
@@ -49,8 +49,8 @@ use sp_runtime::{
 	},
 	transaction_validity::{TransactionValidity, TransactionValidityError, ValidTransaction},
 	types::{
-		ExtrinsicMetadata, SystemTokenId, SystemTokenLocalAssetProvider, VoteAccountId, VoteWeight, RuntimeState,
-		AssetId as InfraAssetId
+		AssetId as InfraAssetId, ExtrinsicMetadata, RuntimeState, SystemTokenId,
+		SystemTokenLocalAssetProvider, VoteAccountId, VoteWeight,
 	},
 	FixedPointOperand,
 };
@@ -63,15 +63,15 @@ pub use pallet::*;
 pub mod pallet {
 	use frame_support::traits::Contains;
 
-use super::*;
+	use super::*;
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config + pallet_transaction_payment::Config 
-	{
+	pub trait Config: frame_system::Config + pallet_transaction_payment::Config {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// The fungibles instance used to pay for transactions in assets.
-		type Assets: Balanced<Self::AccountId> + SystemTokenLocalAssetProvider<InfraAssetId, Self::AccountId>;
+		type Assets: Balanced<Self::AccountId>
+			+ SystemTokenLocalAssetProvider<InfraAssetId, Self::AccountId>;
 		/// The actual transaction charging logic that charges the fees.
 		type OnChargeSystemToken: OnChargeSystemToken<Self>;
 		/// The type that handles the voting.
@@ -112,7 +112,8 @@ use super::*;
 impl<T: Config> Pallet<T> {
 	fn check_bootstrap_and_filter(call: &T::RuntimeCall) -> Result<bool, TransactionValidityError> {
 		match (T::Assets::runtime_state(), T::BootstrapCallFilter::contains(call)) {
-			(RuntimeState::Bootstrap, false) => Err(TransactionValidityError::Invalid(InvalidTransaction::InvalidBootstrappingCall)),
+			(RuntimeState::Bootstrap, false) =>
+				Err(TransactionValidityError::Invalid(InvalidTransaction::InvalidBootstrappingCall)),
 			(RuntimeState::Bootstrap, true) => Ok(true),
 			(RuntimeState::Normal, _) => Ok(false),
 		}
@@ -367,7 +368,7 @@ where
 								},
 								vote_candidate: None,
 							});
-						}
+						},
 					}
 				},
 				InitialPayment::Nothing => {
@@ -394,6 +395,6 @@ pub struct CreditToBucket<T>(PhantomData<T>);
 impl<T: Config> HandleCredit<T::AccountId, T::Assets> for CreditToBucket<T> {
 	fn handle_credit(credit: Credit<T::AccountId, T::Assets>) {
 		let dest = T::PalletId::get().into_account_truncating();
-		let _ = <T::Assets as Balanced<T::AccountId>>::resolve(&dest, credit);                    
+		let _ = <T::Assets as Balanced<T::AccountId>>::resolve(&dest, credit);
 	}
 }

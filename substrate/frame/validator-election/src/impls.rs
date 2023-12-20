@@ -110,7 +110,9 @@ where
 }
 
 impl<T: Config> VotingInterface<T> for () {
-	fn update_vote_status(_: VoteAccountId, _: VoteWeight) -> bool { false }
+	fn update_vote_status(_: VoteAccountId, _: VoteWeight) -> bool {
+		false
+	}
 }
 
 // Session Pallet Rotate Order

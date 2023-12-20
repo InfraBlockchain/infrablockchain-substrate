@@ -23,13 +23,13 @@ use crate::{
 	configuration::{self, HostConfiguration},
 	disputes, dmp, hrmp, paras,
 	scheduler::{self, AvailabilityTimeoutStatus},
-	shared::{self, AllowedRelayParentsTracker}
+	shared::{self, AllowedRelayParentsTracker},
 };
 use bitvec::{order::Lsb0 as BitOrderLsb0, vec::BitVec};
 use frame_support::{
 	defensive,
 	pallet_prelude::*,
-	traits::{Defensive, EnqueueMessage, infra_support::system_token::SystemTokenInterface},
+	traits::{infra_support::system_token::SystemTokenInterface, Defensive, EnqueueMessage},
 	BoundedSlice,
 };
 use frame_system::pallet_prelude::*;
@@ -41,12 +41,14 @@ use primitives::{
 	effective_minimum_backing_votes, supermajority_threshold, well_known_keys,
 	AvailabilityBitfield, BackedCandidate, CandidateCommitments, CandidateDescriptor,
 	CandidateHash, CandidateReceipt, CommittedCandidateReceipt, CoreIndex, GroupIndex, Hash,
-	HeadData, Id as ParaId, SignedAvailabilityBitfields, SigningContext,
-	UpwardMessage, ValidatorId, ValidatorIndex, ValidityAttestation, BLOCKS_PER_YEAR,
+	HeadData, Id as ParaId, SignedAvailabilityBitfields, SigningContext, UpwardMessage,
+	ValidatorId, ValidatorIndex, ValidityAttestation, BLOCKS_PER_YEAR,
 };
 use scale_info::TypeInfo;
 use sp_runtime::{
-	traits::One, types::{PotVote, VoteWeight, VoteAccountId}, DispatchError, SaturatedConversion, Saturating
+	traits::One,
+	types::{PotVote, VoteAccountId, VoteWeight},
+	DispatchError, SaturatedConversion, Saturating,
 };
 #[cfg(feature = "std")]
 use sp_std::fmt;
@@ -926,10 +928,9 @@ impl<T: Config> Pallet<T> {
 			let session_index = shared::Pallet::<T>::session_index();
 			for vote in vote_result.into_iter() {
 				if let Some(original) =
-					T::SystemTokenInterface::convert_to_original_system_token(
-						&vote.system_token_id,
-					) {
-					let PotVote { system_token_id, account_id, mut vote_weight} = vote;
+					T::SystemTokenInterface::convert_to_original_system_token(&vote.system_token_id)
+				{
+					let PotVote { system_token_id, account_id, mut vote_weight } = vote;
 					let vote_system_token = system_token_id;
 					// We don't collect vote if it is boot system token
 					if T::SystemTokenInterface::is_boot(vote_system_token.para_id) {
@@ -956,7 +957,7 @@ impl<T: Config> Pallet<T> {
 			}
 			Self::deposit_event(Event::<T>::VoteCollected {
 				from: receipt.descriptor.para_id,
-				collected: collected_votes
+				collected: collected_votes,
 			});
 		};
 

@@ -55,7 +55,11 @@ impl MalusCli {
 			NemesisVariant::BackGarbageCandidate(opts) => {
 				let BackGarbageCandidateOptions { percentage, cli } = opts;
 
-				infrablockchain_cli::run_node(cli, BackGarbageCandidates { percentage }, finality_delay)?
+				infrablockchain_cli::run_node(
+					cli,
+					BackGarbageCandidates { percentage },
+					finality_delay,
+				)?
 			},
 			NemesisVariant::SuggestGarbageCandidate(opts) => {
 				let SuggestGarbageCandidateOptions { percentage, cli } = opts;

@@ -937,8 +937,7 @@ pub fn infra_relay_chain_spec_properties() -> serde_json::map::Map<String, serde
 /// Infra Relay development config
 #[cfg(feature = "infra-relay-native")]
 pub fn infra_relay_development_config() -> Result<InfraRelayChainSpec, String> {
-	let wasm_binary =
-		infra_relay::WASM_BINARY.ok_or("InfraRelayChain-Dev wasm not available")?;
+	let wasm_binary = infra_relay::WASM_BINARY.ok_or("InfraRelayChain-Dev wasm not available")?;
 
 	Ok(InfraRelayChainSpec::from_genesis(
 		"InfraRelayChain-Dev",

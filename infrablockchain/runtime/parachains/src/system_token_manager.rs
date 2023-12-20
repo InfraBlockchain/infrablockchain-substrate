@@ -28,7 +28,7 @@ use sp_runtime::{
 	traits::StaticLookup,
 	types::{
 		AssetId as InfraAssetId, PalletId as InfraPalletId, ParaId as InfraParaId, SystemTokenId,
-		SystemTokenWeight, VoteWeight, RELAY_CHAIN_PARA_ID
+		SystemTokenWeight, VoteWeight, RELAY_CHAIN_PARA_ID,
 	},
 };
 use sp_std::prelude::*;
@@ -1090,7 +1090,6 @@ where
 }
 
 impl<T: Config> SystemTokenInterface for Pallet<T> {
-
 	fn is_boot(id: InfraParaId) -> bool {
 		!ParaIdSystemTokens::<T>::contains_key(&id)
 	}

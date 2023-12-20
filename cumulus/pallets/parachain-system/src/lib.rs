@@ -954,7 +954,11 @@ pub mod pallet {
 }
 
 impl<T: Config> VotingHandler for Pallet<T> {
-	fn update_pot_vote(who: VoteAccountId, system_token_id: SystemTokenId, vote_weight: VoteWeight) {
+	fn update_pot_vote(
+		who: VoteAccountId,
+		system_token_id: SystemTokenId,
+		vote_weight: VoteWeight,
+	) {
 		Self::do_update_pot_vote(system_token_id, who, vote_weight);
 	}
 }

@@ -9,5 +9,6 @@ impl VotingHandler for () {
 		_who: VoteAccountId,
 		_system_token_id: SystemTokenId,
 		_vote_weight: VoteWeight,
-	) {}
+	) {
+	}
 }

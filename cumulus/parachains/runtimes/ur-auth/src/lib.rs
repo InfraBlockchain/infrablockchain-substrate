@@ -182,8 +182,8 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 			RuntimeCall::Assets(
 				pallet_assets::Call::create { .. } |
 				pallet_assets::Call::set_metadata { .. } |
-				pallet_assets::Call::mint { .. } | 
-				pallet_assets::Call::set_runtime_state { .. }
+				pallet_assets::Call::mint { .. } |
+				pallet_assets::Call::set_runtime_state { .. },
 			) => true,
 			_ => false,
 		}
@@ -191,7 +191,7 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 	#[cfg(feature = "fast-runtime")]
 	fn contains(call: &RuntimeCall) -> bool {
 		match call {
-			_ => true
+			_ => true,
 		}
 	}
 }

@@ -354,27 +354,27 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 		match call {
 			RuntimeCall::SystemTokenManager(
 				system_token_manager::Call::register_system_token { .. } |
-				system_token_manager::Call::deregister_system_token { .. } 
-			) | 
+				system_token_manager::Call::deregister_system_token { .. },
+			) |
 			RuntimeCall::Council(
 				pallet_collective::Call::propose { .. } |
 				pallet_collective::Call::vote { .. } |
-				pallet_collective::Call::close { .. }
+				pallet_collective::Call::close { .. },
 			) |
-			RuntimeCall::Democracy(pallet_democracy::Call::external_propose_majority { .. }) |
-			RuntimeCall::Preimage(pallet_preimage::Call::note_preimage { .. })
-			=> true,
+			RuntimeCall::Democracy(pallet_democracy::Call::external_propose_majority {
+				..
+			}) |
+			RuntimeCall::Preimage(pallet_preimage::Call::note_preimage { .. }) => true,
 			_ => false,
 		}
 	}
 	#[cfg(feature = "fast-runtime")]
 	fn contains(call: &RuntimeCall) -> bool {
 		match call {
-			_ => true
+			_ => true,
 		}
 	}
 }
-
 
 impl pallet_system_token_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;

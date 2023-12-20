@@ -7,8 +7,8 @@ mod vote;
 pub use self::{
 	fee::ExtrinsicMetadata,
 	token::{
-		AssetId, PalletId, ParaId, SystemTokenId, SystemTokenLocalAssetProvider, SystemTokenWeight,
-		RuntimeState, RELAY_CHAIN_PARA_ID
+		AssetId, PalletId, ParaId, RuntimeState, SystemTokenId, SystemTokenLocalAssetProvider,
+		SystemTokenWeight, RELAY_CHAIN_PARA_ID,
 	},
 	vote::{PotVote, PotVotes, PotVotesResult, VoteAccountId, VoteAssetId, VoteWeight},
 };

@@ -85,7 +85,7 @@ pub enum InvalidTransaction {
 	/// System Token is not registered yet
 	SystemTokenMissing,
 	/// The bootstrapping process is not finished yet.
-	InvalidBootstrappingCall
+	InvalidBootstrappingCall,
 }
 
 impl InvalidTransaction {

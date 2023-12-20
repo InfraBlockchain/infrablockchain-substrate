@@ -136,12 +136,11 @@ where
 			asset_id
 		} else {
 			let l = T::Assets::system_token_list();
-			ensure!(!l.is_empty(), TransactionValidityError::from(InvalidTransaction::SystemTokenMissing));
-			T::Assets::get_most_account_system_token_balance(
-				l,
-				who.clone(),
-			)
-			.into()
+			ensure!(
+				!l.is_empty(),
+				TransactionValidityError::from(InvalidTransaction::SystemTokenMissing)
+			);
+			T::Assets::get_most_account_system_token_balance(l, who.clone()).into()
 		};
 		let min_converted_fee = if fee.is_zero() { Zero::zero() } else { One::one() };
 		let converted_fee = CON::to_asset_balance(fee, system_token_asset_id.clone())

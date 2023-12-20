@@ -37,7 +37,11 @@ pub mod pallet {
 }
 
 impl<T: Config> VotingHandler for Pallet<T> {
-	fn update_pot_vote(who: VoteAccountId, system_token_id: SystemTokenId, vote_weight: VoteWeight) {
+	fn update_pot_vote(
+		who: VoteAccountId,
+		system_token_id: SystemTokenId,
+		vote_weight: VoteWeight,
+	) {
 		Self::do_update_pot_vote(system_token_id, who, vote_weight);
 	}
 }
@@ -52,18 +56,13 @@ impl<T: Config> Pallet<T> {
 		// Validity Check
 		// 1. Check whether it is boot system token
 		// 2. Check whether it is registered system token
-		if T::SystemTokenInterface::is_boot(vote_system_token.para_id) || 
-		!T::SystemTokenInterface::is_system_token(&vote_system_token)
+		if T::SystemTokenInterface::is_boot(vote_system_token.para_id) ||
+			!T::SystemTokenInterface::is_system_token(&vote_system_token)
 		{
 			return;
 		}
-		let weight =
-			T::SystemTokenInterface::adjusted_weight(&vote_system_token, vote_weight);
+		let weight = T::SystemTokenInterface::adjusted_weight(&vote_system_token, vote_weight);
 		T::VotingHandler::update_vote_status(candidate.clone(), weight);
-		Self::deposit_event(Event::<T>::Voted {
-			candidate,
-			vote_system_token,
-			weight,
-		});
+		Self::deposit_event(Event::<T>::Voted { candidate, vote_system_token, weight });
 	}
 }

@@ -26,8 +26,8 @@ pub(super) enum DeadConsequence {
 	Keep,
 }
 
-use DeadConsequence::*;
 use sp_runtime::traits::BadOrigin;
+use DeadConsequence::*;
 
 // The main implementation block for the module.
 impl<T: Config<I>, I: 'static> Pallet<T, I> {
@@ -1106,7 +1106,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 	pub fn do_set_runtime_state() -> DispatchResult {
 		ensure!(State::<T, I>::get() == RuntimeState::Bootstrap, Error::<T, I>::NotInBootstrap);
-		let l = <Pallet<T, I> as SystemTokenLocalAssetProvider<sp_runtime::types::AssetId, T::AccountId>>::system_token_list();
+		let l = <Pallet<T, I> as SystemTokenLocalAssetProvider<
+			sp_runtime::types::AssetId,
+			T::AccountId,
+		>>::system_token_list();
 		ensure!(!l.is_empty(), Error::<T, I>::NotAllowedToChangeState);
 		let mut is_payable: bool = false;
 		for id in l {
@@ -1119,16 +1122,17 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		}
 		ensure!(is_payable, Error::<T, I>::NotAllowedToChangeState);
 		State::<T, I>::put(RuntimeState::Normal);
-		Self::deposit_event(Event::<T, I>::RuntimeStateUpdated { 
-			from: RuntimeState::Bootstrap, 
-			to: RuntimeState::Normal
+		Self::deposit_event(Event::<T, I>::RuntimeStateUpdated {
+			from: RuntimeState::Bootstrap,
+			to: RuntimeState::Normal,
 		});
 		Ok(())
 	}
 }
 
-impl<T: Config<I>, I: 'static> SystemTokenLocalAssetProvider<sp_runtime::types::AssetId, T::AccountId> for Pallet<T, I> {
-
+impl<T: Config<I>, I: 'static>
+	SystemTokenLocalAssetProvider<sp_runtime::types::AssetId, T::AccountId> for Pallet<T, I>
+{
 	fn runtime_state() -> RuntimeState {
 		State::<T, I>::get()
 	}
@@ -1166,7 +1170,7 @@ impl<T: Config<I>, I: 'static> SystemTokenLocalAssetProvider<sp_runtime::types::
 	}
 }
 
-pub fn ensure_dispatch_from_relay<OuterOrigin, T, I>(o: OuterOrigin) -> Result<(), BadOrigin> 
+pub fn ensure_dispatch_from_relay<OuterOrigin, T, I>(o: OuterOrigin) -> Result<(), BadOrigin>
 where
 	OuterOrigin: Into<Result<RawOrigin<T, I>, OuterOrigin>>,
 {

@@ -104,9 +104,12 @@ fn main() -> Result<(), sc_cli::Error> {
 				);
 
 			let tokio_handle = config.tokio_handle.clone();
-			let polkadot_config =
-				SubstrateCli::create_configuration(&infrablockchain_cli, &infrablockchain_cli, tokio_handle)
-					.map_err(|err| format!("Relay chain argument error: {}", err))?;
+			let polkadot_config = SubstrateCli::create_configuration(
+				&infrablockchain_cli,
+				&infrablockchain_cli,
+				tokio_handle,
+			)
+			.map_err(|err| format!("Relay chain argument error: {}", err))?;
 
 			tracing::info!("Parachain id: {:?}", parachain_id);
 			tracing::info!("Parachain Account: {}", parachain_account);
