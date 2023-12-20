@@ -257,6 +257,7 @@ fn infra_relay_staging_testnet_config_genesis(
 				})
 				.collect::<Vec<_>>(),
 		},
+		#[cfg(feature = "fast-runtime")]
 		sudo: infra_relay::SudoConfig { key: Some(root_key) },
 		phragmen_election: Default::default(),
 		democracy: Default::default(),
@@ -781,6 +782,7 @@ pub fn infra_relay_testnet_genesis(
 				})
 				.collect::<Vec<_>>(),
 		},
+		#[cfg(feature = "fast-runtime")]
 		sudo: infra_relay::SudoConfig { key: Some(root_key) },
 		phragmen_election: Default::default(),
 		democracy: infra_relay::DemocracyConfig::default(),

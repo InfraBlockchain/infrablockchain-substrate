@@ -176,6 +176,7 @@ parameter_types! {
 
 pub struct BootstrapCallFilter;
 impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
+	#[cfg(not(feature = "fast-runtime"))]
 	fn contains(call: &RuntimeCall) -> bool {
 		match call {
 			RuntimeCall::Assets(
@@ -185,6 +186,12 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 				pallet_assets::Call::set_runtime_state { .. }
 			) => true,
 			_ => false,
+		}
+	}
+	#[cfg(feature = "fast-runtime")]
+	fn contains(call: &RuntimeCall) -> bool {
+		match call {
+			_ => true
 		}
 	}
 }

@@ -176,6 +176,7 @@ impl frame_system::Config for Runtime {
 	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
+#[cfg(feature = "fast-runtime")]
 impl pallet_sudo::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
@@ -348,6 +349,7 @@ impl HandleCredit<AccountId, Assets> for CreditToBucket {
 
 pub struct BootstrapCallFilter;
 impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
+	#[cfg(not(feature = "fast-runtime"))]
 	fn contains(call: &RuntimeCall) -> bool {
 		match call {
 			RuntimeCall::SystemTokenManager(
@@ -360,12 +362,19 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 				pallet_collective::Call::close { .. }
 			) |
 			RuntimeCall::Democracy(pallet_democracy::Call::external_propose_majority { .. }) |
-			RuntimeCall::Preimage(pallet_preimage::Call::note_preimage { .. }) 
+			RuntimeCall::Preimage(pallet_preimage::Call::note_preimage { .. })
 			=> true,
 			_ => false,
 		}
 	}
+	#[cfg(feature = "fast-runtime")]
+	fn contains(call: &RuntimeCall) -> bool {
+		match call {
+			_ => true
+		}
+	}
 }
+
 
 impl pallet_system_token_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -1471,6 +1480,7 @@ construct_runtime! {
 		Auctions: auctions::{Pallet, Call, Storage, Event<T>} = 72,
 		Crowdloan: crowdloan::{Pallet, Call, Storage, Event<T>} = 73,
 
+		#[cfg(feature = "fast-runtime")]
 		Sudo: pallet_sudo::{Pallet, Call, Storage, Config<T>, Event<T>} = 81,
 		ParasSudoWrapper: paras_sudo_wrapper::{Pallet, Call} = 82,
 
