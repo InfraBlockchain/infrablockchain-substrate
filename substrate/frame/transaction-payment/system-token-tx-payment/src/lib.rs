@@ -381,9 +381,7 @@ where
 				InitialPayment::Bootstrap => {
 					Pallet::<T>::deposit_event(Event::<T>::OnBootstrapping);
 				},
-				_ => {
-					return Err(TransactionValidityError::Invalid(InvalidTransaction::Payment))
-				},
+				_ => return Err(TransactionValidityError::Invalid(InvalidTransaction::Payment)),
 			}
 		}
 
