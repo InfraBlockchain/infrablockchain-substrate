@@ -1116,7 +1116,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			if let Some(ad) = Self::asset_detail(&id.into()) {
 				if ad.supply.ge(&ad.min_balance) && ad.is_sufficient {
 					is_payable = true;
-					break;
+					break
 				}
 			}
 		}

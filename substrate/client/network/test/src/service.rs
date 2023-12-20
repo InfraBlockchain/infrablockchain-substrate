@@ -480,7 +480,7 @@ async fn lots_of_incoming_peers_works() {
 				futures::select! {
 					_ = timer => {
 						// Test succeeds when timer fires.
-						return;
+						return
 					}
 					ev = event_stream.next() => {
 						match ev.unwrap() {

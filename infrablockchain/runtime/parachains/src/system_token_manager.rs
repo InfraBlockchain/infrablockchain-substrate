@@ -1090,10 +1090,6 @@ where
 }
 
 impl<T: Config> SystemTokenInterface for Pallet<T> {
-	fn is_boot(id: InfraParaId) -> bool {
-		!ParaIdSystemTokens::<T>::contains_key(&id)
-	}
-
 	fn is_system_token(original: &SystemTokenId) -> bool {
 		<OriginalSystemTokenMetadata<T>>::get(original).is_some()
 	}

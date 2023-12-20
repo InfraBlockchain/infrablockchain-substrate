@@ -187,7 +187,7 @@ impl Queue {
 					if let Some(to_queue) = to_queue {
 						handle_to_queue(&mut self, to_queue);
 					} else {
-						break;
+						break
 					}
 				}
 				ev = self.mux.select_next_some() => handle_mux(&mut self, ev).await,

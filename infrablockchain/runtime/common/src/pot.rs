@@ -54,12 +54,9 @@ impl<T: Config> Pallet<T> {
 		vote_weight: VoteWeight,
 	) {
 		// Validity Check
-		// 1. Check whether it is boot system token
-		// 2. Check whether it is registered system token
-		if T::SystemTokenInterface::is_boot(vote_system_token.para_id) ||
-			!T::SystemTokenInterface::is_system_token(&vote_system_token)
-		{
-			return;
+		// Check whether it is registered system token
+		if !T::SystemTokenInterface::is_system_token(&vote_system_token) {
+			return
 		}
 		let weight = T::SystemTokenInterface::adjusted_weight(&vote_system_token, vote_weight);
 		T::VotingHandler::update_vote_status(candidate.clone(), weight);

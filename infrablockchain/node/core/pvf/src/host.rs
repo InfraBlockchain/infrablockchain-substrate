@@ -370,7 +370,7 @@ async fn run(
 					None => {
 						// The sending half of the channel has been closed, meaning the
 						// `ValidationHost` struct was dropped. Shutting down gracefully.
-						break;
+						break
 					},
 					Some(to_host) => to_host,
 				};

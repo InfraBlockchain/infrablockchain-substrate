@@ -93,7 +93,7 @@ impl CollationGenerationSubsystem {
 			select! {
 				incoming = ctx.recv().fuse() => {
 					if self.handle_incoming::<Context>(incoming, &mut ctx).await {
-						break;
+						break
 					}
 				},
 			}

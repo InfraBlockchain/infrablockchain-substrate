@@ -524,7 +524,7 @@ macro_rules! __impl_test_ext_for_relay_chain {
 								.into_iter()
 								.map(|inbound| (inbound.sent_at, inbound.msg));
 							if downward_messages.len() == 0 {
-								continue;
+								continue
 							}
 							<$name>::send_downward_messages(para_id, downward_messages.into_iter());
 
@@ -1225,7 +1225,7 @@ macro_rules! assert_expected_events {
 						// Set the index where we found a perfect match
 						if event_received && meet_conditions {
 							index_match = index;
-							break;
+							break
 						} else {
 							event_message.extend(conditions_message);
 						}

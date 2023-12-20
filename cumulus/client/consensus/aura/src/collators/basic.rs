@@ -136,7 +136,7 @@ where
 				($err:expr) => {{
 					request.complete(None);
 					tracing::error!(target: crate::LOG_TARGET, err = ?{ $err });
-					continue;
+					continue
 				}};
 			}
 

@@ -932,10 +932,6 @@ impl<T: Config> Pallet<T> {
 				{
 					let PotVote { system_token_id, account_id, mut vote_weight } = vote;
 					let vote_system_token = system_token_id;
-					// We don't collect vote if it is boot system token
-					if T::SystemTokenInterface::is_boot(vote_system_token.para_id) {
-						continue;
-					}
 					vote_weight = {
 						let res = milli_block_time_weight.saturating_mul(
 							T::SystemTokenInterface::adjusted_weight(&original, vote_weight),
