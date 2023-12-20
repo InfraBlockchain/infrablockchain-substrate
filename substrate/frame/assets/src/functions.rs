@@ -26,7 +26,6 @@ pub(super) enum DeadConsequence {
 	Keep,
 }
 
-use sp_runtime::traits::BadOrigin;
 use DeadConsequence::*;
 
 // The main implementation block for the module.
@@ -1167,15 +1166,5 @@ impl<T: Config<I>, I: 'static>
 			}
 		}
 		most_balance.0
-	}
-}
-
-pub fn ensure_dispatch_from_relay<OuterOrigin, T, I>(o: OuterOrigin) -> Result<(), BadOrigin>
-where
-	OuterOrigin: Into<Result<RawOrigin<T, I>, OuterOrigin>>,
-{
-	match o.into() {
-		Ok(RawOrigin::<T, I>::Relay) => Ok(()),
-		_ => Err(BadOrigin),
 	}
 }

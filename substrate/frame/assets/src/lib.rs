@@ -214,7 +214,6 @@ impl<AssetId, AccountId> AssetsCallback<AssetId, AccountId> for () {}
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use functions::ensure_dispatch_from_relay;
 
 	/// The current storage version.
 	const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -240,10 +239,6 @@ pub mod pallet {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self, I>>
 			+ IsType<<Self as frame_system::Config>::RuntimeEvent>;
-
-		// type RuntimeOrigin: From<RawOrigin<Self, I>>
-		// 	+ From<<Self as frame_system::Config>::RuntimeOrigin>
-		// 	+ Into<Result<RawOrigin<Self, I>, <Self as Config<I>>::RuntimeOrigin>>;
 
 		/// The units in which we record balances.
 		type Balance: Member
@@ -1890,7 +1885,6 @@ pub mod pallet {
 		#[pallet::call_index(38)]
 		#[pallet::weight(T::WeightInfo::block())]
 		pub fn set_runtime_state(origin: OriginFor<T>) -> DispatchResult {
-			// ensure_dispatch_from_relay(<T as Config<I>>::RuntimeOrigin::from(origin))?;
 			ensure_root(origin)?;
 			Self::do_set_runtime_state()?;
 			Ok(())
