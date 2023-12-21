@@ -43,7 +43,7 @@ jobs:
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           source ~/.cargo/env
-          rustup default nightly
+          rustup default nightly-2023-12-20
           rustup target add wasm32-unknown-unknown
 
       - name: Check Build
