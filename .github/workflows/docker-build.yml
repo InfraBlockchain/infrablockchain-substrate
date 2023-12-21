@@ -42,7 +42,7 @@ jobs:
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           source ~/.cargo/env
-          rustup default nightly
+          rustup default nightly-2023-12-20
           rustup target add wasm32-unknown-unknown
 
       - name: Check Build
@@ -74,6 +74,7 @@ jobs:
           # Build a docker container and
           # push it to ECR so that it can
           # be deployed to ECS.
+          docker system prune -a -f
           docker build -f docker/dockerfiles/infrablockspace/injected_infrablockspace_builder.Dockerfile -t public.ecr.aws/v8x3j0k5/infrablockspace:$IMAGE_TAG .
           docker push public.ecr.aws/v8x3j0k5/infrablockspace:$IMAGE_TAG
           echo "::set-output name=image::public.ecr.aws/v8x3j0k5/infrablockspace:$IMAGE_TAG"
