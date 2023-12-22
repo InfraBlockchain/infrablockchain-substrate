@@ -54,7 +54,7 @@ impl PotVote {
 impl PotVote {
 	/// Type cast from PotVote to PotVoteU128
 	pub fn to_u128(&self) -> PotVoteU128 {
-		let vote_weight = self.vote_weight.to_i32() as u128;
+		let vote_weight = self.vote_weight.to_i128() as u128;
 		PotVoteU128 {
 			system_token_id: self.system_token_id.clone(),
 			account_id: self.account_id.clone(),

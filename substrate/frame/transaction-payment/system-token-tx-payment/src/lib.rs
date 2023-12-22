@@ -323,7 +323,7 @@ where
 							});
 
 							// Update vote
-							let vote_weight = F64::from_i32(converted_fee.into() as i32);
+							let vote_weight = F64::from_i128(converted_fee.into() as i128);
 							T::VotingHandler::update_pot_vote(
 								vote_candidate.clone().into(),
 								system_token_id.clone(),

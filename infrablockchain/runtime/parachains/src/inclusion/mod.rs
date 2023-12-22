@@ -923,11 +923,11 @@ impl<T: Config> Pallet<T> {
 		let mut is_collected: bool = false;
 
 		let block_time_weight: F64 = {
-			let current_block_number: u32 = relay_parent_number.saturated_into();
-			// pow = ln2 * current block number / BLOCKS_PER_YEAR
-			let pow: F64 = F64::from_i32(2).ln() *
-				F64::from_i32(current_block_number as i32).div(BLOCKS_PER_YEAR);
-			// block_time_weight = 2 ^ x = exp ^ (pow)
+			let current_block_number: u128 = relay_parent_number.saturated_into();
+			// pow = ln(2) * current block number / BLOCKS_PER_YEAR
+			let pow: F64 = F64::from_i128(2).ln() *
+				F64::from_i128(current_block_number as i128).div(BLOCKS_PER_YEAR);
+			// block_time_weight = 2 ^ (current block number / BLOCKS_PER_YEAR) = exp ^ (pow)
 			let block_time_weight = pow.exp();
 			block_time_weight
 		};
@@ -965,7 +965,7 @@ impl<T: Config> Pallet<T> {
 			}
 			if is_collected {
 				let vote_result_u128 = convert_pot_votes(vote_result);
-				let block_time_weight_u128 = block_time_weight.to_i32() as u128;
+				let block_time_weight_u128 = block_time_weight.to_i128() as u128;
 
 				Self::deposit_event(Event::<T>::VoteCollected(
 					receipt.descriptor.para_id,

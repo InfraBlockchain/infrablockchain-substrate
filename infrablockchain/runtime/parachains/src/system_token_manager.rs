@@ -1106,10 +1106,10 @@ impl<T: Config> SystemTokenInterface for Pallet<T> {
 		if let Some(p) = <SystemTokenProperties<T>>::get(original) {
 			let system_token_weight = {
 				let w: u128 = p.system_token_weight.map_or(BASE_WEIGHT, |w| w);
-				let system_token_weight = F64::from_i32(w as i32);
+				let system_token_weight = F64::from_i128(w as i128);
 				system_token_weight
 			};
-			let base_weight = F64::from_i32(BASE_WEIGHT as i32);
+			let base_weight = F64::from_i128(BASE_WEIGHT as i128);
 			return vote_weight.mul(system_token_weight).div(base_weight)
 		}
 		vote_weight

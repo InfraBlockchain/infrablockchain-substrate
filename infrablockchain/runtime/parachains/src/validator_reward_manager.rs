@@ -167,7 +167,7 @@ pub mod pallet {
 				rewards.iter_mut().find(|ar| ar.system_token_id == system_token_id)
 			{
 				let SystemTokenId { para_id, pallet_id, asset_id } = system_token_id;
-				let amount: u128 = reward.amount.to_i32() as u128;
+				let amount: u128 = reward.amount.to_i128() as u128;
 				let encoded_call: Vec<u8> = pallet_assets::Call::<T>::force_transfer2 {
 					id: asset_id.into(),
 					source: T::Lookup::unlookup(sovereign.clone()),
@@ -181,7 +181,7 @@ pub mod pallet {
 					system_token_id,
 					amount,
 				});
-				reward.amount = F64::from_i32(0);
+				reward.amount = F64::from_i128(0);
 			}
 			ValidatorRewards::<T>::insert(who.clone(), rewards.clone());
 
@@ -225,7 +225,7 @@ impl<T: Config> Pallet<T> {
 	fn distribute_reward(session_index: SessionIndex) {
 		let current_validators = T::ValidatorSet::validators();
 		let aggregated_rewards = TotalSessionRewards::<T>::get(session_index).unwrap_or_default();
-		let len_current_validators = F64::from_i32(current_validators.len() as i32);
+		let len_current_validators = F64::from_i128(current_validators.len() as i128);
 
 		if aggregated_rewards.is_empty() {
 			return

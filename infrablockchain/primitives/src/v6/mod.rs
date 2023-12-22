@@ -79,7 +79,7 @@ pub const COLLATOR_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"coll");
 
 /// The number of blocks per year. i.e) 10 blocks/min * 60 min/hours* 24 hours/day * 365 days/year =
 /// 5_256_000
-pub const BLOCKS_PER_YEAR: F64 = F64::from_i32(5_256_000);
+pub const BLOCKS_PER_YEAR: F64 = F64::from_i128(5_256_000);
 
 mod collator_app {
 	use application_crypto::{app_crypto, sr25519};

@@ -15790,6 +15790,8 @@ name = "softfloat"
 version = "1.0.0"
 dependencies = [
  "cfg-if",
+ "env_logger 0.9.3",
+ "log",
  "parity-scale-codec",
  "scale-info",
  "serde",

@@ -441,7 +441,7 @@ members = [
 	"substrate/utils/prometheus",
 	"substrate/utils/wasm-builder",
 ]
-default-members = ["infrablockchain", "cumulus/parachain-template/node", "cumulus/infra-parachain"]
+default-members = ["infrablockchain", "cumulus/infra-parachain"]
 
 [profile.release]
 # Polkadot runtime requires unwinding.

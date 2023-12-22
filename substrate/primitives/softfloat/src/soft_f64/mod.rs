@@ -85,6 +85,14 @@ impl F64 {
 		crate::conv::f64_to_i32(self)
 	}
 
+	pub const fn from_i128(a: i128) -> Self {
+		crate::conv::i128_to_f64(a)
+	}
+
+	pub const fn to_i128(self) -> i128 {
+		crate::conv::f64_to_i128(self)
+	}
+
 	pub const fn from_bits(a: u64) -> Self {
 		Self(Bits64(a))
 	}
@@ -218,6 +226,7 @@ impl From<usize> for F64 {
 		Self::from_i32(a)
 	}
 }
+
 impl From<u8> for F64 {
 	fn from(x: u8) -> Self {
 		let a = x as i32;
