@@ -160,7 +160,7 @@ mod tests {
 	fn do_not_insert_value_if_exceeds_works() {
 		let candidate: VoteAccountId = AccountId32::new([0u8; 32]);
 		let system_token_id = SystemTokenId::new(2000, 50, 99);
-		let vote_weight: VoteWeight = F64::from_i32(1);
+		let vote_weight: VoteWeight = F64::from_i128(1);
 		let mut pot_votes = new_pot_votes(system_token_id.clone(), candidate.clone(), vote_weight);
 		for _ in 1..MAX_VOTE_NUM + 1 {
 			pot_votes.update_vote_weight(system_token_id, candidate.clone(), 1);
@@ -171,7 +171,7 @@ mod tests {
 	#[test]
 	fn get_votes_works() {
 		let candidate: VoteAccountId = AccountId32::new([0u8; 32]);
-		let vote_weight: VoteWeight = F64::from_i32(1);
+		let vote_weight: VoteWeight = F64::from_i128(1);
 		let mut pot_votes =
 			new_pot_votes(SystemTokenId::new(2000, 50, 99), candidate.clone(), vote_weight);
 		pot_votes.update_vote_weight(

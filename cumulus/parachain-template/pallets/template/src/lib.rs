@@ -18,6 +18,7 @@ mod benchmarking;
 pub mod pallet {
 	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
+	use softfloat::F64;
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -101,6 +102,34 @@ pub mod pallet {
 					Ok(().into())
 				},
 			}
+		}
+
+		/// An example dispatchable that takes two values as parameters, divide values to
+		/// storage and emits an event. This function must be dispatched by a signed extrinsic.
+		#[pallet::call_index(2)]
+		#[pallet::weight(Weight::from_parts(10_000, 0) + T::DbWeight::get().writes(1))]
+		pub fn divide_something_f64(
+			origin: OriginFor<T>,
+			den: u32,
+			num: u32,
+		) -> DispatchResultWithPostInfo {
+			// Check that the extrinsic was signed and get the signer.
+			// This function will return an error if the extrinsic is not signed.
+			// https://docs.substrate.io/v3/runtime/origins
+			let who = ensure_signed(origin)?;
+
+			// Update storage.
+			<Something<T>>::put(den);
+
+			let den_f64 = F64::from_i128(den as i128);
+			let num_f64 = F64::from_i128(num as i128);
+
+			let result = den_f64.div(num_f64).to_i128() as u32;
+
+			// Emit an event.
+			Self::deposit_event(Event::SomethingStored(result, who));
+			// Return a successful DispatchResultWithPostInfo
+			Ok(().into())
 		}
 	}
 }

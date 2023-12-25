@@ -16,6 +16,7 @@ codec = { package = "parity-scale-codec", version = "3.0.0", features = [
 	"derive",
 ], default-features = false }
 scale-info = { version = "2.2.0", default-features = false, features = ["derive"] }
+softfloat = { path = "../../../../substrate/primitives/softfloat", default-features = false }
 
 # Substrate
 frame-benchmarking = { path = "../../../../substrate/frame/benchmarking", default-features = false, optional = true }

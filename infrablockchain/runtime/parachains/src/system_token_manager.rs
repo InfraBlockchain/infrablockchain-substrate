@@ -1110,6 +1110,7 @@ impl<T: Config> SystemTokenInterface for Pallet<T> {
 				system_token_weight
 			};
 			let base_weight = F64::from_i128(BASE_WEIGHT as i128);
+			// Since the base_weight cannot be zero, this division is guaranteed to be safe.
 			return vote_weight.mul(system_token_weight).div(base_weight)
 		}
 		vote_weight

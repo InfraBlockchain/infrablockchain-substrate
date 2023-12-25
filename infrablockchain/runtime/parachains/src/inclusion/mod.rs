@@ -964,12 +964,12 @@ impl<T: Config> Pallet<T> {
 				};
 			}
 			if is_collected {
-				let vote_result_u128 = convert_pot_votes(vote_result);
+				let converted_vote_result = convert_pot_votes(vote_result);
 				let block_time_weight_u128 = block_time_weight.to_i128() as u128;
 
 				Self::deposit_event(Event::<T>::VoteCollected(
 					receipt.descriptor.para_id,
-					vote_result_u128,
+					converted_vote_result,
 					block_time_weight_u128,
 				));
 			}

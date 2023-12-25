@@ -1,4 +1,3 @@
-use crate::soft_f32::F32;
 use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 
@@ -67,14 +66,6 @@ impl F64 {
 
 	pub const fn to_native_f64(self) -> f64 {
 		unsafe { core::mem::transmute(self.0) }
-	}
-
-	pub const fn from_f32(a: F32) -> Self {
-		a.to_f64()
-	}
-
-	pub const fn to_f32(self) -> F32 {
-		F32::from_f64(self)
 	}
 
 	pub const fn from_i32(a: i32) -> Self {
