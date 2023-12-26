@@ -18,7 +18,7 @@ use parachains_common::types::{AccountId, Signature};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use serde::{Deserialize, Serialize};
 use sp_core::{Pair, Public};
-use sp_runtime::traits::{IdentifyAccount, Verify};
+pub use sp_runtime::traits::{IdentifyAccount, Verify};
 
 // Parachains' Runtime Module
 pub mod asset_hubs;

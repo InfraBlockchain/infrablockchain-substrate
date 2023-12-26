@@ -266,7 +266,7 @@ pub fn check_block_in_chain(
 
 /// Build the Polkadot full node using the given `config`.
 #[sc_tracing::logging::prefix_logs_with("Relaychain")]
-fn build_polkadot_full_node(
+fn build_infrablockchain_full_node(
 	config: Configuration,
 	parachain_config: &Configuration,
 	telemetry_worker_handle: Option<TelemetryWorkerHandle>,
@@ -309,7 +309,7 @@ fn build_polkadot_full_node(
 
 /// Builds a relay chain interface by constructing a full relay chain node
 pub fn build_inprocess_relay_chain(
-	mut polkadot_config: Configuration,
+	mut infrablockchain_config: Configuration,
 	parachain_config: &Configuration,
 	telemetry_worker_handle: Option<TelemetryWorkerHandle>,
 	task_manager: &mut TaskManager,
@@ -317,11 +317,11 @@ pub fn build_inprocess_relay_chain(
 ) -> RelayChainResult<(Arc<(dyn RelayChainInterface + 'static)>, Option<CollatorPair>)> {
 	// This is essentially a hack, but we want to ensure that we send the correct node version
 	// to the telemetry.
-	polkadot_config.impl_version = polkadot_cli::Cli::impl_version();
-	polkadot_config.impl_name = polkadot_cli::Cli::impl_name();
+	infrablockchain_config.impl_version = infrablockchain_cli::Cli::impl_version();
+	infrablockchain_config.impl_name = infrablockchain_cli::Cli::impl_name();
 
-	let (full_node, collator_key) = build_polkadot_full_node(
-		polkadot_config,
+	let (full_node, collator_key) = build_infrablockchain_full_node(
+		infrablockchain_config,
 		parachain_config,
 		telemetry_worker_handle,
 		hwbench,

@@ -66,7 +66,7 @@ pallet-transaction-payment-rpc = { path = "../../substrate/frame/transaction-pay
 substrate-state-trie-migration-rpc = { path = "../../substrate/utils/frame/rpc/state-trie-migration-rpc" }
 
 # Infr Relay
-polkadot-cli = { path = "../../infrablockchain/cli", features = [
+infrablockchain-cli = { path = "../../infrablockchain/cli", features = [
 	"rococo-native",
 	"infra-relay-native",
 ] }
@@ -104,14 +104,14 @@ runtime-benchmarks = [
 	"frame-benchmarking-cli/runtime-benchmarks",
 	"frame-benchmarking/runtime-benchmarks",
 	"parachains-common/runtime-benchmarks",
-	"polkadot-cli/runtime-benchmarks",
+	"infrablockchain-cli/runtime-benchmarks",
 	"primitives/runtime-benchmarks",
 	"infrablockchain-service/runtime-benchmarks",
 	"sc-service/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 ]
 try-runtime = [
-	"polkadot-cli/try-runtime",
+	"infrablockchain-cli/try-runtime",
 	"infrablockchain-service/try-runtime",
 	"sp-runtime/try-runtime",
 ]

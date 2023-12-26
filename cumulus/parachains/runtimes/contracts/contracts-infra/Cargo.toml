@@ -20,6 +20,14 @@ log = { version = "0.4.20", default-features = false }
 scale-info = { version = "2.9.0", default-features = false, features = ["derive"] }
 smallvec = "1.11.0"
 
+# InfraBlockchain
+pallet-system-token = { path = "../../../../../substrate/frame/system-token", default-features = false }
+pallet-system-token-tx-payment = { path = "../../../../../substrate/frame/transaction-payment/system-token-tx-payment", default-features = false }
+pallet-assets = { path = "../../../../../substrate/frame/assets", default-features = false }
+pallet-asset-link = { package = "infra-asset-link", path = "../../../../../infrablockchain/xcm/infra-asset-link", default-features = false }
+pallet-uniques = { path = "../../../../../substrate/frame/uniques", default-features = false }
+assets-common = { path = "../../assets/common", default-features = false }
+
 # Substrate
 sp-api = { path = "../../../../../substrate/primitives/api", default-features = false }
 sp-block-builder = { path = "../../../../../substrate/primitives/block-builder", default-features = false }
@@ -54,12 +62,6 @@ pallet-utility = { path = "../../../../../substrate/frame/utility", default-feat
 pallet-sudo = { path = "../../../../../substrate/frame/sudo", default-features = false }
 pallet-contracts = { path = "../../../../../substrate/frame/contracts", default-features = false }
 pallet-contracts-primitives = { path = "../../../../../substrate/frame/contracts/primitives", default-features = false }
-pallet-uniques = { path = "../../../../../substrate/frame/uniques", default-features = false }
-pallet-assets = { path = "../../../../../substrate/frame/assets", default-features = false }
-pallet-asset-link = { package = "infra-asset-link", path = "../../../../../infrablockchain/xcm/infra-asset-link", default-features = false }
-pallet-system-token = { path = "../../../../../substrate/frame/system-token", default-features = false }
-pallet-system-token-tx-payment = { path = "../../../../../substrate/frame/transaction-payment/system-token-tx-payment", default-features = false }
-assets-common = { path = "../../assets/common", default-features = false }
 
 # Infra Relay
 pallet-xcm = { path = "../../../../../infrablockchain/xcm/pallet-xcm", default-features = false }

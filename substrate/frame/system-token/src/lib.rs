@@ -17,7 +17,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::traits::ibs_support::fee::FeeTableProvider;
+use frame_support::traits::infra_support::fee::FeeTableProvider;
 pub use pallet::*;
 use sp_runtime::types::ExtrinsicMetadata;
 use sp_std::vec::Vec;
@@ -33,7 +33,7 @@ pub mod pallet {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Some authorized origins(e.g Relay Chain) to do some action
-		type AuthorizedOrigin: EnsureOrigin<Self::RuntimeOrigin>;
+		type AuthorizedOrigin: EnsureOrigin<<Self as frame_system::Config>::RuntimeOrigin>;
 	}
 
 	#[pallet::event]

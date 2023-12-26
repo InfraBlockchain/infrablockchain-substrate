@@ -40,7 +40,7 @@ use frame_support::{
 	ensure,
 	inherent::{InherentData, InherentIdentifier, ProvideInherent},
 	storage,
-	traits::{ibs_support::pot::VotingHandler, Get},
+	traits::{infra_support::pot::VotingHandler, Get},
 	weights::Weight,
 };
 use frame_system::{ensure_none, ensure_root, pallet_prelude::HeaderFor};
@@ -954,23 +954,27 @@ pub mod pallet {
 }
 
 impl<T: Config> VotingHandler for Pallet<T> {
-	fn update_pot_vote(who: VoteAccountId, asset_id: SystemTokenId, vote_weight: VoteWeight) {
-		Self::do_update_pot_vote(asset_id, who, vote_weight);
+	fn update_pot_vote(
+		who: VoteAccountId,
+		system_token_id: SystemTokenId,
+		vote_weight: VoteWeight,
+	) {
+		Self::do_update_pot_vote(system_token_id, who, vote_weight);
 	}
 }
 
 impl<T: Config> Pallet<T> {
 	/// Update vote weight for given (asset_id, candidate)
 	fn do_update_pot_vote(
-		vote_asset_id: SystemTokenId,
+		vote_system_token: SystemTokenId,
 		vote_account_id: VoteAccountId,
 		vote_weight: VoteWeight,
 	) {
 		let pot_votes = if let Some(mut old) = CollectedPotVotes::<T>::get() {
-			old.update_vote_weight(vote_asset_id, vote_account_id, vote_weight);
+			old.update_vote_weight(vote_system_token, vote_account_id, vote_weight);
 			old
 		} else {
-			PotVotes::new(vote_asset_id, vote_account_id, vote_weight)
+			PotVotes::new(vote_system_token, vote_account_id, vote_weight)
 		};
 		CollectedPotVotes::<T>::put(pot_votes);
 	}

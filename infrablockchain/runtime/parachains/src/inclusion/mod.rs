@@ -24,13 +24,12 @@ use crate::{
 	disputes, dmp, hrmp, paras,
 	scheduler::{self, AvailabilityTimeoutStatus},
 	shared::{self, AllowedRelayParentsTracker},
-	system_token_manager::SystemTokenInterface,
 };
 use bitvec::{order::Lsb0 as BitOrderLsb0, vec::BitVec};
 use frame_support::{
 	defensive,
 	pallet_prelude::*,
-	traits::{Defensive, EnqueueMessage},
+	traits::{infra_support::system_token::SystemTokenInterface, Defensive, EnqueueMessage},
 	BoundedSlice,
 };
 use frame_system::pallet_prelude::*;
@@ -49,7 +48,7 @@ use scale_info::TypeInfo;
 use softfloat::F64;
 use sp_runtime::{
 	traits::One,
-	types::{convert_pot_votes, PotVotesU128Result},
+	types::{convert_pot_votes, PotVote, VoteAccountId, VoteWeight},
 	DispatchError, SaturatedConversion, Saturating,
 };
 #[cfg(feature = "std")]
@@ -261,6 +260,7 @@ pub type MaxUmpMessageLenOf<T> =
 
 #[frame_support::pallet]
 pub mod pallet {
+
 	use super::*;
 
 	#[pallet::pallet]
@@ -280,18 +280,15 @@ pub mod pallet {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		type DisputesHandler: disputes::DisputesHandler<BlockNumberFor<Self>>;
 		type RewardValidators: RewardValidators;
-
 		/// The system message queue.
 		///
 		/// The message queue provides general queueing and processing functionality. Currently it
 		/// replaces the old `UMP` dispatch queue. Other use-cases can be implemented as well by
 		/// adding new variants to `AggregateMessageOrigin`.
 		type MessageQueue: EnqueueMessage<AggregateMessageOrigin>;
-
-		type VotingManager: VotingInterface<Self>;
-		type SystemTokenManager: SystemTokenInterface;
+		type VotingInterface: VotingInterface<Self>;
+		type SystemTokenInterface: SystemTokenInterface;
 		type RewardInterface: RewardInterface;
-
 		/// Weight info for the calls of this pallet.
 		type WeightInfo: WeightInfo;
 	}
@@ -308,7 +305,7 @@ pub mod pallet {
 		/// Some upward messages have been received and will be processed.
 		UpwardMessagesReceived { from: ParaId, count: u32 },
 		/// Pot Vote has been collected
-		VoteCollected(ParaId, PotVotesU128Result, u128),
+		VoteCollected { from: ParaId, collected: Vec<(VoteAccountId, VoteWeight)> },
 	}
 
 	#[pallet::error]
@@ -920,8 +917,6 @@ impl<T: Config> Pallet<T> {
 			commitments.horizontal_messages,
 		));
 
-		let mut is_collected: bool = false;
-
 		let block_time_weight: F64 = {
 			let current_block_number: u128 = relay_parent_number.saturated_into();
 			// pow = ln(2) * current block number / BLOCKS_PER_YEAR
@@ -932,47 +927,40 @@ impl<T: Config> Pallet<T> {
 			block_time_weight
 		};
 
+		let mut collected_votes: Vec<(VoteAccountId, VoteWeight)> = Vec::new();
 		if let Some(vote_result) = commitments.vote_result {
 			let session_index = shared::Pallet::<T>::session_index();
 			for vote in vote_result.clone().into_iter() {
-				if let Some(system_token_id) =
-					T::SystemTokenManager::convert_to_original_system_token(
-						vote.clone().system_token_id,
-					) {
-					if !is_collected {
-						is_collected = true;
-					}
-					let who = vote.clone().account_id;
-					let weight = vote.clone().vote_weight;
+				if let Some(original) =
+					T::SystemTokenInterface::convert_to_original_system_token(&vote.system_token_id)
+				{
+					let PotVote { system_token_id, account_id, vote_weight } = vote;
 
 					let adjusted_weight = {
-						let res = block_time_weight.mul(T::SystemTokenManager::adjusted_weight(
-							system_token_id.clone(),
-							weight,
+						let res = block_time_weight.mul(T::SystemTokenInterface::adjusted_weight(
+							&original,
+							vote_weight.clone(),
 						));
 
 						res
 					};
 
-					T::VotingManager::update_vote_status(who, adjusted_weight);
+					if T::VotingInterface::update_vote_status(account_id.clone(), adjusted_weight) {
+						collected_votes.push((account_id, adjusted_weight));
+					}
 					T::RewardInterface::aggregate_reward(
 						session_index,
-						vote.clone().system_token_id.para_id,
-						system_token_id.clone(),
-						weight,
+						system_token_id.para_id,
+						original,
+						adjusted_weight,
 					);
 				};
 			}
-			if is_collected {
-				let converted_vote_result = convert_pot_votes(vote_result);
-				let block_time_weight_u128 = block_time_weight.to_i128() as u128;
-
-				Self::deposit_event(Event::<T>::VoteCollected(
-					receipt.descriptor.para_id,
-					converted_vote_result,
-					block_time_weight_u128,
-				));
-			}
+			let converted_vote_result = convert_pot_votes(vote_result);
+			Self::deposit_event(Event::<T>::VoteCollected {
+				from: receipt.descriptor.para_id,
+				collected: converted_vote_result,
+			});
 		};
 
 		Self::deposit_event(Event::<T>::CandidateIncluded(

@@ -500,7 +500,7 @@ benchmarks_instance_pallet! {
 				yes_votes,
 				0,
 				m,) {
-				break;
+				break
 			}
 			Collective::<T, I>::vote(
 				SystemOrigin::Signed(voter.clone()).into(),

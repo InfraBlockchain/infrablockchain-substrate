@@ -21,9 +21,9 @@
 **/hfuzz_workspace/
 **/node_modules
 target
-!target/release/infrablockspace
-!target/release/infrablockspace-execute-worker
-!target/release/infrablockspace-prepare-worker
+!target/release/infrablockchain
+!target/release/infrablockchain-execute-worker
+!target/release/infrablockchain-prepare-worker
 !target/release/infra-parachain
 **/wip/*.stderr
 /.cargo/config

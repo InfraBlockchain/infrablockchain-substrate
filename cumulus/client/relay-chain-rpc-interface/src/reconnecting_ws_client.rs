@@ -352,7 +352,7 @@ impl ReconnectingWebsocketWorker {
 					},
 					None => {
 						tracing::error!(target: LOG_TARGET, "RPC client receiver closed. Stopping RPC Worker.");
-						return;
+						return
 					}
 				},
 				should_retry = pending_requests.next(), if !pending_requests.is_empty() => {
@@ -371,7 +371,7 @@ impl ReconnectingWebsocketWorker {
 									?hash,
 									"Duplicate imported block header. This might happen after switching to a new RPC node. Skipping distribution."
 								);
-								continue;
+								continue
 							}
 							imported_blocks_cache.insert(hash, ());
 							distribute_header(header, &mut self.imported_header_listeners);

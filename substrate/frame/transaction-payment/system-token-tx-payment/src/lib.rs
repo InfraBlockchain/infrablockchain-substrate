@@ -20,6 +20,7 @@ mod mock;
 mod tests;
 
 mod types;
+
 use types::*;
 
 mod payment;
@@ -30,12 +31,12 @@ use frame_support::{
 	dispatch::{DispatchInfo, DispatchResult, PostDispatchInfo},
 	pallet_prelude::*,
 	traits::{
-		ibs_support::{fee::FeeTableProvider, pot::VotingHandler},
+		infra_support::{fee::FeeTableProvider, pot::VotingHandler},
 		tokens::{
 			fungibles::{Balanced, Credit, Inspect},
 			WithdrawConsequence,
 		},
-		CallMetadata, GetCallMetadata, IsType,
+		CallMetadata, Contains, GetCallMetadata, IsType,
 	},
 	DefaultNoBound, PalletId,
 };
@@ -48,7 +49,10 @@ use sp_runtime::{
 		Zero,
 	},
 	transaction_validity::{TransactionValidity, TransactionValidityError, ValidTransaction},
-	types::{ExtrinsicMetadata, SystemTokenId, SystemTokenLocalAssetProvider, VoteAccountId},
+	types::{
+		AssetId as InfraAssetId, ExtrinsicMetadata, RuntimeState, SystemTokenId,
+		SystemTokenLocalAssetProvider, VoteAccountId,
+	},
 	FixedPointOperand,
 };
 
@@ -58,22 +62,25 @@ pub use pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {
+	use frame_support::traits::Contains;
+
 	use super::*;
 
 	#[pallet::config]
-	pub trait Config:
-		frame_system::Config + pallet_transaction_payment::Config + pallet_assets::Config
-	{
+	pub trait Config: frame_system::Config + pallet_transaction_payment::Config {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// The fungibles instance used to pay for transactions in assets.
-		type Assets: Balanced<Self::AccountId> + SystemTokenLocalAssetProvider;
+		type Assets: Balanced<Self::AccountId>
+			+ SystemTokenLocalAssetProvider<InfraAssetId, Self::AccountId>;
 		/// The actual transaction charging logic that charges the fees.
 		type OnChargeSystemToken: OnChargeSystemToken<Self>;
 		/// The type that handles the voting.
 		type VotingHandler: VotingHandler;
 		/// The type that handles fee table.
 		type FeeTableProvider: FeeTableProvider<ChargeAssetBalanceOf<Self>>;
+		/// Filters for bootstrappring runtime.
+		type BootstrapCallFilter: Contains<Self::RuntimeCall>;
 		/// Id for handling fee(e.g SoverignAccount for some Runtime).
 		#[pallet::constant]
 		type PalletId: Get<PalletId>;
@@ -87,18 +94,29 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		/// A transaction fee `actual_fee`, of which `tip` was added to the minimum inclusion fee,
 		/// has been paid by `who` in an asset `asset_id`.
-		AssetTxFeePaid {
+		SystemTokenTxFeePaid {
 			fee_payer: T::AccountId,
-			actual_fee: BalanceOf<T>,
-			fee_detail: FeeDetail<SystemTokenId, AssetBalanceOf<T>>,
-			tip: Option<AssetBalanceOf<T>>,
+			detail: Detail<T>,
 			vote_candidate: Option<VoteAccountId>,
 		},
+		/// Currently, Runtime is in bootstrap mode.
+		OnBootstrapping,
 	}
 
 	impl<T: Config> Pallet<T> {
 		pub fn account_id() -> T::AccountId {
 			T::PalletId::get().into_account_truncating()
+		}
+	}
+}
+
+impl<T: Config> Pallet<T> {
+	fn check_bootstrap_and_filter(call: &T::RuntimeCall) -> Result<bool, TransactionValidityError> {
+		match (T::Assets::runtime_state(), T::BootstrapCallFilter::contains(call)) {
+			(RuntimeState::Bootstrap, false) =>
+				Err(TransactionValidityError::Invalid(InvalidTransaction::InvalidBootstrappingCall)),
+			(RuntimeState::Bootstrap, true) => Ok(true),
+			(RuntimeState::Normal, _) => Ok(false),
 		}
 	}
 }
@@ -202,6 +220,7 @@ where
 	T::RuntimeCall:
 		Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo> + GetCallMetadata,
 	AssetBalanceOf<T>: Send + Sync + FixedPointOperand + IsType<u128>,
+	AssetIdOf<T>: Send + Sync + IsType<ChargeSystemTokenAssetIdOf<T>>,
 	BalanceOf<T>: Send + Sync + From<u64> + FixedPointOperand + IsType<ChargeAssetBalanceOf<T>>,
 	ChargeSystemTokenAssetIdOf<T>: Send + Sync,
 	Credit<T::AccountId, T::Assets>: IsType<ChargeAssetLiquidityOf<T>>,
@@ -238,7 +257,13 @@ where
 	) -> TransactionValidity {
 		use pallet_transaction_payment::ChargeTransactionPayment;
 		let payer = who.clone();
-		let (fee, _) = self.withdraw_fee(&payer, call, info, len)?;
+		let is_bootstrap = Pallet::<T>::check_bootstrap_and_filter(call)?;
+		let (fee, _) = if is_bootstrap {
+			(Zero::zero(), InitialPayment::Nothing)
+		} else {
+			let (fee, _paid) = self.withdraw_fee(&payer, call, info, len)?;
+			(fee, _paid)
+		};
 		let priority = ChargeTransactionPayment::<T>::get_priority(info, len, self.tip, fee);
 		Ok(ValidTransaction { priority, ..Default::default() })
 	}
@@ -250,7 +275,12 @@ where
 		info: &DispatchInfoOf<Self::Call>,
 		len: usize,
 	) -> Result<Self::Pre, TransactionValidityError> {
-		let (_fee, initial_payment) = self.withdraw_fee(who, call, info, len)?;
+		let is_bootstrap = Pallet::<T>::check_bootstrap_and_filter(call)?;
+		let (_, initial_payment) = if is_bootstrap {
+			(Zero::zero(), InitialPayment::Nothing)
+		} else {
+			self.withdraw_fee(who, call, info, len)?
+		};
 		let call_metadata = call.get_call_metadata();
 		Ok((
 			self.tip,
@@ -293,7 +323,7 @@ where
 								len as u32, info, post_info, tip,
 								)
 						};
-
+					let paid_asset_id = already_withdrawn.asset();
 					let (converted_fee, converted_tip) =
 						T::OnChargeSystemToken::correct_and_deposit_fee(
 							&who,
@@ -311,14 +341,14 @@ where
 					match (&vote_candidate, &system_token_id) {
 						// Case: Voting and system token has clarified
 						(Some(vote_candidate), Some(system_token_id)) => {
-							Pallet::<T>::deposit_event(Event::<T>::AssetTxFeePaid {
+							Pallet::<T>::deposit_event(Event::<T>::SystemTokenTxFeePaid {
 								fee_payer: who,
-								actual_fee,
-								fee_detail: FeeDetail::<SystemTokenId, AssetBalanceOf<T>>::new(
-									system_token_id.clone(),
+								detail: Detail::<T> {
+									paid_asset_id: paid_asset_id.into(),
+									actual_fee,
 									converted_fee,
-								),
-								tip,
+									tip,
+								},
 								vote_candidate: Some(vote_candidate.clone()),
 							});
 
@@ -330,19 +360,18 @@ where
 								vote_weight,
 							);
 						},
-						// Case: No voting but system token id has clarified.
-						(None, Some(system_token_id)) =>
-							Pallet::<T>::deposit_event(Event::<T>::AssetTxFeePaid {
+						_ => {
+							Pallet::<T>::deposit_event(Event::<T>::SystemTokenTxFeePaid {
 								fee_payer: who,
-								actual_fee,
-								fee_detail: FeeDetail::<SystemTokenId, AssetBalanceOf<T>>::new(
-									system_token_id.clone(),
+								detail: Detail::<T> {
+									paid_asset_id: paid_asset_id.into(),
+									actual_fee,
 									converted_fee,
-								),
-								tip,
+									tip,
+								},
 								vote_candidate: None,
-							}),
-						_ => {},
+							});
+						},
 					}
 				},
 				InitialPayment::Nothing => {
@@ -352,7 +381,10 @@ where
 					// move ahead without adjusting the fee, though, so we do nothing.
 					debug_assert!(tip.is_zero(), "tip should be zero if initial fee was zero.");
 				},
-				_ => {},
+				InitialPayment::Bootstrap => {
+					Pallet::<T>::deposit_event(Event::<T>::OnBootstrapping);
+				},
+				_ => return Err(TransactionValidityError::Invalid(InvalidTransaction::Payment)),
 			}
 		}
 

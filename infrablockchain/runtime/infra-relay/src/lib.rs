@@ -176,6 +176,7 @@ impl frame_system::Config for Runtime {
 	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
+#[cfg(feature = "fast-runtime")]
 impl pallet_sudo::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
@@ -242,7 +243,7 @@ impl pallet_preimage::Config for Runtime {
 	type WeightInfo = weights::pallet_preimage::WeightInfo<Runtime>;
 	type RuntimeEvent = RuntimeEvent;
 	type Currency = Balances;
-	type ManagerOrigin = EnsureRoot<AccountId>;
+	type ManagerOrigin = AuthorityOrigin;
 	type Consideration = frame_support::traits::fungible::HoldConsideration<
 		AccountId,
 		Balances,
@@ -346,6 +347,35 @@ impl HandleCredit<AccountId, Assets> for CreditToBucket {
 	}
 }
 
+pub struct BootstrapCallFilter;
+impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
+	#[cfg(not(feature = "fast-runtime"))]
+	fn contains(call: &RuntimeCall) -> bool {
+		match call {
+			RuntimeCall::SystemTokenManager(
+				system_token_manager::Call::register_system_token { .. } |
+				system_token_manager::Call::deregister_system_token { .. },
+			) |
+			RuntimeCall::Council(
+				pallet_collective::Call::propose { .. } |
+				pallet_collective::Call::vote { .. } |
+				pallet_collective::Call::close { .. },
+			) |
+			RuntimeCall::Democracy(pallet_democracy::Call::external_propose_majority {
+				..
+			}) |
+			RuntimeCall::Preimage(pallet_preimage::Call::note_preimage { .. }) => true,
+			_ => false,
+		}
+	}
+	#[cfg(feature = "fast-runtime")]
+	fn contains(call: &RuntimeCall) -> bool {
+		match call {
+			_ => true,
+		}
+	}
+}
+
 impl pallet_system_token_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Assets = Assets;
@@ -355,13 +385,14 @@ impl pallet_system_token_tx_payment::Config for Runtime {
 	>;
 	type FeeTableProvider = ();
 	type VotingHandler = Pot;
+	type BootstrapCallFilter = BootstrapCallFilter;
 	type PalletId = FeeTreasuryId;
 }
 
 impl relay_pot::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type VotingHandler = ValidatorElection;
-	type SystemTokenManager = SystemTokenManager;
+	type SystemTokenInterface = SystemTokenManager;
 }
 
 parameter_types! {
@@ -472,29 +503,29 @@ impl pallet_democracy::Config for Runtime {
 	/// A straight majority of the council can decide what their next motion is.
 	type ExternalOrigin = EitherOfDiverse<
 		pallet_collective::EnsureProportionAtLeast<AccountId, ValidatorCollective, 1, 2>,
-		frame_system::EnsureRoot<AccountId>,
+		EnsureRoot<AccountId>,
 	>;
 	/// A 60% super-majority can have the next scheduled referendum be a straight majority-carries
 	/// vote.
 	type ExternalMajorityOrigin = EitherOfDiverse<
 		pallet_collective::EnsureProportionAtLeast<AccountId, ValidatorCollective, 3, 5>,
-		frame_system::EnsureRoot<AccountId>,
+		EnsureRoot<AccountId>,
 	>;
 	/// A unanimous council can have the next scheduled referendum be a straight default-carries
 	/// (NTB) vote.
 	type ExternalDefaultOrigin = EitherOfDiverse<
 		pallet_collective::EnsureProportionAtLeast<AccountId, ValidatorCollective, 1, 1>,
-		frame_system::EnsureRoot<AccountId>,
+		EnsureRoot<AccountId>,
 	>;
 	/// Two thirds of the technical committee can have an `ExternalMajority/ExternalDefault` vote
 	/// be tabled immediately and with a shorter voting/enactment period.
 	type FastTrackOrigin = EitherOfDiverse<
 		pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 2, 3>,
-		frame_system::EnsureRoot<AccountId>,
+		EnsureRoot<AccountId>,
 	>;
 	type InstantOrigin = EitherOfDiverse<
 		pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 1, 1>,
-		frame_system::EnsureRoot<AccountId>,
+		EnsureRoot<AccountId>,
 	>;
 	type InstantAllowed = InstantAllowed;
 	type FastTrackVotingPeriod = FastTrackVotingPeriod;
@@ -509,7 +540,7 @@ impl pallet_democracy::Config for Runtime {
 		pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 1, 1>,
 		EnsureRoot<AccountId>,
 	>;
-	type BlacklistOrigin = EnsureRoot<AccountId>;
+	type BlacklistOrigin = AuthorityOrigin;
 	// Any single technical committee member may veto a coming council proposal, however they can
 	// only do it once and it lasts only for the cooloff period.
 	type VetoOrigin = pallet_collective::EnsureMember<AccountId, TechnicalCollective>;
@@ -535,7 +566,7 @@ pub type ValidatorCollective = pallet_collective::Instance1;
 impl pallet_collective::Config<ValidatorCollective> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;
-	type SetMembersOrigin = EnsureRoot<AccountId>;
+	type SetMembersOrigin = AuthorityOrigin;
 	type MaxProposalWeight = MaximumSchedulerWeight;
 	type Proposal = RuntimeCall;
 	type MotionDuration = CouncilMotionDuration;
@@ -595,7 +626,7 @@ pub type TechnicalCollective = pallet_collective::Instance2;
 impl pallet_collective::Config<TechnicalCollective> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;
-	type SetMembersOrigin = EnsureRoot<AccountId>;
+	type SetMembersOrigin = AuthorityOrigin;
 	type Proposal = RuntimeCall;
 	type MotionDuration = TechnicalMotionDuration;
 	type MaxProposals = TechnicalMaxProposals;
@@ -639,7 +670,8 @@ parameter_types! {
 	pub const MaxBalance: Balance = Balance::max_value();
 }
 
-type ApproveOrigin = EitherOfDiverse<
+/// Either origin by governance or 3/5 validator origin
+type AuthorityOrigin = EitherOfDiverse<
 	EnsureRoot<AccountId>,
 	pallet_collective::EnsureProportionAtLeast<AccountId, ValidatorCollective, 3, 5>,
 >;
@@ -648,8 +680,8 @@ impl pallet_treasury::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type PalletId = TreasuryPalletId;
 	type Currency = Balances;
-	type ApproveOrigin = ApproveOrigin;
-	type RejectOrigin = EnsureRoot<AccountId>;
+	type ApproveOrigin = AuthorityOrigin;
+	type RejectOrigin = AuthorityOrigin;
 	type SpendOrigin = EnsureWithSuccess<EnsureRoot<AccountId>, AccountId, MaxBalance>;
 	type OnSlash = Treasury;
 	type ProposalBond = ProposalBond;
@@ -672,9 +704,9 @@ impl pallet_treasury::Config for Runtime {
 }
 
 impl pallet_asset_rate::Config for Runtime {
-	type CreateOrigin = EnsureRoot<AccountId>;
-	type RemoveOrigin = EnsureRoot<AccountId>;
-	type UpdateOrigin = EnsureRoot<AccountId>;
+	type CreateOrigin = AuthorityOrigin;
+	type RemoveOrigin = AuthorityOrigin;
+	type UpdateOrigin = AuthorityOrigin;
 	type Currency = Balances;
 	type AssetKind = u32;
 	type RuntimeEvent = RuntimeEvent;
@@ -1057,8 +1089,8 @@ impl parachains_inclusion::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type DisputesHandler = ParasDisputes;
 	type RewardValidators = RewardValidators;
-	type VotingManager = ValidatorElection;
-	type SystemTokenManager = SystemTokenManager;
+	type VotingInterface = ValidatorElection;
+	type SystemTokenInterface = SystemTokenManager;
 	type RewardInterface = ValidatorRewardManager;
 	type MessageQueue = MessageQueue;
 	type WeightInfo = weights::runtime_parachains_inclusion::WeightInfo<Runtime>;
@@ -1083,7 +1115,7 @@ impl pallet_validator_election::Config for Runtime {
 
 impl pallet_asset_link::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type ReserveAssetModifierOrigin = EnsureRoot<AccountId>;
+	type ReserveAssetModifierOrigin = AuthorityOrigin;
 	type Assets = Assets;
 	type WeightInfo = ();
 }
@@ -1098,7 +1130,7 @@ impl system_token_manager::Config for Runtime {
 
 impl pallet_system_token::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type AuthorizedOrigin = EnsureRoot<AccountId>;
+	type AuthorizedOrigin = AuthorityOrigin;
 }
 
 impl validator_reward_manager::Config for Runtime {
@@ -1173,7 +1205,7 @@ impl parachains_dmp::Config for Runtime {}
 impl parachains_hrmp::Config for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeEvent = RuntimeEvent;
-	type ChannelManager = EnsureRoot<AccountId>;
+	type ChannelManager = AuthorityOrigin;
 	type Currency = Balances;
 	type WeightInfo = weights::runtime_parachains_hrmp::WeightInfo<Self>;
 }
@@ -1206,7 +1238,7 @@ impl parachains_assigner::Config for Runtime {
 
 impl parachains_initializer::Config for Runtime {
 	type Randomness = pallet_babe::RandomnessFromOneEpochAgo<Runtime>;
-	type ForceOrigin = EnsureRoot<AccountId>;
+	type ForceOrigin = AuthorityOrigin;
 	type WeightInfo = weights::runtime_parachains_initializer::WeightInfo<Runtime>;
 }
 
@@ -1329,7 +1361,7 @@ impl pallet_assets::Config for Runtime {
 	type AssetIdParameter = parity_scale_codec::Compact<AssetId>;
 	type Currency = Balances;
 	type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
-	type ForceOrigin = EnsureRoot<AccountId>;
+	type ForceOrigin = AuthorityOrigin;
 	type AssetDeposit = ConstU128<2>;
 	type AssetAccountDeposit = ConstU128<2>;
 	type MetadataDepositBase = ConstU128<0>;
@@ -1448,6 +1480,7 @@ construct_runtime! {
 		Auctions: auctions::{Pallet, Call, Storage, Event<T>} = 72,
 		Crowdloan: crowdloan::{Pallet, Call, Storage, Event<T>} = 73,
 
+		#[cfg(feature = "fast-runtime")]
 		Sudo: pallet_sudo::{Pallet, Call, Storage, Config<T>, Event<T>} = 81,
 		ParasSudoWrapper: paras_sudo_wrapper::{Pallet, Call} = 82,
 

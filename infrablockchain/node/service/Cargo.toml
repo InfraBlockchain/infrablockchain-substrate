@@ -213,6 +213,7 @@ try-runtime = [
 	"sp-runtime/try-runtime",
 ]
 fast-runtime = [
+	"infra-relay-runtime?/fast-runtime",
 	"rococo-runtime?/fast-runtime",
 ]
 

@@ -282,6 +282,28 @@ parameter_types! {
 	pub const FeeTreasuryId: PalletId = PalletId(*b"infrapid");
 }
 
+pub struct BootstrapCallFilter;
+impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
+	#[cfg(not(feature = "fast-runtime"))]
+	fn contains(call: &RuntimeCall) -> bool {
+		match call {
+			RuntimeCall::Assets(
+				pallet_assets::Call::create { .. } |
+				pallet_assets::Call::set_metadata { .. } |
+				pallet_assets::Call::mint { .. } |
+				pallet_assets::Call::set_runtime_state { .. },
+			) => true,
+			_ => false,
+		}
+	}
+	#[cfg(feature = "fast-runtime")]
+	fn contains(call: &RuntimeCall) -> bool {
+		match call {
+			_ => true,
+		}
+	}
+}
+
 impl pallet_system_token_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Assets = Assets;
@@ -291,6 +313,7 @@ impl pallet_system_token_tx_payment::Config for Runtime {
 	>;
 	type FeeTableProvider = SystemToken;
 	type VotingHandler = ParachainSystem;
+	type BootstrapCallFilter = BootstrapCallFilter;
 	type PalletId = FeeTreasuryId;
 }
 

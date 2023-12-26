@@ -35,21 +35,19 @@ pub enum InitialPayment<T: Config> {
 	/// No initial fee was payed.
 	#[default]
 	Nothing,
+	/// Runtime is in bootstrap mode.
+	Bootstrap,
 	/// The initial fee was payed in the native currency.
 	Native(LiquidityInfoOf<T>),
 	/// The initial fee was payed in an asset.
 	Asset(Credit<T::AccountId, T::Assets>),
 }
 
-#[derive(Encode, Decode, Debug, Clone, TypeInfo, PartialEq)]
+#[derive(Encode, Decode, Clone, TypeInfo, PartialEq, RuntimeDebugNoBound)]
 /// Details of fee payment of which system token used and its amount.
-pub struct FeeDetail<SystemTokenId, Balance> {
-	system_token_id: SystemTokenId,
-	amount: Balance,
-}
-
-impl<SystemTokenId, Balance> FeeDetail<SystemTokenId, Balance> {
-	pub fn new(system_token_id: SystemTokenId, amount: Balance) -> Self {
-		Self { system_token_id, amount }
-	}
+pub struct Detail<T: Config> {
+	pub paid_asset_id: ChargeSystemTokenAssetIdOf<T>,
+	pub actual_fee: BalanceOf<T>,
+	pub converted_fee: AssetBalanceOf<T>,
+	pub tip: Option<AssetBalanceOf<T>>,
 }

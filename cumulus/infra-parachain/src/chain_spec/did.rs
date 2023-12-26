@@ -198,21 +198,7 @@ fn did_genesis(
 				.map(|k| (k, DID_INFRA_RELAY_ED * 4096))
 				.collect(),
 		},
-		assets: did_runtime::AssetsConfig {
-			assets: vec![(
-				99,                                                   // asset_id
-				get_account_id_from_seed::<sr25519::Public>("Alice"), // owner
-				true,                                                 // is_sufficient
-				1000,                                                 // min_balance
-			)],
-			metadata: vec![(99, "iBOOT".into(), "iBOOT".into(), 2)],
-			accounts: vec![(
-				99,
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
-				100_000_000_000, // 1_000_000_000 iTEST
-			)],
-			..Default::default()
-		},
+		assets: Default::default(),
 		parachain_info: did_runtime::ParachainInfoConfig { parachain_id: id, ..Default::default() },
 		collator_selection: did_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),

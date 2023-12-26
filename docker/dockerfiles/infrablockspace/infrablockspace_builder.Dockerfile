@@ -1,29 +1,29 @@
-# This is the build stage for infrablockspace. Here we create the binary in a temporary image.
+# This is the build stage for infrablockchain. Here we create the binary in a temporary image.
 FROM docker.io/paritytech/ci-linux:production as builder
 
-WORKDIR /infrablockspace
+WORKDIR /infrablockchain
 
-COPY . /infrablockspace
+COPY . /infrablockchain
 
 RUN cargo build --release --locked
 
-# This is the 2nd stage: a very small image where we copy the infrablockspace binary."
+# This is the 2nd stage: a very small image where we copy the infrablockchain binary."
 FROM docker.io/library/ubuntu:20.04
 
-COPY --from=builder /infrablockspace/target/release/infrablockspace /usr/local/bin
-COPY --from=builder /infrablockspace/target/release/infrablockchain-execute-worker /usr/local/bin
-COPY --from=builder /infrablockspace/target/release/infrablockchain-prepare-worker /usr/local/bin
+COPY --from=builder /infrablockchain/target/release/infrablockchain /usr/local/bin
+COPY --from=builder /infrablockchain/target/release/infrablockchain-execute-worker /usr/local/bin
+COPY --from=builder /infrablockchain/target/release/infrablockchain-prepare-worker /usr/local/bin
 
-RUN useradd -m -u 1000 -U -s /bin/sh -d /infrablockspace infrablockspace && \
-	mkdir -p /data /infrablockspace/.local/share && \
-	chown -R infrablockspace:infrablockspace /data && \
-	ln -s /data /infrablockspace/.local/share/infrablockspace && \
+RUN useradd -m -u 1000 -U -s /bin/sh -d /infrablockchain infrablockchain && \
+	mkdir -p /data /infrablockchain/.local/share && \
+	chown -R infrablockchain:infrablockchain /data && \
+	ln -s /data /infrablockchain/.local/share/infrablockchain && \
 # check if executable works in this container
-	/usr/local/bin/infrablockspace --version
+	/usr/local/bin/infrablockchain --version
 
-USER infrablockspace
+USER infrablockchain
 
 EXPOSE 30333 9933 9944 9615
 VOLUME ["/data"]
 
-ENTRYPOINT ["/usr/local/bin/infrablockspace"]
+ENTRYPOINT ["/usr/local/bin/infrablockchain"]

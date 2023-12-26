@@ -262,20 +262,6 @@ fn contracts_infra_genesis(
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
 			..Default::default()
 		},
-		assets: contracts_infra_runtime::AssetsConfig {
-			assets: vec![(
-				99,                                                   // asset_id
-				get_account_id_from_seed::<sr25519::Public>("Alice"), // owner
-				true,                                                 // is_sufficient
-				1000,                                                 // min_balance
-			)],
-			metadata: vec![(99, "iBOOT".into(), "iBOOT".into(), 2)],
-			accounts: vec![(
-				99,
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
-				100_000_000_000, // 1_000_000_000 iTEST
-			)],
-			..Default::default()
-		},
+		assets: Default::default(),
 	}
 }

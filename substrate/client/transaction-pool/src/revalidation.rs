@@ -284,7 +284,7 @@ impl<Api: ChainApi> RevalidationWorker<Api> {
 								);
 							}
 
-							continue;
+							continue
 						},
 						// R.I.P. worker!
 						None => break,

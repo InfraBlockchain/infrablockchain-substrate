@@ -424,7 +424,7 @@ fn overseer_start_stop_works() {
 			select! {
 				res = overseer_fut => {
 					assert!(res.is_ok());
-					break;
+					break
 				},
 				res = rx_5.next() => {
 					if let Some(res) = res {
@@ -528,7 +528,7 @@ fn overseer_finalize_works() {
 			select! {
 				res = overseer_fut => {
 					assert!(res.is_ok());
-					break;
+					break
 				},
 				res = rx_5.next() => {
 					if let Some(res) = res {
@@ -631,7 +631,7 @@ fn overseer_finalize_leaf_preserves_it() {
 			select! {
 				res = overseer_fut => {
 					assert!(res.is_ok());
-					break;
+					break
 				},
 				res = rx_5.next() => {
 					if let Some(res) = res {
@@ -716,7 +716,7 @@ fn do_not_send_empty_leaves_update_on_block_finalization() {
 			select! {
 				res = overseer_fut => {
 					assert!(res.is_ok());
-					break;
+					break
 				},
 				res = rx_5.next() => {
 					if let Some(res) = dbg!(res) {

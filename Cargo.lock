@@ -3295,8 +3295,8 @@ dependencies = [
  "cumulus-test-service",
  "futures",
  "futures-timer",
+ "infrablockchain-cli",
  "infrablockchain-service",
- "polkadot-cli",
  "polkadot-test-client",
  "primitives",
  "prioritized-metered-channel",
@@ -3500,6 +3500,7 @@ dependencies = [
  "frame-system",
  "frame-system-rpc-runtime-api",
  "futures",
+ "infrablockchain-cli",
  "infrablockchain-overseer",
  "infrablockchain-service",
  "jsonrpsee",
@@ -3509,7 +3510,6 @@ dependencies = [
  "pallet-transaction-payment",
  "parachains-common",
  "parity-scale-codec",
- "polkadot-cli",
  "polkadot-test-service",
  "portpicker",
  "primitives",
@@ -5989,6 +5989,7 @@ dependencies = [
  "frame-benchmarking-cli",
  "futures",
  "hex-literal 0.4.1",
+ "infrablockchain-cli",
  "infrablockchain-service",
  "jsonrpsee",
  "log",
@@ -5996,7 +5997,6 @@ dependencies = [
  "pallet-transaction-payment-rpc",
  "parachains-common",
  "parity-scale-codec",
- "polkadot-cli",
  "primitives",
  "sc-basic-authorship",
  "sc-chain-spec",
@@ -6155,6 +6155,7 @@ version = "1.1.0"
 dependencies = [
  "assert_cmd",
  "color-eyre",
+ "infrablockchain-cli",
  "infrablockchain-core-primitives",
  "infrablockchain-overseer",
  "nix 0.26.4",
@@ -6162,12 +6163,38 @@ dependencies = [
  "node-core-pvf-common",
  "node-core-pvf-execute-worker",
  "node-core-pvf-prepare-worker",
- "polkadot-cli",
  "substrate-build-script-utils",
  "substrate-rpc-client",
  "tempfile",
  "tikv-jemallocator",
  "tokio",
+]
+
+[[package]]
+name = "infrablockchain-cli"
+version = "1.1.0"
+dependencies = [
+ "clap 4.4.11",
+ "frame-benchmarking-cli",
+ "futures",
+ "infrablockchain-service",
+ "log",
+ "node-metrics",
+ "pyroscope",
+ "pyroscope_pprofrs",
+ "sc-cli",
+ "sc-executor",
+ "sc-service",
+ "sc-storage-monitor",
+ "sc-sysinfo",
+ "sc-tracing",
+ "sp-core",
+ "sp-io",
+ "sp-keyring",
+ "sp-maybe-compressed-blob",
+ "substrate-build-script-utils",
+ "thiserror",
+ "try-runtime-cli",
 ]
 
 [[package]]
@@ -7685,9 +7712,9 @@ dependencies = [
 
 [[package]]
 name = "memmap2"
-version = "0.9.2"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "39a69c7c189ae418f83003da62820aca28d15a07725ce51fb924999335d622ff"
+checksum = "deaba38d7abf1d4cca21cc89e932e542ba2b9258664d2a9ef0e61512039c9375"
 dependencies = [
  "libc",
 ]
@@ -11559,12 +11586,12 @@ dependencies = [
  "frame-benchmarking",
  "frame-benchmarking-cli",
  "futures",
+ "infrablockchain-cli",
  "jsonrpsee",
  "log",
  "pallet-transaction-payment-rpc",
  "parachain-template-runtime",
  "parity-scale-codec",
- "polkadot-cli",
  "primitives",
  "sc-basic-authorship",
  "sc-chain-spec",
@@ -12078,33 +12105,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "polkadot-cli"
-version = "1.1.0"
-dependencies = [
- "clap 4.4.11",
- "frame-benchmarking-cli",
- "futures",
- "infrablockchain-service",
- "log",
- "node-metrics",
- "pyroscope",
- "pyroscope_pprofrs",
- "sc-cli",
- "sc-executor",
- "sc-service",
- "sc-storage-monitor",
- "sc-sysinfo",
- "sc-tracing",
- "sp-core",
- "sp-io",
- "sp-keyring",
- "sp-maybe-compressed-blob",
- "substrate-build-script-utils",
- "thiserror",
- "try-runtime-cli",
-]
-
-[[package]]
 name = "polkadot-primitives-test-helpers"
 version = "1.0.0"
 dependencies = [
@@ -12207,6 +12207,7 @@ dependencies = [
  "color-eyre",
  "futures",
  "futures-timer",
+ "infrablockchain-cli",
  "infrablockchain-erasure-coding",
  "node-core-backing",
  "node-core-candidate-validation",
@@ -12219,7 +12220,6 @@ dependencies = [
  "node-subsystem-test-helpers",
  "node-subsystem-types",
  "node-subsystem-util",
- "polkadot-cli",
  "primitives",
  "rand 0.8.5",
  "sp-core",
@@ -17543,7 +17543,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1cccfffbc6bb3bb2d3a26cd2077f4d055f6808d266f9d4d158797a4c60510dfe"
 dependencies = [
  "debugid",
- "memmap2 0.9.2",
+ "memmap2 0.9.0",
  "stable_deref_trait",
  "uuid",
 ]
@@ -17685,6 +17685,7 @@ dependencies = [
  "clap 4.4.11",
  "futures",
  "futures-timer",
+ "infrablockchain-cli",
  "infrablockchain-service",
  "log",
  "node-core-pvf",
@@ -17692,7 +17693,6 @@ dependencies = [
  "node-subsystem",
  "parachain-primitives",
  "parity-scale-codec",
- "polkadot-cli",
  "polkadot-test-service",
  "primitives",
  "sc-cli",
@@ -17733,6 +17733,7 @@ dependencies = [
  "clap 4.4.11",
  "futures",
  "futures-timer",
+ "infrablockchain-cli",
  "infrablockchain-service",
  "log",
  "node-core-pvf",
@@ -17740,7 +17741,6 @@ dependencies = [
  "node-subsystem",
  "parachain-primitives",
  "parity-scale-codec",
- "polkadot-cli",
  "polkadot-test-service",
  "primitives",
  "sc-cli",
@@ -19545,9 +19545,9 @@ checksum = "dff9641d1cd4be8d1a070daf9e3773c5f67e78b4d9d42263020c057706765c04"
 
 [[package]]
 name = "winnow"
-version = "0.5.30"
+version = "0.5.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9b5c3db89721d50d0e2a673f5043fc4722f76dcc352d7b1ab8b8288bed4ed2c5"
+checksum = "6c830786f7720c2fd27a1a0e27a709dbd3c4d009b56d098fc742d4f4eab91fe2"
 dependencies = [
  "memchr",
 ]

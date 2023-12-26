@@ -26,7 +26,7 @@ color-eyre = { version = "0.6.1", default-features = false }
 tikv-jemallocator = { version = "0.5.0", optional = true }
 
 # Crates in our workspace, defined as dependencies so we can pass them feature flags.
-polkadot-cli = { path = "cli", features = ["rococo-native", "infra-relay-native" ]  }
+infrablockchain-cli = { path = "cli", features = ["rococo-native", "infra-relay-native" ]  }
 node-core-pvf = { path = "node/core/pvf" }
 node-core-pvf-prepare-worker = { path = "node/core/pvf/prepare-worker" }
 infrablockchain-overseer = { path = "node/overseer" }
@@ -53,11 +53,11 @@ substrate-build-script-utils = { path = "../substrate/utils/build-script-utils" 
 maintenance = { status = "actively-developed" }
 
 [features]
-runtime-benchmarks = [ "polkadot-cli/runtime-benchmarks" ]
-try-runtime = [ "polkadot-cli/try-runtime" ]
-fast-runtime = [ "polkadot-cli/fast-runtime" ]
-runtime-metrics = [ "polkadot-cli/runtime-metrics" ]
-pyroscope = [ "polkadot-cli/pyroscope" ]
+runtime-benchmarks = [ "infrablockchain-cli/runtime-benchmarks" ]
+try-runtime = [ "infrablockchain-cli/try-runtime" ]
+fast-runtime = [ "infrablockchain-cli/fast-runtime" ]
+runtime-metrics = [ "infrablockchain-cli/runtime-metrics" ]
+pyroscope = [ "infrablockchain-cli/pyroscope" ]
 jemalloc-allocator = [
 	"dep:tikv-jemallocator",
 	"node-core-pvf-prepare-worker/jemalloc-allocator",

@@ -4,13 +4,14 @@ use crate::{
 	types::token::SystemTokenId,
 };
 use bounded_collections::{BoundedVec, ConstU32};
+use softfloat::F64;
 use sp_core::crypto::AccountId32;
 use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 
 /// Account Id type of vote candidate. Should be equal to the AccountId type of the Relay Chain
 pub type VoteAccountId = AccountId32;
 /// Weight of vote which is weight of transaction and asset id
-pub type VoteWeight = softfloat::F64;
+pub type VoteWeight = F64;
 /// Which asset to vote for
 pub type VoteAssetId = u32;
 
@@ -19,11 +20,21 @@ use serde::{Deserialize, Serialize};
 
 /// Aggregated votes with maximum amount `MAX_VOTE_NUM`
 pub type PotVotesResult = BoundedVec<PotVote, ConstU32<MAX_VOTE_NUM>>;
-pub type PotVotesU128Result = Vec<PotVoteU128>;
 
-/// Convert pot votes to PotVotesU128Result
-pub fn convert_pot_votes(votes: PotVotesResult) -> PotVotesU128Result {
-	let converted_votes: Vec<PotVoteU128> = votes.into_iter().map(|vote| vote.to_u128()).collect();
+/// Convert pot votes to Vec<(AccountId32, F64)>
+pub fn convert_pot_votes(votes: PotVotesResult) -> Vec<(AccountId32, F64)> {
+	let converted_votes: Vec<(AccountId32, F64)> = votes
+		.into_iter()
+		.map(|vote| {
+			// Assuming AccountId32 and F64 are the types you want to use for account_id and
+			// vote_weight respectively. Also assuming that VoteAccountId can be transformed into
+			// AccountId32, and VoteWeight can be transformed into F64.
+			let account_id = vote.account_id;
+			let vote_weight = vote.vote_weight;
+
+			(account_id, vote_weight)
+		})
+		.collect();
 
 	converted_votes
 }

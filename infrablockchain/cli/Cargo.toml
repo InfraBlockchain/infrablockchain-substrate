@@ -1,6 +1,6 @@
 [package]
-name = "polkadot-cli"
-description = "Polkadot Relay-chain Client Node"
+name = "infrablockchain-cli"
+description = "InfraBlockchain Relay-chain Client Node"
 version = "1.1.0"
 authors.workspace = true
 edition.workspace = true

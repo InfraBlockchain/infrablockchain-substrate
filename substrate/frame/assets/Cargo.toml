@@ -13,18 +13,21 @@ readme = "README.md"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
+
+# External
 codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false }
 log = { version = "0.4.17", default-features = false }
 scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
+
+# Primitives
+sp-core = { path = "../../primitives/core", default-features = false}
 sp-std = { path = "../../primitives/std", default-features = false}
-# Needed for various traits. In our case, `OnFinalize`.
 sp-runtime = { path = "../../primitives/runtime", default-features = false}
-# Needed for type-safe access to storage DB.
+
+# FRAME
 frame-support = { path = "../support", default-features = false}
-# `system` module provides us with all sorts of useful stuff and macros depend on it being around.
 frame-system = { path = "../system", default-features = false}
 frame-benchmarking = { path = "../benchmarking", default-features = false, optional = true }
-sp-core = { path = "../../primitives/core", default-features = false}
 
 [dev-dependencies]
 sp-std = { path = "../../primitives/std" }
@@ -35,9 +38,6 @@ pallet-balances = { path = "../balances" }
 default = [ "std" ]
 std = [
 	"codec/std",
-	"frame-benchmarking?/std",
-	"frame-support/std",
-	"frame-system/std",
 	"log/std",
 	"pallet-balances/std",
 	"scale-info/std",
@@ -45,6 +45,9 @@ std = [
 	"sp-io/std",
 	"sp-runtime/std",
 	"sp-std/std",
+	"frame-benchmarking?/std",
+	"frame-support/std",
+	"frame-system/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking/runtime-benchmarks",
