@@ -750,8 +750,7 @@ pub fn infra_relay_testnet_genesis(
 		AssignmentId,
 		AuthorityDiscoveryId,
 	)>,
-	#[allow(unused_variables)]
-	root_key: AccountId,
+	#[allow(unused_variables)] root_key: AccountId,
 	endowed_accounts: Option<Vec<AccountId>>,
 ) -> infra_relay::RuntimeGenesisConfig {
 	let endowed_accounts: Vec<AccountId> = endowed_accounts.unwrap_or_else(testnet_accounts);
