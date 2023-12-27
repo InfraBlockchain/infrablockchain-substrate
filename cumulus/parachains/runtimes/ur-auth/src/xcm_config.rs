@@ -230,7 +230,6 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 			RuntimeCall::DmpQueue(..) |
 			RuntimeCall::AssetLink(pallet_asset_link::Call::link_system_token { .. }) |
 			RuntimeCall::Assets(
-				pallet_assets::Call::update_para_fee_rate { .. } |
 				pallet_assets::Call::update_system_token_weight { .. } |
 				pallet_assets::Call::set_sufficient_and_system_token_weight { .. } |
 				pallet_assets::Call::set_sufficient_with_unlink_system_token { .. } |
@@ -262,8 +261,7 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				pallet_assets::Call::force_cancel_approval { .. } |
 				pallet_assets::Call::transfer_approved { .. } |
 				pallet_assets::Call::touch { .. } |
-				pallet_assets::Call::refund { .. } |
-				pallet_assets::Call::set_runtime_state { .. },
+				pallet_assets::Call::refund { .. }
 			) => true,
 			_ => false,
 		}

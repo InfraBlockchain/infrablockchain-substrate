@@ -1399,7 +1399,7 @@ construct_runtime! {
 		// IBS Support
 		SystemTokenManager: system_token_manager::{Pallet, Call, Storage, Event<T>} = 20,
 		ValidatorRewardManager: validator_reward_manager::{Pallet, Call, Storage, Event<T>} = 21,
-		SystemToken: pallet_system_token = 23,
+		SystemToken: pallet_system_token::{Pallet, Origin} = 23,
 		AssetLink: pallet_asset_link = 24,
 		Pot: relay_pot::{Pallet, Storage, Event<T>} = 25,
 		SystemTokenAggregator: system_token_aggregator = 26,
