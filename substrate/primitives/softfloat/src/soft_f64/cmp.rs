@@ -6,7 +6,6 @@ type F = F64;
 type FInt = u64;
 type FSignedInt = i64;
 
-const UNORDERED: Option<Ordering> = None;
 const EQUAL: Option<Ordering> = Some(Ordering::Equal);
 const GREATER: Option<Ordering> = Some(Ordering::Greater);
 const LESS: Option<Ordering> = Some(Ordering::Less);
@@ -26,9 +25,19 @@ pub(crate) const fn cmp(a: &F, &b: &F) -> Option<Ordering> {
 	let a_abs = a_rep & abs_mask;
 	let b_abs = b_rep & abs_mask;
 
-	// If either a or b is NaN, they are unordered.
-	if a_abs > inf_rep || b_abs > inf_rep {
-		return UNORDERED;
+	// If a and b are both NaN, they are equal.
+	if a_abs > inf_rep && b_abs > inf_rep {
+		return EQUAL;
+	}
+
+	// If only a is NaN, a are less.
+	if a_abs > inf_rep {
+		return LESS;
+	}
+
+	// If only b is NaN, a are greather.
+	if b_abs > inf_rep {
+		return GREATER;
 	}
 
 	// If a and b are both zeros, they are equal.
