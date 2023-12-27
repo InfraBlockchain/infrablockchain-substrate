@@ -26,6 +26,7 @@ use xcm_executor::{
 	traits::{JustTry, WithOriginFilter},
 	XcmExecutor,
 };
+use pallet_system_token::Origin as SystemTokenOrigin;
 
 parameter_types! {
 	pub UniversalLocationNetworkId: NetworkId = UniversalLocation::get().global_consensus().unwrap();
@@ -34,7 +35,7 @@ parameter_types! {
 		interior:Junctions::X1(Parachain(1000))
 	};
 	pub const RelayNetwork: Option<NetworkId> = None;
-	pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
+	pub RelayChainOrigin: RuntimeOrigin = SystemTokenOrigin::SystemTokenBody.into();
 	pub UniversalLocation: InteriorMultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
 	pub CheckingAccount: AccountId = IbsXcm::check_account();
 	pub TrustBackedAssetsPalletLocation: MultiLocation =
@@ -224,7 +225,7 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				pallet_collator_selection::Call::leave_intent { .. },
 			) |
 			RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
-			RuntimeCall::SystemToken(pallet_system_token::Call::set_fee_table { .. }) |
+			RuntimeCall::SystemTokenTxPayment(..) |
 			RuntimeCall::XcmpQueue(..) |
 			RuntimeCall::DmpQueue(..) |
 			RuntimeCall::AssetLink(pallet_asset_link::Call::link_system_token { .. }) |

@@ -38,11 +38,12 @@ use xcm_builder::{
 	WithUniqueTopic,
 };
 use xcm_executor::{traits::WithOriginFilter, XcmExecutor};
+use pallet_system_token::Origin as SystemTokenOrigin;
 
 parameter_types! {
 	pub const NativeLocation: MultiLocation = Here.into_location();
 	pub const RelayNetwork: Option<NetworkId> = Some(NetworkId::InfraRelay);
-	pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
+	pub RelayChainOrigin: RuntimeOrigin = SystemTokenOrigin::SystemTokenBody.into();
 	pub UniversalLocation: InteriorMultiLocation =
 		X2(GlobalConsensus(RelayNetwork::get().unwrap()), Parachain(ParachainInfo::parachain_id().into()));
 	pub UniversalLocationNetworkId: NetworkId = UniversalLocation::get().global_consensus().unwrap();
@@ -197,8 +198,8 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				pallet_collator_selection::Call::register_as_candidate { .. } |
 				pallet_collator_selection::Call::leave_intent { .. },
 			) |
+			RuntimeCall::SystemTokenTxPayment(..) |
 			RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
-			RuntimeCall::SystemToken(pallet_system_token::Call::set_fee_table { .. }) |
 			RuntimeCall::XcmpQueue(..) |
 			RuntimeCall::DmpQueue(..) |
 			RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. }) |
