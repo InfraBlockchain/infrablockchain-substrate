@@ -27,7 +27,6 @@ sp-std = { path = "../../primitives/std", default-features = false }
 # frames
 frame-support = { path = "../support", default-features = false }
 frame-system = { path = "../system", default-features = false }
-pallet-assets = { path = "../assets", default-features = false } 
 
 [features]
 default = ["std"]
@@ -35,7 +34,6 @@ std = [
 	"codec/std",
 	"frame-support/std",
 	"frame-system/std",
-	"pallet-assets/std",
 	"scale-info/std",
 	"sp-io/std",
 	"sp-runtime/std",

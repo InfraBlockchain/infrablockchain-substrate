@@ -29,7 +29,7 @@ use frame_support::{
 };
 
 use sp_runtime::{
-	traits::{DispatchInfoOf, One, PostDispatchInfoOf},
+	traits::{DispatchInfoOf, One, PostDispatchInfoOf, MaybeEquivalence},
 	transaction_validity::InvalidTransaction,
 };
 use sp_std::marker::PhantomData;
@@ -91,16 +91,18 @@ impl<A, B: Balanced<A>> HandleCredit<A, B> for () {
 /// [`BalanceConversion`]) and a credit handler (implementing [`HandleCredit`]).
 ///
 /// The credit handler is given the complete fee in terms of the asset used for the transaction.
-pub struct TransactionFeeCharger<CON, HC>(PhantomData<(CON, HC)>);
+pub struct TransactionFeeCharger<CON, HC, ConvertBalance>(PhantomData<(CON, HC, ConvertBalance)>);
 
 /// Default implementation for a runtime instantiating this pallet, a balance to asset converter and
 /// a credit handler.
-impl<T, CON, HC> OnChargeSystemToken<T> for TransactionFeeCharger<CON, HC>
+impl<T, CON, HC, ConvertBalance> OnChargeSystemToken<T> for TransactionFeeCharger<CON, HC, ConvertBalance>
 where
 	T: Config,
 	CON: ConversionToAssetBalance<BalanceOf<T>, AssetIdOf<T>, AssetBalanceOf<T>>,
 	HC: HandleCredit<T::AccountId, T::Assets>,
 	AssetIdOf<T>: AssetId + From<sp_runtime::types::token::AssetId>,
+	AssetBalanceOf<T>: From<BalanceOf<T>>,
+	ConvertBalance: MaybeEquivalence<u128, BalanceOf<T>>,
 {
 	type Balance = BalanceOf<T>;
 	type SystemTokenAssetId = AssetIdOf<T>;
@@ -143,9 +145,12 @@ where
 			T::Assets::get_most_account_system_token_balance(l, who.clone()).into()
 		};
 		let min_converted_fee = if fee.is_zero() { Zero::zero() } else { One::one() };
-		let converted_fee = CON::to_asset_balance(fee, system_token_asset_id.clone())
+		let mut converted_fee = CON::to_asset_balance(fee, system_token_asset_id.clone())
 			.map_err(|_| TransactionValidityError::from(InvalidTransaction::Payment))?
 			.max(min_converted_fee);
+		let default = ConvertBalance::convert(&CORRECTION_PARA_FEE_RATE).ok_or(TransactionValidityError::from(InvalidTransaction::Payment))?;
+		let pfr: AssetBalanceOf<T> = ParaFeeRate::<T>::get().map_or(default, |v| v).into();
+		converted_fee = converted_fee * pfr;
 		let can_withdraw = <T::Assets as Inspect<T::AccountId>>::can_withdraw(
 			system_token_asset_id.clone(),
 			who,

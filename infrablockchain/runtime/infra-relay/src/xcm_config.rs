@@ -311,9 +311,8 @@ impl xcm_executor::Config for XcmConfig {
 	type XcmSender = XcmRouter;
 	type AssetTransactor = AssetTransactors;
 	type OriginConverter = LocalOriginConverter;
-	// infrablockspace Relay recognises no chains which act as reserves.
 	type IsReserve = ();
-	type IsTeleporter = ();
+	type IsTeleporter = Everything;
 	type UniversalLocation = UniversalLocation;
 	type Barrier = Barrier;
 	type Weigher = FixedWeightBounds<BaseXcmWeight, RuntimeCall, MaxInstructions>;

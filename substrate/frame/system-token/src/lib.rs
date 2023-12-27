@@ -17,61 +17,46 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::traits::infra_support::fee::FeeTableProvider;
+use frame_support::pallet_prelude::*;
+use frame_support::error::BadOrigin;
 pub use pallet::*;
-use sp_runtime::types::ExtrinsicMetadata;
-use sp_std::vec::Vec;
+
+/// Ensure that the origin `o` represents a relay chain.
+/// Returns `Ok` that effected the extrinsic or an `Err` otherwise.
+pub fn ensure_system_token_origin<OuterOrigin>(o: OuterOrigin) -> Result<(), BadOrigin>
+where
+	OuterOrigin: Into<Result<Origin, OuterOrigin>>,
+{
+	match o.into() {
+		Ok(Origin::SystemTokenBody) => Ok(()),
+		_ => Err(BadOrigin),
+	}
+}
 
 #[frame_support::pallet(dev_mode)]
 pub mod pallet {
 	use super::*;
-	use frame_support::pallet_prelude::*;
-	use frame_system::pallet_prelude::*;
-
-	#[pallet::config]
-	pub trait Config: frame_system::Config + pallet_assets::Config {
-		/// The overarching event type.
-		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-		/// Some authorized origins(e.g Relay Chain) to do some action
-		type AuthorizedOrigin: EnsureOrigin<<Self as frame_system::Config>::RuntimeOrigin>;
-	}
-
-	#[pallet::event]
-	#[pallet::generate_deposit(pub(super) fn deposit_event)]
-	pub enum Event<T: Config> {
-		/// Fee has been set on fee table
-		SetFeeTable { metadata: ExtrinsicMetadata, fee: T::Balance },
-	}
 
 	#[pallet::pallet]
 	pub struct Pallet<T>(_);
 
-	#[pallet::storage]
-	#[pallet::unbounded]
-	pub type FeeTable<T: Config> =
-		StorageMap<_, Twox128, ExtrinsicMetadata, T::Balance, OptionQuery>;
+	#[pallet::config]
+	pub trait Config: frame_system::Config {}
 
-	#[pallet::call]
-	impl<T: Config> Pallet<T> {
-		#[pallet::call_index(0)]
-		#[pallet::weight(1_000)]
-		pub fn set_fee_table(
-			origin: OriginFor<T>,
-			pallet_name: Vec<u8>,
-			call_name: Vec<u8>,
-			fee: T::Balance,
-		) -> DispatchResult {
-			T::AuthorizedOrigin::ensure_origin(origin)?;
-			let extrinsic_metadata = ExtrinsicMetadata::new(pallet_name, call_name);
-			FeeTable::<T>::insert(&extrinsic_metadata, fee);
-			Self::deposit_event(Event::<T>::SetFeeTable { metadata: extrinsic_metadata, fee });
-			Ok(())
-		}
-	}
-}
-
-impl<T: Config> FeeTableProvider<T::Balance> for Pallet<T> {
-	fn get_fee_from_fee_table(key: ExtrinsicMetadata) -> Option<T::Balance> {
-		FeeTable::<T>::get(key)
+	/// Origin for the parachains.
+	#[pallet::origin]
+	#[derive(
+		PartialEq,
+		Eq,
+		Clone,
+		Encode,
+		Decode,
+		sp_core::RuntimeDebug,
+		scale_info::TypeInfo,
+		MaxEncodedLen,
+	)]
+	pub enum Origin {
+		/// It comes from a relay chain
+		SystemTokenBody
 	}
 }

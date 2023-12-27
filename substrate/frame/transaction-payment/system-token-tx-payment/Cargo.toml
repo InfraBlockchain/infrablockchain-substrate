@@ -27,10 +27,11 @@ sp-std = { path = "../../../primitives/std", default-features = false}
 
 # frames
 frame-benchmarking = { path = "../../benchmarking", default-features = false, optional = true}
-frame-support = { path = "../../support", default-features = false}
-frame-system = { path = "../../system", default-features = false}
-pallet-transaction-payment = { path = "..", default-features = false}
-pallet-assets = { path = "../../assets", default-features = false}
+frame-support = { path = "../../support", default-features = false }
+frame-system = { path = "../../system", default-features = false }
+pallet-transaction-payment = { path = "..", default-features = false }
+pallet-assets = { path = "../../assets", default-features = false }
+pallet-system-token = { path = "../../system-token", default-features = false }
 
 [dev-dependencies]
 
@@ -51,5 +52,6 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-transaction-payment/std",
+	"pallet-system-token/std",
 	"pallet-assets/std",
 ]

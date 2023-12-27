@@ -34,6 +34,8 @@ use sp_runtime::{
 use sp_std::prelude::*;
 use types::*;
 
+use pallet_transaction_payment::BalanceOf;
+
 #[frame_support::pallet(dev_mode)]
 pub mod pallet {
 	use super::*;
@@ -46,7 +48,7 @@ pub mod pallet {
 		+ dmp::Config
 		+ pallet_assets::Config
 		+ pallet_asset_link::Config
-		+ pallet_system_token::Config
+		+ pallet_system_token_tx_payment::Config
 	{
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
@@ -80,9 +82,9 @@ pub mod pallet {
 		/// and decimal.
 		SetSystemTokenWeight { original: SystemTokenId, property: SystemTokenProperty },
 		/// Update the fee rate of the parachain. The default value is 1_000.
-		SetParaFeeRate { para_id: InfraParaId, para_fee_rate: u128 },
+		SetParaFeeRate { para_id: InfraParaId, para_fee_rate: BalanceOf<T> },
 		/// Update the fee table of the parachain
-		SetFeeTable { para_call_metadata: ParaCallMetadata, fee: T::Balance },
+		SetFeeTable { para_call_metadata: ParaCallMetadata, fee: BalanceOf<T> },
 		/// Suspend a `original` system token.
 		OriginalSystemTokenSuspended { original: SystemTokenId },
 		/// Unsuspend the `original` system token.
@@ -445,12 +447,12 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			para_id: InfraParaId,
 			pallet_id: InfraPalletId,
-			para_fee_rate: u128,
+			para_fee_rate: BalanceOf<T>,
 		) -> DispatchResult {
 			ensure_root(origin)?;
 
 			let encoded_call: Vec<u8> =
-				pallet_assets::Call::<T>::update_para_fee_rate { para_fee_rate }.encode();
+				pallet_system_token_tx_payment::Call::<T>::set_para_fee_rate { para_fee_rate }.encode();
 			system_token_helper::try_queue_dmp::<T>(para_id, pallet_id, encoded_call)?;
 			Self::deposit_event(Event::<T>::SetParaFeeRate { para_id, para_fee_rate });
 
@@ -479,14 +481,14 @@ pub mod pallet {
 		pub fn set_fee_table(
 			origin: OriginFor<T>,
 			para_call_metadata: ParaCallMetadata,
-			fee: T::Balance,
+			fee: BalanceOf<T>,
 		) -> DispatchResult {
 			ensure_root(origin)?;
 
 			let ParaCallMetadata { para_id, pallet_id, pallet_name, call_name } =
 				para_call_metadata.clone();
 			let encoded_call: Vec<u8> =
-				pallet_system_token::Call::<T>::set_fee_table { pallet_name, call_name, fee }
+				pallet_system_token_tx_payment::Call::<T>::set_fee_table { pallet_name, call_name, fee }
 					.encode();
 			system_token_helper::try_queue_dmp::<T>(para_id, pallet_id, encoded_call)?;
 

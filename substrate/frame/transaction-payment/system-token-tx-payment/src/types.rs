@@ -1,5 +1,7 @@
 use super::*;
 
+pub(super) const CORRECTION_PARA_FEE_RATE: u128 = 1_000_000;
+
 // Type aliases used for interaction with `OnChargeTransaction`.
 pub(crate) type OnChargeTransactionOf<T> =
 	<T as pallet_transaction_payment::Config>::OnChargeTransaction;
@@ -50,4 +52,12 @@ pub struct Detail<T: Config> {
 	pub actual_fee: BalanceOf<T>,
 	pub converted_fee: AssetBalanceOf<T>,
 	pub tip: Option<AssetBalanceOf<T>>,
+}
+
+#[allow(missing_docs)]
+#[derive(Encode, Decode, Eq, Clone, PartialEq, RuntimeDebug, MaxEncodedLen, TypeInfo, Default)]
+pub enum RuntimeState {
+	#[default]
+	Bootstrap,
+	Normal,
 }

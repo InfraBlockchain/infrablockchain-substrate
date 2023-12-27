@@ -26,7 +26,6 @@ pub(super) enum DeadConsequence {
 	Keep,
 }
 
-use sp_runtime::traits::BadOrigin;
 use DeadConsequence::*;
 
 // The main implementation block for the module.
@@ -1103,40 +1102,11 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 		Ok(())
 	}
-
-	pub fn do_set_runtime_state() -> DispatchResult {
-		ensure!(State::<T, I>::get() == RuntimeState::Bootstrap, Error::<T, I>::NotInBootstrap);
-		let l = <Pallet<T, I> as SystemTokenLocalAssetProvider<
-			sp_runtime::types::AssetId,
-			T::AccountId,
-		>>::system_token_list();
-		ensure!(!l.is_empty(), Error::<T, I>::NotAllowedToChangeState);
-		let mut is_payable: bool = false;
-		for id in l {
-			if let Some(ad) = Self::asset_detail(&id.into()) {
-				if ad.supply.ge(&ad.min_balance) && ad.is_sufficient {
-					is_payable = true;
-					break
-				}
-			}
-		}
-		ensure!(is_payable, Error::<T, I>::NotAllowedToChangeState);
-		State::<T, I>::put(RuntimeState::Normal);
-		Self::deposit_event(Event::<T, I>::RuntimeStateUpdated {
-			from: RuntimeState::Bootstrap,
-			to: RuntimeState::Normal,
-		});
-		Ok(())
-	}
 }
 
 impl<T: Config<I>, I: 'static>
 	SystemTokenLocalAssetProvider<sp_runtime::types::AssetId, T::AccountId> for Pallet<T, I>
 {
-	fn runtime_state() -> RuntimeState {
-		State::<T, I>::get()
-	}
-
 	fn system_token_list() -> Vec<sp_runtime::types::AssetId> {
 		let assets = Asset::<T, I>::iter_keys();
 		let token_list = assets
@@ -1147,9 +1117,6 @@ impl<T: Config<I>, I: 'static>
 					.map(|_| asset.into())
 			})
 			.collect::<Vec<sp_runtime::types::AssetId>>();
-		if State::<T, I>::get() != RuntimeState::Bootstrap && token_list.is_empty() {
-			Self::deposit_event(Event::<T, I>::NoSufficientTokenToPay);
-		}
 		token_list
 	}
 
@@ -1167,15 +1134,5 @@ impl<T: Config<I>, I: 'static>
 			}
 		}
 		most_balance.0
-	}
-}
-
-pub fn ensure_dispatch_from_relay<OuterOrigin, T, I>(o: OuterOrigin) -> Result<(), BadOrigin>
-where
-	OuterOrigin: Into<Result<RawOrigin<T, I>, OuterOrigin>>,
-{
-	match o.into() {
-		Ok(RawOrigin::<T, I>::Relay) => Ok(()),
-		_ => Err(BadOrigin),
 	}
 }

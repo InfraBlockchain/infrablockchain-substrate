@@ -23,6 +23,8 @@ static_assertions = { version = "1.1.0", optional = true }
 # infra-related
 pallet-validator-election = { path = "../../../substrate/frame/validator-election", default-features = false }
 pallet-system-token = { path = "../../../substrate/frame/system-token", default-features = false }
+pallet-transaction-payment = { path = "../../../substrate/frame/transaction-payment", default-features = false }
+pallet-system-token-tx-payment = { path = "../../../substrate/frame/transaction-payment/system-token-tx-payment", default-features = false }
 
 # primitives
 sp-api = { path = "../../../substrate/primitives/api", default-features = false }
@@ -91,6 +93,8 @@ std = [
 	"pallet-xcm/std",
 	"pallet-validator-election/std",
 	"pallet-system-token/std",
+	"pallet-transaction-payment/std",
+	"pallet-system-token-tx-payment/std",
 	"pallet-authority-discovery/std",
 	"pallet-authorship/std",
 	"pallet-babe/std",

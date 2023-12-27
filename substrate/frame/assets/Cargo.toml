@@ -28,6 +28,7 @@ sp-runtime = { path = "../../primitives/runtime", default-features = false}
 frame-support = { path = "../support", default-features = false}
 frame-system = { path = "../system", default-features = false}
 frame-benchmarking = { path = "../benchmarking", default-features = false, optional = true }
+pallet-system-token = { path = "../system-token", default-features = false }
 
 [dev-dependencies]
 sp-std = { path = "../../primitives/std" }
@@ -48,6 +49,7 @@ std = [
 	"frame-benchmarking?/std",
 	"frame-support/std",
 	"frame-system/std",
+	"pallet-system-token/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking/runtime-benchmarks",
