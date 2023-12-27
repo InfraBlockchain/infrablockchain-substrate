@@ -23,6 +23,7 @@ use frame_support::{
 	match_types, parameter_types,
 	traits::{ConstU32, Contains, Everything, Nothing, PalletInfoAccess},
 };
+use pallet_system_token::Origin as SystemTokenOrigin;
 use pallet_xcm::XcmPassthrough;
 use parachain_primitives::primitives::Sibling;
 use parachains_common::{
@@ -39,7 +40,6 @@ use xcm_builder::{
 	WithUniqueTopic,
 };
 use xcm_executor::{traits::WithOriginFilter, XcmExecutor};
-use pallet_system_token::Origin as SystemTokenOrigin;
 
 parameter_types! {
 	pub const RelayLocation: MultiLocation = MultiLocation::parent();
@@ -228,7 +228,7 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				pallet_assets::Call::force_cancel_approval { .. } |
 				pallet_assets::Call::transfer_approved { .. } |
 				pallet_assets::Call::touch { .. } |
-				pallet_assets::Call::refund { .. }
+				pallet_assets::Call::refund { .. },
 			) |
 			RuntimeCall::Uniques(
 				pallet_uniques::Call::create { .. } |

@@ -452,7 +452,8 @@ pub mod pallet {
 			ensure_root(origin)?;
 
 			let encoded_call: Vec<u8> =
-				pallet_system_token_tx_payment::Call::<T>::set_para_fee_rate { para_fee_rate }.encode();
+				pallet_system_token_tx_payment::Call::<T>::set_para_fee_rate { para_fee_rate }
+					.encode();
 			system_token_helper::try_queue_dmp::<T>(para_id, pallet_id, encoded_call)?;
 			Self::deposit_event(Event::<T>::SetParaFeeRate { para_id, para_fee_rate });
 
@@ -487,9 +488,12 @@ pub mod pallet {
 
 			let ParaCallMetadata { para_id, pallet_id, pallet_name, call_name } =
 				para_call_metadata.clone();
-			let encoded_call: Vec<u8> =
-				pallet_system_token_tx_payment::Call::<T>::set_fee_table { pallet_name, call_name, fee }
-					.encode();
+			let encoded_call: Vec<u8> = pallet_system_token_tx_payment::Call::<T>::set_fee_table {
+				pallet_name,
+				call_name,
+				fee,
+			}
+			.encode();
 			system_token_helper::try_queue_dmp::<T>(para_id, pallet_id, encoded_call)?;
 
 			Self::deposit_event(Event::<T>::SetFeeTable { para_call_metadata, fee });

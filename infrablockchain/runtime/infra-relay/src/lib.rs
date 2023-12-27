@@ -78,7 +78,8 @@ use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{
 		AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto,
-		Extrinsic as ExtrinsicT, OpaqueKeys, SaturatedConversion, Verify, TryConvertInto as JustTry
+		Extrinsic as ExtrinsicT, OpaqueKeys, SaturatedConversion, TryConvertInto as JustTry,
+		Verify,
 	},
 	transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
 	types::{VoteAccountId, VoteWeight},

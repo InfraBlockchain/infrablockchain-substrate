@@ -62,7 +62,9 @@ use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, TryConvertInto as JustTry},
+	traits::{
+		AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, TryConvertInto as JustTry,
+	},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,
 };
@@ -248,7 +250,7 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 			RuntimeCall::Assets(
 				pallet_assets::Call::create { .. } |
 				pallet_assets::Call::set_metadata { .. } |
-				pallet_assets::Call::mint { .. }
+				pallet_assets::Call::mint { .. },
 			) => true,
 			_ => false,
 		}
@@ -268,7 +270,7 @@ impl pallet_system_token_tx_payment::Config for Runtime {
 	type OnChargeSystemToken = TransactionFeeCharger<
 		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
 		CreditToBucket<Runtime>,
-		JustTry
+		JustTry,
 	>;
 	type VotingHandler = ParachainSystem;
 	type BootstrapCallFilter = BootstrapCallFilter;

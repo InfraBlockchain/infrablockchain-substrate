@@ -17,8 +17,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::pallet_prelude::*;
-use frame_support::error::BadOrigin;
+use frame_support::{error::BadOrigin, pallet_prelude::*};
 pub use pallet::*;
 
 /// Ensure that the origin `o` represents a relay chain.
@@ -57,6 +56,6 @@ pub mod pallet {
 	)]
 	pub enum Origin {
 		/// It comes from a relay chain
-		SystemTokenBody
+		SystemTokenBody,
 	}
 }

@@ -29,7 +29,7 @@ use frame_support::{
 };
 
 use sp_runtime::{
-	traits::{DispatchInfoOf, One, PostDispatchInfoOf, MaybeEquivalence},
+	traits::{DispatchInfoOf, MaybeEquivalence, One, PostDispatchInfoOf},
 	transaction_validity::InvalidTransaction,
 };
 use sp_std::marker::PhantomData;
@@ -95,7 +95,8 @@ pub struct TransactionFeeCharger<CON, HC, ConvertBalance>(PhantomData<(CON, HC, 
 
 /// Default implementation for a runtime instantiating this pallet, a balance to asset converter and
 /// a credit handler.
-impl<T, CON, HC, ConvertBalance> OnChargeSystemToken<T> for TransactionFeeCharger<CON, HC, ConvertBalance>
+impl<T, CON, HC, ConvertBalance> OnChargeSystemToken<T>
+	for TransactionFeeCharger<CON, HC, ConvertBalance>
 where
 	T: Config,
 	CON: ConversionToAssetBalance<BalanceOf<T>, AssetIdOf<T>, AssetBalanceOf<T>>,
@@ -148,7 +149,8 @@ where
 		let mut converted_fee = CON::to_asset_balance(fee, system_token_asset_id.clone())
 			.map_err(|_| TransactionValidityError::from(InvalidTransaction::Payment))?
 			.max(min_converted_fee);
-		let default = ConvertBalance::convert(&CORRECTION_PARA_FEE_RATE).ok_or(TransactionValidityError::from(InvalidTransaction::Payment))?;
+		let default = ConvertBalance::convert(&CORRECTION_PARA_FEE_RATE)
+			.ok_or(TransactionValidityError::from(InvalidTransaction::Payment))?;
 		let pfr: AssetBalanceOf<T> = ParaFeeRate::<T>::get().map_or(default, |v| v).into();
 		converted_fee = converted_fee * pfr;
 		let can_withdraw = <T::Assets as Inspect<T::AccountId>>::can_withdraw(

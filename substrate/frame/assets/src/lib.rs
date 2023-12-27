@@ -178,8 +178,8 @@ use sp_runtime::{
 use sp_std::prelude::*;
 
 use frame_system::Config as SystemConfig;
-use pallet_system_token::{Origin as SystemTokenOrigin, ensure_system_token_origin};
 pub use pallet::*;
+use pallet_system_token::{ensure_system_token_origin, Origin as SystemTokenOrigin};
 pub use weights::WeightInfo;
 
 type AccountIdLookupOf<T> = <<T as frame_system::Config>::Lookup as StaticLookup>::Source;
@@ -226,7 +226,6 @@ pub mod pallet {
 	#[pallet::config]
 	/// The module configuration trait.
 	pub trait Config<I: 'static = ()>: frame_system::Config {
-
 		type RuntimeOrigin: From<SystemTokenOrigin>
 			+ From<<Self as frame_system::Config>::RuntimeOrigin>
 			+ Into<Result<SystemTokenOrigin, <Self as Config<I>>::RuntimeOrigin>>;

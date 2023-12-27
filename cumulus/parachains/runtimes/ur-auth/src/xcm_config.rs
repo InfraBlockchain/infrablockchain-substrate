@@ -9,6 +9,7 @@ use frame_support::{
 	traits::{ConstU32, Contains, Everything, Nothing, PalletInfoAccess},
 	weights::Weight,
 };
+use pallet_system_token::Origin as SystemTokenOrigin;
 use pallet_xcm::XcmPassthrough;
 use parachain_primitives::primitives::Sibling;
 use parachains_common::{types::AssetId, xcm_config::AssetFeeAsExistentialDepositMultiplier};
@@ -26,7 +27,6 @@ use xcm_executor::{
 	traits::{JustTry, WithOriginFilter},
 	XcmExecutor,
 };
-use pallet_system_token::Origin as SystemTokenOrigin;
 
 parameter_types! {
 	pub UniversalLocationNetworkId: NetworkId = UniversalLocation::get().global_consensus().unwrap();
@@ -261,7 +261,7 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				pallet_assets::Call::force_cancel_approval { .. } |
 				pallet_assets::Call::transfer_approved { .. } |
 				pallet_assets::Call::touch { .. } |
-				pallet_assets::Call::refund { .. }
+				pallet_assets::Call::refund { .. },
 			) => true,
 			_ => false,
 		}

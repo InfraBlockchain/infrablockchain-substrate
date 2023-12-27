@@ -27,7 +27,6 @@ mod payment;
 pub use payment::*;
 
 use codec::{Decode, Encode};
-use frame_system::pallet_prelude::*;
 use frame_support::{
 	dispatch::{DispatchInfo, DispatchResult, PostDispatchInfo},
 	pallet_prelude::*,
@@ -41,8 +40,9 @@ use frame_support::{
 	},
 	DefaultNoBound, PalletId,
 };
+use frame_system::pallet_prelude::*;
+use pallet_system_token::{ensure_system_token_origin, Origin as SystemTokenOrigin};
 use pallet_transaction_payment::OnChargeTransaction;
-use pallet_system_token::{Origin as SystemTokenOrigin, ensure_system_token_origin};
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{
@@ -51,8 +51,8 @@ use sp_runtime::{
 	},
 	transaction_validity::{TransactionValidity, TransactionValidityError, ValidTransaction},
 	types::{
-		AssetId as InfraAssetId, ExtrinsicMetadata, SystemTokenId,
-		SystemTokenLocalAssetProvider, VoteAccountId, VoteWeight,
+		AssetId as InfraAssetId, ExtrinsicMetadata, SystemTokenId, SystemTokenLocalAssetProvider,
+		VoteAccountId, VoteWeight,
 	},
 	FixedPointOperand,
 };
@@ -119,9 +119,12 @@ pub mod pallet {
 			Self::deposit_event(Event::<T>::FeeTableUpdated { metadata: extrinsic_metadata, fee });
 			Ok(())
 		}
-		
+
 		#[pallet::call_index(1)]
-		pub fn set_para_fee_rate(origin: OriginFor<T>, para_fee_rate: BalanceOf<T>) -> DispatchResult {
+		pub fn set_para_fee_rate(
+			origin: OriginFor<T>,
+			para_fee_rate: BalanceOf<T>,
+		) -> DispatchResult {
 			ensure_system_token_origin(<T as Config>::RuntimeOrigin::from(origin))?;
 
 			ParaFeeRate::<T>::set(Some(para_fee_rate));
@@ -151,17 +154,22 @@ pub mod pallet {
 		/// Currently, Runtime is in bootstrap mode.
 		OnBootstrapping,
 		/// Fee Tabe has been updated
-		FeeTableUpdated { metadata: ExtrinsicMetadata, fee: BalanceOf<T> },
+		FeeTableUpdated {
+			metadata: ExtrinsicMetadata,
+			fee: BalanceOf<T>,
+		},
 		/// Para fee rate has been updated
-		ParaFeeRateUpdated { para_fee_rate: BalanceOf<T> },
-		BootstrapEnded
+		ParaFeeRateUpdated {
+			para_fee_rate: BalanceOf<T>,
+		},
+		BootstrapEnded,
 	}
 
 	#[pallet::error]
 	pub enum Error<T> {
 		ErrorConvertToAssetBalance,
 		NotInBootstrap,
-		NotAllowedToChangeState
+		NotAllowedToChangeState,
 	}
 
 	impl<T: Config> Pallet<T> {
@@ -292,7 +300,12 @@ where
 		Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo> + GetCallMetadata,
 	AssetBalanceOf<T>: Send + Sync + FixedPointOperand + IsType<VoteWeight>,
 	AssetIdOf<T>: Send + Sync + IsType<ChargeSystemTokenAssetIdOf<T>>,
-	BalanceOf<T>: Send + Sync + From<u64> + FixedPointOperand + IsType<ChargeAssetBalanceOf<T>> + From<AssetBalanceOf<T>>,
+	BalanceOf<T>: Send
+		+ Sync
+		+ From<u64>
+		+ FixedPointOperand
+		+ IsType<ChargeAssetBalanceOf<T>>
+		+ From<AssetBalanceOf<T>>,
 	ChargeSystemTokenAssetIdOf<T>: Send + Sync,
 	Credit<T::AccountId, T::Assets>: IsType<ChargeAssetLiquidityOf<T>>,
 {
