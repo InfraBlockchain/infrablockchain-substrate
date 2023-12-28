@@ -2,7 +2,7 @@
 authors = ["blockchain labs"]
 edition = "2021"
 homepage = "https://infrablockchain.net/en"
-repository = "https://github.com/InfraBlockchain/infrablockchain-sdk"
+repository = "https://github.com/InfraBlockchain/infrablockchain-substrate"
 license = "GPL-3.0-only"
 
 [workspace]
