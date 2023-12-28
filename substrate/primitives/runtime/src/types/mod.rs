@@ -10,5 +10,8 @@ pub use self::{
 		AssetId, PalletId, ParaId, RuntimeState, SystemTokenId, SystemTokenLocalAssetProvider,
 		SystemTokenWeight, RELAY_CHAIN_PARA_ID,
 	},
-	vote::{PotVote, PotVotes, PotVotesResult, VoteAccountId, VoteAssetId, VoteWeight},
+	vote::{
+		convert_pot_votes, PotVote, PotVotes, PotVotesResult, VoteAccountId, VoteAssetId,
+		VoteWeight,
+	},
 };

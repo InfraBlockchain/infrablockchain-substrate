@@ -9,7 +9,10 @@ license.workspace = true
 micromath = "2.0.0"
 impl-trait-for-tuples = "0.2.2"
 bitvec = { version = "1.0.0", default-features = false, features = ["alloc"] }
-parity-scale-codec = { version = "3.6.1", default-features = false, features = ["derive", "max-encoded-len"] }
+parity-scale-codec = { version = "3.6.1", default-features = false, features = [
+	"derive",
+	"max-encoded-len",
+] }
 log = { version = "0.4.17", default-features = false }
 rustc-hex = { version = "2.1.0", default-features = false }
 scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
@@ -19,6 +22,7 @@ bitflags = "1.3.2"
 rand = { version = "0.8.5", default-features = false }
 rand_chacha = { version = "0.3.1", default-features = false }
 static_assertions = { version = "1.1.0", optional = true }
+softfloat = { path = "../../../substrate/primitives/softfloat", default-features = false }
 
 # infra-related
 pallet-validator-election = { path = "../../../substrate/frame/validator-election", default-features = false }
@@ -29,10 +33,16 @@ sp-api = { path = "../../../substrate/primitives/api", default-features = false 
 inherents = { package = "sp-inherents", path = "../../../substrate/primitives/inherents", default-features = false }
 sp-std = { package = "sp-std", path = "../../../substrate/primitives/std", default-features = false }
 sp-io = { path = "../../../substrate/primitives/io", default-features = false }
-sp-runtime = { path = "../../../substrate/primitives/runtime", default-features = false, features=["serde"] }
+sp-runtime = { path = "../../../substrate/primitives/runtime", default-features = false, features = [
+	"serde",
+] }
 sp-session = { path = "../../../substrate/primitives/session", default-features = false }
-sp-staking = { path = "../../../substrate/primitives/staking", default-features = false, features=["serde"] }
-sp-core = { path = "../../../substrate/primitives/core", default-features = false, features=["serde"] }
+sp-staking = { path = "../../../substrate/primitives/staking", default-features = false, features = [
+	"serde",
+] }
+sp-core = { path = "../../../substrate/primitives/core", default-features = false, features = [
+	"serde",
+] }
 sp-keystore = { path = "../../../substrate/primitives/keystore", optional = true }
 sp-application-crypto = { path = "../../../substrate/primitives/application-crypto", default-features = false, optional = true }
 sp-tracing = { path = "../../../substrate/primitives/tracing", default-features = false, optional = true }
@@ -61,7 +71,7 @@ pallet-asset-link = { package = "infra-asset-link", path = "../../xcm/infra-asse
 xcm-primitives = { path = "../../xcm/xcm-primitives", default-features = false }
 
 parachain-primitives = { path = "../../parachain", default-features = false }
-polkadot-runtime-metrics = { path = "../metrics", default-features = false}
+polkadot-runtime-metrics = { path = "../metrics", default-features = false }
 infrablockchain-core-primitives = { path = "../../core-primitives", default-features = false }
 
 [dev-dependencies]
@@ -77,7 +87,7 @@ assert_matches = "1"
 serde_json = "1.0.107"
 
 [features]
-default = [ "std" ]
+default = ["std"]
 no_std = []
 std = [
 	"bitvec/std",
@@ -154,7 +164,4 @@ try-runtime = [
 	"pallet-vesting/try-runtime",
 	"sp-runtime/try-runtime",
 ]
-runtime-metrics = [
-	"polkadot-runtime-metrics/runtime-metrics",
-	"sp-tracing/with-tracing",
-]
+runtime-metrics = ["polkadot-runtime-metrics/runtime-metrics", "sp-tracing/with-tracing"]

@@ -4,23 +4,40 @@ use crate::{
 	types::token::SystemTokenId,
 };
 use bounded_collections::{BoundedVec, ConstU32};
+use softfloat::F64;
 use sp_core::crypto::AccountId32;
 use sp_std::{collections::btree_map::BTreeMap, prelude::*};
-
-#[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
 
 /// Account Id type of vote candidate. Should be equal to the AccountId type of the Relay Chain
 pub type VoteAccountId = AccountId32;
 /// Weight of vote which is weight of transaction and asset id
-pub type VoteWeight = u128;
+pub type VoteWeight = F64;
 /// Which asset to vote for
 pub type VoteAssetId = u32;
 
 pub const MAX_VOTE_NUM: u32 = 16 * 1024;
+use serde::{Deserialize, Serialize};
 
 /// Aggregated votes with maximum amount `MAX_VOTE_NUM`
 pub type PotVotesResult = BoundedVec<PotVote, ConstU32<MAX_VOTE_NUM>>;
+
+/// Convert pot votes to Vec<(AccountId32, F64)>
+pub fn convert_pot_votes(votes: PotVotesResult) -> Vec<(AccountId32, F64)> {
+	let converted_votes: Vec<(AccountId32, F64)> = votes
+		.into_iter()
+		.map(|vote| {
+			// Assuming AccountId32 and F64 are the types you want to use for account_id and
+			// vote_weight respectively. Also assuming that VoteAccountId can be transformed into
+			// AccountId32, and VoteWeight can be transformed into F64.
+			let account_id = vote.account_id;
+			let vote_weight = vote.vote_weight;
+
+			(account_id, vote_weight)
+		})
+		.collect();
+
+	converted_votes
+}
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, sp_core::RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Default, Hash))]
@@ -31,7 +48,6 @@ pub struct PotVote {
 	#[allow(missing_docs)]
 	pub account_id: VoteAccountId,
 	#[allow(missing_docs)]
-	#[codec(compact)]
 	pub vote_weight: VoteWeight,
 }
 
@@ -46,7 +62,27 @@ impl PotVote {
 	}
 }
 
-#[derive(Encode, Decode, PartialEq, Eq, Clone, sp_core::RuntimeDebug, TypeInfo)]
+impl PotVote {
+	/// Type cast from PotVote to PotVoteU128
+	pub fn to_u128(&self) -> PotVoteU128 {
+		let vote_weight = self.vote_weight.to_i128() as u128;
+		PotVoteU128 {
+			system_token_id: self.system_token_id.clone(),
+			account_id: self.account_id.clone(),
+			vote_weight,
+		}
+	}
+}
+
+#[derive(Encode, Decode, Clone, PartialEq, Eq, sp_core::RuntimeDebug, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Default, Hash))]
+pub struct PotVoteU128 {
+	pub system_token_id: SystemTokenId,
+	pub account_id: VoteAccountId,
+	pub vote_weight: u128,
+}
+
+#[derive(Encode, Decode, PartialEq, Eq, Clone, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 /// Transaction-as-a-Vote
 ///
@@ -90,7 +126,7 @@ impl PotVotes {
 		// Weight for asset id already existed
 		if let Some(old_weight) = self.votes.get_mut(&key) {
 			// Weight for asset id already existed
-			vote_weight = old_weight.saturating_add(vote_weight);
+			vote_weight = old_weight.add(vote_weight);
 		}
 		// We update value if vote count is not exceeded for given period
 		if self.increase_vote_count_if_not_exceeds() {
@@ -135,7 +171,7 @@ mod tests {
 	fn do_not_insert_value_if_exceeds_works() {
 		let candidate: VoteAccountId = AccountId32::new([0u8; 32]);
 		let system_token_id = SystemTokenId::new(2000, 50, 99);
-		let vote_weight: VoteWeight = 1;
+		let vote_weight: VoteWeight = F64::from_i128(1);
 		let mut pot_votes = new_pot_votes(system_token_id.clone(), candidate.clone(), vote_weight);
 		for _ in 1..MAX_VOTE_NUM + 1 {
 			pot_votes.update_vote_weight(system_token_id, candidate.clone(), 1);
@@ -146,7 +182,7 @@ mod tests {
 	#[test]
 	fn get_votes_works() {
 		let candidate: VoteAccountId = AccountId32::new([0u8; 32]);
-		let vote_weight: VoteWeight = 1;
+		let vote_weight: VoteWeight = F64::from_i128(1);
 		let mut pot_votes =
 			new_pot_votes(SystemTokenId::new(2000, 50, 99), candidate.clone(), vote_weight);
 		pot_votes.update_vote_weight(

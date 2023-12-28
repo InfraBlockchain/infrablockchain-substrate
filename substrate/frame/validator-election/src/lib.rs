@@ -29,7 +29,7 @@ use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::MaybeDisplay,
 	types::{ParaId, SystemTokenId, VoteAccountId, VoteWeight},
-	RuntimeDebug, Saturating,
+	RuntimeDebug,
 };
 
 #[cfg(test)]
@@ -136,11 +136,13 @@ impl<T: Config> VotingStatus<T> {
 	pub fn add_points(&mut self, who: &T::InfraVoteAccountId, vote_points: T::InfraVotePoints) {
 		for s in self.status.iter_mut() {
 			if &s.0 == who {
-				s.1 = s.1.clone().saturating_add(vote_points.into());
-				return
+				let current_vote_weight: VoteWeight = s.1.clone().into();
+				let additional_vote_weight: VoteWeight = vote_points.into();
+				s.1 = current_vote_weight.add(additional_vote_weight).into();
+				return;
 			}
 		}
-		self.status.push((who.clone(), vote_points.into()));
+		self.status.push((who.clone(), vote_points));
 	}
 
 	pub fn counts(&self) -> usize {
@@ -161,7 +163,7 @@ impl<T: Config> VotingStatus<T> {
 		self.status
 			.iter()
 			.take(num as usize)
-			.filter(|vote_status| vote_status.1 >= MinVotePointsThreshold::<T>::get().into())
+			.filter(|vote_status| vote_status.1 >= MinVotePointsThreshold::<T>::get())
 			.map(|vote_status| vote_status.0.clone().into())
 			.collect()
 	}
@@ -201,15 +203,19 @@ pub mod pallet {
 			+ IsType<<Self as frame_system::Config>::AccountId>;
 
 		/// Simply the vote weight type for election
-		type InfraVotePoints: sp_runtime::traits::AtLeast32BitUnsigned
-			+ codec::FullCodec
+		type InfraVotePoints: codec::FullCodec
+			+ Eq
+			+ PartialEq
+			+ PartialOrd
+			+ Ord
 			+ Copy
 			+ MaybeSerializeDeserialize
 			+ sp_std::fmt::Debug
 			+ Default
 			+ TypeInfo
 			+ MaxEncodedLen
-			+ From<VoteWeight>;
+			+ From<VoteWeight>
+			+ Into<VoteWeight>;
 
 		/// Something that can estimate the next session change, accurately or as a best effort
 		/// guess.

@@ -45,9 +45,10 @@ use primitives::{
 	ValidatorId, ValidatorIndex, ValidityAttestation, BLOCKS_PER_YEAR,
 };
 use scale_info::TypeInfo;
+use softfloat::F64;
 use sp_runtime::{
 	traits::One,
-	types::{PotVote, VoteAccountId, VoteWeight},
+	types::{convert_pot_votes, PotVote, VoteAccountId, VoteWeight},
 	DispatchError, SaturatedConversion, Saturating,
 };
 #[cfg(feature = "std")]
@@ -916,44 +917,49 @@ impl<T: Config> Pallet<T> {
 			commitments.horizontal_messages,
 		));
 
-		let milli_block_time_weight: u128 = {
-			let exp: u32 = relay_parent_number.saturated_into();
-			let base: f32 = 2.0;
-			let block_time_weight = base.powf(exp as f32 / BLOCKS_PER_YEAR);
-			(block_time_weight * 1_000.0) as u128
+		let block_time_weight: F64 = {
+			let current_block_number: u128 = relay_parent_number.saturated_into();
+			// pow = ln(2) * current block number / BLOCKS_PER_YEAR
+			let pow: F64 = F64::from_i128(2).ln() *
+				F64::from_i128(current_block_number as i128).div(BLOCKS_PER_YEAR);
+			// block_time_weight = 2 ^ (current block number / BLOCKS_PER_YEAR) = exp ^ (pow)
+			let block_time_weight = pow.exp();
+			block_time_weight
 		};
 
 		let mut collected_votes: Vec<(VoteAccountId, VoteWeight)> = Vec::new();
 		if let Some(vote_result) = commitments.vote_result {
 			let session_index = shared::Pallet::<T>::session_index();
-			for vote in vote_result.into_iter() {
+			for vote in vote_result.clone().into_iter() {
 				if let Some(original) =
 					T::SystemTokenInterface::convert_to_original_system_token(&vote.system_token_id)
 				{
-					let PotVote { system_token_id, account_id, mut vote_weight } = vote;
-					let vote_system_token = system_token_id;
-					vote_weight = {
-						let res = milli_block_time_weight.saturating_mul(
-							T::SystemTokenInterface::adjusted_weight(&original, vote_weight),
-						);
-						// correction for consideration of milli_block_time_weight
-						res.saturating_div(1_000)
+					let PotVote { system_token_id, account_id, vote_weight } = vote;
+
+					let adjusted_weight = {
+						let res = block_time_weight.mul(T::SystemTokenInterface::adjusted_weight(
+							&original,
+							vote_weight.clone(),
+						));
+
+						res
 					};
 
-					if T::VotingInterface::update_vote_status(account_id.clone(), vote_weight) {
-						collected_votes.push((account_id, vote_weight));
+					if T::VotingInterface::update_vote_status(account_id.clone(), adjusted_weight) {
+						collected_votes.push((account_id, adjusted_weight));
 					}
 					T::RewardInterface::aggregate_reward(
 						session_index,
-						vote_system_token.para_id,
-						original.clone(),
-						vote_weight,
+						system_token_id.para_id,
+						original,
+						adjusted_weight,
 					);
 				};
 			}
+			let converted_vote_result = convert_pot_votes(vote_result);
 			Self::deposit_event(Event::<T>::VoteCollected {
 				from: receipt.descriptor.para_id,
-				collected: collected_votes,
+				collected: converted_vote_result,
 			});
 		};
 

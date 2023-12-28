@@ -259,6 +259,7 @@ impl xcm_executor::Config for XcmConfig {
 	type IsTeleporter = ();
 	type UniversalLocation = UniversalLocation;
 	type Barrier = Barrier;
+	// Change
 	type Weigher = WeightInfoBounds<
 		crate::weights::xcm::StatemintXcmWeight<RuntimeCall>,
 		RuntimeCall,
