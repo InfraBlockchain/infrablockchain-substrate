@@ -21,10 +21,10 @@
 **/hfuzz_workspace/
 **/node_modules
 target
-!target/release/infrablockchain
-!target/release/infrablockchain-execute-worker
-!target/release/infrablockchain-prepare-worker
-!target/release/infra-parachain
+!target/release/infra-relaychain
+!target/release/infra-relaychain-execute-worker
+!target/release/infra-relaychain-prepare-worker
+!target/release/infra-assethub-parachain
 **/wip/*.stderr
 /.cargo/config
 /.envrc

@@ -1,13 +1,13 @@
 [[bin]]
-name = "infrablockchain"
+name = "infra-relaychain"
 path = "src/main.rs"
 
 [[bin]]
-name = "infrablockchain-execute-worker"
+name = "infra-relaychain-execute-worker"
 path = "src/bin/execute-worker.rs"
 
 [[bin]]
-name = "infrablockchain-prepare-worker"
+name = "infra-relaychain-prepare-worker"
 path = "src/bin/prepare-worker.rs"
 
 [package]
@@ -19,7 +19,7 @@ readme = "README.md"
 authors.workspace = true
 edition.workspace = true
 version = "1.1.0"
-default-run = "infrablockchain"
+default-run = "infra-relaychain"
 
 [dependencies]
 color-eyre = { version = "0.6.1", default-features = false }
@@ -80,17 +80,17 @@ license-file = ["LICENSE", "0"]
 maintainer-scripts = "scripts/packaging/deb-maintainer-scripts"
 assets = [
 	[
-		"target/release/infrablockchain",
+		"target/release/infra-relaychain",
 		"/usr/bin/",
 		"755",
 	],
 	[
-		"target/release/infrablockchain-prepare-worker",
+		"target/release/infra-relaychain-prepare-worker",
 		"/usr/lib/polkadot/",
 		"755"
 	],
 	[
-		"target/release/infrablockchain-execute-worker",
+		"target/release/infra-relaychain-execute-worker",
 		"/usr/lib/polkadot/",
 		"755"
 	],

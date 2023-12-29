@@ -54,10 +54,10 @@ pub const PREPARE_FAILURE_COOLDOWN: Duration = Duration::from_millis(200);
 pub const NUM_PREPARE_RETRIES: u32 = 5;
 
 /// The name of binary spawned to prepare a PVF artifact
-pub const PREPARE_BINARY_NAME: &str = "infrablockchain-prepare-worker";
+pub const PREPARE_BINARY_NAME: &str = "infra-relaychain-prepare-worker";
 
 /// The name of binary spawned to execute a PVF
-pub const EXECUTE_BINARY_NAME: &str = "infrablockchain-execute-worker";
+pub const EXECUTE_BINARY_NAME: &str = "infra-relaychain-execute-worker";
 
 /// An alias to not spell the type for the oneshot sender for the PVF execution result.
 pub(crate) type ResultSender = oneshot::Sender<Result<ValidationResult, ValidationError>>;
