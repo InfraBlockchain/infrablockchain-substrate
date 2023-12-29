@@ -69,7 +69,7 @@ members = [
 	"cumulus/parachains/runtimes/ur-auth",
 	"cumulus/parachains/runtimes/contracts/contracts-infra",
 	"cumulus/parachains/runtimes/did",
-	"cumulus/infra-parachain",
+	"cumulus/infra-assethub-parachain",
 	"cumulus/primitives/aura",
 	"cumulus/primitives/core",
 	"cumulus/primitives/parachain-inherent",
@@ -441,7 +441,7 @@ members = [
 	"substrate/utils/prometheus",
 	"substrate/utils/wasm-builder",
 ]
-default-members = ["infrablockchain", "cumulus/infra-parachain"]
+default-members = ["infrablockchain", "cumulus/infra-assethub-parachain"]
 
 [profile.release]
 # Polkadot runtime requires unwinding.
