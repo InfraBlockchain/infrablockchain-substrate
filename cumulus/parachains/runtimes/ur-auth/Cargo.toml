@@ -1,5 +1,5 @@
 [package]
-name = "urauth-runtime"
+name = "newnal-runtime"
 version = "0.1.1"
 authors.workspace = true
 edition.workspace = true
@@ -16,7 +16,7 @@ scale-info = { version = "2.3.1", default-features = false, features = ["derive"
 smallvec = "1.10.0"
 
 # Local
-pallet-urauth = { version = "0.1.1", default-features = false, path = "../../../../substrate/frame/urauth" }
+pallet-newnal = { version = "0.1.1", default-features = false, path = "../../../../substrate/frame/newnal" }
 
 # System
 frame-benchmarking = { path = "../../../../substrate/frame/benchmarking", default-features = false, optional = true }
@@ -134,7 +134,7 @@ std = [
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-transaction-payment/std",
 	"pallet-xcm/std",
-	"pallet-urauth/std",
+	"pallet-newnal/std",
 	"parachain-info/std",
 	"infrablockchain-core-primitives/std",
 	"infra-relay-runtime-constants/std",

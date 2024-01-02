@@ -492,9 +492,9 @@ parameter_types! {
 	pub const MaxRequest: u32 = 100;
 }
 
-impl pallet_urauth::Config for Runtime {
+impl pallet_newnal::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type URAuthParser = pallet_urauth::URAuthParser<Self>;
+	type URAuthParser = pallet_newnal::URAuthParser<Self>;
 	type UnixTime = Timestamp;
 	type MaxOracleMembers = MaxOracleMembers;
 	type MaxURIByOracle = MaxURIByOracle;
@@ -515,7 +515,7 @@ construct_runtime!(
 		ParachainInfo: parachain_info::{Pallet, Storage, Config<T>} = 3,
 
 		// The main stage
-		URAuth: pallet_urauth::{Pallet, Call, Storage, Config<T>, Event<T>} = 5,
+		URAuth: pallet_newnal::{Pallet, Call, Storage, Config<T>, Event<T>} = 5,
 
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,

@@ -25,7 +25,7 @@ use sp_core::{crypto::UncheckedInto, sr25519};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type URAuthChainSpec =
-	sc_service::GenericChainSpec<urauth_runtime::RuntimeGenesisConfig, Extensions>;
+	sc_service::GenericChainSpec<newnal_runtime::RuntimeGenesisConfig, Extensions>;
 
 const URAUTH_INFRA_RELAY_ED: URAuthBalance =
 	parachains_common::infra_relay::currency::EXISTENTIAL_DEPOSIT;
@@ -35,11 +35,11 @@ const URAUTH_PARACHAIN_ID: u32 = 2000;
 /// Generate the session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn urauth_session_keys(keys: AuraId) -> urauth_runtime::SessionKeys {
-	urauth_runtime::SessionKeys { aura: keys }
+pub fn newnal_session_keys(keys: AuraId) -> newnal_runtime::SessionKeys {
+	newnal_runtime::SessionKeys { aura: keys }
 }
 
-pub fn urauth_development_config() -> URAuthChainSpec {
+pub fn newnal_development_config() -> URAuthChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("ss58Format".into(), 0.into());
 	properties.insert("tokenSymbol".into(), "".into());
@@ -49,10 +49,10 @@ pub fn urauth_development_config() -> URAuthChainSpec {
 		// Name
 		"InfraBlockchain URAuth Dev",
 		// ID
-		"urauth-infra-dev",
+		"newnal-infra-dev",
 		ChainType::Local,
 		move || {
-			urauth_genesis(
+			newnal_genesis(
 				// initial collators.
 				vec![(
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -78,7 +78,7 @@ pub fn urauth_development_config() -> URAuthChainSpec {
 	)
 }
 
-pub fn urauth_local_config() -> URAuthChainSpec {
+pub fn newnal_local_config() -> URAuthChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("ss58Format".into(), 0.into());
 	properties.insert("tokenSymbol".into(), "".into());
@@ -88,10 +88,10 @@ pub fn urauth_local_config() -> URAuthChainSpec {
 		// Name
 		"InfraBlockchain URAuth Local",
 		// ID
-		"urauth-infra-local",
+		"newnal-infra-local",
 		ChainType::Local,
 		move || {
-			urauth_genesis(
+			newnal_genesis(
 				// initial collators.
 				vec![
 					(
@@ -132,7 +132,7 @@ pub fn urauth_local_config() -> URAuthChainSpec {
 }
 
 // Not used for syncing, but just to determine the genesis values set for the upgrade from shell.
-pub fn urauth_config() -> URAuthChainSpec {
+pub fn newnal_config() -> URAuthChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("ss58Format".into(), 0.into());
 	properties.insert("tokenSymbol".into(), "".into());
@@ -142,10 +142,10 @@ pub fn urauth_config() -> URAuthChainSpec {
 		// Name
 		"InfraBlockchain URAuth Main",
 		// ID
-		"urauth-infra",
+		"newnal-infra",
 		ChainType::Live,
 		move || {
-			urauth_genesis(
+			newnal_genesis(
 				// initial collators.
 				vec![
 					(
@@ -188,21 +188,21 @@ pub fn urauth_config() -> URAuthChainSpec {
 	)
 }
 
-fn urauth_genesis(
+fn newnal_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
 	oracle_members: Vec<AccountId>,
 	root_key: Option<AccountId>,
 	id: ParaId,
-) -> urauth_runtime::RuntimeGenesisConfig {
-	urauth_runtime::RuntimeGenesisConfig {
-		system: urauth_runtime::SystemConfig {
-			code: urauth_runtime::WASM_BINARY
+) -> newnal_runtime::RuntimeGenesisConfig {
+	newnal_runtime::RuntimeGenesisConfig {
+		system: newnal_runtime::SystemConfig {
+			code: newnal_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
 			..Default::default()
 		},
-		balances: urauth_runtime::BalancesConfig {
+		balances: newnal_runtime::BalancesConfig {
 			balances: endowed_accounts
 				.iter()
 				.cloned()
@@ -210,23 +210,23 @@ fn urauth_genesis(
 				.collect(),
 		},
 		assets: Default::default(),
-		parachain_info: urauth_runtime::ParachainInfoConfig {
+		parachain_info: newnal_runtime::ParachainInfoConfig {
 			parachain_id: id,
 			..Default::default()
 		},
-		collator_selection: urauth_runtime::CollatorSelectionConfig {
+		collator_selection: newnal_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
 			candidacy_bond: URAUTH_INFRA_RELAY_ED * 16,
 			..Default::default()
 		},
-		session: urauth_runtime::SessionConfig {
+		session: newnal_runtime::SessionConfig {
 			keys: invulnerables
 				.into_iter()
 				.map(|(acc, aura)| {
 					(
 						acc.clone(),               // account id
 						acc,                       // validator id
-						urauth_session_keys(aura), // session keys
+						newnal_session_keys(aura), // session keys
 					)
 				})
 				.collect(),
@@ -236,11 +236,11 @@ fn urauth_genesis(
 		aura: Default::default(),
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
-		ibs_xcm: urauth_runtime::IbsXcmConfig {
+		ibs_xcm: newnal_runtime::IbsXcmConfig {
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
 			..Default::default()
 		},
-		ur_auth: urauth_runtime::URAuthConfig { oracle_members },
-		sudo: urauth_runtime::SudoConfig { key: root_key },
+		ur_auth: newnal_runtime::URAuthConfig { oracle_members },
+		sudo: newnal_runtime::SudoConfig { key: root_key },
 	}
 }
