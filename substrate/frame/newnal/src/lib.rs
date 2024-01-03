@@ -25,6 +25,9 @@ pub use types::*;
 pub mod parser;
 pub use parser::*;
 
+pub type RequestId = u64;
+pub type TradeId = u64;
+
 #[cfg(test)]
 pub mod mock;
 
@@ -195,41 +198,43 @@ pub mod pallet {
 	pub type Counter<T: Config> = StorageValue<_, URAuthDocCount, ValueQuery>;
 
 
+
+
+
 	/// Data Purchase Request from Buyer
 	#[pallet::storage]
 	#[pallet::getter(fn data_purchase_requests)]
-	pub type DataPurchaseRequests<T: Config> = StorageMap<_, Twox64Concat, RequestId, PurchaseRequestDetails, OptionQuery>;
+	pub type DataPurchaseRequests<T: Config> =
+		StorageMap<_, Twox64Concat, RequestId, PurchaseRequestDetails<T::AccountId, BlockNumberFor<T>>, OptionQuery>;
 
-	#[derive(Encode, Decode, Clone, PartialEq, Eq)]
-	#[cfg_attr(feature = "std", derive(Debug))]
-	pub struct PurchaseRequestDetails {
-		pub buyer_id: T::AccountId,
+	#[derive(Encode, Decode, Clone, PartialEq, Eq, TypeInfo)]
+	#[cfg_attr(feature = "std", derive(Hash, Debug))]
+	pub struct PurchaseRequestDetails<AccountId, BlockNumber> {
+		pub buyer_id: AccountId,
 		pub data_type: DataType,
 		pub quantity: u64,
-		pub price_per_data: BalanceOf<T>, // Assuming BalanceOf is defined as per your configuration
-		pub deadline: T::BlockNumber,
-		pub status: PurchaseStatus, // Added status field
+		// pub price_per_data: BalanceOf<T>,
+		pub deadline: BlockNumber,
+		pub status: PurchaseStatus,
 	}
-
 
 	#[pallet::storage]
 	#[pallet::getter(fn data_transmits)]
-	pub type DataTradeReceipts<T: Config> = StorageDoubleMap<_, Twox64Concat, RequstId, TradeId, TradeReceiptDetails, OptionQuery>;
+	pub type DataTradeReceipts<T: Config> =
+		StorageDoubleMap<_, Twox64Concat, RequestId, Twox64Concat, TradeId, TradeReceiptDetails<T::AccountId>, OptionQuery>;
 
-	#[derive(Encode, Decode, Clone, PartialEq, Eq)]
-	#[cfg_attr(feature = "std", derive(Debug))]
-	pub struct TradeReceiptDetails {
-		pub seller_id: T::AccountId,
+	#[derive(Encode, Decode, Clone, PartialEq, Eq, TypeInfo)]
+	#[cfg_attr(feature = "std", derive(Hash, Debug))]
+	pub struct TradeReceiptDetails<AccountId> {
+		pub seller_id: AccountId,
 		pub data_type: DataType,
 		pub quantity: u64,
 	}
 
 	#[pallet::storage]
 	#[pallet::getter(fn purchase_agreements)]
-	pub type PurchaseAgreements<T: Config> = StorageMap<_, Twox64Concat, RequestId, u64, ValueQuery>;
-
-
-
+	pub type PurchaseAgreements<T: Config> =
+		StorageMap<_, Twox64Concat, RequestId, u64, ValueQuery>;
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T>
@@ -267,7 +272,9 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// URI is requested for its ownership.
-		URAuthRegisterRequested { uri: URI },
+		URAuthRegisterRequested {
+			uri: URI,
+		},
 		/// `URAuthDoc` is registered on `URAuthTree`.
 		URAuthTreeRegistered {
 			claim_type: ClaimType,
@@ -275,9 +282,15 @@ pub mod pallet {
 			newnal_doc: URAuthDoc<T::AccountId>,
 		},
 		/// Oracle member has submitted its verification of challenge value.
-		VerificationSubmitted { member: T::AccountId, digest: H256 },
+		VerificationSubmitted {
+			member: T::AccountId,
+			digest: H256,
+		},
 		/// Result of `VerificationSubmission`.
-		VerificationInfo { uri: URI, progress_status: VerificationSubmissionResult },
+		VerificationInfo {
+			uri: URI,
+			progress_status: VerificationSubmissionResult,
+		},
 		/// `URAuthDoc` has been updated for specific fiend.
 		URAuthDocUpdated {
 			update_doc_field: UpdateDocField<T::AccountId>,
@@ -293,7 +306,22 @@ pub mod pallet {
 		/// List of `URIByOracle` has been removed
 		URIByOracleRemoved,
 		/// Request of registering URI has been removed.
-		Removed { uri: URI },
+		Removed {
+			uri: URI,
+		},
+		DataPurchaseFinalized {
+			caller: T::AccountId,
+			request_id: RequestId,
+		},
+		DataTradeExecuted {
+			executor: T::AccountId,
+			request_id: RequestId,
+			trade_id: TradeId,
+		},
+		DataPurchaseRegistered {
+			buyer: T::AccountId,
+			request_id: RequestId,
+		},
 	}
 
 	#[pallet::error]
@@ -359,12 +387,24 @@ pub mod pallet {
 		UpdateInProgress,
 		/// Only URL is supported currently. General URI work in progress
 		GeneralURINotSupportedYet,
+		/// Error failed to the existing purchase request
+		RequestDoesNotExist,
+		/// Status of the purchase request is not active 
+		RequestNotActive,
 	}
 
-	#[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug)]
+	#[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+	#[cfg_attr(feature = "std", derive(Hash))]
 	pub enum PurchaseStatus {
 		Active,
 		Finished,
+	}
+
+	#[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+	#[cfg_attr(feature = "std", derive(Hash))]
+	pub enum DataType {
+		Image,
+		Json,
 	}
 
 	#[pallet::call]
@@ -723,68 +763,72 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			data_type: DataType,
 			quantity: u64,
-			price_per_data: BalanceOf<T>,
-			deadline: T::BlockNumber,
+			// price_per_data: BalanceOf<T>,
+			deadline: BlockNumberFor<T>,
 		) -> DispatchResultWithPostInfo {
 			let buyer = ensure_signed(origin)?;
-	
+
 			// Generating a unique request ID
-			let request_id = Self::generate_request_id(&buyer, &data_type, &quantity);
-	
+			let request_id = 0;
+			// let request_id = Self::generate_request_id(&buyer, &data_type, &quantity);
+
 			// Create a purchase request structure
 			let new_request = PurchaseRequestDetails {
 				buyer_id: buyer.clone(),
 				data_type,
 				quantity,
-				price_per_data,
+				// price_per_data,
 				deadline,
 				status: PurchaseStatus::Active, // Assume PurchaseStatus enum is defined somewhere
 			};
-	
+
 			// Insert the new request into storage
 			DataPurchaseRequests::<T>::insert(request_id, new_request);
 
 			// Initialize the purchase agreement count for this request
 			PurchaseAgreements::<T>::insert(request_id, 0);
-	
+
 			// Logic to lock the specified amount of tokens in a specific address
 			// Implement token locking mechanism here...
-	
+
 			// Emit an event for successful registration
-			Self::deposit_event(Event::DataPurchaseRegistered(buyer, request_id));
-	
+			Self::deposit_event(Event::<T>::DataPurchaseRegistered{buyer, request_id});
+
 			Ok(().into())
 		}
 
 		#[pallet::call_index(12)]
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		#[pallet::weight(10_000)]
 		pub fn execute_data_trade(
 			origin: OriginFor<T>,
 			request_id: RequestId,
 			trade_id: TradeId, // A unique identifier for the trade
 		) -> DispatchResultWithPostInfo {
 			let executor = ensure_signed(origin)?;
-	
+
 			// Ensure the purchase request is valid and active
-			let purchase_request = DataPurchaseRequests::<T>::get(&request_id).ok_or(Error::<T>::RequestDoesNotExist)?;
-			ensure!(purchase_request.status == PurchaseStatus::Active, Error::<T>::RequestNotActive);
-	
+			let purchase_request = DataPurchaseRequests::<T>::get(&request_id)
+				.ok_or(Error::<T>::RequestDoesNotExist)?;
+			ensure!(
+				purchase_request.status == PurchaseStatus::Active,
+				Error::<T>::RequestNotActive
+			);
+
 			// Logic for transferring tokens from the buyer's escrow to the seller
 			// Implement token transfer mechanism here...
-	
+
 			// Record the trade details in the DataTradeReceipts storage
 			let new_trade_receipt = TradeReceiptDetails {
-				seller_id: executor, // or however you determine the seller
+				seller_id: executor.clone(), // or however you determine the seller
 				data_type: purchase_request.data_type,
-				quantity: 1, // or however you determine the quantity
-				// Add other necessary details
+				quantity: 1, 
 			};
-	
+
 			DataTradeReceipts::<T>::insert(request_id, trade_id, new_trade_receipt);
-	
+
 			// Emit an event for successful trade execution
-			Self::deposit_event(Event::DataTradeExecuted(executor, request_id, trade_id));
-	
+			Self::deposit_event(Event::<T>::DataTradeExecuted{executor, request_id, trade_id});
+
 			Ok(().into())
 		}
 
@@ -795,22 +839,24 @@ pub mod pallet {
 			request_id: RequestId,
 		) -> DispatchResultWithPostInfo {
 			let caller = ensure_signed(origin)?;
-	
+
 			// Retrieve the purchase request
-			let mut purchase_request = DataPurchaseRequests::<T>::get(&request_id).ok_or(Error::<T>::RequestDoesNotExist)?;
-	
-			ensure!(purchase_request.status == PurchaseStatus::Active, Error::<T>::RequestNotActive);
-	
+			let mut purchase_request = DataPurchaseRequests::<T>::get(&request_id)
+				.ok_or(Error::<T>::RequestDoesNotExist)?;
+
+			ensure!(
+				purchase_request.status == PurchaseStatus::Active,
+				Error::<T>::RequestNotActive
+			);
+
 			// Update the status to Completed
 			purchase_request.status = PurchaseStatus::Finished;
 			DataPurchaseRequests::<T>::insert(&request_id, purchase_request);
-	
+
 			// Emit an event for purchase finalization
-			Self::deposit_event(Event::DataPurchaseFinalized(caller, request_id));
-	
+			Self::deposit_event(Event::<T>::DataPurchaseFinalized{caller, request_id});
 			Ok(().into())
 		}
-
 	}
 }
 

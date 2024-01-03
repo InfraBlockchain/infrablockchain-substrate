@@ -26,7 +26,7 @@ parachains-common = { path = "../parachains/common" }
 
 # parachains's runtimes
 asset-hub-runtime = { path = "../parachains/runtimes/assets/asset-hub-infra" }
-newnal-runtime = { path = "../parachains/runtimes/ur-auth" }
+newnal-runtime = { path = "../parachains/runtimes/newnal" }
 contracts-infra-runtime = { path = "../parachains/runtimes/contracts/contracts-infra" }
 did-runtime = { path = "../parachains/runtimes/did" }
 
