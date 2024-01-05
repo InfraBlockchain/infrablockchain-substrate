@@ -95,7 +95,7 @@ pub(crate) const fn rem_pio2(x: F64) -> (i32, F64, F64) {
 				let z = x.sub(PIO2_1); /* one round good to 85 bits */
 				let y0 = z.sub(PIO2_1T);
 				let y1 = (z.sub(y0)).sub(PIO2_1T);
-				return (1, y0, y1);
+				return (1, y0, y1)
 			} else {
 				let z = x.add(PIO2_1);
 				let y0 = z.add(PIO2_1T);
