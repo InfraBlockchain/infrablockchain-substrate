@@ -23,7 +23,7 @@ pub const fn floor(x: F64) -> F64 {
 	};
 	/* special case because of non-nearest rounding modes */
 	if e < 0x3ff {
-		return if (ui >> 63) != 0 { f64!(-1.0) } else { F64::ZERO };
+		return if (ui >> 63) != 0 { f64!(-1.0) } else { F64::ZERO }
 	}
 	if gt(&y, &F64::ZERO) {
 		x.add(y).sub(F64::ONE)

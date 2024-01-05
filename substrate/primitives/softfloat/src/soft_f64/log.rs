@@ -69,7 +69,7 @@ pub(crate) const fn log(mut x: F64) -> F64 {
 	if (hx < 0x00100000) || ((hx >> 31) != 0) {
 		/* x < 2**-126 */
 		if ui << 1 == 0 {
-			return f64!(-1.).div(x.mul(x)); /* log(+-0)=-inf */
+			return f64!(-1.).div(x.mul(x)) /* log(+-0)=-inf */
 		}
 		if hx >> 31 != 0 {
 			return (x.sub(x)).div(F64::ZERO) /* log(-#) = NaN */

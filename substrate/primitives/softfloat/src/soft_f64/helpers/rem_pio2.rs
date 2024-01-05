@@ -87,7 +87,7 @@ pub(crate) const fn rem_pio2(x: F64) -> (i32, F64, F64) {
 		/* |x| ~<= 5pi/4 */
 		if (ix & 0xfffff) == 0x921fb {
 			/* |x| ~= pi/2 or 2pi/2 */
-			return medium(x, ix); /* cancellation -- use medium case */
+			return medium(x, ix) /* cancellation -- use medium case */
 		}
 		if ix <= 0x4002d97c {
 			/* |x| ~<= 3pi/4 */
@@ -100,18 +100,18 @@ pub(crate) const fn rem_pio2(x: F64) -> (i32, F64, F64) {
 				let z = x.add(PIO2_1);
 				let y0 = z.add(PIO2_1T);
 				let y1 = (z.sub(y0)).add(PIO2_1T);
-				return (-1, y0, y1);
+				return (-1, y0, y1)
 			}
 		} else if sign == 0 {
 			let z = x.sub(f64!(2.0).mul(PIO2_1));
 			let y0 = z.sub(f64!(2.0).mul(PIO2_1T));
 			let y1 = (z.sub(y0)).sub(f64!(2.0).mul(PIO2_1T));
-			return (2, y0, y1);
+			return (2, y0, y1)
 		} else {
 			let z = x.add(f64!(2.0).mul(PIO2_1));
 			let y0 = z.add(f64!(2.0).mul(PIO2_1T));
 			let y1 = (z.sub(y0)).add(f64!(2.0).mul(PIO2_1T));
-			return (-2, y0, y1);
+			return (-2, y0, y1)
 		}
 	}
 	if ix <= 0x401c463b {
@@ -120,40 +120,40 @@ pub(crate) const fn rem_pio2(x: F64) -> (i32, F64, F64) {
 			/* |x| ~<= 7pi/4 */
 			if ix == 0x4012d97c {
 				/* |x| ~= 3pi/2 */
-				return medium(x, ix);
+				return medium(x, ix)
 			}
 			if sign == 0 {
 				let z = x.sub(f64!(3.0).mul(PIO2_1));
 				let y0 = z.sub(f64!(3.0).mul(PIO2_1T));
 				let y1 = (z.sub(y0)).sub(f64!(3.0).mul(PIO2_1T));
-				return (3, y0, y1);
+				return (3, y0, y1)
 			} else {
 				let z = x.add(f64!(3.0).mul(PIO2_1));
 				let y0 = z.add(f64!(3.0).mul(PIO2_1T));
 				let y1 = (z.sub(y0)).add(f64!(3.0).mul(PIO2_1T));
-				return (-3, y0, y1);
+				return (-3, y0, y1)
 			}
 		} else {
 			if ix == 0x401921fb {
 				/* |x| ~= 4pi/2 */
-				return medium(x, ix);
+				return medium(x, ix)
 			}
 			if sign == 0 {
 				let z = x.sub(f64!(4.0).mul(PIO2_1));
 				let y0 = z.sub(f64!(4.0).mul(PIO2_1T));
 				let y1 = (z.sub(y0)).sub(f64!(4.0).mul(PIO2_1T));
-				return (4, y0, y1);
+				return (4, y0, y1)
 			} else {
 				let z = x.add(f64!(4.0).mul(PIO2_1));
 				let y0 = z.add(f64!(4.0).mul(PIO2_1T));
 				let y1 = (z.sub(y0)).add(f64!(4.0).mul(PIO2_1T));
-				return (-4, y0, y1);
+				return (-4, y0, y1)
 			}
 		}
 	}
 	if ix < 0x413921fb {
 		/* |x| ~< 2^20*(pi/2), medium size */
-		return medium(x, ix);
+		return medium(x, ix)
 	}
 	/*
 	 * all other (large) arguments
@@ -162,7 +162,7 @@ pub(crate) const fn rem_pio2(x: F64) -> (i32, F64, F64) {
 		/* x is inf or NaN */
 		let y0 = x.sub(x);
 		let y1 = y0;
-		return (0, y0, y1);
+		return (0, y0, y1)
 	}
 	/* set z = scalbn(|x|,-ilogb(x)+23) */
 	let mut ui = F64::to_bits(x);
@@ -192,7 +192,7 @@ pub(crate) const fn rem_pio2(x: F64) -> (i32, F64, F64) {
 		_ => panic!(),
 	};
 	if sign != 0 {
-		return (-n, ty[0].neg(), ty[1].neg());
+		return (-n, ty[0].neg(), ty[1].neg())
 	}
 	(n, ty[0], ty[1])
 }

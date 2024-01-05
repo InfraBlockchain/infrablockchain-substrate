@@ -57,7 +57,7 @@ pub(crate) const fn cos(x: F64) -> F64 {
 				return F64::ONE
 			}
 		}
-		return k_cos(x, F64::ZERO);
+		return k_cos(x, F64::ZERO)
 	}
 
 	/* cos(Inf or NaN) is NaN */

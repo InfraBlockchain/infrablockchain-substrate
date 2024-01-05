@@ -61,7 +61,7 @@ pub(crate) const fn sin(x: F64) -> F64 {
 			}
 			return x
 		}
-		return k_sin(x, F64::ZERO, 0);
+		return k_sin(x, F64::ZERO, 0)
 	}
 
 	/* sin(Inf or NaN) is NaN */

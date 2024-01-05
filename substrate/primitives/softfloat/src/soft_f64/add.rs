@@ -56,7 +56,7 @@ pub(crate) const fn add(a: F, b: F) -> F {
 		if a_abs == 0 {
 			// but we need to get the sign right for zero + zero
 			if b_abs == 0 {
-				return F::from_repr(a.repr() & b.repr());
+				return F::from_repr(a.repr() & b.repr())
 			} else {
 				return b
 			}
