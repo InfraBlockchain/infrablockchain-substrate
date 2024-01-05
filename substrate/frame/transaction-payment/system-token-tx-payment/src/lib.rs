@@ -53,7 +53,7 @@ use sp_runtime::{
 	transaction_validity::{TransactionValidity, TransactionValidityError, ValidTransaction},
 	types::{
 		AssetId as InfraAssetId, ExtrinsicMetadata, SystemTokenId, SystemTokenLocalAssetProvider,
-		VoteAccountId, VoteWeight,
+		VoteAccountId,
 	},
 	FixedPointOperand,
 };
