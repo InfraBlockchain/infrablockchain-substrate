@@ -59,14 +59,14 @@ pub(crate) const fn sin(x: F64) -> F64 {
 			} else {
 				x.add(x1p120);
 			}
-			return x;
+			return x
 		}
 		return k_sin(x, F64::ZERO, 0);
 	}
 
 	/* sin(Inf or NaN) is NaN */
 	if ix >= 0x7ff00000 {
-		return x.sub(x);
+		return x.sub(x)
 	}
 
 	/* argument reduction needed */

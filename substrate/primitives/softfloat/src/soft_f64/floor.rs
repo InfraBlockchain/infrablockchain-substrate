@@ -13,7 +13,7 @@ pub const fn floor(x: F64) -> F64 {
 	let e = ((ui >> 52) & 0x7ff) as i32;
 
 	if (e >= 0x3ff + 52) || eq(&x, &F64::ZERO) {
-		return x;
+		return x
 	}
 	/* y = int(x) - x, where int(x) is an integer neighbor of x */
 	let y = if (ui >> 63) != 0 {

@@ -403,7 +403,7 @@ pub(crate) const fn rem_pio2_large<const Y: usize>(
 			}
 		}
 
-		break;
+		break
 	}
 
 	/* chop off zero terms */

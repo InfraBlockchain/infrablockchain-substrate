@@ -72,7 +72,7 @@ pub(crate) const fn log(mut x: F64) -> F64 {
 			return f64!(-1.).div(x.mul(x)); /* log(+-0)=-inf */
 		}
 		if hx >> 31 != 0 {
-			return (x.sub(x)).div(F64::ZERO); /* log(-#) = NaN */
+			return (x.sub(x)).div(F64::ZERO) /* log(-#) = NaN */
 		}
 		/* subnormal number, scale x up */
 		k -= 54;
@@ -80,9 +80,9 @@ pub(crate) const fn log(mut x: F64) -> F64 {
 		ui = x.to_bits();
 		hx = (ui >> 32) as u32;
 	} else if hx >= 0x7ff00000 {
-		return x;
+		return x
 	} else if hx == 0x3ff00000 && ui << 32 == 0 {
-		return F64::ZERO;
+		return F64::ZERO
 	}
 
 	/* reduce x into [sqrt(2)/2, sqrt(2)] */

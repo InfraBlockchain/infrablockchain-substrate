@@ -27,22 +27,22 @@ pub(crate) const fn cmp(a: &F, &b: &F) -> Option<Ordering> {
 
 	// If a and b are both NaN, they are equal.
 	if a_abs > inf_rep && b_abs > inf_rep {
-		return EQUAL;
+		return EQUAL
 	}
 
 	// If only a is NaN, a are less.
 	if a_abs > inf_rep {
-		return LESS;
+		return LESS
 	}
 
 	// If only b is NaN, a are greather.
 	if b_abs > inf_rep {
-		return GREATER;
+		return GREATER
 	}
 
 	// If a and b are both zeros, they are equal.
 	if a_abs | b_abs == zero {
-		return EQUAL;
+		return EQUAL
 	}
 
 	let a_srep = a.signed_repr();
