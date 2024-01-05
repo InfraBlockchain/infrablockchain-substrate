@@ -169,7 +169,6 @@ pub mod pallet {
 	#[pallet::error]
 	pub enum Error<T> {
 		ErrorConvertToAssetBalance,
-		NotInBootstrap,
 		NotAllowedToChangeState,
 	}
 
@@ -191,7 +190,9 @@ impl<T: Config> Pallet<T> {
 	}
 
 	pub fn do_set_runtime_state() -> DispatchResult {
-		ensure!(State::<T>::get() == RuntimeState::Bootstrap, Error::<T>::NotInBootstrap);
+		if State::<T>::get() == RuntimeState::Normal {
+			return Ok(())
+		}
 		let l = T::Assets::system_token_list();
 		ensure!(!l.is_empty(), Error::<T>::NotAllowedToChangeState);
 		// ToDo: Check whether a parachain has enough system token to pay

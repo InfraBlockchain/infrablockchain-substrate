@@ -1071,6 +1071,7 @@ where
 				0,
 				system_token_weight,
 			)?;
+			pallet_system_token_tx_payment::pallet::Pallet::<T>::do_set_runtime_state()?;
 		} else {
 			// Parachain
 			let encoded_call: Vec<u8> = pallet_assets::Call::<T>::force_create_with_metadata {
