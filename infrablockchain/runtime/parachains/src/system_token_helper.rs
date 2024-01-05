@@ -66,7 +66,7 @@ fn transact_xcm(
 	VersionedXcm::from(Xcm(vec![
 		BuyExecution { fees: fees.into(), weight_limit: WeightLimit::Unlimited },
 		Transact {
-			origin_kind: origin_kind.map_or(xcm::v2::OriginKind::Superuser, |o| o),
+			origin_kind: origin_kind.map_or(xcm::v3::OriginKind::Native, |o| o),
 			require_weight_at_most: require_weight_at_most
 				.map_or(Weight::from_parts(REF_WEIGHT, PROOF_WEIGHT), |w| w),
 			call: encoded_call.into(),
