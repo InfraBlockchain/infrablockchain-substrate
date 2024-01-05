@@ -78,7 +78,8 @@ use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{
 		AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto,
-		Extrinsic as ExtrinsicT, OpaqueKeys, SaturatedConversion, Verify,
+		Extrinsic as ExtrinsicT, OpaqueKeys, SaturatedConversion, TryConvertInto as JustTry,
+		Verify,
 	},
 	transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
 	types::{VoteAccountId, VoteWeight},
@@ -377,13 +378,14 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 }
 
 impl pallet_system_token_tx_payment::Config for Runtime {
+	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeEvent = RuntimeEvent;
 	type Assets = Assets;
 	type OnChargeSystemToken = TransactionFeeCharger<
 		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
 		CreditToBucket,
+		JustTry,
 	>;
-	type FeeTableProvider = ();
 	type VotingHandler = Pot;
 	type BootstrapCallFilter = BootstrapCallFilter;
 	type PalletId = FeeTreasuryId;
@@ -1128,10 +1130,7 @@ impl system_token_manager::Config for Runtime {
 	type MaxOriginalUsedParaIds = ConstU32<10>;
 }
 
-impl pallet_system_token::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type AuthorizedOrigin = AuthorityOrigin;
-}
+impl pallet_system_token::Config for Runtime {}
 
 impl validator_reward_manager::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -1354,6 +1353,7 @@ impl auctions::Config for Runtime {
 
 type AssetId = u32;
 impl pallet_assets::Config for Runtime {
+	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
 	type AssetId = AssetId;
@@ -1400,7 +1400,7 @@ construct_runtime! {
 		// IBS Support
 		SystemTokenManager: system_token_manager::{Pallet, Call, Storage, Event<T>} = 20,
 		ValidatorRewardManager: validator_reward_manager::{Pallet, Call, Storage, Event<T>} = 21,
-		SystemToken: pallet_system_token = 23,
+		SystemToken: pallet_system_token::{Pallet, Origin} = 23,
 		AssetLink: pallet_asset_link = 24,
 		Pot: relay_pot::{Pallet, Storage, Event<T>} = 25,
 		SystemTokenAggregator: system_token_aggregator = 26,
@@ -1413,7 +1413,7 @@ construct_runtime! {
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 5,
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>, Config<T>} = 6,
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 31,
-		SystemTokenTxPayment: pallet_system_token_tx_payment::{Pallet, Event<T>} = 32,
+		SystemTokenTxPayment: pallet_system_token_tx_payment::{Pallet, Call, Storage, Event<T>} = 32,
 
 		// Consensus support.
 		// Authorship must be before session in order to note author in the correct session and era

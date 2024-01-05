@@ -53,41 +53,41 @@ pub(crate) const fn div(a: F, b: F) -> F {
 
 		// NaN / anything = qNaN
 		if a_abs > inf_rep {
-			return F::from_repr(a_rep | quiet_bit);
+			return F::from_repr(a_rep | quiet_bit)
 		}
 		// anything / NaN = qNaN
 		if b_abs > inf_rep {
-			return F::from_repr(b_rep | quiet_bit);
+			return F::from_repr(b_rep | quiet_bit)
 		}
 
 		if a_abs == inf_rep {
 			if b_abs == inf_rep {
 				// infinity / infinity = NaN
-				return F::from_repr(qnan_rep);
+				return F::from_repr(qnan_rep)
 			} else {
 				// infinity / anything else = +/- infinity
-				return F::from_repr(a_abs | quotient_sign);
+				return F::from_repr(a_abs | quotient_sign)
 			}
 		}
 
 		// anything else / infinity = +/- 0
 		if b_abs == inf_rep {
-			return F::from_repr(quotient_sign);
+			return F::from_repr(quotient_sign)
 		}
 
 		if a_abs == zero {
 			if b_abs == zero {
 				// zero / zero = NaN
-				return F::from_repr(qnan_rep);
+				return F::from_repr(qnan_rep)
 			} else {
 				// zero / anything else = +/- zero
-				return F::from_repr(quotient_sign);
+				return F::from_repr(quotient_sign)
 			}
 		}
 
 		// anything else / zero = +/- infinity
 		if b_abs == zero {
-			return F::from_repr(inf_rep | quotient_sign);
+			return F::from_repr(inf_rep | quotient_sign)
 		}
 
 		// one or both of a or b is denormal, the other (if applicable) is a
@@ -395,7 +395,7 @@ pub(crate) const fn div(a: F, b: F) -> F {
 
 	// If we have overflowed the exponent, return infinity
 	if written_exponent >= max_exponent as i64 {
-		return F::from_repr(inf_rep | quotient_sign);
+		return F::from_repr(inf_rep | quotient_sign)
 	}
 
 	// Now, quotient <= the correctly-rounded result
@@ -408,7 +408,7 @@ pub(crate) const fn div(a: F, b: F) -> F {
 		ret
 	} else {
 		if (significand_bits as i64 + written_exponent) < 0 {
-			return F::from_repr(quotient_sign);
+			return F::from_repr(quotient_sign)
 		}
 		let ret = quotient.wrapping_shr((negate_u64(written_exponent as u64) + 1) as u32);
 		residual = a_significand

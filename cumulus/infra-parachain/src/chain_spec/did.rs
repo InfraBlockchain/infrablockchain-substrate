@@ -222,7 +222,7 @@ fn did_genesis(
 		aura: Default::default(),
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
-		ibs_xcm: did_runtime::IbsXcmConfig {
+		infra_xcm: did_runtime::InfraXcmConfig {
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
 			..Default::default()
 		},

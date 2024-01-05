@@ -226,7 +226,7 @@ fn asset_hub_genesis(
 		aura: Default::default(),
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
-		ibs_xcm: asset_hub_runtime::IbsXcmConfig {
+		infra_xcm: asset_hub_runtime::InfraXcmConfig {
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
 			..Default::default()
 		},

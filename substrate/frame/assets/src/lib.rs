@@ -169,31 +169,21 @@ use frame_support::{
 	},
 };
 use frame_system::pallet_prelude::*;
-
-use core::marker::PhantomData;
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Saturating, StaticLookup, Zero},
-	types::{RuntimeState, SystemTokenId, SystemTokenLocalAssetProvider, SystemTokenWeight},
+	types::{SystemTokenId, SystemTokenLocalAssetProvider, SystemTokenWeight},
 	ArithmeticError, DispatchError, TokenError,
 };
 use sp_std::prelude::*;
 
 use frame_system::Config as SystemConfig;
-
 pub use pallet::*;
+use pallet_system_token::{ensure_system_token_origin, Origin as SystemTokenOrigin};
 pub use weights::WeightInfo;
 
 type AccountIdLookupOf<T> = <<T as frame_system::Config>::Lookup as StaticLookup>::Source;
 const LOG_TARGET: &str = "runtime::assets";
-
-/// Origin for the parachains module.
-#[derive(PartialEq, Eq, Clone, Encode, Decode, TypeInfo, RuntimeDebug, MaxEncodedLen)]
-#[scale_info(skip_type_params(I))]
-pub enum RawOrigin<T, I> {
-	Relay,
-	_Phantom(PhantomData<(T, I)>),
-}
 
 /// Trait with callbacks that are executed after successfull asset creation or destruction.
 pub trait AssetsCallback<AssetId, AccountId> {
@@ -236,6 +226,10 @@ pub mod pallet {
 	#[pallet::config]
 	/// The module configuration trait.
 	pub trait Config<I: 'static = ()>: frame_system::Config {
+		type RuntimeOrigin: From<SystemTokenOrigin>
+			+ From<<Self as frame_system::Config>::RuntimeOrigin>
+			+ Into<Result<SystemTokenOrigin, <Self as Config<I>>::RuntimeOrigin>>;
+
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self, I>>
 			+ IsType<<Self as frame_system::Config>::RuntimeEvent>;
@@ -383,14 +377,6 @@ pub mod pallet {
 		ValueQuery,
 	>;
 
-	#[pallet::storage]
-	/// The fee rate imposed to parachain. The fee rate 1_000 actually equals 1.
-	/// It is initilzed as 1_000(1.0), then it SHOULD be only set by a dmp call from RELAY CHAIN.
-	pub(super) type ParaFeeRate<T: Config<I>, I: 'static = ()> = StorageValue<_, u128, OptionQuery>;
-
-	#[pallet::storage]
-	pub(super) type State<T: Config<I>, I: 'static = ()> =
-		StorageValue<_, RuntimeState, ValueQuery>;
 	#[pallet::genesis_config]
 	#[derive(frame_support::DefaultNoBound)]
 	pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
@@ -405,7 +391,6 @@ pub mod pallet {
 	#[pallet::genesis_build]
 	impl<T: Config<I>, I: 'static> BuildGenesisConfig for GenesisConfig<T, I> {
 		fn build(&self) {
-			ParaFeeRate::<T, I>::set(Some(CORRECTION_PARA_FEE_RATE));
 			for (id, owner, is_sufficient, min_balance) in &self.assets {
 				assert!(!Asset::<T, I>::contains_key(id), "Asset id already in use");
 				assert!(!min_balance.is_zero(), "Min balance should not be zero");
@@ -465,9 +450,6 @@ pub mod pallet {
 			}
 		}
 	}
-
-	// #[pallet::origin]
-	// pub type Origin<T, I = ()> = RawOrigin<T, I>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -560,12 +542,6 @@ pub mod pallet {
 			original_system_token_weight: SystemTokenWeight,
 			new_system_token_weight: SystemTokenWeight,
 		},
-		/// No sufficient token to pay the transaciton fee
-		NoSufficientTokenToPay,
-		/// The ParaFeeRate has been updated
-		ParaFeeRateUpdated { para_fee_rate: u128 },
-		/// Runtime state has been changed to Normal state
-		RuntimeStateUpdated { from: RuntimeState, to: RuntimeState },
 	}
 
 	#[pallet::error]
@@ -613,10 +589,6 @@ pub mod pallet {
 		NotFrozen,
 		/// Callback action resulted in error
 		CallbackFailed,
-		/// Currently, there is not system token to pay tx fee.
-		NotAllowedToChangeState,
-		/// Current Runtime is not in bootstrap mode
-		NotInBootstrap,
 	}
 
 	#[pallet::call(weight(<T as Config<I>>::WeightInfo))]
@@ -1711,7 +1683,7 @@ pub mod pallet {
 			dest: AccountIdLookupOf<T>,
 			#[pallet::compact] amount: T::Balance,
 		) -> DispatchResult {
-			T::ForceOrigin::ensure_origin(origin)?;
+			ensure_system_token_origin(<T as Config<I>>::RuntimeOrigin::from(origin))?;
 			let source = T::Lookup::lookup(source)?;
 			let dest = T::Lookup::lookup(dest)?;
 			let id: T::AssetId = id.into();
@@ -1737,7 +1709,7 @@ pub mod pallet {
 			is_sufficient: bool,
 			system_token_weight: Option<SystemTokenWeight>,
 		) -> DispatchResult {
-			T::ForceOrigin::ensure_origin(origin)?;
+			ensure_system_token_origin(<T as Config<I>>::RuntimeOrigin::from(origin))?;
 			let id: T::AssetId = id.into();
 
 			let mut details = Asset::<T, I>::get(&id).ok_or(Error::<T, I>::Unknown)?;
@@ -1769,7 +1741,7 @@ pub mod pallet {
 			id: T::AssetIdParameter,
 			is_sufficient: bool,
 		) -> DispatchResult {
-			T::ForceOrigin::ensure_origin(origin.clone())?;
+			ensure_system_token_origin(<T as Config<I>>::RuntimeOrigin::from(origin))?;
 			let asset_id: T::AssetId = id.into();
 			Self::do_set_sufficient_and_unlink(&asset_id, is_sufficient)?;
 
@@ -1813,7 +1785,7 @@ pub mod pallet {
 			asset_link_parents: u8,
 			system_token_weight: SystemTokenWeight,
 		) -> DispatchResult {
-			T::ForceOrigin::ensure_origin(origin.clone())?;
+			ensure_system_token_origin(<T as Config<I>>::RuntimeOrigin::from(origin))?;
 			Self::do_create_asset_with_metadata(
 				id,
 				owner,
@@ -1846,7 +1818,7 @@ pub mod pallet {
 			id: T::AssetIdParameter,
 			system_token_weight: SystemTokenWeight,
 		) -> DispatchResult {
-			T::ForceOrigin::ensure_origin(origin)?;
+			ensure_system_token_origin(<T as Config<I>>::RuntimeOrigin::from(origin))?;
 
 			let asset_id: T::AssetId = id.into();
 
@@ -1859,34 +1831,6 @@ pub mod pallet {
 				original_system_token_weight,
 				new_system_token_weight: system_token_weight,
 			});
-			Ok(())
-		}
-
-		/// Sets the system_token_weight of an AssetDetails.
-		///
-		///
-		/// Origin must be Signed and the sender has to be the root
-		///
-		/// - `id`: The identifier of the asset.
-		/// - `system_token_weight`: The new value of `system_token_weight`.
-		///
-		/// Emits `AssetSystemTokenWeightChanged` event when successful.
-		#[pallet::call_index(37)]
-		#[pallet::weight(T::WeightInfo::set_min_balance())]
-		pub fn update_para_fee_rate(origin: OriginFor<T>, para_fee_rate: u128) -> DispatchResult {
-			T::ForceOrigin::ensure_origin(origin)?;
-
-			ParaFeeRate::<T, I>::set(Some(para_fee_rate));
-
-			Self::deposit_event(Event::ParaFeeRateUpdated { para_fee_rate });
-			Ok(())
-		}
-
-		#[pallet::call_index(38)]
-		#[pallet::weight(T::WeightInfo::block())]
-		pub fn set_runtime_state(origin: OriginFor<T>) -> DispatchResult {
-			ensure_root(origin)?;
-			Self::do_set_runtime_state()?;
 			Ok(())
 		}
 	}

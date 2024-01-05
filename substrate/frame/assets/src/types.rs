@@ -330,12 +330,10 @@ where
 		// ensure!(!min_balance.is_zero(), ConversionError::MinBalanceZero);
 		let balance = CON::convert(balance);
 
-		let para_fee_rate = ParaFeeRate::<T, I>::get().ok_or(ConversionError::AssetMissing)?;
-
 		// balance * para_fee_rate / (system_token_weight * correction_para_fee_rate)
 		// ToDo: Divisor should be changed based on the decimals
 		Ok(FixedU128::saturating_from_rational(
-			para_fee_rate * CORRECTION_GAS_FEE,
+			CORRECTION_GAS_FEE,
 			asset.system_token_weight * CORRECTION_PARA_FEE_RATE,
 		)
 		.saturating_mul_int(balance))

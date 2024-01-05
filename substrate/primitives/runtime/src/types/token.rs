@@ -58,17 +58,8 @@ impl SystemTokenId {
 	}
 }
 
-#[allow(missing_docs)]
-#[derive(Encode, Decode, Eq, Clone, PartialEq, RuntimeDebug, MaxEncodedLen, TypeInfo, Default)]
-pub enum RuntimeState {
-	#[default]
-	Bootstrap,
-	Normal,
-}
-#[allow(missing_docs)]
 /// API for local asset
 pub trait SystemTokenLocalAssetProvider<Asset, Account> {
-	fn runtime_state() -> RuntimeState;
 	/// Get a list of local assets created on local chain
 	fn system_token_list() -> Vec<Asset>;
 	/// Get the most account balance

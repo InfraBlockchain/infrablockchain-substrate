@@ -14,7 +14,7 @@
 // limitations under the License.
 
 use super::{
-	AccountId, AllPalletsWithSystem, AssetLink, Assets, Authorship, Balance, Balances, IbsXcm,
+	AccountId, AllPalletsWithSystem, AssetLink, Assets, Authorship, Balance, Balances, InfraXcm,
 	ParachainInfo, ParachainSystem, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, WeightToFee,
 	XcmpQueue,
 };
@@ -24,6 +24,7 @@ use frame_support::{
 	traits::{ConstU32, Contains, Everything, Nothing, PalletInfoAccess},
 };
 
+use pallet_system_token::Origin as SystemTokenOrigin;
 use pallet_xcm::XcmPassthrough;
 use parachain_primitives::primitives::Sibling;
 use parachains_common::xcm_config::AssetFeeAsExistentialDepositMultiplier;
@@ -42,13 +43,13 @@ use xcm_executor::{traits::WithOriginFilter, XcmExecutor};
 parameter_types! {
 	pub const NativeLocation: MultiLocation = Here.into_location();
 	pub const RelayNetwork: Option<NetworkId> = Some(NetworkId::InfraRelay);
-	pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
+	pub RelayChainOrigin: RuntimeOrigin = SystemTokenOrigin::SystemTokenBody.into();
 	pub UniversalLocation: InteriorMultiLocation =
 		X2(GlobalConsensus(RelayNetwork::get().unwrap()), Parachain(ParachainInfo::parachain_id().into()));
 	pub UniversalLocationNetworkId: NetworkId = UniversalLocation::get().global_consensus().unwrap();
 	pub TrustBackedAssetsPalletLocation: MultiLocation =
 		PalletInstance(<Assets as PalletInfoAccess>::index() as u8).into();
-	pub CheckingAccount: AccountId = IbsXcm::check_account();
+	pub CheckingAccount: AccountId = InfraXcm::check_account();
 }
 
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
@@ -197,14 +198,13 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				pallet_collator_selection::Call::register_as_candidate { .. } |
 				pallet_collator_selection::Call::leave_intent { .. },
 			) |
+			RuntimeCall::SystemTokenTxPayment(..) |
 			RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
-			RuntimeCall::SystemToken(pallet_system_token::Call::set_fee_table { .. }) |
 			RuntimeCall::XcmpQueue(..) |
 			RuntimeCall::DmpQueue(..) |
 			RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. }) |
 			RuntimeCall::AssetLink(pallet_asset_link::Call::link_system_token { .. }) |
 			RuntimeCall::Assets(
-				pallet_assets::Call::update_para_fee_rate { .. } |
 				pallet_assets::Call::update_system_token_weight { .. } |
 				pallet_assets::Call::set_sufficient_and_system_token_weight { .. } |
 				pallet_assets::Call::set_sufficient_with_unlink_system_token { .. } |
@@ -236,8 +236,7 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				pallet_assets::Call::force_cancel_approval { .. } |
 				pallet_assets::Call::transfer_approved { .. } |
 				pallet_assets::Call::touch { .. } |
-				pallet_assets::Call::refund { .. } |
-				pallet_assets::Call::set_runtime_state { .. },
+				pallet_assets::Call::refund { .. },
 			) |
 			RuntimeCall::Uniques(
 				pallet_uniques::Call::create { .. } |
@@ -327,10 +326,10 @@ impl xcm_executor::Config for XcmConfig {
 			>,
 		>,
 	);
-	type ResponseHandler = IbsXcm;
-	type AssetTrap = IbsXcm;
-	type AssetClaims = IbsXcm;
-	type SubscriptionService = IbsXcm;
+	type ResponseHandler = InfraXcm;
+	type AssetTrap = InfraXcm;
+	type AssetClaims = InfraXcm;
+	type SubscriptionService = InfraXcm;
 	type PalletInstancesInfo = AllPalletsWithSystem;
 	type MaxAssetsIntoHolding = MaxAssetsIntoHolding;
 	type AssetLocker = ();
@@ -351,7 +350,7 @@ pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, R
 /// queues.
 pub type XcmRouter = WithUniqueTopic<(
 	// Two routers - use UMP to communicate with the relay chain:
-	cumulus_primitives_utility::ParentAsUmp<ParachainSystem, IbsXcm, ()>,
+	cumulus_primitives_utility::ParentAsUmp<ParachainSystem, InfraXcm, ()>,
 	// ..and XCMP to communicate with the sibling chains.
 	XcmpQueue,
 )>;
