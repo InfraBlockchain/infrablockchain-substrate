@@ -216,3 +216,4 @@ std = [
 	"parachains-common/std",
 	"assets-common/std",
 ]
+fast-runtime = []
