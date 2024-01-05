@@ -80,7 +80,7 @@ impl SubstrateCli for Cli {
 	}
 
 	fn support_url() -> String {
-		"https://github.com/InfraBlockchain/infrablockchain-sdk/issues/new".into()
+		"https://github.com/InfraBlockchain/infrablockchain-substrate/issues/new".into()
 	}
 
 	fn copyright_start_year() -> i32 {

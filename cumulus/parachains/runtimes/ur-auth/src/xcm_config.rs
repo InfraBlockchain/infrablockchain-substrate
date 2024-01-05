@@ -7,7 +7,6 @@ use assets_common::matching::{StartsWith, StartsWithExplicitGlobalConsensus};
 use frame_support::{
 	match_types, parameter_types,
 	traits::{ConstU32, Contains, Everything, Nothing, PalletInfoAccess},
-	weights::Weight,
 };
 use pallet_system_token::Origin as SystemTokenOrigin;
 use pallet_xcm::XcmPassthrough;
@@ -17,16 +16,13 @@ use sp_runtime::traits::ConvertInto;
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowSubscriptionsFrom,
-	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteId, EnsureXcmOrigin,
-	FungiblesAdapter, LocalMint, NativeAsset, NonLocalMint, ParentAsSuperuser, ParentIsPreset,
-	RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
-	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
-	WeightInfoBounds,
+	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, EnsureXcmOrigin, FungiblesAdapter,
+	LocalMint, NonLocalMint, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
+	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
+	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, WeightInfoBounds,
 };
-use xcm_executor::{
-	traits::{JustTry, WithOriginFilter},
-	XcmExecutor,
-};
+use xcm_executor::{traits::WithOriginFilter, XcmExecutor};
+use xcm_primitives::TrappistDropAssets;
 
 parameter_types! {
 	pub UniversalLocationNetworkId: NetworkId = UniversalLocation::get().global_consensus().unwrap();
@@ -73,13 +69,6 @@ pub type LocalIssuedFungiblesTransactor = FungiblesAdapter<
 	LocalMint<parachains_common::impls::NonZeroIssuance<AccountId, Assets>>,
 	// The account to use for tracking teleports.
 	CheckingAccount,
->;
-
-pub type InfraConvertedConcreteId<AssetConverter> = ConvertedConcreteId<
-	AssetId,
-	Balance,
-	xcm_primitives::AsAssetMultiLocation<AssetId, AssetConverter>,
-	JustTry,
 >;
 
 /// `AssetId/Balance` converter for `TrustBackedAssets`
@@ -139,8 +128,6 @@ pub type XcmOriginToTransactDispatchOrigin = (
 );
 
 parameter_types! {
-	// One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
-	pub UnitWeightCost: Weight = Weight::from_parts(20_000_000, 0);
 	pub const MaxInstructions: u32 = 100;
 	pub const MaxAssetsIntoHolding: u32 = 64;
 	pub XcmAssetFeesReceiver: Option<AccountId> = Authorship::author();
@@ -179,17 +166,7 @@ pub type AssetFeeAsExistentialDepositMultiplierFeeCharger = AssetFeeAsExistentia
 	(),
 >;
 
-parameter_types! {
-	pub const InfraSystem: MultiLocation = Parachain(1000).into_exterior(1);
-
-	pub const ItestInfraSystemLocation: MultiLocation = X3(Parachain(1000), PalletInstance(50), GeneralIndex(99)).into_exterior(1);
-	pub const ItestInfraSystemFilter: MultiAssetFilter = Wild(AllOf { fun: WildFungible, id: Concrete(ItestInfraSystemLocation::get())});
-
-	pub const ItestForInfraSystem: (MultiAssetFilter, MultiLocation) = (ItestInfraSystemFilter::get(), InfraSystem::get());
-}
-
 pub type AssetTransactors = (ForeignFungiblesTransactor, LocalIssuedFungiblesTransactor);
-pub type TrustedTeleporters = (xcm_builder::Case<ItestForInfraSystem>, NativeAsset);
 
 /// A call filter for the XCM Transact instruction. This is a temporary measure until we properly
 /// account for proof size weights.
@@ -281,6 +258,7 @@ impl xcm_executor::Config for XcmConfig {
 	type IsTeleporter = ();
 	type UniversalLocation = UniversalLocation;
 	type Barrier = Barrier;
+	// Change
 	type Weigher = WeightInfoBounds<
 		crate::weights::xcm::StatemintXcmWeight<RuntimeCall>,
 		RuntimeCall,
@@ -300,7 +278,8 @@ impl xcm_executor::Config for XcmConfig {
 		>,
 	);
 	type ResponseHandler = IbsXcm;
-	type AssetTrap = IbsXcm;
+	// type AssetTrap = IbsXcm;
+	type AssetTrap = TrappistDropAssets<AssetId, AssetLink, Assets, Balances, IbsXcm, AccountId>;
 	type AssetClaims = IbsXcm;
 	type SubscriptionService = IbsXcm;
 	type PalletInstancesInfo = AllPalletsWithSystem;

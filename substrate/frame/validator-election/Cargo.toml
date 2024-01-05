@@ -12,24 +12,28 @@ readme = "README.md"
 [dependencies]
 
 # External
-serde = { version = "1.0.188", default-features = false, features = ["alloc", "derive"]}
-codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false, features = ["derive", "max-encoded-len"] }
+serde = { version = "1.0.188", default-features = false, features = ["alloc", "derive"] }
+codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false, features = [
+	"derive",
+	"max-encoded-len",
+] }
 log = { version = "0.4.17", default-features = false }
 scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
+softfloat = { path = "../../primitives/softfloat", default-features = false }
 
 # primitives
 sp-application-crypto = { path = "../../primitives/application-crypto", default-features = false }
-sp-core = { path = "../../../substrate/primitives/core", default-features= false }
+sp-core = { path = "../../../substrate/primitives/core", default-features = false }
 sp-io = { path = "../../../substrate/primitives/io", default-features = false }
 sp-runtime = { path = "../../primitives/runtime", default-features = false }
-sp-std = { path = "../../primitives/std", default-features = false}
+sp-std = { path = "../../primitives/std", default-features = false }
 
 # frames
 frame-benchmarking = { path = "../benchmarking", default-features = false, optional = true }
 frame-support = { path = "../support", default-features = false }
 frame-system = { path = "../system", default-features = false }
 pallet-authorship = { path = "../authorship", default-features = false }
-pallet-assets = { path = "../assets", default-features = false } 
+pallet-assets = { path = "../assets", default-features = false }
 pallet-session = { path = "../session", default-features = false }
 
 

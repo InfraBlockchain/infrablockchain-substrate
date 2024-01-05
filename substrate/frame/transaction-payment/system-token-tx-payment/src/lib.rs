@@ -44,6 +44,7 @@ use frame_system::pallet_prelude::*;
 use pallet_system_token::{ensure_system_token_origin, Origin as SystemTokenOrigin};
 use pallet_transaction_payment::OnChargeTransaction;
 use scale_info::TypeInfo;
+use softfloat::F64;
 use sp_runtime::{
 	traits::{
 		AccountIdConversion, DispatchInfoOf, Dispatchable, PostDispatchInfoOf, SignedExtension,
@@ -298,7 +299,7 @@ impl<T: Config> SignedExtension for ChargeSystemToken<T>
 where
 	T::RuntimeCall:
 		Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo> + GetCallMetadata,
-	AssetBalanceOf<T>: Send + Sync + FixedPointOperand + IsType<VoteWeight>,
+	AssetBalanceOf<T>: Send + Sync + FixedPointOperand + IsType<u128>,
 	AssetIdOf<T>: Send + Sync + IsType<ChargeSystemTokenAssetIdOf<T>>,
 	BalanceOf<T>: Send
 		+ Sync
@@ -435,11 +436,13 @@ where
 								},
 								vote_candidate: Some(vote_candidate.clone()),
 							});
+
 							// Update vote
+							let vote_weight = F64::from_i128(converted_fee.into() as i128);
 							T::VotingHandler::update_pot_vote(
 								vote_candidate.clone().into(),
 								system_token_id.clone(),
-								converted_fee.into(),
+								vote_weight,
 							);
 						},
 						_ => {

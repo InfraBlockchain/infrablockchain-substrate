@@ -2,7 +2,7 @@
 authors = ["blockchain labs"]
 edition = "2021"
 homepage = "https://infrablockchain.net/en"
-repository = "https://github.com/InfraBlockchain/infrablockchain-sdk"
+repository = "https://github.com/InfraBlockchain/infrablockchain-substrate"
 license = "GPL-3.0-only"
 
 [workspace]
@@ -405,6 +405,7 @@ members = [
 	"substrate/primitives/staking",
 	"substrate/primitives/state-machine",
 	"substrate/primitives/statement-store",
+	"substrate/primitives/softfloat",
 	"substrate/primitives/std",
 	"substrate/primitives/storage",
 	"substrate/primitives/test-primitives",

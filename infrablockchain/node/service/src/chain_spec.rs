@@ -225,6 +225,7 @@ fn infra_relay_staging_testnet_config_genesis(
 	const ENDOWMENT: u128 = 1_000_000 * UNIT;
 	const STASH: u128 = 100 * UNIT;
 
+	#[cfg(feature = "fast-runtime")]
 	let root_key = get_account_id_from_seed::<sr25519::Public>("Alice");
 
 	infra_relay::RuntimeGenesisConfig {
@@ -749,7 +750,7 @@ pub fn infra_relay_testnet_genesis(
 		AssignmentId,
 		AuthorityDiscoveryId,
 	)>,
-	root_key: AccountId,
+	#[allow(unused_variables)] root_key: AccountId,
 	endowed_accounts: Option<Vec<AccountId>>,
 ) -> infra_relay::RuntimeGenesisConfig {
 	let endowed_accounts: Vec<AccountId> = endowed_accounts.unwrap_or_else(testnet_accounts);

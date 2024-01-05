@@ -22,7 +22,9 @@ sp-runtime = { path = "../../../substrate/primitives/runtime" }
 sp-state-machine = { path = "../../../substrate/primitives/state-machine" }
 
 # Polkadot
-infrablockchain-cli = { path = "../../../infrablockchain/cli", default-features = false, features = ["cli"] }
+infrablockchain-cli = { path = "../../../infrablockchain/cli", default-features = false, features = [
+    "cli",
+] }
 infrablockchain-service = { path = "../../../infrablockchain/node/service" }
 
 # Cumulus
@@ -37,7 +39,9 @@ sp-keyring = { path = "../../../substrate/primitives/keyring" }
 # Polkadot
 primitives = { path = "../../../infrablockchain/primitives" }
 polkadot-test-client = { path = "../../../infrablockchain/node/test/client" }
-metered = { package = "prioritized-metered-channel", version = "0.5.1", default-features = false, features=["futures_channel"] }
+metered = { package = "prioritized-metered-channel", version = "0.5.1", default-features = false, features = [
+    "futures_channel",
+] }
 
 # Cumulus
 cumulus-test-service = { path = "../../test/service" }
