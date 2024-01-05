@@ -490,6 +490,8 @@ parameter_types! {
 	pub const MaxURIByOracle: u32 = 100;
 	pub const VerificationPeriod: BlockNumber = 100;
 	pub const MaxRequest: u32 = 100;
+
+	pub const MaxPurchaseQuantity: u32 = 1_000_000_000;
 }
 
 impl pallet_newnal::Config for Runtime {
@@ -504,6 +506,11 @@ impl pallet_newnal::Config for Runtime {
 	type AuthorizedOrigin = EnsureRoot<AccountId>;
 }
 
+impl pallet_data_market::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type MaxPurchaseQuantity = MaxPurchaseQuantity;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime {
@@ -515,7 +522,8 @@ construct_runtime!(
 		ParachainInfo: parachain_info::{Pallet, Storage, Config<T>} = 3,
 
 		// The main stage
-		URAuth: pallet_newnal::{Pallet, Call, Storage, Config<T>, Event<T>} = 5,
+		Newnal: pallet_newnal::{Pallet, Call, Storage, Config<T>, Event<T>} = 5,
+		DataMarket: pallet_data_market::{Pallet, Call, Storage, Event<T>} = 6,
 
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,

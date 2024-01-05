@@ -17,6 +17,7 @@ smallvec = "1.10.0"
 
 # Local
 pallet-newnal = { version = "0.1.1", default-features = false, path = "../../../../substrate/frame/newnal" }
+pallet-data-market = { version = "0.1.1", default-features = false, path = "../../../../substrate/frame/data-market" }
 
 # System
 frame-benchmarking = { path = "../../../../substrate/frame/benchmarking", default-features = false, optional = true }
@@ -135,6 +136,7 @@ std = [
 	"pallet-transaction-payment/std",
 	"pallet-xcm/std",
 	"pallet-newnal/std",
+	"pallet-data-market/std",
 	"parachain-info/std",
 	"infrablockchain-core-primitives/std",
 	"infra-relay-runtime-constants/std",
@@ -197,3 +199,5 @@ try-runtime = [
 	"pallet-xcm/try-runtime",
 	"parachain-info/try-runtime",
 ]
+
+fast-runtime = []

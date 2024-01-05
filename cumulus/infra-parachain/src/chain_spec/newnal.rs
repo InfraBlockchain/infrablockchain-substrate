@@ -240,7 +240,7 @@ fn newnal_genesis(
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
 			..Default::default()
 		},
-		ur_auth: newnal_runtime::URAuthConfig { oracle_members },
+		newnal: newnal_runtime::NewnalConfig { oracle_members },
 		sudo: newnal_runtime::SudoConfig { key: root_key },
 	}
 }
