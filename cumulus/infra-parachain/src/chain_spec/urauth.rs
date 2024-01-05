@@ -236,7 +236,7 @@ fn urauth_genesis(
 		aura: Default::default(),
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
-		ibs_xcm: urauth_runtime::IbsXcmConfig {
+		infra_xcm: urauth_runtime::InfraXcmConfig {
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
 			..Default::default()
 		},

@@ -1,5 +1,5 @@
 use super::{
-	AccountId, AllPalletsWithSystem, AssetLink, Assets, Authorship, Balance, Balances, IbsXcm,
+	AccountId, AllPalletsWithSystem, AssetLink, Assets, Authorship, Balance, Balances, InfraXcm,
 	ParachainInfo, ParachainSystem, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, WeightToFee,
 	XcmpQueue,
 };
@@ -33,7 +33,7 @@ parameter_types! {
 	pub const RelayNetwork: Option<NetworkId> = None;
 	pub RelayChainOrigin: RuntimeOrigin = SystemTokenOrigin::SystemTokenBody.into();
 	pub UniversalLocation: InteriorMultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
-	pub CheckingAccount: AccountId = IbsXcm::check_account();
+	pub CheckingAccount: AccountId = InfraXcm::check_account();
 	pub TrustBackedAssetsPalletLocation: MultiLocation =
 		PalletInstance(<Assets as PalletInfoAccess>::index() as u8).into();
 }
@@ -277,11 +277,11 @@ impl xcm_executor::Config for XcmConfig {
 			>,
 		>,
 	);
-	type ResponseHandler = IbsXcm;
-	// type AssetTrap = IbsXcm;
-	type AssetTrap = TrappistDropAssets<AssetId, AssetLink, Assets, Balances, IbsXcm, AccountId>;
-	type AssetClaims = IbsXcm;
-	type SubscriptionService = IbsXcm;
+	type ResponseHandler = InfraXcm;
+	// type AssetTrap = InfraXcm;
+	type AssetTrap = TrappistDropAssets<AssetId, AssetLink, Assets, Balances, InfraXcm, AccountId>;
+	type AssetClaims = InfraXcm;
+	type SubscriptionService = InfraXcm;
 	type PalletInstancesInfo = AllPalletsWithSystem;
 	type MaxAssetsIntoHolding = MaxAssetsIntoHolding;
 	type AssetLocker = ();
