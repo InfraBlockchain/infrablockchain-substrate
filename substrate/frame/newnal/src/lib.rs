@@ -4,7 +4,7 @@ use fixedstr::zstr;
 
 use frame_support::{
 	pallet_prelude::*,
-	traits::{ConstU32, UnixTime},
+	traits::{ConstU32, Get, UnixTime},
 	BoundedVec,
 };
 
@@ -24,6 +24,12 @@ pub use types::*;
 
 pub mod parser;
 pub use parser::*;
+
+pub type PurchaseId = u128;
+pub type TradeCount = u64;
+pub type IssuerWeight = u32;
+pub type FeeRatio = u32;
+pub type Quantity = u128;
 
 #[cfg(test)]
 pub mod mock;
@@ -235,7 +241,7 @@ pub mod pallet {
 		URAuthTreeRegistered {
 			claim_type: ClaimType,
 			uri: URI,
-			urauth_doc: URAuthDoc<T::AccountId>,
+			newnal_doc: URAuthDoc<T::AccountId>,
 		},
 		/// Oracle member has submitted its verification of challenge value.
 		VerificationSubmitted { member: T::AccountId, digest: H256 },
@@ -244,11 +250,11 @@ pub mod pallet {
 		/// `URAuthDoc` has been updated for specific fiend.
 		URAuthDocUpdated {
 			update_doc_field: UpdateDocField<T::AccountId>,
-			urauth_doc: URAuthDoc<T::AccountId>,
+			newnal_doc: URAuthDoc<T::AccountId>,
 		},
 		/// Update of `URAuthDoc` is in progress.
 		UpdateInProgress {
-			urauth_doc: URAuthDoc<T::AccountId>,
+			newnal_doc: URAuthDoc<T::AccountId>,
 			update_doc_status: UpdateDocStatus<T::AccountId>,
 		},
 		/// List of `URIByOracle` has been added
@@ -469,7 +475,7 @@ pub mod pallet {
 		// 3. If valid, store on `URAuthTree` based on Multi DIDs weight and threshold
 		#[pallet::call_index(2)]
 		#[pallet::weight(1_000)]
-		pub fn update_urauth_doc(
+		pub fn update_newnal_doc(
 			origin: OriginFor<T>,
 			uri: URI,
 			update_doc_field: UpdateDocField<T::AccountId>,
@@ -478,15 +484,15 @@ pub mod pallet {
 		) -> DispatchResult {
 			let _ = ensure_signed(origin)?;
 
-			let (mut updated_urauth_doc, mut update_doc_status) =
-				Self::try_update_urauth_doc(&uri, &update_doc_field, updated_at, proof.clone())?;
+			let (mut updated_newnal_doc, mut update_doc_status) =
+				Self::try_update_newnal_doc(&uri, &update_doc_field, updated_at, proof.clone())?;
 			let (owner, proof, did_detail) =
-				Self::try_verify_urauth_doc_proof(&uri, &updated_urauth_doc, proof)?;
-			Self::try_store_updated_urauth_doc(
+				Self::try_verify_newnal_doc_proof(&uri, &updated_newnal_doc, proof)?;
+			Self::try_store_updated_newnal_doc(
 				owner.clone(),
 				proof,
 				uri,
-				&mut updated_urauth_doc,
+				&mut updated_newnal_doc,
 				&mut update_doc_status,
 				update_doc_field,
 			)?;
@@ -547,7 +553,7 @@ pub mod pallet {
 			)?;
 			let owner =
 				Self::account_id_from_source(AccountIdSource::DID(bounded_owner_did.to_vec()))?;
-			let urauth_doc = match claim_type.clone() {
+			let newnal_doc = match claim_type.clone() {
 				ClaimType::Contents { data_source, name, description, .. } => {
 					let bounded_name: AnyText =
 						name.try_into().map_err(|_| Error::<T>::OverMaxSize)?;
@@ -565,17 +571,17 @@ pub mod pallet {
 						&maybe_register_uri,
 						DataSetMetadata::<AnyText>::new(bounded_name, bounded_description),
 					);
-					Self::new_urauth_doc(owner, None, bounded_data_source)?
+					Self::new_newnal_doc(owner, None, bounded_data_source)?
 				},
-				_ => Self::new_urauth_doc(owner, None, None)?,
+				_ => Self::new_newnal_doc(owner, None, None)?,
 			};
 
-			URAuthTree::<T>::insert(&maybe_register_uri, urauth_doc.clone());
+			URAuthTree::<T>::insert(&maybe_register_uri, newnal_doc.clone());
 			DIDs::<T>::insert(&signer_acc, did_detail);
 			Self::deposit_event(Event::<T>::URAuthTreeRegistered {
 				claim_type,
 				uri: maybe_register_uri,
-				urauth_doc,
+				newnal_doc,
 			});
 
 			Ok(())
@@ -727,7 +733,7 @@ where
 		match claim_type {
 			ClaimType::Domain => ensure!(uri_part.host.is_some(), Error::<T>::BadClaim),
 			_ => {
-				ensure!(uri_part.scheme == "urauth://".as_bytes().to_vec(), Error::<T>::BadClaim);
+				ensure!(uri_part.scheme == "newnal://".as_bytes().to_vec(), Error::<T>::BadClaim);
 			},
 		}
 		Ok(())
@@ -781,8 +787,8 @@ where
 	) -> Result<Vec<u8>, DispatchError> {
 		let uris = <URAuthParser<T> as Parser<T>>::parse_parent_uris(&raw_uri, &claim_type)?;
 		for uri in uris {
-			if let Some(urauth_doc) = URAuthTree::<T>::get(&uri) {
-				if urauth_doc.is_owner(maybe_owner) {
+			if let Some(newnal_doc) = URAuthTree::<T>::get(&uri) {
+				if newnal_doc.is_owner(maybe_owner) {
 					return Ok(raw_uri)
 				}
 			}
@@ -806,7 +812,7 @@ where
 		}
 	}
 
-	fn new_urauth_doc(
+	fn new_newnal_doc(
 		owner_did: T::AccountId,
 		asset: Option<MultiAsset>,
 		data_source: Option<URI>,
@@ -838,7 +844,7 @@ where
 		))?;
 
 		let did_detail = Self::try_increase_nonce(&signer_account_id)?;
-		let urauth_signed_payload =
+		let newnal_signed_payload =
 			URAuthSignedPayload::<T::AccountId, BlockNumberFor<T>>::Request {
 				uri: uri.clone(),
 				owner_did: owner_did.clone(),
@@ -850,7 +856,7 @@ where
 		}
 
 		// Check signature
-		if !urauth_signed_payload
+		if !newnal_signed_payload
 			.using_encoded(|payload| signature.verify(payload, &signer.into_account()))
 		{
 			return Err(Error::<T>::BadProof.into())
@@ -884,13 +890,13 @@ where
 		match res {
 			VerificationSubmissionResult::Complete => {
 				let RequestMetadata { claim_type, maybe_register_uri, .. } = metadata;
-				let urauth_doc = Self::new_urauth_doc(owner_did, None, None)?;
-				URAuthTree::<T>::insert(&maybe_register_uri, urauth_doc.clone());
+				let newnal_doc = Self::new_newnal_doc(owner_did, None, None)?;
+				URAuthTree::<T>::insert(&maybe_register_uri, newnal_doc.clone());
 				Self::remove_all_uri_related(&uri);
 				Self::deposit_event(Event::<T>::URAuthTreeRegistered {
 					claim_type,
 					uri: maybe_register_uri,
-					urauth_doc,
+					newnal_doc,
 				})
 			},
 			VerificationSubmissionResult::Tie => Self::remove_all_uri_related(&uri),
@@ -962,24 +968,24 @@ where
 	/// ## Errors
 	/// `ProofMissing`
 	/// `URAuthTreeNotRegistered`
-	fn try_update_urauth_doc(
+	fn try_update_newnal_doc(
 		uri: &URI,
 		update_doc_field: &UpdateDocField<T::AccountId>,
 		updated_at: u128,
 		maybe_proof: Option<Proof>,
 	) -> Result<(URAuthDoc<T::AccountId>, UpdateDocStatus<T::AccountId>), DispatchError> {
 		let _ = maybe_proof.ok_or(Error::<T>::ProofMissing)?;
-		let mut urauth_doc =
+		let mut newnal_doc =
 			URAuthTree::<T>::get(uri).ok_or(Error::<T>::URAuthTreeNotRegistered)?;
-		let mut update_doc_status = URAuthDocUpdateStatus::<T>::get(&urauth_doc.id);
+		let mut update_doc_status = URAuthDocUpdateStatus::<T>::get(&newnal_doc.id);
 		Self::do_try_update_doc(
-			&mut urauth_doc,
+			&mut newnal_doc,
 			&mut update_doc_status,
 			update_doc_field,
 			updated_at,
 		)?;
 
-		Ok((urauth_doc, update_doc_status))
+		Ok((newnal_doc, update_doc_status))
 	}
 
 	/// Try to store _updated_ `URAuthDoc` on `URAuthTree::<T>`.
@@ -987,15 +993,15 @@ where
 	/// Check whether _did_weight_ is greater of equal to _remaining_threshold_.
 	/// If it is bigger, _1. remove all previous proofs 2. and store on `URAuthTree::<T>`._
 	/// Otherwise, update `URAuthDocUpdateStatus`.
-	fn handle_updated_urauth_doc(
+	fn handle_updated_newnal_doc(
 		signer: AccountId32,
 		proof: Proof,
 		uri: URI,
-		urauth_doc: &mut URAuthDoc<T::AccountId>,
+		newnal_doc: &mut URAuthDoc<T::AccountId>,
 		update_doc_status: &mut UpdateDocStatus<T::AccountId>,
 		update_doc_field: UpdateDocField<T::AccountId>,
 	) -> Result<(), DispatchError> {
-		let multi_did = urauth_doc.get_multi_did();
+		let multi_did = newnal_doc.get_multi_did();
 		let account_id = Pallet::<T>::account_id_from_source(AccountIdSource::AccountId32(signer))?;
 		let did_weight =
 			multi_did.get_did_weight(&account_id).ok_or(Error::<T>::NotURAuthDocOwner)?;
@@ -1005,17 +1011,17 @@ where
 			.map_err(|_| Error::<T>::ErrorOnUpdateDocStatus)?;
 		if did_weight >= remaining_threshold {
 			let new_proofs = update_doc_status.get_proofs();
-			urauth_doc.handle_proofs(new_proofs);
-			URAuthTree::<T>::insert(uri, urauth_doc.clone());
-			URAuthDocUpdateStatus::<T>::remove(urauth_doc.id);
+			newnal_doc.handle_proofs(new_proofs);
+			URAuthTree::<T>::insert(uri, newnal_doc.clone());
+			URAuthDocUpdateStatus::<T>::remove(newnal_doc.id);
 			Pallet::<T>::deposit_event(Event::<T>::URAuthDocUpdated {
 				update_doc_field,
-				urauth_doc: urauth_doc.clone(),
+				newnal_doc: newnal_doc.clone(),
 			});
 		} else {
-			URAuthDocUpdateStatus::<T>::insert(urauth_doc.id, update_doc_status.clone());
+			URAuthDocUpdateStatus::<T>::insert(newnal_doc.id, update_doc_status.clone());
 			Pallet::<T>::deposit_event(Event::<T>::UpdateInProgress {
-				urauth_doc: urauth_doc.clone(),
+				newnal_doc: newnal_doc.clone(),
 				update_doc_status: update_doc_status.clone(),
 			});
 		}
@@ -1030,22 +1036,22 @@ where
 	/// `NotURAuthDocOwner` : If signer is not owner of `URAuthDoc`
 	///
 	/// `BadProof` : Signature is not valid
-	fn try_verify_urauth_doc_proof(
+	fn try_verify_newnal_doc_proof(
 		uri: &URI,
-		urauth_doc: &URAuthDoc<T::AccountId>,
+		newnal_doc: &URAuthDoc<T::AccountId>,
 		proof: Option<Proof>,
 	) -> Result<(AccountId32, Proof, DidDetails<T>), DispatchError> {
 		let (owner_did, sig) = match proof.clone().ok_or(Error::<T>::ProofMissing)? {
 			Proof::ProofV1 { did, proof } => (did, proof),
 		};
 		let owner_account = Self::account_id_from_source(AccountIdSource::DID(owner_did.to_vec()))?;
-		if !urauth_doc.multi_owner_did.is_owner(&owner_account) {
+		if !newnal_doc.multi_owner_did.is_owner(&owner_account) {
 			return Err(Error::<T>::NotURAuthDocOwner.into())
 		}
 		let did_detail = Self::try_increase_nonce(&owner_account)?;
 		let payload = URAuthSignedPayload::<T::AccountId, BlockNumberFor<T>>::Update {
 			uri: uri.clone(),
-			urauth_doc: urauth_doc.clone(),
+			newnal_doc: newnal_doc.clone(),
 			owner_did: owner_did.clone(),
 			nonce: did_detail.nonce(),
 		};
@@ -1057,20 +1063,20 @@ where
 		Ok((signer, proof.expect("Already checked!"), did_detail))
 	}
 
-	/// Try to store _updated_urauth_doc_ on `URAuthTree::<T>` based on `URAuthDocStatus`
-	fn try_store_updated_urauth_doc(
+	/// Try to store _updated_newnal_doc_ on `URAuthTree::<T>` based on `URAuthDocStatus`
+	fn try_store_updated_newnal_doc(
 		signer: AccountId32,
 		proof: Proof,
 		uri: URI,
-		urauth_doc: &mut URAuthDoc<T::AccountId>,
+		newnal_doc: &mut URAuthDoc<T::AccountId>,
 		update_doc_status: &mut UpdateDocStatus<T::AccountId>,
 		updated_doc_field: UpdateDocField<T::AccountId>,
 	) -> Result<(), DispatchError> {
-		Self::handle_updated_urauth_doc(
+		Self::handle_updated_newnal_doc(
 			signer,
 			proof,
 			uri,
-			urauth_doc,
+			newnal_doc,
 			update_doc_status,
 			updated_doc_field,
 		)?;
@@ -1172,7 +1178,11 @@ where
 	}
 }
 
-impl<T: Config> Pallet<T> {
+impl<T: Config> Pallet<T>
+where
+	URIFor<T>: Into<URI>,
+	URIPartFor<T>: IsType<URIPart>,
+{
 	/// Check whether `updated_at` is greater than `prev_updated_at`
 	///
 	/// ## Error
@@ -1215,21 +1225,21 @@ impl<T: Config> Pallet<T> {
 	/// - Try to update on different field
 	/// - Threshold is bigger than sum of _multi_dids'_ weight
 	pub fn do_try_update_doc(
-		urauth_doc: &mut URAuthDoc<T::AccountId>,
+		newnal_doc: &mut URAuthDoc<T::AccountId>,
 		update_doc_status: &mut UpdateDocStatus<T::AccountId>,
 		update_doc_field: &UpdateDocField<T::AccountId>,
 		updated_at: u128,
 	) -> Result<(), DispatchError> {
-		let prev_updated_at = urauth_doc.updated_at;
+		let prev_updated_at = newnal_doc.updated_at;
 		Self::check_valid_updated_at(prev_updated_at, updated_at)?;
 		Self::handle_update_doc_status(
 			update_doc_status,
 			update_doc_field,
-			urauth_doc.get_threshold(),
+			newnal_doc.get_threshold(),
 		)?;
 
-		urauth_doc.update_doc(update_doc_field.clone(), updated_at).map_err(|e| {
-			log::warn!(" 🚨 Error on update urauth_doc {:?} 🚨", e);
+		newnal_doc.update_doc(update_doc_field.clone(), updated_at).map_err(|e| {
+			log::warn!(" 🚨 Error on update newnal_doc {:?} 🚨", e);
 			Error::<T>::ErrorOnUpdateDoc
 		})?;
 
@@ -1246,9 +1256,9 @@ impl<T: Config> Pallet<T> {
 		update_doc_field: UpdateDocField<T::AccountId>,
 		updated_at: u128,
 	) -> Option<URAuthDoc<T::AccountId>> {
-		if let Some(mut urauth_doc) = URAuthTree::<T>::get(&uri) {
-			match urauth_doc.update_doc(update_doc_field, updated_at) {
-				Ok(_) => Some(urauth_doc.clone()),
+		if let Some(mut newnal_doc) = URAuthTree::<T>::get(&uri) {
+			match newnal_doc.update_doc(update_doc_field, updated_at) {
+				Ok(_) => Some(newnal_doc.clone()),
 				Err(_) => None,
 			}
 		} else {

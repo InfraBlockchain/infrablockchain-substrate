@@ -37,9 +37,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		"asset-hub-infra-dev" | "dev" | "" =>
 			Box::new(chain_spec::asset_hubs::asset_hub_development_config()),
 		"asset-hub-infra-local" => Box::new(chain_spec::asset_hubs::asset_hub_local_config()),
-		"asset-hub-infra" => Box::new(chain_spec::asset_hubs::AssetHubChainSpec::from_json_bytes(
-			&include_bytes!("../chain-specs/asset-hub-polkadot.json")[..],
-		)?),
+		"asset-hub-infra" => Box::new(chain_spec::asset_hubs::asset_hub_config()),
 		// -- Loading a specific spec from disk
 		path => {
 			let path: PathBuf = path.into();

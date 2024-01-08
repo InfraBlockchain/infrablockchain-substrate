@@ -1,4 +1,4 @@
-pub use crate::{self as pallet_urauth, *};
+pub use crate::{self as pallet_newnal, *};
 use frame_support::{parameter_types, traits::Everything};
 use frame_system::EnsureRoot;
 use sp_core::{sr25519::Signature, H256};
@@ -26,7 +26,7 @@ frame_support::construct_runtime!(
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>} = 1,
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage} = 2,
-		URAuth: pallet_urauth::{Pallet, Call, Storage, Event<T>} = 99,
+		URAuth: pallet_newnal::{Pallet, Call, Storage, Event<T>} = 99,
 	}
 );
 
@@ -73,7 +73,7 @@ parameter_types! {
 	pub const MaxOracleMembers: u32 = 5;
 }
 
-impl pallet_urauth::Config for Test {
+impl pallet_newnal::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type UnixTime = Timestamp;
 	type URAuthParser = URAuthParser<Self>;
@@ -121,7 +121,7 @@ impl<Account: Encode> MockURAuthHelper<Account> {
 		}
 	}
 
-	pub fn deconstruct_urauth_doc(
+	pub fn deconstruct_newnal_doc(
 		&self,
 		uri: Option<String>,
 	) -> (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) {
@@ -199,7 +199,7 @@ impl<Account: Encode> MockProver<Account> {
 			ProofType::Request(uri, owner_did, nonce) => (uri, owner_did, nonce).encode(),
 			ProofType::Challenge(uri, owner_did, challenge, timestamp) =>
 				(uri, owner_did, challenge, timestamp).encode(),
-			ProofType::Update(uri, urauth_doc, owner_did, nonce) => {
+			ProofType::Update(uri, newnal_doc, owner_did, nonce) => {
 				let URAuthDoc {
 					id,
 					created_at,
@@ -212,7 +212,7 @@ impl<Account: Encode> MockProver<Account> {
 					asset,
 					data_source,
 					..
-				} = urauth_doc;
+				} = newnal_doc;
 
 				(
 					uri,
@@ -471,11 +471,11 @@ pub fn run_to_block(n: BlockNumberFor<Test>) {
 	}
 }
 
-pub fn debug_doc<Account>(urauth_doc: &URAuthDoc<Account>)
+pub fn debug_doc<Account>(newnal_doc: &URAuthDoc<Account>)
 where
 	Account: Encode + sp_std::fmt::Debug,
 {
-	println!("URAUTH DOCUMENT => {:?}", urauth_doc);
+	println!("URAUTH DOCUMENT => {:?}", newnal_doc);
 	println!("");
-	println!("DOCUMENT SIZE => {:?} bytes", urauth_doc.encode().len());
+	println!("DOCUMENT SIZE => {:?} bytes", newnal_doc.encode().len());
 }

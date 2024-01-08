@@ -174,7 +174,7 @@ impl URIPart {
 	pub fn is_root(&self, claim_type: &ClaimType) -> bool {
 		let mut is_root: bool = false;
 		// Root of 'File' and 'Dataset' has CID
-		// e.g urauth://file/{cid}
+		// e.g newnal://file/{cid}
 		if matches!(claim_type, ClaimType::Contents { .. }) {
 			let mut count = 0;
 			let slash = b'/';
@@ -340,7 +340,7 @@ pub enum VerificationSubmissionResult {
 pub enum URAuthSignedPayload<Account, BlockNumber> {
 	Request { uri: URI, owner_did: OwnerDID, nonce: BlockNumber },
 	Challenge { uri: URI, owner_did: OwnerDID, challenge: Vec<u8>, timestamp: Vec<u8> },
-	Update { uri: URI, urauth_doc: URAuthDoc<Account>, owner_did: OwnerDID, nonce: BlockNumber },
+	Update { uri: URI, newnal_doc: URAuthDoc<Account>, owner_did: OwnerDID, nonce: BlockNumber },
 }
 
 impl<Account: Encode, BlockNumber: Encode> Encode for URAuthSignedPayload<Account, BlockNumber> {
@@ -350,7 +350,7 @@ impl<Account: Encode, BlockNumber: Encode> Encode for URAuthSignedPayload<Accoun
 				(uri, owner_did, nonce).encode(),
 			URAuthSignedPayload::Challenge { uri, owner_did, challenge, timestamp } =>
 				(uri, owner_did, challenge, timestamp).encode(),
-			URAuthSignedPayload::Update { uri, urauth_doc, owner_did, nonce } => {
+			URAuthSignedPayload::Update { uri, newnal_doc, owner_did, nonce } => {
 				let URAuthDoc {
 					id,
 					created_at,
@@ -363,7 +363,7 @@ impl<Account: Encode, BlockNumber: Encode> Encode for URAuthSignedPayload<Accoun
 					asset,
 					data_source,
 					..
-				} = urauth_doc;
+				} = newnal_doc;
 
 				(
 					uri,
@@ -1126,7 +1126,7 @@ mod tests {
 		assert_eq!(submission.threshold, 3);
 	}
 
-	// cargo t -p pallet-urauth --lib -- types::tests::deconstruct_works --exact --nocapture
+	// cargo t -p pallet-newnal --lib -- types::tests::deconstruct_works --exact --nocapture
 	#[test]
 	fn parse_works() {
 		// URI with length less than minimum should fail
@@ -1150,7 +1150,7 @@ mod tests {
 		assert_eq!(uri_part.path, Some("/user1/feed".as_bytes().to_vec()));
 
 		// Full URI related to 'file' or 'dataset'
-		let raw_uri = "urauth://file/cid".as_bytes().to_vec();
+		let raw_uri = "newnal://file/cid".as_bytes().to_vec();
 		let uri_part = URAuthParser::<Test>::try_parse(
 			&raw_uri,
 			&ClaimType::Contents {
@@ -1160,14 +1160,14 @@ mod tests {
 			},
 		)
 		.unwrap();
-		assert_eq!(uri_part.scheme, "urauth://".as_bytes().to_vec());
+		assert_eq!(uri_part.scheme, "newnal://".as_bytes().to_vec());
 		assert_eq!(uri_part.host, Some("file".as_bytes().to_vec()));
 		assert_eq!(uri_part.sub_domain, None);
 		assert_eq!(uri_part.path, Some("/cid".as_bytes().to_vec()));
 
 		// Partial URI related to 'file' or 'dataset'.
-		// Scheme is set to 'urauth://'
-		let raw_uri = "urauth://file/cid".as_bytes().to_vec();
+		// Scheme is set to 'newnal://'
+		let raw_uri = "newnal://file/cid".as_bytes().to_vec();
 		let uri_part = URAuthParser::<Test>::try_parse(
 			&raw_uri,
 			&ClaimType::Contents {
@@ -1177,12 +1177,12 @@ mod tests {
 			},
 		)
 		.unwrap();
-		assert_eq!(uri_part.scheme, "urauth://".as_bytes().to_vec());
+		assert_eq!(uri_part.scheme, "newnal://".as_bytes().to_vec());
 		assert_eq!(uri_part.host, Some("file".as_bytes().to_vec()));
 		assert_eq!(uri_part.sub_domain, None);
 		assert_eq!(uri_part.path, Some("/cid".as_bytes().to_vec()));
 
-		let raw_uri = "urauth://sub2.sub1.file/cid".as_bytes().to_vec();
+		let raw_uri = "newnal://sub2.sub1.file/cid".as_bytes().to_vec();
 		let uri_part = URAuthParser::<Test>::try_parse(
 			&raw_uri,
 			&ClaimType::Contents {
@@ -1193,13 +1193,13 @@ mod tests {
 		)
 		.unwrap();
 		println!("{:?}", sp_std::str::from_utf8(&uri_part.host.clone().unwrap()));
-		assert_eq!(uri_part.scheme, "urauth://".as_bytes().to_vec());
+		assert_eq!(uri_part.scheme, "newnal://".as_bytes().to_vec());
 		assert_eq!(uri_part.host, Some("file".as_bytes().to_vec()));
 		assert_eq!(uri_part.sub_domain, Some("sub2.sub1.".as_bytes().to_vec()));
 		assert_eq!(uri_part.path, Some("/cid".as_bytes().to_vec()));
 	}
 
-	// cargo t -p pallet-urauth --lib -- tests::parser_works --exact --nocapture
+	// cargo t -p pallet-newnal --lib -- tests::parser_works --exact --nocapture
 	#[test]
 	fn parser_works() {
 		assert_eq!(is_root_domain("http://instagram.com", ClaimType::Domain), true);
@@ -1212,7 +1212,7 @@ mod tests {
 		assert_eq!(is_root_domain("smtp://sub2.sub1.www.instagram.com", ClaimType::Domain), false);
 		assert_eq!(
 			is_root_domain(
-				"urauth://file/",
+				"newnal://file/",
 				ClaimType::Contents {
 					data_source: None,
 					name: Default::default(),
@@ -1223,7 +1223,7 @@ mod tests {
 		);
 		assert_eq!(
 			is_root_domain(
-				"urauth://file/cid",
+				"newnal://file/cid",
 				ClaimType::Contents {
 					data_source: None,
 					name: Default::default(),
@@ -1234,7 +1234,7 @@ mod tests {
 		);
 		assert_eq!(
 			is_root_domain(
-				"urauth://file/cid/1",
+				"newnal://file/cid/1",
 				ClaimType::Contents {
 					data_source: None,
 					name: Default::default(),
@@ -1245,7 +1245,7 @@ mod tests {
 		);
 		assert_eq!(
 			is_root_domain(
-				"urauth://sub1.file/cid/1",
+				"newnal://sub1.file/cid/1",
 				ClaimType::Contents {
 					data_source: None,
 					name: Default::default(),
@@ -1263,7 +1263,7 @@ mod tests {
 		uri_part.is_root(&claim_type)
 	}
 
-	// cargo t -p pallet-urauth --lib -- types::tests::uri_part_eq_works --exact --nocapture
+	// cargo t -p pallet-newnal --lib -- types::tests::uri_part_eq_works --exact --nocapture
 	#[test]
 	fn uri_part_eq_works() {
 		let uri_part1 = URIPart::new("https://".into(), None, Some("instagram.com".into()), None);
