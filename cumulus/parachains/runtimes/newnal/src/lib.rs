@@ -487,6 +487,7 @@ impl pallet_preimage::Config for Runtime {
 
 parameter_types! {
 	pub const MaxOracleMembers: u32 = 10;
+	pub const MaxVerifierMembers: u32 = 10;
 	pub const MaxURIByOracle: u32 = 100;
 	pub const VerificationPeriod: BlockNumber = 100;
 	pub const MaxRequest: u32 = 100;
@@ -509,6 +510,7 @@ impl pallet_newnal::Config for Runtime {
 impl pallet_data_market::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type MaxPurchaseQuantity = MaxPurchaseQuantity;
+	type MaxVerifierMembers = MaxVerifierMembers;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -523,7 +525,7 @@ construct_runtime!(
 
 		// The main stage
 		Newnal: pallet_newnal::{Pallet, Call, Storage, Config<T>, Event<T>} = 5,
-		DataMarket: pallet_data_market::{Pallet, Call, Storage, Event<T>} = 6,
+		DataMarket: pallet_data_market::{Pallet, Call, Config<T>, Storage, Event<T>} = 6,
 
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,

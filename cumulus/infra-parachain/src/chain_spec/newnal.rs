@@ -65,6 +65,7 @@ pub fn newnal_development_config() -> URAuthChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
 				],
 				vec![],
+				vec![],
 				Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
 				URAUTH_PARACHAIN_ID.into(),
 			)
@@ -118,6 +119,7 @@ pub fn newnal_local_config() -> URAuthChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
 				Default::default(),
+				vec![get_account_id_from_seed::<sr25519::Public>("Alice")],
 				Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
 				URAUTH_PARACHAIN_ID.into(),
 			)
@@ -175,6 +177,7 @@ pub fn newnal_config() -> URAuthChainSpec {
 				],
 				vec![],
 				Default::default(),
+				Default::default(),
 				None,
 				URAUTH_PARACHAIN_ID.into(),
 			)
@@ -192,6 +195,7 @@ fn newnal_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
 	oracle_members: Vec<AccountId>,
+	verifier_members: Vec<AccountId>,
 	root_key: Option<AccountId>,
 	id: ParaId,
 ) -> newnal_runtime::RuntimeGenesisConfig {
@@ -241,6 +245,7 @@ fn newnal_genesis(
 			..Default::default()
 		},
 		newnal: newnal_runtime::NewnalConfig { oracle_members },
+		data_market: newnal_runtime::DataMarketConfig { verifier_members },
 		sudo: newnal_runtime::SudoConfig { key: root_key },
 	}
 }

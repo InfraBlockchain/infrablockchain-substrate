@@ -20,7 +20,6 @@ pub type TradeCount = u64;
 pub type IssuerWeight = u32;
 pub type FeeRatio = u32;
 pub type Quantity = u128;
-pub const MAX_RECORDS_SIZE: u128 = 3 * 1024;
 
 #[cfg(test)]
 pub mod mock;
@@ -43,9 +42,11 @@ pub mod pallet {
 	pub trait Config: frame_system::Config + pallet_assets::Config {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
-		/// The current members of Oracle.
 		#[pallet::constant]
 		type MaxPurchaseQuantity: Get<u32>;
+
+		#[pallet::constant]
+		type MaxVerifierMembers: Get<u32>;
 	}
 
 	#[pallet::storage]
@@ -102,6 +103,31 @@ pub mod pallet {
 		pub quantity: Quantity,
 	}
 
+	#[pallet::storage]
+	#[pallet::getter(fn verifier_members)]
+	pub type VerifierMembers<T: Config> =
+		StorageValue<_, BoundedVec<T::AccountId, T::MaxVerifierMembers>, ValueQuery>;
+
+	#[pallet::genesis_config]
+	pub struct GenesisConfig<T: Config> {
+		pub verifier_members: Vec<T::AccountId>,
+	}
+
+	impl<T: Config> Default for GenesisConfig<T> {
+		fn default() -> Self {
+			GenesisConfig { verifier_members: Default::default() }
+		}
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
+		fn build(&self) {
+			let verifier_members: BoundedVec<T::AccountId, T::MaxVerifierMembers> =
+				self.verifier_members.clone().try_into().expect("Max verifier members reached!");
+			VerifierMembers::<T>::put(verifier_members);
+		}
+	}
+
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
@@ -133,22 +159,25 @@ pub mod pallet {
 
 	#[pallet::error]
 	pub enum Error<T> {
-		/// Overflow for CurrentPurchaseId
+		/// Overflow for CurrentPurchaseId.
 		Overflow,
-		/// The account has already participated in the trade
+		/// The account has already participated in the trade.
 		AccountAlreadyExists,
-		/// Verifier of the origin is invalid
-		InvalidVerifier,
+		/// Verifier of the origin is invalid.
 		/// Error that the total trade limit has been reached.
 		TradeLimitReached,
 		/// Error that the total trade limit has been reached.
 		BoundLimitReached,
-		/// Error failed to the existing purchase request
+		/// Error failed to the existing purchase request.
 		PurchaseDoesNotExist,
-		/// Purchase has already been finished
+		/// Purchase has already been finished.
 		PurchaseNotActive,
-		/// Origin is different with data buyer
+		/// Origin is different with data buyer.
 		InvalidBuyer,
+		/// Verifier of the origin is invalid.
+		InvalidVerifier,
+		/// Submitted veifiers are invalid
+		NoValidVerfierFound,
 	}
 
 	#[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
@@ -193,6 +222,13 @@ pub mod pallet {
 				*c = c.checked_add(1).ok_or(Error::<T>::Overflow)?;
 				Ok(())
 			})?;
+
+			let current_verifiers = Self::verifier_members();
+
+			ensure!(
+				data_verifiers.iter().any(|verifier| current_verifiers.contains(verifier)),
+				Error::<T>::NoValidVerfierFound
+			);
 
 			let data_purchase_register_details = DataPurchaseRegisterDetails {
 				data_buyer: data_buyer.clone(),
@@ -242,7 +278,12 @@ pub mod pallet {
 			data_issuer: Vec<(T::AccountId, IssuerWeight)>,
 			data_verification_proof: VerificationProof<AnyText>,
 		) -> DispatchResult {
-			let current_verifier = ensure_signed(origin)?;
+			let origin_verifier = ensure_signed(origin)?;
+
+			ensure!(
+				Self::verifier_members().contains(&origin_verifier),
+				Error::<T>::InvalidVerifier
+			);
 
 			// Ensure the purchase register is valid and active
 			let mut data_purchase_register_details =
@@ -250,7 +291,6 @@ pub mod pallet {
 					.ok_or(Error::<T>::PurchaseDoesNotExist)?;
 
 			let DataPurchaseRegisterDetails {
-				data_verifiers,
 				data_owner_fee_ratio,
 				data_issuer_fee_ratio,
 				price_per_data,
@@ -291,10 +331,6 @@ pub mod pallet {
 					}
 				},
 				Err(_) => return Err(Error::<T>::BoundLimitReached.into()),
-			}
-
-			if !data_verifiers.contains(&current_verifier) {
-				return Err(Error::<T>::InvalidVerifier.into())
 			}
 
 			// Transfer system tokens from the escrow to owner, issuer and platform
@@ -436,16 +472,17 @@ where
 		data_owner_fee_ratio: u32,
 		data_issuer_fee_ratio: u32,
 	) -> (u128, u128, u128) {
-		let platform_fee_ratio = 10000u32 - data_owner_fee_ratio - data_issuer_fee_ratio;
+		let platform_fee_ratio = 10_000u32 - data_owner_fee_ratio - data_issuer_fee_ratio;
 		let quantity = 1u128;
 		let total_amount = price_per_data * quantity;
 
 		let data_owner_fee =
-			total_amount.saturating_mul(data_owner_fee_ratio as u128).saturating_div(10000);
-		let data_issuer_fee =
-			total_amount.saturating_mul(data_issuer_fee_ratio as u128).saturating_div(10000);
+			total_amount.saturating_mul(data_owner_fee_ratio as u128).saturating_div(10_000);
+		let data_issuer_fee = total_amount
+			.saturating_mul(data_issuer_fee_ratio as u128)
+			.saturating_div(10_000);
 		let platform_fee =
-			total_amount.saturating_mul(platform_fee_ratio as u128).saturating_div(10000);
+			total_amount.saturating_mul(platform_fee_ratio as u128).saturating_div(10_000);
 
 		(data_owner_fee, data_issuer_fee, platform_fee)
 	}
