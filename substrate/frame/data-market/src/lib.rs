@@ -67,8 +67,6 @@ pub mod pallet {
 		OptionQuery,
 	>;
 
-	// To show buy and sell lists for AccountId, reverse storage should be needed.
-
 	#[derive(Encode, Decode, Clone, PartialEq, Eq, TypeInfo)]
 	#[cfg_attr(feature = "std", derive(Hash, Debug))]
 	pub struct DataPurchaseRegisterDetails<AccountId, BlockNumber, Balance, AnyText> {
@@ -272,9 +270,9 @@ pub mod pallet {
 		#[pallet::call_index(1)]
 		#[pallet::weight(10_000)]
 		pub fn execute_data_trade(
-			origin: OriginFor<T>, // data verifier
-			data_owner: T::AccountId,
+			origin: OriginFor<T>,
 			data_purchase_id: PurchaseId,
+			data_owner: T::AccountId,
 			data_issuer: Vec<(T::AccountId, IssuerWeight)>,
 			data_verification_proof: VerificationProof<AnyText>,
 		) -> DispatchResult {
