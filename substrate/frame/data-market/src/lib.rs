@@ -16,10 +16,8 @@ pub mod types;
 pub use types::*;
 
 pub type PurchaseId = u128;
-pub type TradeCount = u64;
+pub type Quantity = u32;
 pub type IssuerWeight = u32;
-pub type FeeRatio = u32;
-pub type Quantity = u128;
 
 #[cfg(test)]
 pub mod mock;
@@ -43,10 +41,12 @@ pub mod pallet {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		#[pallet::constant]
-		type MaxPurchaseQuantity: Get<u32>;
+		type MaxPurchaseQuantity: Get<Quantity>;
 
 		#[pallet::constant]
 		type MaxVerifierMembers: Get<u32>;
+
+		type AuthorizedOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 	}
 
 	#[pallet::storage]
@@ -95,14 +95,6 @@ pub mod pallet {
 		ValueQuery,
 	>;
 
-	#[derive(Encode, Decode, Clone, PartialEq, Eq, TypeInfo)]
-	#[cfg_attr(feature = "std", derive(Hash, Debug))]
-	pub struct TradeReceiptDetails<AccountId> {
-		pub data_owner: AccountId,
-		pub data_issuer: Vec<(AccountId, IssuerWeight)>,
-		pub quantity: Quantity,
-	}
-
 	#[pallet::storage]
 	#[pallet::getter(fn verifier_members)]
 	pub type VerifierMembers<T: Config> =
@@ -131,20 +123,6 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		DataPurchaseFinished {
-			data_buyer: T::AccountId,
-			data_purchase_id: PurchaseId,
-			data_purchase_status: PurchaseStatus,
-		},
-		DataTradeExecuted {
-			data_owner: T::AccountId,
-			data_purchase_id: PurchaseId,
-			total_amount: u128,
-			data_owner_fee: u128,
-			data_issuer_fee: u128,
-			platform_fee: u128,
-			data_verification_proof: VerificationProof<AnyText>,
-		},
 		DataPurchaseRegistered {
 			data_buyer: T::AccountId,
 			data_purchase_id: PurchaseId,
@@ -155,6 +133,20 @@ pub mod pallet {
 				AnyText,
 			>,
 		},
+		DataTradeExecuted {
+			data_owner: T::AccountId,
+			data_purchase_id: PurchaseId,
+			total_amount: u128,
+			data_owner_fee: u128,
+			data_issuer_fee: u128,
+			platform_fee: u128,
+			data_verification_proof: VerificationProof<AnyText>,
+		},
+		DataPurchaseFinished {
+			data_buyer: T::AccountId,
+			data_purchase_id: PurchaseId,
+			data_purchase_status: PurchaseStatus,
+		},
 	}
 
 	#[pallet::error]
@@ -163,7 +155,6 @@ pub mod pallet {
 		Overflow,
 		/// The account has already participated in the trade.
 		AccountAlreadyExists,
-		/// Verifier of the origin is invalid.
 		/// Error that the total trade limit has been reached.
 		TradeLimitReached,
 		/// Error that the total trade limit has been reached.
@@ -178,6 +169,12 @@ pub mod pallet {
 		InvalidVerifier,
 		/// Submitted veifiers are invalid
 		NoValidVerfierFound,
+		/// Issuer weight should be greater than zero
+		IssuerWeightInvalid,
+		/// Max verifier members exceed
+		MaxVeirifierMembersExceed,
+		/// Invalid calculation of fee ratio
+		InvalidFeeRatio,
 	}
 
 	#[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
@@ -187,17 +184,9 @@ pub mod pallet {
 		Finished,
 	}
 
-	#[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
-	#[cfg_attr(feature = "std", derive(Hash))]
-	pub enum DataType {
-		Image,
-		Json,
-	}
-
 	#[pallet::call]
 	impl<T: Config> Pallet<T>
 	where
-		u32: PartialEq<<T as pallet_assets::Config>::AssetId>,
 		<T as pallet_assets::Config>::Balance: From<u128> + Into<u128>,
 		<T as pallet_assets::Config>::AssetIdParameter: From<u32>,
 	{
@@ -217,18 +206,28 @@ pub mod pallet {
 		) -> DispatchResult {
 			let data_buyer = ensure_signed(origin.clone())?;
 
-			let data_purchase_id = CurrentPurchaseId::<T>::get();
-			CurrentPurchaseId::<T>::try_mutate(|c| -> DispatchResult {
-				*c = c.checked_add(1).ok_or(Error::<T>::Overflow)?;
-				Ok(())
-			})?;
-
 			let current_verifiers = Self::verifier_members();
 
 			ensure!(
 				data_verifiers.iter().any(|verifier| current_verifiers.contains(verifier)),
 				Error::<T>::NoValidVerfierFound
 			);
+
+			// total_fee_ratio is 100%(indicates 10_000)
+			let total_fee_ratio = 10_000;
+			// platform_fee_ratio is fixed at a minimum of 10%
+			let min_platform_fee_ratio: u32 = 1_000;
+			ensure!(
+				data_issuer_fee_ratio + data_owner_fee_ratio <=
+					total_fee_ratio - min_platform_fee_ratio,
+				Error::<T>::InvalidFeeRatio
+			);
+
+			let data_purchase_id = CurrentPurchaseId::<T>::get();
+			CurrentPurchaseId::<T>::try_mutate(|c| -> DispatchResult {
+				*c = c.checked_add(1).ok_or(Error::<T>::Overflow)?;
+				Ok(())
+			})?;
 
 			let data_purchase_register_details = DataPurchaseRegisterDetails {
 				data_buyer: data_buyer.clone(),
@@ -249,16 +248,17 @@ pub mod pallet {
 				data_purchase_register_details.clone(),
 			);
 
-			// Transfer system tokens from data buyer to the escrow account
-			let total_amount = quantity.saturating_mul(price_per_data.into());
-			let escrow_account = Self::get_escrow_account();
+			{
+				let total_amount = (quantity as u128).saturating_mul(price_per_data.into());
+				let escrow_account = Self::get_escrow_account();
 
-			pallet_assets::Pallet::<T>::transfer(
-				origin.clone(),
-				system_token_id.into(),
-				T::Lookup::unlookup(escrow_account.clone()),
-				<T as pallet_assets::Config>::Balance::from(total_amount),
-			)?;
+				pallet_assets::Pallet::<T>::transfer(
+					origin.clone(),
+					system_token_id.into(),
+					T::Lookup::unlookup(escrow_account),
+					<T as pallet_assets::Config>::Balance::from(total_amount),
+				)?;
+			}
 
 			Self::deposit_event(Event::<T>::DataPurchaseRegistered {
 				data_buyer,
@@ -311,7 +311,7 @@ pub mod pallet {
 
 			match trade_accounts.try_push(data_owner.clone()) {
 				Ok(_) => {
-					let len_trade_accounts = trade_accounts.len() as u128;
+					let len_trade_accounts = trade_accounts.len() as u32;
 					DataTradeRecords::<T>::insert(data_purchase_id, trade_accounts);
 
 					if len_trade_accounts == quantity {
@@ -349,11 +349,6 @@ pub mod pallet {
 				system_token_id,
 			)?;
 
-			// Record the trade details in the DataTradeRecords storage
-			let _new_trade_receipt =
-				TradeReceiptDetails { data_owner: data_owner.clone(), data_issuer, quantity };
-
-			// Emit an event for successful trade execution
 			Self::deposit_event(Event::<T>::DataTradeExecuted {
 				data_owner,
 				data_purchase_id,
@@ -379,12 +374,40 @@ pub mod pallet {
 
 			Ok(())
 		}
+
+		#[pallet::call_index(3)]
+		#[pallet::weight(1_000)]
+		pub fn add_verifier_member(origin: OriginFor<T>, who: T::AccountId) -> DispatchResult {
+			T::AuthorizedOrigin::ensure_origin(origin)?;
+
+			VerifierMembers::<T>::mutate(|m| {
+				m.try_push(who).map_err(|_| Error::<T>::MaxVeirifierMembersExceed)
+			})?;
+
+			Ok(())
+		}
+
+		#[pallet::call_index(4)]
+		#[pallet::weight(1_000)]
+		pub fn kick_out_verifier_member(origin: OriginFor<T>, who: T::AccountId) -> DispatchResult {
+			T::AuthorizedOrigin::ensure_origin(origin)?;
+
+			VerifierMembers::<T>::mutate(|m| {
+				if let Some(index) = m.iter().position(|x| *x == who) {
+					m.remove(index);
+					Ok(())
+				} else {
+					Err(Error::<T>::InvalidVerifier)
+				}
+			})?;
+
+			Ok(())
+		}
 	}
 }
 
 impl<T: Config> Pallet<T>
 where
-	u32: PartialEq<<T as pallet_assets::Config>::AssetId>,
 	<T as pallet_assets::Config>::Balance: From<u128> + Into<u128>,
 	<T as pallet_assets::Config>::AssetIdParameter: From<u32>,
 {
@@ -416,7 +439,8 @@ where
 			<T as pallet_assets::Config>::Balance::from(data_owner_fee),
 		)?;
 
-		let total_weight: IssuerWeight = data_issuer.iter().map(|(_, weight)| weight).sum();
+		let total_weight: u32 = data_issuer.iter().map(|(_, weight)| weight).sum();
+		ensure!(total_weight > 0u32, Error::<T>::IssuerWeightInvalid);
 
 		for (account, weight) in data_issuer.iter() {
 			let distributed_fee = data_issuer_fee
@@ -472,7 +496,7 @@ where
 		data_owner_fee_ratio: u32,
 		data_issuer_fee_ratio: u32,
 	) -> (u128, u128, u128) {
-		let platform_fee_ratio = 10_000u32 - data_owner_fee_ratio - data_issuer_fee_ratio;
+		let platform_fee_ratio = 10_000 - data_owner_fee_ratio - data_issuer_fee_ratio;
 		let quantity = 1u128;
 		let total_amount = price_per_data * quantity;
 

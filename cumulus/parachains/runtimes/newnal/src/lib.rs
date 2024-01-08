@@ -511,6 +511,7 @@ impl pallet_data_market::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type MaxPurchaseQuantity = MaxPurchaseQuantity;
 	type MaxVerifierMembers = MaxVerifierMembers;
+	type AuthorizedOrigin = EnsureRoot<AccountId>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
