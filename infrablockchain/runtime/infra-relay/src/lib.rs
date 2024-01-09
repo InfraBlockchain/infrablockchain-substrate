@@ -1130,7 +1130,14 @@ impl system_token_manager::Config for Runtime {
 	type MaxOriginalUsedParaIds = ConstU32<10>;
 }
 
-impl pallet_system_token::Config for Runtime {}
+parameter_types! {
+	pub const BaseSystemTokenWeight: sp_runtime::types::SystemTokenWeight = 1_000_000;
+}
+
+impl pallet_system_token::Config for Runtime {
+	type ShouldEndSession = Babe;
+	type BaseWeight = BaseSystemTokenWeight;
+}
 
 impl validator_reward_manager::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -1373,6 +1380,7 @@ impl pallet_assets::Config for Runtime {
 	type CallbackHandle = ();
 	type WeightInfo = ();
 	type RemoveItemsLimit = ConstU32<1000>;
+	type SystemTokenHelper = SystemTokenHelper;
 }
 
 parameter_types! {
@@ -1400,7 +1408,7 @@ construct_runtime! {
 		// IBS Support
 		SystemTokenManager: system_token_manager::{Pallet, Call, Storage, Event<T>} = 20,
 		ValidatorRewardManager: validator_reward_manager::{Pallet, Call, Storage, Event<T>} = 21,
-		SystemToken: pallet_system_token::{Pallet, Origin} = 23,
+		SystemTokenHelper: pallet_system_token::{Pallet, Origin} = 23,
 		AssetLink: pallet_asset_link = 24,
 		Pot: relay_pot::{Pallet, Storage, Event<T>} = 25,
 		SystemTokenAggregator: system_token_aggregator = 26,

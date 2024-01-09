@@ -359,6 +359,7 @@ impl pallet_assets::Config for Runtime {
 	type CallbackHandle = ();
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = ();
+	type SystemTokenHelper = SystemTokenHelper;
 }
 
 parameter_types! {
@@ -642,7 +643,14 @@ impl pallet_collator_selection::Config for Runtime {
 	type WeightInfo = weights::pallet_collator_selection::WeightInfo<Runtime>;
 }
 
-impl pallet_system_token::Config for Runtime {}
+parameter_types! {
+	pub const BaseSystemTokenWeight: sp_runtime::types::SystemTokenWeight = 1_000_000;
+}
+
+impl pallet_system_token::Config for Runtime {
+	type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
+	type BaseWeight = BaseSystemTokenWeight;
+}
 
 parameter_types! {
 	pub const CollectionDeposit: Balance = 10 * UNITS; // 10 UNIT deposit to create uniques class
@@ -739,7 +747,7 @@ construct_runtime!(
 		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
 		AssetLink: pallet_asset_link = 52,
 		SystemTokenAggregator: system_token_aggregator = 53,
-		SystemToken: pallet_system_token::{Pallet, Origin} = 54,
+		SystemTokenHelper: pallet_system_token::{Pallet, Origin} = 54,
 
 		// DID.
 		DIDModule: did::{Pallet, Call, Storage, Event<T>, Config<T>} = 61,

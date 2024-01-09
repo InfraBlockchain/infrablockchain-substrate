@@ -83,8 +83,8 @@ pub struct AssetDetails<Balance, AccountId, DepositBalance> {
 	pub(super) approvals: u32,
 	/// The status of the asset
 	pub(super) status: AssetStatus,
-	/// The system token weight compared with base system token.
-	pub(super) system_token_weight: SystemTokenWeight,
+	/// The system token weight compared with base system token. 'None' if it is not a system token.
+	pub(super) system_token_weight: Option<SystemTokenWeight>,
 }
 
 /// Data concerning an approval.
@@ -283,6 +283,8 @@ pub enum ConversionError {
 	/// The asset is not sufficient and thus does not have a reliable `min_balance` so it cannot be
 	/// converted.
 	AssetNotSufficient,
+	/// Weight of system token is missing,
+	WeightMissing,
 }
 
 // Type alias for `frame_system`'s account id.
@@ -318,9 +320,12 @@ where
 		balance: BalanceOf<F, T>,
 		asset_id: AssetIdOf<T, I>,
 	) -> Result<AssetBalanceOf<T, I>, ConversionError> {
-		let asset = Asset::<T, I>::get(asset_id).ok_or(ConversionError::AssetMissing)?;
+		let mut asset = Asset::<T, I>::get(asset_id).ok_or(ConversionError::AssetMissing)?;
 		// only sufficient assets have a min balance with reliable value
 		ensure!(asset.is_sufficient, ConversionError::AssetNotSufficient);
+		ensure!(asset.system_token_weight.is_some(), ConversionError::WeightMissing);
+		let system_token_weight = asset.system_token_weight.take().ok_or(ConversionError::WeightMissing)?;
+		
 		// ToDo
 		// 1. Acutal min ratio should be handled!
 		// 2. CON should be handled. Now it is Balance pallet
@@ -334,7 +339,7 @@ where
 		// ToDo: Divisor should be changed based on the decimals
 		Ok(FixedU128::saturating_from_rational(
 			CORRECTION_GAS_FEE,
-			asset.system_token_weight * CORRECTION_PARA_FEE_RATE,
+			system_token_weight * CORRECTION_PARA_FEE_RATE,
 		)
 		.saturating_mul_int(balance))
 	}

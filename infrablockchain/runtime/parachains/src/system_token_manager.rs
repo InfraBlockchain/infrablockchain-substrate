@@ -262,7 +262,7 @@ pub mod pallet {
 		//
 		// Logic:
 		// Once it is accepted by governance,
-		// `try_register_original` and `try_set_sufficient_and_weight` will be called,
+		// `try_register_original` and `try_promote` will be called,
 		// which will change `original` system token state
 		#[pallet::call_index(0)]
 		#[pallet::weight(1_000)]
@@ -583,7 +583,7 @@ where
 		let SystemTokenId { para_id, .. } = original.clone();
 		Self::try_push_sys_token_for_para_id(para_id, &original)?;
 		Self::try_push_para_id(para_id, &original)?;
-		Self::try_set_sufficient_and_weight(&original, true, Some(system_token_weight))?;
+		Self::try_promote(&original, true, Some(system_token_weight))?;
 		SystemTokenProperties::<T>::insert(
 			&original,
 			SystemTokenProperty {
@@ -693,13 +693,13 @@ where
 		}
 
 		// Case: Original's self-wrapped
-		if original.para_id == para_id {
+		let (system_token_id, is_unlink) = if original.para_id == para_id {
 			OriginalSystemTokenMetadata::<T>::remove(original);
-			Self::try_set_sufficient_and_weight(&original, false, None)?;
+			(original, false)
 		} else {
-			Self::try_set_sufficient_and_unlink(wrapped.clone(), false)?;
-		}
-
+			(wrapped.clone(), true)
+		};
+		Self::try_demote(system_token_id, is_unlink)?;
 		Self::try_remove_sys_token_for_para(wrapped)?;
 		Self::try_remove_para_id(original, para_id)?;
 
@@ -754,7 +754,7 @@ where
 			Ok(())
 		})?;
 
-		Self::try_set_sufficient_and_weight(&wrapped, false, property.system_token_weight)?;
+		Self::try_demote(*wrapped, false)?;
 
 		Ok(())
 	}
@@ -803,7 +803,7 @@ where
 			Ok(())
 		})?;
 
-		Self::try_set_sufficient_and_weight(&wrapped, true, property.system_token_weight)?;
+		Self::try_promote(&wrapped, true, property.system_token_weight)?;
 
 		Ok(())
 	}
@@ -945,26 +945,16 @@ where
 	/// **Logic:**
 	///
 	/// If `para_id == 0`, which means Relay Chain, call internal `Assets` pallet method.
-	/// Otherwise, send DMP of `set_sufficient_with_unlink_system_token` to expected `para_id`
+	/// Otherwise, send DMP of `demote` to expected `para_id`
 	/// destination
-	fn try_set_sufficient_and_unlink(
-		wrapped: SystemTokenId,
-		is_sufficient: bool,
-	) -> DispatchResult {
+	fn try_demote(wrapped: SystemTokenId, is_unlink: bool) -> DispatchResult {
 		let SystemTokenId { para_id, pallet_id, asset_id } = wrapped;
 		if para_id == 0u32 {
 			// Relay Chain
-			pallet_assets::pallet::Pallet::<T>::do_set_sufficient_and_unlink(
-				&asset_id.into(),
-				false,
-			)?;
+			pallet_assets::pallet::Pallet::<T>::try_do_unlink(&asset_id.into(), is_unlink)?;
 		} else {
 			// Parachain
-			let encoded_call = pallet_assets::Call::<T>::set_sufficient_with_unlink_system_token {
-				id: asset_id.into(),
-				is_sufficient,
-			}
-			.encode();
+			let encoded_call = pallet_assets::Call::<T>::demote { id: asset_id.into(), is_unlink }.encode();
 			system_token_helper::try_queue_dmp::<T>(para_id, pallet_id, encoded_call)?;
 		}
 
@@ -973,18 +963,17 @@ where
 
 	/// **Description:**
 	///
-	/// Try sending DMP of call `set_sufficient_and_system_token_weight` to specific parachain.
+	/// Try sending DMP of call `promote` to specific parachain.
 	/// If success, destination parachain's local asset's `sufficient` state to `is_sufficient`, and
 	/// set its weight
-	fn try_set_sufficient_and_weight(
+	fn try_promote(
 		system_token_id: &SystemTokenId,
 		is_sufficient: bool,
 		system_token_weight: Option<SystemTokenWeight>,
 	) -> DispatchResult {
 		let SystemTokenId { para_id, pallet_id, asset_id } = system_token_id.clone();
-		let encoded_call = pallet_assets::Call::<T>::set_sufficient_and_system_token_weight {
+		let encoded_call = pallet_assets::Call::<T>::promote {
 			id: asset_id.into(),
-			is_sufficient,
 			system_token_weight,
 		}
 		.encode();
@@ -1017,13 +1006,13 @@ where
 			// Relay Chain
 			pallet_assets::pallet::Pallet::<T>::do_update_system_token_weight(
 				asset_id.into(),
-				system_token_weight,
+				Some(system_token_weight),
 			)?
 		} else {
 			// Parachain
 			let encoded_call = pallet_assets::Call::<T>::update_system_token_weight {
 				id: asset_id.into(),
-				system_token_weight,
+				system_token_weight: Some(system_token_weight),
 			}
 			.encode();
 			system_token_helper::try_queue_dmp::<T>(para_id, pallet_id, encoded_call)?;
@@ -1069,7 +1058,7 @@ where
 				false,
 				original,
 				0,
-				system_token_weight,
+				Some(system_token_weight),
 			)?;
 			pallet_system_token_tx_payment::pallet::Pallet::<T>::do_set_runtime_state()?;
 		} else {
@@ -1085,7 +1074,7 @@ where
 				is_frozen: false,
 				system_token_id: original,
 				asset_link_parents: 1,
-				system_token_weight,
+				system_token_weight: Some(system_token_weight),
 			}
 			.encode();
 

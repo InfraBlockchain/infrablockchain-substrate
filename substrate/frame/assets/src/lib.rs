@@ -179,7 +179,7 @@ use sp_std::prelude::*;
 
 use frame_system::Config as SystemConfig;
 pub use pallet::*;
-use pallet_system_token::{ensure_system_token_origin, Origin as SystemTokenOrigin};
+use pallet_system_token::{ensure_system_token_origin, Origin as SystemTokenOrigin, SystemTokenHelper};
 pub use weights::WeightInfo;
 
 type AccountIdLookupOf<T> = <<T as frame_system::Config>::Lookup as StaticLookup>::Source;
@@ -284,6 +284,9 @@ pub mod pallet {
 			Self::AssetId,
 			Success = Self::AccountId,
 		>;
+
+		/// Helper for System Token
+		type SystemTokenHelper: SystemTokenHelper;
 
 		/// The origin which may forcibly create or destroy an asset or otherwise alter privileged
 		/// attributes.
@@ -409,7 +412,7 @@ pub mod pallet {
 						sufficients: 0,
 						approvals: 0,
 						status: AssetStatus::Live,
-						system_token_weight: BASE_SYSTEM_TOKEN_WEIGHT,
+						system_token_weight: None,
 					},
 				);
 			}
@@ -534,13 +537,15 @@ pub mod pallet {
 		Touched { asset_id: T::AssetId, who: T::AccountId, depositor: T::AccountId },
 		/// Some account `who` was blocked.
 		Blocked { asset_id: T::AssetId, who: T::AccountId },
-		/// The is_sufficient of an asset has been updated by the asset owner.
-		AssetIsSufficientChanged { asset_id: T::AssetId, is_sufficient: bool },
+		/// Local asset has promoted to System Token
+		Promoted { asset_id: T::AssetId, system_token_weight: SystemTokenWeight },
+		/// System Token has demoted 
+		Demoted { asset_id: T::AssetId },
 		/// The is_sufficient of an asset has been updated by the asset owner.
 		AssetSystemTokenWeightChanged {
 			asset_id: T::AssetId,
-			original_system_token_weight: SystemTokenWeight,
-			new_system_token_weight: SystemTokenWeight,
+			from: SystemTokenWeight,
+			to: SystemTokenWeight,
 		},
 	}
 
@@ -589,6 +594,8 @@ pub mod pallet {
 		NotFrozen,
 		/// Callback action resulted in error
 		CallbackFailed,
+		/// Weight of System Token is missing
+		WeightMissing,
 	}
 
 	#[pallet::call(weight(<T as Config<I>>::WeightInfo))]
@@ -644,7 +651,7 @@ pub mod pallet {
 					sufficients: 0,
 					approvals: 0,
 					status: AssetStatus::Live,
-					system_token_weight: BASE_SYSTEM_TOKEN_WEIGHT,
+					system_token_weight: None,
 				},
 			);
 			ensure!(T::CallbackHandle::created(&id, &owner).is_ok(), Error::<T, I>::CallbackFailed);
@@ -1692,40 +1699,35 @@ pub mod pallet {
 			Self::do_transfer(id, &source, &dest, amount, None, f).map(|_| ())
 		}
 
-		/// Sets the is_sufficient flag of an asset.
+		/// Promote local ass to be used as System Token
 		///
 		///
-		/// Origin must be Signed and the sender has to be the root
+		/// Origin must be System Token Origin
 		///
 		/// - `id`: The identifier of the asset.
-		/// - `is_sufficient`: The new value of `is_sufficient`.
-		///
-		/// Emits `AssetIsSufficientChanged` event when successful.
+		/// - `system_token_weight`: Weight of system token for fee payment
 		#[pallet::call_index(33)]
 		#[pallet::weight(T::WeightInfo::set_min_balance())]
-		pub fn set_sufficient_and_system_token_weight(
+		pub fn promote(
 			origin: OriginFor<T>,
 			id: T::AssetIdParameter,
-			is_sufficient: bool,
 			system_token_weight: Option<SystemTokenWeight>,
 		) -> DispatchResult {
 			ensure_system_token_origin(<T as Config<I>>::RuntimeOrigin::from(origin))?;
 			let id: T::AssetId = id.into();
-
 			let mut details = Asset::<T, I>::get(&id).ok_or(Error::<T, I>::Unknown)?;
-
-			details.is_sufficient = is_sufficient;
-
-			if let Some(weight) = system_token_weight {
-				details.system_token_weight = weight;
-			};
+			let mut system_token_weight = system_token_weight;
+			let weight = system_token_weight.take().ok_or(Error::<T, I>::WeightMissing)?;
+			ensure!(!details.is_sufficient, Error::<T, I>::IncorrectStatus);
+			details.is_sufficient = true;
+			details.system_token_weight = Some(weight);
 
 			Asset::<T, I>::insert(&id, details);
-			Self::deposit_event(Event::AssetIsSufficientChanged { asset_id: id, is_sufficient });
+			Self::deposit_event(Event::Promoted { asset_id: id, system_token_weight: weight});
 			Ok(())
 		}
 
-		/// Sets the is_sufficient flag and unlink system token id of an asset.
+		/// Demote System Token, which cannot be used as transaction fee
 		///
 		///
 		/// Origin must be Signed and the sender has to be the root
@@ -1736,16 +1738,16 @@ pub mod pallet {
 		/// Emits `AssetIsSufficientChanged` event when successful.
 		#[pallet::call_index(34)]
 		#[pallet::weight(T::WeightInfo::set_min_balance())]
-		pub fn set_sufficient_with_unlink_system_token(
+		pub fn demote(
 			origin: OriginFor<T>,
 			id: T::AssetIdParameter,
-			is_sufficient: bool,
+			is_unlink: bool,
 		) -> DispatchResult {
 			ensure_system_token_origin(<T as Config<I>>::RuntimeOrigin::from(origin))?;
 			let asset_id: T::AssetId = id.into();
-			Self::do_set_sufficient_and_unlink(&asset_id, is_sufficient)?;
+			Self::try_do_unlink(&asset_id, is_unlink)?;
 
-			Self::deposit_event(Event::AssetIsSufficientChanged { asset_id, is_sufficient });
+			Self::deposit_event(Event::Demoted { asset_id });
 
 			Ok(())
 		}
@@ -1783,7 +1785,7 @@ pub mod pallet {
 			is_frozen: bool,
 			system_token_id: SystemTokenId,
 			asset_link_parents: u8,
-			system_token_weight: SystemTokenWeight,
+			system_token_weight: Option<SystemTokenWeight>,
 		) -> DispatchResult {
 			ensure_system_token_origin(<T as Config<I>>::RuntimeOrigin::from(origin))?;
 			Self::do_create_asset_with_metadata(
@@ -1816,20 +1818,24 @@ pub mod pallet {
 		pub fn update_system_token_weight(
 			origin: OriginFor<T>,
 			id: T::AssetIdParameter,
-			system_token_weight: SystemTokenWeight,
+			system_token_weight: Option<SystemTokenWeight>,
 		) -> DispatchResult {
 			ensure_system_token_origin(<T as Config<I>>::RuntimeOrigin::from(origin))?;
+			ensure!(system_token_weight.is_some(), Error::<T, I>::WeightMissing);
 
 			let asset_id: T::AssetId = id.into();
+			let mut asset = Asset::<T, I>::get(asset_id).ok_or(Error::<T, I>::Unknown)?;
+			let mut system_token_weight = system_token_weight;
+			let new_weight = system_token_weight.take().ok_or(Error::<T, I>::WeightMissing)?;
 
-			let asset = Asset::<T, I>::get(asset_id).ok_or(Error::<T, I>::Unknown)?;
-			let original_system_token_weight = asset.system_token_weight;
+			ensure!(asset.is_sufficient, Error::<T, I>::IncorrectStatus);
+			let old_weight = asset.system_token_weight.take().ok_or(Error::<T, I>::WeightMissing)?;
 
 			Self::do_update_system_token_weight(id, system_token_weight)?;
 			Self::deposit_event(Event::AssetSystemTokenWeightChanged {
 				asset_id: id.into(),
-				original_system_token_weight,
-				new_system_token_weight: system_token_weight,
+				from: old_weight,
+				to: new_weight,
 			});
 			Ok(())
 		}

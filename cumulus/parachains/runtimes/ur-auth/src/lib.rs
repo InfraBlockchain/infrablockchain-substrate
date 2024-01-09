@@ -164,11 +164,19 @@ impl pallet_assets::Config for Runtime {
 	type Freezer = ();
 	type Extra = ();
 	type CallbackHandle = ();
+	type SystemTokenHelper = SystemTokenHelper;
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = ();
 }
 
-impl pallet_system_token::Config for Runtime {}
+parameter_types! {
+	pub const BaseSystemTokenWeight: sp_runtime::types::SystemTokenWeight = 1_000_000;
+}
+
+impl pallet_system_token::Config for Runtime {
+	type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
+	type BaseWeight = BaseSystemTokenWeight;
+}
 
 parameter_types! {
 	pub const FeeTreasuryId: PalletId = PalletId(*b"infrapid");
@@ -540,7 +548,7 @@ construct_runtime!(
 
 		AssetLink: pallet_asset_link::{Pallet, Call, Storage, Event<T>} = 34,
 		SystemTokenAggregator: system_token_aggregator::{Pallet, Event<T>} = 35,
-		SystemToken: pallet_system_token::{Pallet, Origin} = 36,
+		SystemTokenHelper: pallet_system_token::{Pallet, Origin} = 36,
 
 		// Governance
 		Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>, HoldReason} = 40,

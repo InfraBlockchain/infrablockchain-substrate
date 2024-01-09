@@ -60,7 +60,7 @@ pub mod v1 {
 				sufficients: self.sufficients,
 				approvals: self.approvals,
 				status,
-				system_token_weight: BASE_SYSTEM_TOKEN_WEIGHT,
+				system_token_weight: None,
 			}
 		}
 	}

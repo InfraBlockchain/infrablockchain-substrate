@@ -704,7 +704,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	) -> DispatchResult {
 		ensure!(!Asset::<T, I>::contains_key(&id), Error::<T, I>::InUse);
 		ensure!(!min_balance.is_zero(), Error::<T, I>::MinBalanceZero);
-
 		Asset::<T, I>::insert(
 			&id,
 			AssetDetails {
@@ -720,7 +719,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 				sufficients: 0,
 				approvals: 0,
 				status: AssetStatus::Live,
-				system_token_weight: 100000,
+				system_token_weight: None,
 			},
 		);
 		ensure!(T::CallbackHandle::created(&id, &owner).is_ok(), Error::<T, I>::CallbackFailed);
@@ -1035,7 +1034,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		is_frozen: bool,
 		system_token_id: SystemTokenId,
 		asset_link_parents: u8,
-		system_token_weight: SystemTokenWeight,
+		system_token_weight: Option<SystemTokenWeight>,
 	) -> DispatchResult {
 		let id: T::AssetId = id.into();
 		ensure!(!Asset::<T, I>::contains_key(&id), Error::<T, I>::InUse);
@@ -1073,7 +1072,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 	pub fn do_update_system_token_weight(
 		id: T::AssetIdParameter,
-		system_token_weight: SystemTokenWeight,
+		system_token_weight: Option<SystemTokenWeight>,
 	) -> DispatchResult {
 		let id: T::AssetId = id.into();
 		Asset::<T, I>::try_mutate_exists(&id, |maybe_detail| -> DispatchResult {
@@ -1086,19 +1085,21 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		Ok(())
 	}
 
-	pub fn do_set_sufficient_and_unlink(
+	pub fn try_do_unlink(
 		asset_id: &T::AssetId,
-		is_sufficient: bool,
+		is_unlink: bool
 	) -> DispatchResult {
 		Asset::<T, I>::try_mutate_exists(asset_id, |maybe_detail| -> DispatchResult {
 			let mut asset_detail = maybe_detail.take().ok_or(Error::<T, I>::Unknown)?;
-			asset_detail.is_sufficient = is_sufficient;
+			asset_detail.is_sufficient = false;
 			*maybe_detail = Some(asset_detail);
 
 			Ok(())
 		})?;
 
-		T::AssetLink::unlink_system_token(asset_id)?;
+		if is_unlink {
+			T::AssetLink::unlink_system_token(asset_id)?;
+		}
 
 		Ok(())
 	}

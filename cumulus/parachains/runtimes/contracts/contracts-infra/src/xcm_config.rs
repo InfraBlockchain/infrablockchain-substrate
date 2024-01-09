@@ -197,8 +197,8 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 			RuntimeCall::AssetLink(pallet_asset_link::Call::link_system_token { .. }) |
 			RuntimeCall::Assets(
 				pallet_assets::Call::update_system_token_weight { .. } |
-				pallet_assets::Call::set_sufficient_and_system_token_weight { .. } |
-				pallet_assets::Call::set_sufficient_with_unlink_system_token { .. } |
+				pallet_assets::Call::promote { .. } |
+				pallet_assets::Call::demote { .. } |
 				pallet_assets::Call::force_create_with_metadata { .. } |
 				pallet_assets::Call::force_set_metadata { .. } |
 				pallet_assets::Call::create { .. } |
