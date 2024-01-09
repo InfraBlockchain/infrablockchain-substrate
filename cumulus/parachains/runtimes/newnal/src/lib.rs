@@ -510,8 +510,6 @@ impl pallet_newnal::Config for Runtime {
 impl pallet_data_market::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type MaxPurchaseQuantity = MaxPurchaseQuantity;
-	type MaxVerifierMembers = MaxVerifierMembers;
-	type AuthorizedOrigin = EnsureRoot<AccountId>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -526,7 +524,7 @@ construct_runtime!(
 
 		// The main stage
 		Newnal: pallet_newnal::{Pallet, Call, Storage, Config<T>, Event<T>} = 5,
-		DataMarket: pallet_data_market::{Pallet, Call, Config<T>, Storage, Event<T>} = 6,
+		DataMarket: pallet_data_market::{Pallet, Call, Storage, Event<T>} = 6,
 
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
