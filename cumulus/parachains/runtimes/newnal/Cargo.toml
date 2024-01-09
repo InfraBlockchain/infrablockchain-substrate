@@ -16,7 +16,7 @@ scale-info = { version = "2.3.1", default-features = false, features = ["derive"
 smallvec = "1.10.0"
 
 # Local
-pallet-newnal = { version = "0.1.1", default-features = false, path = "../../../../substrate/frame/newnal" }
+pallet-urauth = { version = "0.1.1", default-features = false, path = "../../../../substrate/frame/urauth" }
 pallet-data-market = { version = "0.1.1", default-features = false, path = "../../../../substrate/frame/data-market" }
 
 # System
@@ -135,7 +135,7 @@ std = [
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-transaction-payment/std",
 	"pallet-xcm/std",
-	"pallet-newnal/std",
+	"pallet-urauth/std",
 	"pallet-data-market/std",
 	"parachain-info/std",
 	"infrablockchain-core-primitives/std",

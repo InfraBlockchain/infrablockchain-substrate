@@ -44,7 +44,7 @@ pub mod pallet {
 	}
 
 	#[pallet::storage]
-	pub(super) type CurrentPurchaseId<T: Config> = StorageValue<_, PurchaseId, ValueQuery>;
+	pub(super) type NextPurchaseId<T: Config> = StorageValue<_, PurchaseId, ValueQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn data_purchase_registers)]
@@ -118,7 +118,7 @@ pub mod pallet {
 
 	#[pallet::error]
 	pub enum Error<T> {
-		/// Overflow for CurrentPurchaseId.
+		/// Overflow for NextPurchaseId.
 		Overflow,
 		/// The account has already participated in the trade.
 		AccountAlreadyExists,
@@ -175,8 +175,8 @@ pub mod pallet {
 				Error::<T>::InvalidFeeRatio
 			);
 
-			let data_purchase_id = CurrentPurchaseId::<T>::get();
-			CurrentPurchaseId::<T>::try_mutate(|c| -> DispatchResult {
+			let data_purchase_id = NextPurchaseId::<T>::get();
+			NextPurchaseId::<T>::try_mutate(|c| -> DispatchResult {
 				*c = c.checked_add(1).ok_or(Error::<T>::Overflow)?;
 				Ok(())
 			})?;

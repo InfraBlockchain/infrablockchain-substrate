@@ -8251,7 +8251,6 @@ dependencies = [
  "pallet-balances",
  "pallet-collator-selection",
  "pallet-data-market",
- "pallet-newnal",
  "pallet-preimage",
  "pallet-scheduler",
  "pallet-session",
@@ -8261,6 +8260,7 @@ dependencies = [
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
+ "pallet-urauth",
  "pallet-xcm",
  "parachain-info",
  "parachain-primitives",
@@ -10662,31 +10662,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-newnal"
-version = "0.1.1"
-dependencies = [
- "bs58 0.4.0",
- "fixedstr",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "hex",
- "lite-json",
- "log",
- "nuuid",
- "pallet-timestamp",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-core",
- "sp-io",
- "sp-keyring",
- "sp-runtime",
- "sp-std 8.0.0",
- "staging-xcm",
-]
-
-[[package]]
 name = "pallet-nft-fractionalization"
 version = "4.0.0-dev"
 dependencies = [
@@ -11561,6 +11536,31 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std 8.0.0",
+]
+
+[[package]]
+name = "pallet-urauth"
+version = "0.1.1"
+dependencies = [
+ "bs58 0.4.0",
+ "fixedstr",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "hex",
+ "lite-json",
+ "log",
+ "nuuid",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-keyring",
+ "sp-runtime",
+ "sp-std 8.0.0",
+ "staging-xcm",
 ]
 
 [[package]]

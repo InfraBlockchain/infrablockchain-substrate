@@ -129,7 +129,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 				Runtime::ContractsInfra =>
 					Box::new(chain_spec::contracts::ContractsInfraChainSpec::from_json_file(path)?),
 				Runtime::URAuth =>
-					Box::new(chain_spec::newnal::URAuthChainSpec::from_json_file(path)?),
+					Box::new(chain_spec::newnal::NewnalChainSpec::from_json_file(path)?),
 				Runtime::DidInfra => Box::new(chain_spec::did::DidChainSpec::from_json_file(path)?),
 				Runtime::Default =>
 					Box::new(chain_spec::asset_hubs::AssetHubChainSpec::from_json_file(path)?),

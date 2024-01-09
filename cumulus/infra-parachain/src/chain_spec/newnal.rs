@@ -19,18 +19,18 @@ use crate::chain_spec::{
 };
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
-use parachains_common::types::{AccountId, AuraId, Balance as URAuthBalance};
+use parachains_common::types::{AccountId, AuraId, Balance as NewnalBalance};
 use sc_service::ChainType;
 use sp_core::{crypto::UncheckedInto, sr25519};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
-pub type URAuthChainSpec =
+pub type NewnalChainSpec =
 	sc_service::GenericChainSpec<newnal_runtime::RuntimeGenesisConfig, Extensions>;
 
-const URAUTH_INFRA_RELAY_ED: URAuthBalance =
+const NEWNAL_INFRA_RELAY_ED: NewnalBalance =
 	parachains_common::infra_relay::currency::EXISTENTIAL_DEPOSIT;
 
-const URAUTH_PARACHAIN_ID: u32 = 2000;
+const NEWNAL_PARACHAIN_ID: u32 = 2000;
 
 /// Generate the session keys from individual elements.
 ///
@@ -39,18 +39,18 @@ pub fn newnal_session_keys(keys: AuraId) -> newnal_runtime::SessionKeys {
 	newnal_runtime::SessionKeys { aura: keys }
 }
 
-pub fn newnal_development_config() -> URAuthChainSpec {
+pub fn newnal_development_config() -> NewnalChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("ss58Format".into(), 0.into());
 	properties.insert("tokenSymbol".into(), "".into());
 	properties.insert("tokenDecimals".into(), 10.into());
 
-	URAuthChainSpec::from_genesis(
+	NewnalChainSpec::from_genesis(
 		// Name
-		"InfraBlockchain URAuth Dev",
+		"InfraBlockchain Newnal Dev",
 		// ID
 		"newnal-infra-dev",
-		ChainType::Local,
+		ChainType::Development,
 		move || {
 			newnal_genesis(
 				// initial collators.
@@ -66,7 +66,7 @@ pub fn newnal_development_config() -> URAuthChainSpec {
 				],
 				vec![],
 				Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
-				URAUTH_PARACHAIN_ID.into(),
+				NEWNAL_PARACHAIN_ID.into(),
 			)
 		},
 		Vec::new(),
@@ -74,19 +74,19 @@ pub fn newnal_development_config() -> URAuthChainSpec {
 		None,
 		None,
 		Some(properties),
-		Extensions { relay_chain: "infra-relay-local".into(), para_id: URAUTH_PARACHAIN_ID },
+		Extensions { relay_chain: "infra-relay-local".into(), para_id: NEWNAL_PARACHAIN_ID },
 	)
 }
 
-pub fn newnal_local_config() -> URAuthChainSpec {
+pub fn newnal_local_config() -> NewnalChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("ss58Format".into(), 0.into());
 	properties.insert("tokenSymbol".into(), "".into());
 	properties.insert("tokenDecimals".into(), 10.into());
 
-	URAuthChainSpec::from_genesis(
+	NewnalChainSpec::from_genesis(
 		// Name
-		"InfraBlockchain URAuth Local",
+		"InfraBlockchain Newnal Local",
 		// ID
 		"newnal-infra-local",
 		ChainType::Local,
@@ -119,7 +119,7 @@ pub fn newnal_local_config() -> URAuthChainSpec {
 				],
 				Default::default(),
 				Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
-				URAUTH_PARACHAIN_ID.into(),
+				NEWNAL_PARACHAIN_ID.into(),
 			)
 		},
 		Vec::new(),
@@ -127,20 +127,20 @@ pub fn newnal_local_config() -> URAuthChainSpec {
 		None,
 		None,
 		Some(properties),
-		Extensions { relay_chain: "infra-relay-local".into(), para_id: URAUTH_PARACHAIN_ID },
+		Extensions { relay_chain: "infra-relay-local".into(), para_id: NEWNAL_PARACHAIN_ID },
 	)
 }
 
 // Not used for syncing, but just to determine the genesis values set for the upgrade from shell.
-pub fn newnal_config() -> URAuthChainSpec {
+pub fn newnal_config() -> NewnalChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("ss58Format".into(), 0.into());
 	properties.insert("tokenSymbol".into(), "".into());
 	properties.insert("tokenDecimals".into(), 10.into());
 
-	URAuthChainSpec::from_genesis(
+	NewnalChainSpec::from_genesis(
 		// Name
-		"InfraBlockchain URAuth Main",
+		"InfraBlockchain Newnal Main",
 		// ID
 		"newnal-infra",
 		ChainType::Live,
@@ -176,7 +176,7 @@ pub fn newnal_config() -> URAuthChainSpec {
 				vec![],
 				Default::default(),
 				None,
-				URAUTH_PARACHAIN_ID.into(),
+				NEWNAL_PARACHAIN_ID.into(),
 			)
 		},
 		vec![],
@@ -184,7 +184,7 @@ pub fn newnal_config() -> URAuthChainSpec {
 		None,
 		None,
 		Some(properties),
-		Extensions { relay_chain: "infra-relay".into(), para_id: URAUTH_PARACHAIN_ID },
+		Extensions { relay_chain: "infra-relay".into(), para_id: NEWNAL_PARACHAIN_ID },
 	)
 }
 
@@ -206,7 +206,7 @@ fn newnal_genesis(
 			balances: endowed_accounts
 				.iter()
 				.cloned()
-				.map(|k| (k, URAUTH_INFRA_RELAY_ED * 4096))
+				.map(|k| (k, NEWNAL_INFRA_RELAY_ED * 4096))
 				.collect(),
 		},
 		assets: Default::default(),
@@ -216,7 +216,7 @@ fn newnal_genesis(
 		},
 		collator_selection: newnal_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
-			candidacy_bond: URAUTH_INFRA_RELAY_ED * 16,
+			candidacy_bond: NEWNAL_INFRA_RELAY_ED * 16,
 			..Default::default()
 		},
 		session: newnal_runtime::SessionConfig {
@@ -240,7 +240,7 @@ fn newnal_genesis(
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
 			..Default::default()
 		},
-		newnal: newnal_runtime::NewnalConfig { oracle_members },
+		ur_auth: newnal_runtime::URAuthConfig { oracle_members },
 		sudo: newnal_runtime::SudoConfig { key: root_key },
 	}
 }

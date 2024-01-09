@@ -495,9 +495,9 @@ parameter_types! {
 	pub const MaxPurchaseQuantity: u32 = 1_000_000_000;
 }
 
-impl pallet_newnal::Config for Runtime {
+impl pallet_urauth::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type URAuthParser = pallet_newnal::URAuthParser<Self>;
+	type URAuthParser = pallet_urauth::URAuthParser<Self>;
 	type UnixTime = Timestamp;
 	type MaxOracleMembers = MaxOracleMembers;
 	type MaxURIByOracle = MaxURIByOracle;
@@ -523,7 +523,7 @@ construct_runtime!(
 		ParachainInfo: parachain_info::{Pallet, Storage, Config<T>} = 3,
 
 		// The main stage
-		Newnal: pallet_newnal::{Pallet, Call, Storage, Config<T>, Event<T>} = 5,
+		URAuth: pallet_urauth::{Pallet, Call, Storage, Config<T>, Event<T>} = 5,
 		DataMarket: pallet_data_market::{Pallet, Call, Storage, Event<T>} = 6,
 
 		// Monetary stuff.
