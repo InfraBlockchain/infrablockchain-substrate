@@ -15,15 +15,6 @@ pub use pallet::*;
 pub mod types;
 pub use types::*;
 
-pub type PurchaseId = u128;
-pub type Quantity = u32;
-pub type IssuerWeight = u32;
-
-// TOTAL_FEE_RATIO is 100%(indicates 10_000)
-const TOTAL_FEE_RATIO: u32 = 10_000;
-// MIN_PLATFORM_FEE_RATIO is fixed at a minimum of 10%
-const MIN_PLATFORM_FEE_RATIO: u32 = 1_000;
-
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
@@ -39,6 +30,7 @@ pub mod pallet {
 	pub trait Config: frame_system::Config + pallet_assets::Config {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
+		// To be deleted
 		#[pallet::constant]
 		type MaxPurchaseQuantity: Get<Quantity>;
 	}
@@ -61,22 +53,6 @@ pub mod pallet {
 		OptionQuery,
 	>;
 
-	#[derive(Encode, Decode, Clone, PartialEq, Eq, TypeInfo)]
-	#[cfg_attr(feature = "std", derive(Hash, Debug))]
-	pub struct DataPurchaseRegisterDetails<AccountId, BlockNumber, Balance, AnyText> {
-		pub data_buyer: AccountId,
-		pub data_buyer_info: DataBuyerInfo<AnyText>,
-		pub data_purchase_info: DataPurchaseInfo<AnyText>,
-		pub data_verifiers: Vec<AccountId>,
-		pub purchase_deadline: BlockNumber,
-		pub system_token_id: u32,
-		pub quantity: Quantity,
-		pub price_per_data: Balance,
-		pub data_issuer_fee_ratio: u32,
-		pub data_owner_fee_ratio: u32,
-		pub purchase_status: PurchaseStatus,
-	}
-
 	#[pallet::storage]
 	#[pallet::getter(fn data_trade_records)]
 	pub type DataTradeRecords<T: Config> =
@@ -84,7 +60,7 @@ pub mod pallet {
 
 	#[pallet::storage]
 	pub type TradeCountForPurchase<T: Config> =
-		StorageMap<_, Twox64Concat, PurchaseId, u32, ValueQuery>;
+		StorageMap<_, Twox64Concat, PurchaseId, Quantity, ValueQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -120,8 +96,8 @@ pub mod pallet {
 	pub enum Error<T> {
 		/// Overflow for NextPurchaseId.
 		Overflow,
-		/// The account has already participated in the trade.
-		AccountAlreadyExists,
+		/// The account has already participated to trade.
+		AlreadyTraded,
 		/// Error that the total trade limit has been reached.
 		TradeLimitReached,
 		/// Error failed to the existing purchase request.
@@ -140,13 +116,6 @@ pub mod pallet {
 		InvalidFeeRatio,
 	}
 
-	#[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
-	#[cfg_attr(feature = "std", derive(Hash))]
-	pub enum PurchaseStatus {
-		Active,
-		Finished,
-	}
-
 	#[pallet::call]
 	impl<T: Config> Pallet<T>
 	where
@@ -154,14 +123,13 @@ pub mod pallet {
 		<T as pallet_assets::Config>::AssetIdParameter: From<u32>,
 	{
 		#[pallet::call_index(0)]
-		#[pallet::weight(1_000)]
 		pub fn register_data_purchase(
 			origin: OriginFor<T>,
 			data_buyer_info: DataBuyerInfo<AnyText>,
 			data_purchase_info: DataPurchaseInfo<AnyText>,
 			data_verifiers: Vec<T::AccountId>,
 			purchase_deadline: BlockNumberFor<T>,
-			system_token_id: u32,
+			system_token_asset_id: u32,
 			quantity: Quantity,
 			price_per_data: <T as pallet_assets::Config>::Balance,
 			data_issuer_fee_ratio: u32,
@@ -169,11 +137,9 @@ pub mod pallet {
 		) -> DispatchResult {
 			let data_buyer = ensure_signed(origin.clone())?;
 
-			ensure!(
-				data_issuer_fee_ratio + data_owner_fee_ratio <=
-					TOTAL_FEE_RATIO - MIN_PLATFORM_FEE_RATIO,
-				Error::<T>::InvalidFeeRatio
-			);
+			let sum_fee_ratio =
+				data_issuer_fee_ratio + data_owner_fee_ratio + MIN_PLATFORM_FEE_RATIO;
+			ensure!(sum_fee_ratio <= TOTAL_FEE_RATIO, Error::<T>::InvalidFeeRatio);
 
 			let data_purchase_id = NextPurchaseId::<T>::get();
 			NextPurchaseId::<T>::try_mutate(|c| -> DispatchResult {
@@ -187,7 +153,7 @@ pub mod pallet {
 				data_purchase_info,
 				data_verifiers,
 				purchase_deadline,
-				system_token_id,
+				system_token_asset_id,
 				quantity,
 				price_per_data,
 				data_issuer_fee_ratio,
@@ -201,14 +167,15 @@ pub mod pallet {
 			);
 
 			{
-				let total_amount = (quantity as u128).saturating_mul(price_per_data.into());
+				let total_amount = quantity.saturating_mul(price_per_data.into());
 				let escrow_account = Self::get_escrow_account();
-
-				pallet_assets::Pallet::<T>::transfer(
-					origin.clone(),
-					system_token_id.into(),
-					T::Lookup::unlookup(escrow_account),
-					<T as pallet_assets::Config>::Balance::from(total_amount),
+				// Self::transfer_to_escrow(origin, escrow_account, system_token_asset_id,
+				// total_amount)?;
+				Self::escrow_transfer(
+					TransferFrom::Origin(origin),
+					escrow_account,
+					system_token_asset_id,
+					total_amount,
 				)?;
 			}
 
@@ -222,7 +189,6 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(1)]
-		#[pallet::weight(10_000)]
 		pub fn execute_data_trade(
 			origin: OriginFor<T>,
 			data_purchase_id: PurchaseId,
@@ -230,7 +196,7 @@ pub mod pallet {
 			data_issuer: Vec<(T::AccountId, IssuerWeight)>,
 			data_verification_proof: VerificationProof<AnyText>,
 		) -> DispatchResult {
-			let origin_verifier = ensure_signed(origin)?;
+			let maybe_verifier = ensure_signed(origin)?;
 
 			// Ensure the purchase register is valid and active
 			let data_purchase_register_details = DataPurchaseRegisters::<T>::get(data_purchase_id)
@@ -242,7 +208,7 @@ pub mod pallet {
 				data_owner_fee_ratio,
 				data_issuer_fee_ratio,
 				price_per_data,
-				system_token_id,
+				system_token_asset_id,
 				purchase_status,
 				quantity,
 				..
@@ -252,10 +218,10 @@ pub mod pallet {
 
 			ensure!(trade_count < quantity, Error::<T>::TradeLimitReached);
 			ensure!(purchase_status == PurchaseStatus::Active, Error::<T>::PurchaseNotActive);
-			ensure!(data_verifiers.contains(&origin_verifier), Error::<T>::InvalidVerifier);
+			ensure!(data_verifiers.contains(&maybe_verifier), Error::<T>::InvalidVerifier);
 
 			if DataTradeRecords::<T>::contains_key(data_purchase_id, &data_owner) {
-				return Err(Error::<T>::AccountAlreadyExists.into())
+				return Err(Error::<T>::AlreadyTraded.into())
 			} else {
 				trade_count += 1;
 				DataTradeRecords::<T>::insert(data_purchase_id, &data_owner, ());
@@ -275,7 +241,7 @@ pub mod pallet {
 				data_issuer.clone(),
 				data_issuer_fee,
 				platform_fee,
-				system_token_id,
+				system_token_asset_id,
 			)?;
 
 			Self::deposit_event(Event::<T>::DataTradeExecuted {
@@ -296,7 +262,6 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(2)]
-		#[pallet::weight(1_000)]
 		pub fn finish_data_purchase(
 			origin: OriginFor<T>,
 			data_purchase_id: PurchaseId,
@@ -331,78 +296,75 @@ where
 		data_issuer: Vec<(T::AccountId, IssuerWeight)>,
 		data_issuer_fee: u128,
 		platform_fee: u128,
-		system_token_id: u32,
+		system_token_asset_id: u32,
 	) -> DispatchResult {
-		let escrow_account = Self::get_escrow_account();
 		let platform_account = Self::get_platform_account();
 
-		pallet_assets::Pallet::<T>::transfer(
-			frame_system::RawOrigin::Signed(escrow_account.clone()).into(),
-			system_token_id.into(),
-			T::Lookup::unlookup(data_owner),
-			<T as pallet_assets::Config>::Balance::from(data_owner_fee),
+		Self::escrow_transfer(
+			TransferFrom::Escrow,
+			data_owner,
+			system_token_asset_id,
+			data_owner_fee,
 		)?;
 
 		let total_weight: u32 = data_issuer.iter().map(|(_, weight)| weight).sum();
 		ensure!(total_weight > 0u32, Error::<T>::IssuerWeightInvalid);
 
-		for (account, weight) in data_issuer.iter() {
+		for (issuer, weight) in data_issuer.iter() {
 			let distributed_fee = data_issuer_fee
 				.saturating_mul(*weight as u128)
 				.saturating_div(total_weight as u128);
-			pallet_assets::Pallet::<T>::transfer(
-				frame_system::RawOrigin::Signed(escrow_account.clone()).into(),
-				system_token_id.into(),
-				T::Lookup::unlookup(account.clone()),
-				<T as pallet_assets::Config>::Balance::from(distributed_fee),
+			Self::escrow_transfer(
+				TransferFrom::Escrow,
+				issuer.clone(),
+				system_token_asset_id,
+				distributed_fee,
 			)?;
 		}
 
-		pallet_assets::Pallet::<T>::transfer(
-			frame_system::RawOrigin::Signed(escrow_account).into(),
-			system_token_id.into(),
-			T::Lookup::unlookup(platform_account),
-			<T as pallet_assets::Config>::Balance::from(platform_fee),
+		Self::escrow_transfer(
+			TransferFrom::Escrow,
+			platform_account,
+			system_token_asset_id,
+			platform_fee,
 		)?;
 
 		Ok(())
 	}
 
 	pub fn do_finish_data_purchase(
-		data_buyer: T::AccountId,
+		maybe_data_buyer: T::AccountId,
 		data_purchase_id: PurchaseId,
 	) -> DispatchResult {
 		let mut data_purchase_register_details = DataPurchaseRegisters::<T>::get(&data_purchase_id)
 			.ok_or(Error::<T>::PurchaseDoesNotExist)?;
 
 		let DataPurchaseRegisterDetails {
+			data_buyer,
 			price_per_data,
-			system_token_id,
-			purchase_status,
+			system_token_asset_id,
+			mut purchase_status,
 			quantity,
 			..
 		} = data_purchase_register_details.clone();
 
-		ensure!(data_buyer == data_purchase_register_details.data_buyer, Error::<T>::InvalidBuyer);
+		ensure!(maybe_data_buyer == data_buyer, Error::<T>::InvalidBuyer);
 		ensure!(purchase_status == PurchaseStatus::Active, Error::<T>::PurchaseNotActive);
 
 		// Change purchase status
-		data_purchase_register_details.purchase_status = PurchaseStatus::Finished;
+		purchase_status = PurchaseStatus::Finished;
+		data_purchase_register_details.purchase_status = purchase_status;
 		DataPurchaseRegisters::<T>::insert(&data_purchase_id, data_purchase_register_details);
 
 		// Refund the remaining deposit
-		let escrow_account = Self::get_escrow_account();
 		let remainig_quantity = quantity - TradeCountForPurchase::<T>::get(data_purchase_id);
-		let remaining_deposit = {
-			let r_d = (price_per_data.into()).saturating_mul(remainig_quantity as u128);
-			<T as pallet_assets::Config>::Balance::from(r_d)
-		};
+		let remaining_deposit = price_per_data.into().saturating_mul(remainig_quantity);
 
 		if remainig_quantity > 0 {
-			pallet_assets::Pallet::<T>::transfer(
-				frame_system::RawOrigin::Signed(escrow_account).into(),
-				system_token_id.into(),
-				T::Lookup::unlookup(data_buyer.clone()),
+			Self::escrow_transfer(
+				TransferFrom::Escrow,
+				data_buyer.clone(),
+				system_token_asset_id,
 				remaining_deposit,
 			)?;
 		}
@@ -414,7 +376,7 @@ where
 		Self::deposit_event(Event::<T>::DataPurchaseFinished {
 			data_buyer,
 			data_purchase_id,
-			remaining_deposit,
+			remaining_deposit: remaining_deposit.into(),
 			purchase_status,
 		});
 
@@ -427,7 +389,7 @@ where
 		data_issuer_fee_ratio: u32,
 	) -> (u128, u128, u128) {
 		let platform_fee_ratio = 10_000 - data_owner_fee_ratio - data_issuer_fee_ratio;
-		let quantity = 1u128;
+		let quantity = 1;
 		let total_amount = price_per_data * quantity;
 
 		let data_owner_fee =
@@ -439,5 +401,36 @@ where
 			total_amount.saturating_mul(platform_fee_ratio as u128).saturating_div(10_000);
 
 		(data_owner_fee, data_issuer_fee, platform_fee)
+	}
+
+	fn escrow_transfer(
+		from: TransferFrom<T>,
+		to: T::AccountId,
+		system_token_asset_id: u32,
+		amount: u128,
+	) -> DispatchResult {
+		let balance = <T as pallet_assets::Config>::Balance::from(amount);
+
+		match from {
+			TransferFrom::Origin(origin) => {
+				pallet_assets::Pallet::<T>::transfer(
+					origin,
+					system_token_asset_id.into(),
+					T::Lookup::unlookup(to),
+					balance,
+				)?;
+			},
+			TransferFrom::Escrow => {
+				let escrow = Self::get_escrow_account();
+				pallet_assets::Pallet::<T>::transfer(
+					frame_system::RawOrigin::Signed(escrow).into(),
+					system_token_asset_id.into(),
+					T::Lookup::unlookup(to),
+					balance,
+				)?;
+			},
+		}
+
+		Ok(())
 	}
 }

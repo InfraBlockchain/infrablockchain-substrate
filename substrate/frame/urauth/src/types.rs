@@ -340,7 +340,7 @@ pub enum VerificationSubmissionResult {
 pub enum URAuthSignedPayload<Account, BlockNumber> {
 	Request { uri: URI, owner_did: OwnerDID, nonce: BlockNumber },
 	Challenge { uri: URI, owner_did: OwnerDID, challenge: Vec<u8>, timestamp: Vec<u8> },
-	Update { uri: URI, newnal_doc: URAuthDoc<Account>, owner_did: OwnerDID, nonce: BlockNumber },
+	Update { uri: URI, urauth_doc: URAuthDoc<Account>, owner_did: OwnerDID, nonce: BlockNumber },
 }
 
 impl<Account: Encode, BlockNumber: Encode> Encode for URAuthSignedPayload<Account, BlockNumber> {
@@ -350,7 +350,7 @@ impl<Account: Encode, BlockNumber: Encode> Encode for URAuthSignedPayload<Accoun
 				(uri, owner_did, nonce).encode(),
 			URAuthSignedPayload::Challenge { uri, owner_did, challenge, timestamp } =>
 				(uri, owner_did, challenge, timestamp).encode(),
-			URAuthSignedPayload::Update { uri, newnal_doc, owner_did, nonce } => {
+			URAuthSignedPayload::Update { uri, urauth_doc, owner_did, nonce } => {
 				let URAuthDoc {
 					id,
 					created_at,
@@ -363,7 +363,7 @@ impl<Account: Encode, BlockNumber: Encode> Encode for URAuthSignedPayload<Accoun
 					asset,
 					data_source,
 					..
-				} = newnal_doc;
+				} = urauth_doc;
 
 				(
 					uri,

@@ -7,7 +7,7 @@ use sp_runtime::{AccountId32, MultiSigner};
 #[test]
 fn request_register_ownership_works() {
 	let mut newnal_helper = MockURAuthHelper::<MockAccountId>::default(None, None, None, None);
-	let (uri, owner_did, _, _) = newnal_helper.deconstruct_newnal_doc(None);
+	let (uri, owner_did, _, _) = newnal_helper.deconstruct_urauth_doc(None);
 	let bounded_uri = newnal_helper.bounded_uri(None);
 	let signer = MultiSigner::Sr25519(Alice.public());
 	let r_sig = newnal_helper.create_signature(
@@ -92,7 +92,7 @@ fn request_register_ownership_works() {
 #[test]
 fn verify_challenge_works() {
 	let mut newnal_helper = MockURAuthHelper::<MockAccountId>::default(None, None, None, None);
-	let (uri, owner_did, challenge_value, timestamp) = newnal_helper.deconstruct_newnal_doc(None);
+	let (uri, owner_did, challenge_value, timestamp) = newnal_helper.deconstruct_urauth_doc(None);
 	let bounded_uri = newnal_helper.bounded_uri(None);
 	let bounded_owner_did = newnal_helper.raw_owner_did();
 	let request_sig = newnal_helper.create_signature(
@@ -136,15 +136,15 @@ fn verify_challenge_works() {
 			.into(),
 		);
 		let register_uri: URI = "website1.com".as_bytes().to_vec().try_into().unwrap();
-		let newnal_doc = URAuthTree::<Test>::get(&register_uri).unwrap();
-		debug_doc(&newnal_doc);
+		let urauth_doc = URAuthTree::<Test>::get(&register_uri).unwrap();
+		debug_doc(&urauth_doc);
 	});
 }
 
 #[test]
-fn update_newnal_doc_works() {
+fn update_urauth_doc_works() {
 	let mut newnal_helper = MockURAuthHelper::<MockAccountId>::default(None, None, None, None);
-	let (uri, owner_did, challenge_value, timestamp) = newnal_helper.deconstruct_newnal_doc(None);
+	let (uri, owner_did, challenge_value, timestamp) = newnal_helper.deconstruct_urauth_doc(None);
 	let bounded_uri = newnal_helper.bounded_uri(None);
 	let bounded_owner_did = newnal_helper.raw_owner_did();
 	let request_sig = newnal_helper.create_signature(
@@ -181,21 +181,21 @@ fn update_newnal_doc_works() {
 		));
 
 		let register_uri: URI = "website1.com".as_bytes().to_vec().try_into().unwrap();
-		let mut newnal_doc = URAuthTree::<Test>::get(&register_uri).unwrap();
-		debug_doc(&newnal_doc);
+		let mut urauth_doc = URAuthTree::<Test>::get(&register_uri).unwrap();
+		debug_doc(&urauth_doc);
 
 		let update_doc_field = UpdateDocField::AccessRules(None);
-		newnal_doc.update_doc(update_doc_field.clone(), 1).unwrap();
+		urauth_doc.update_doc(update_doc_field.clone(), 1).unwrap();
 		let update_signature = newnal_helper.create_sr25519_signature(
 			Alice,
 			ProofType::Update(
 				register_uri.clone(),
-				newnal_doc.clone(),
+				urauth_doc.clone(),
 				bounded_owner_did.clone(),
 				2,
 			),
 		);
-		assert_ok!(URAuth::update_newnal_doc(
+		assert_ok!(URAuth::update_urauth_doc(
 			RuntimeOrigin::signed(Alice.to_account_id()),
 			register_uri.clone(),
 			update_doc_field,
@@ -214,39 +214,39 @@ fn update_newnal_doc_works() {
 				disallow: vec![ContentType::Video, ContentType::Code],
 			}],
 		}]));
-		newnal_doc.update_doc(update_doc_field.clone(), 2).unwrap();
+		urauth_doc.update_doc(update_doc_field.clone(), 2).unwrap();
 		let update_signature = newnal_helper.create_sr25519_signature(
 			Alice,
 			ProofType::Update(
 				register_uri.clone(),
-				newnal_doc.clone(),
+				urauth_doc.clone(),
 				bounded_owner_did.clone(),
 				3,
 			),
 		);
-		assert_ok!(URAuth::update_newnal_doc(
+		assert_ok!(URAuth::update_urauth_doc(
 			RuntimeOrigin::signed(Alice.to_account_id()),
 			register_uri.clone(),
 			update_doc_field,
 			2u128,
 			Some(Proof::ProofV1 { did: bounded_owner_did.clone(), proof: update_signature.into() })
 		));
-		let mut newnal_doc = URAuthTree::<Test>::get(&register_uri).unwrap();
-		debug_doc(&newnal_doc);
+		let mut urauth_doc = URAuthTree::<Test>::get(&register_uri).unwrap();
+		debug_doc(&urauth_doc);
 
 		let update_doc_field =
 			UpdateDocField::MultiDID(WeightedDID { did: Bob.to_account_id(), weight: 1 });
-		newnal_doc.update_doc(update_doc_field.clone(), 3).unwrap();
+		urauth_doc.update_doc(update_doc_field.clone(), 3).unwrap();
 		let update_signature = newnal_helper.create_sr25519_signature(
 			Alice,
 			ProofType::Update(
 				register_uri.clone(),
-				newnal_doc.clone(),
+				urauth_doc.clone(),
 				bounded_owner_did.clone(),
 				4,
 			),
 		);
-		assert_ok!(URAuth::update_newnal_doc(
+		assert_ok!(URAuth::update_urauth_doc(
 			RuntimeOrigin::signed(Alice.to_account_id()),
 			register_uri.clone(),
 			update_doc_field,
@@ -254,21 +254,21 @@ fn update_newnal_doc_works() {
 			Some(Proof::ProofV1 { did: bounded_owner_did.clone(), proof: update_signature.into() })
 		));
 
-		let mut newnal_doc = URAuthTree::<Test>::get(&register_uri).unwrap();
-		debug_doc(&newnal_doc);
+		let mut urauth_doc = URAuthTree::<Test>::get(&register_uri).unwrap();
+		debug_doc(&urauth_doc);
 
 		let update_doc_field = UpdateDocField::<MockAccountId>::Threshold(2);
-		newnal_doc.update_doc(update_doc_field.clone(), 4).unwrap();
+		urauth_doc.update_doc(update_doc_field.clone(), 4).unwrap();
 		let update_signature = newnal_helper.create_sr25519_signature(
 			Alice,
 			ProofType::Update(
 				register_uri.clone(),
-				newnal_doc.clone(),
+				urauth_doc.clone(),
 				bounded_owner_did.clone(),
 				5,
 			),
 		);
-		assert_ok!(URAuth::update_newnal_doc(
+		assert_ok!(URAuth::update_urauth_doc(
 			RuntimeOrigin::signed(Alice.to_account_id()),
 			register_uri.clone(),
 			update_doc_field,
@@ -276,17 +276,17 @@ fn update_newnal_doc_works() {
 			Some(Proof::ProofV1 { did: bounded_owner_did.clone(), proof: update_signature.into() })
 		));
 
-		let mut newnal_doc = URAuthTree::<Test>::get(&register_uri).unwrap();
-		debug_doc(&newnal_doc);
+		let mut urauth_doc = URAuthTree::<Test>::get(&register_uri).unwrap();
+		debug_doc(&urauth_doc);
 
 		let update_doc_field =
 			UpdateDocField::MultiDID(WeightedDID { did: Charlie.to_account_id(), weight: 1 });
-		newnal_doc.update_doc(update_doc_field.clone(), 5).unwrap();
+		urauth_doc.update_doc(update_doc_field.clone(), 5).unwrap();
 		let update_signature = newnal_helper.create_sr25519_signature(
 			Alice,
 			ProofType::Update(
 				register_uri.clone(),
-				newnal_doc.clone(),
+				urauth_doc.clone(),
 				bounded_owner_did.clone(),
 				6,
 			),
@@ -295,7 +295,7 @@ fn update_newnal_doc_works() {
 			did: bounded_owner_did.clone(),
 			proof: update_signature.clone().into(),
 		};
-		assert_ok!(URAuth::update_newnal_doc(
+		assert_ok!(URAuth::update_urauth_doc(
 			RuntimeOrigin::signed(Alice.to_account_id()),
 			register_uri.clone(),
 			update_doc_field,
@@ -305,11 +305,11 @@ fn update_newnal_doc_works() {
 
 		println!(
 			"URAUTHDOC UPDATE STATUS => {:?}",
-			URAuthDocUpdateStatus::<Test>::get(&newnal_doc.id)
+			URAuthDocUpdateStatus::<Test>::get(&urauth_doc.id)
 		);
 		System::assert_has_event(
 			URAuthEvent::UpdateInProgress {
-				newnal_doc: newnal_doc.clone(),
+				urauth_doc: urauth_doc.clone(),
 				update_doc_status: UpdateDocStatus {
 					remaining_threshold: 1,
 					status: UpdateStatus::InProgress {
@@ -326,11 +326,11 @@ fn update_newnal_doc_works() {
 
 		// Since threhold is 2, URAUTH Document has not been updated.
 		// Bob should sign for update.
-		let mut newnal_doc = URAuthTree::<Test>::get(&register_uri).unwrap();
+		let mut urauth_doc = URAuthTree::<Test>::get(&register_uri).unwrap();
 
 		let update_doc_field =
 			UpdateDocField::MultiDID(WeightedDID { did: Charlie.to_account_id(), weight: 1 });
-		newnal_doc.update_doc(update_doc_field.clone(), 5).unwrap();
+		urauth_doc.update_doc(update_doc_field.clone(), 5).unwrap();
 		let bob_did: OwnerDID = newnal_helper
 			.generate_did(BOB_SS58)
 			.as_bytes()
@@ -339,9 +339,9 @@ fn update_newnal_doc_works() {
 			.expect("Too long");
 		let update_signature = newnal_helper.create_sr25519_signature(
 			Bob,
-			ProofType::Update(register_uri.clone(), newnal_doc.clone(), bob_did.clone(), 1),
+			ProofType::Update(register_uri.clone(), urauth_doc.clone(), bob_did.clone(), 1),
 		);
-		assert_ok!(URAuth::update_newnal_doc(
+		assert_ok!(URAuth::update_urauth_doc(
 			RuntimeOrigin::signed(Bob.to_account_id()),
 			register_uri.clone(),
 			update_doc_field,
@@ -349,9 +349,9 @@ fn update_newnal_doc_works() {
 			Some(Proof::ProofV1 { did: bob_did, proof: update_signature.into() })
 		));
 
-		let newnal_doc = URAuthTree::<Test>::get(&register_uri).unwrap();
-		debug_doc(&newnal_doc);
-		let proofs = newnal_doc.clone().proofs.unwrap();
+		let urauth_doc = URAuthTree::<Test>::get(&register_uri).unwrap();
+		debug_doc(&urauth_doc);
+		let proofs = urauth_doc.clone().proofs.unwrap();
 		for proof in proofs {
 			match proof {
 				Proof::ProofV1 { did, .. } => {
@@ -359,15 +359,15 @@ fn update_newnal_doc_works() {
 				},
 			}
 		}
-		assert!(newnal_doc.clone().proofs.unwrap().len() == 2);
-		debug_doc(&newnal_doc);
+		assert!(urauth_doc.clone().proofs.unwrap().len() == 2);
+		debug_doc(&urauth_doc);
 	});
 }
 
 #[test]
 fn verify_challenge_with_multiple_oracle_members() {
 	let mut newnal_helper = MockURAuthHelper::<MockAccountId>::default(None, None, None, None);
-	let (uri, owner_did, challenge_value, timestamp) = newnal_helper.deconstruct_newnal_doc(None);
+	let (uri, owner_did, challenge_value, timestamp) = newnal_helper.deconstruct_urauth_doc(None);
 	let bounded_uri = newnal_helper.bounded_uri(None);
 	let bounded_owner_did = newnal_helper.raw_owner_did();
 	let request_sig = newnal_helper.create_signature(
@@ -441,7 +441,7 @@ fn verify_challenge_with_multiple_oracle_members() {
 #[test]
 fn integrity_test() {
 	let mut newnal_helper = MockURAuthHelper::<AccountId32>::default(None, None, None, None);
-	let (uri, owner_did, challenge_value, timestamp) = newnal_helper.deconstruct_newnal_doc(None);
+	let (uri, owner_did, challenge_value, timestamp) = newnal_helper.deconstruct_urauth_doc(None);
 	let bounded_uri = newnal_helper.bounded_uri(None);
 	let bounded_owner_did = newnal_helper.raw_owner_did();
 	let signer = MultiSigner::Sr25519(Alice.public());
@@ -495,8 +495,8 @@ fn integrity_test() {
 			challenge_json
 		));
 		let reigstered_uri: URI = "website1.com".as_bytes().to_vec().try_into().unwrap();
-		let newnal_doc = URAuthTree::<Test>::get(&reigstered_uri).unwrap();
-		debug_doc(&newnal_doc);
+		let urauth_doc = URAuthTree::<Test>::get(&reigstered_uri).unwrap();
+		debug_doc(&urauth_doc);
 		let uri = "https://sub2.sub1.website1.com".as_bytes().to_vec();
 		// Registered URI should not be requested.
 		assert_noop!(request_call.clone().runtime_call(), Error::<Test>::AlreadyRegistered);
@@ -529,8 +529,8 @@ fn integrity_test() {
 			.runtime_call());
 		assert_eq!(DIDs::<Test>::get(Alice.to_account_id()).unwrap().nonce(), 2);
 		let reigstered_uri: URI = uri.try_into().unwrap();
-		let newnal_doc = URAuthTree::<Test>::get(&reigstered_uri).unwrap();
-		debug_doc(&newnal_doc);
+		let urauth_doc = URAuthTree::<Test>::get(&reigstered_uri).unwrap();
+		debug_doc(&urauth_doc);
 
 		let uri = "https://website2.com/user".as_bytes().to_vec();
 		// Request URI not in URIByOracle should be fail
