@@ -30,6 +30,7 @@ sp-std = { path = "../../primitives/std", default-features = false }
 frame-support = { path = "../support", default-features = false }
 frame-system = { path = "../system", default-features = false }
 pallet-session = { path = "../session", default-features = false }
+pallet-timestamp = { path = "../timestamp", default-features = false}
 
 [features]
 default = ["std"]
@@ -45,5 +46,6 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-session/std",
+	"pallet-timestamp/std",
 ]
 try-runtime = ["frame-support/try-runtime"]

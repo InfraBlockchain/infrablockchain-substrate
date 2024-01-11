@@ -583,7 +583,7 @@ where
 		let SystemTokenId { para_id, .. } = original.clone();
 		Self::try_push_sys_token_for_para_id(para_id, &original)?;
 		Self::try_push_para_id(para_id, &original)?;
-		Self::try_promote(&original, true, Some(system_token_weight))?;
+		Self::try_promote(&original, Some(system_token_weight))?;
 		SystemTokenProperties::<T>::insert(
 			&original,
 			SystemTokenProperty {
@@ -803,7 +803,7 @@ where
 			Ok(())
 		})?;
 
-		Self::try_promote(&wrapped, true, property.system_token_weight)?;
+		Self::try_promote(&wrapped, property.system_token_weight)?;
 
 		Ok(())
 	}
@@ -968,7 +968,6 @@ where
 	/// set its weight
 	fn try_promote(
 		system_token_id: &SystemTokenId,
-		is_sufficient: bool,
 		system_token_weight: Option<SystemTokenWeight>,
 	) -> DispatchResult {
 		let SystemTokenId { para_id, pallet_id, asset_id } = system_token_id.clone();

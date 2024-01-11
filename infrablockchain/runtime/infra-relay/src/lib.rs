@@ -781,6 +781,7 @@ parameter_types! {
 	pub NposSolutionPriority: TransactionPriority =
 		Perbill::from_percent(90) * TransactionPriority::max_value();
 	pub const ImOnlineUnsignedPriority: TransactionPriority = TransactionPriority::max_value();
+	pub const SystemTokenHelperUnsignedPriority: TransactionPriority = 0;
 }
 
 impl pallet_im_online::Config for Runtime {
@@ -1131,12 +1132,15 @@ impl system_token_manager::Config for Runtime {
 }
 
 parameter_types! {
+	pub const RequestPeriod: BlockNumber = prod_or_fast!(DAYS, 5u32);
 	pub const BaseSystemTokenWeight: sp_runtime::types::SystemTokenWeight = 1_000_000;
+	pub const IsOffChain: bool = false;
 }
-
 impl pallet_system_token::Config for Runtime {
-	type ShouldEndSession = Babe;
+	type RequestPeriod = RequestPeriod;
 	type BaseWeight = BaseSystemTokenWeight;
+	type IsOffChain = IsOffChain;
+	type UnsignedPriority = SystemTokenHelperUnsignedPriority;
 }
 
 impl validator_reward_manager::Config for Runtime {
@@ -1405,16 +1409,18 @@ construct_runtime! {
 		// Asset rate.
 		AssetRate: pallet_asset_rate::{Pallet, Call, Storage, Event<T>} = 39,
 
-		// IBS Support
-		SystemTokenManager: system_token_manager::{Pallet, Call, Storage, Event<T>} = 20,
-		ValidatorRewardManager: validator_reward_manager::{Pallet, Call, Storage, Event<T>} = 21,
-		SystemTokenHelper: pallet_system_token::{Pallet, Origin} = 23,
+		// InfraBlockchain Support
+		SystemTokenManager: system_token_manager::{Pallet, Call, Storage, Event<T>} = 21,
+		ValidatorRewardManager: validator_reward_manager::{Pallet, Call, Storage, Event<T>} = 22,
 		AssetLink: pallet_asset_link = 24,
 		Pot: relay_pot::{Pallet, Storage, Event<T>} = 25,
 		SystemTokenAggregator: system_token_aggregator = 26,
 
 		// Babe must be before session.
 		Babe: pallet_babe::{Pallet, Call, Storage, Config<T>, ValidateUnsigned} = 2,
+
+		// Since this module depends on Babe
+		SystemTokenHelper: pallet_system_token::{Pallet, Call, Storage, ValidateUnsigned, Origin} = 20,
 
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 3,
 		Indices: pallet_indices::{Pallet, Call, Storage, Config<T>, Event<T>} = 4,
@@ -1430,7 +1436,7 @@ construct_runtime! {
 		Offences: pallet_offences::{Pallet, Storage, Event} = 8,
 		Historical: session_historical::{Pallet} = 33,
 		// This should be above Session Pallet
-		ValidatorElection: pallet_validator_election::{Pallet, Call, Storage, Config<T>, Event<T>} = 22,
+		ValidatorElection: pallet_validator_election::{Pallet, Call, Storage, Config<T>, Event<T>} = 23,
 		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 9,
 		Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config<T>, Event, ValidateUnsigned} = 11,
 		ImOnline: pallet_im_online::{Pallet, Call, Storage, Event<T>, ValidateUnsigned, Config<T>} = 12,
