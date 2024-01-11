@@ -65,7 +65,7 @@ use sp_runtime::{
 	traits::{
 		AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, TryConvertInto as JustTry,
 	},
-	transaction_validity::{TransactionSource, TransactionValidity},
+	transaction_validity::{TransactionSource, TransactionValidity, TransactionPriority},
 	ApplyExtrinsicResult,
 };
 
@@ -105,7 +105,7 @@ pub use sp_runtime::BuildStorage;
 
 // Polkadot imports
 use pallet_xcm::{EnsureXcm, IsMajorityOfBody};
-use runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
+use runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate, prod_or_fast};
 use runtime_parachains::system_token_aggregator;
 use xcm::latest::BodyId;
 use xcm_executor::XcmExecutor;
@@ -602,12 +602,17 @@ impl pallet_collator_selection::Config for Runtime {
 }
 
 parameter_types! {
+	pub const RequestPeriod: BlockNumber = prod_or_fast!(DAYS, 5u32);
 	pub const BaseSystemTokenWeight: sp_runtime::types::SystemTokenWeight = 1_000_000;
+	pub const IsOffChain: bool = true;
+	pub const UnsignedPriority: TransactionPriority = TransactionPriority::max_value();
 }
 
 impl pallet_system_token::Config for Runtime {
-	type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
+	type RequestPeriod = RequestPeriod;
 	type BaseWeight = BaseSystemTokenWeight;
+	type IsOffChain = IsOffChain;
+	type UnsignedPriority = UnsignedPriority;
 }
 
 parameter_types! {
@@ -666,6 +671,14 @@ impl system_token_aggregator::Config for Runtime {
 	type IsRelay = IsRelay;
 }
 
+impl<C> frame_system::offchain::SendTransactionTypes<C> for Runtime
+where
+	RuntimeCall: From<C>,
+{
+	type Extrinsic = UncheckedExtrinsic;
+	type OverarchingCall = RuntimeCall;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime {
@@ -705,7 +718,7 @@ construct_runtime!(
 		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
 		AssetLink: pallet_asset_link = 52,
 		SystemTokenAggregator: system_token_aggregator = 53,
-		SystemTokenHelper: pallet_system_token::{Pallet, Origin} = 54,
+		SystemTokenHelper: pallet_system_token::{Pallet, Call, Storage, ValidateUnsigned, Origin} = 54,
 	}
 );
 

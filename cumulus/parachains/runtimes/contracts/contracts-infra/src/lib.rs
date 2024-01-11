@@ -380,11 +380,15 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
 
 parameter_types! {
 	pub const BaseSystemTokenWeight: sp_runtime::types::SystemTokenWeight = 1_000_000;
+	pub const IsOffChain: bool = false;
+	pub const UnsignedPriority: sp_runtime::transaction_validity::TransactionPriority = 0;
 }
 
 impl pallet_system_token::Config for Runtime {
-	type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
+	type RequestPeriod = AggregatedPeriod;
 	type BaseWeight = BaseSystemTokenWeight;
+	type IsOffChain = IsOffChain;
+	type UnsignedPriority = UnsignedPriority;
 }
 
 parameter_types! {
@@ -525,6 +529,14 @@ impl pallet_assets::Config for Runtime {
 	type BenchmarkHelper = ();
 }
 
+impl<C> frame_system::offchain::SendTransactionTypes<C> for Runtime
+where
+	RuntimeCall: From<C>,
+{
+	type Extrinsic = UncheckedExtrinsic;
+	type OverarchingCall = RuntimeCall;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime
@@ -568,7 +580,7 @@ construct_runtime!(
 		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
 		AssetLink: pallet_asset_link = 52,
 		SystemTokenAggregator: system_token_aggregator = 53,
-		SystemTokenHelper: pallet_system_token::{Pallet, Origin} = 54,
+		SystemTokenHelper: pallet_system_token::{Pallet, Storage, Call, ValidateUnsigned, Origin} = 54,
 	}
 );
 
