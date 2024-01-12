@@ -103,7 +103,7 @@ where
 	HC: HandleCredit<T::AccountId, T::Assets>,
 	AssetIdOf<T>: AssetId + From<sp_runtime::types::token::AssetId>,
 	AssetBalanceOf<T>: From<BalanceOf<T>>,
-	ConvertBalance: MaybeEquivalence<u128, BalanceOf<T>>,
+	ConvertBalance: MaybeEquivalence<u128, AssetBalanceOf<T>>,
 {
 	type Balance = BalanceOf<T>;
 	type SystemTokenAssetId = AssetIdOf<T>;
@@ -149,10 +149,10 @@ where
 		let mut converted_fee = CON::to_asset_balance(fee, system_token_asset_id.clone())
 			.map_err(|_| TransactionValidityError::from(InvalidTransaction::Payment))?
 			.max(min_converted_fee);
-		let default = ConvertBalance::convert(&CORRECTION_PARA_FEE_RATE)
-			.ok_or(TransactionValidityError::from(InvalidTransaction::Payment))?;
-		let pfr: AssetBalanceOf<T> = ParaFeeRate::<T>::get().map_or(default, |v| v).into();
-		converted_fee = converted_fee * pfr;
+		let fee_rate: AssetBalanceOf<T> = ConvertBalance::convert(&T::RuntimeConfigProvider::fee_rate()).ok_or(
+			TransactionValidityError::from(InvalidTransaction::Payment),
+		)?;
+		converted_fee = converted_fee * fee_rate;
 		let can_withdraw = <T::Assets as Inspect<T::AccountId>>::can_withdraw(
 			system_token_asset_id.clone(),
 			who,

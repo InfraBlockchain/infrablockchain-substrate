@@ -49,7 +49,6 @@ use frame_system::{
 	EnsureRoot, EnsureSigned,
 };
 use pallet_system_token_tx_payment::{CreditToBucket, TransactionFeeCharger};
-use pallet_system_token_oracle::BASE_SYSTEM_TOKEN_WEIGHT;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{
 	types::{VoteAssetId, VoteWeight},
@@ -171,20 +170,6 @@ impl pallet_assets::Config for Runtime {
 }
 
 parameter_types! {
-	pub const BaseSystemTokenWeight: SystemTokenWeight = BASE_SYSTEM_TOKEN_WEIGHT;
-	pub const UnsignedPriority: TransactionPriority = 0;
-	pub const IsOffChain: bool = false;
-}
-
-impl pallet_system_token_oracle::Config for Runtime {
-	type SystemTokenOracle = ();
-	type RequestPeriod = SessionLength;
-	type BaseWeight = BaseSystemTokenWeight;
-	type IsOffChain = IsOffChain;
-	type UnsignedPriority = UnsignedPriority;
-}
-
-parameter_types! {
 	pub const FeeTreasuryId: PalletId = PalletId(*b"infrapid");
 }
 
@@ -212,8 +197,8 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 }
 
 impl pallet_system_token_tx_payment::Config for Runtime {
-	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeEvent = RuntimeEvent;
+	type RuntimeConfigProvider = ParachainConfig;
 	type Assets = Assets;
 	/// The actual transaction charging logic that charges the fees.
 	type OnChargeSystemToken = TransactionFeeCharger<
@@ -363,6 +348,15 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type ReservedXcmpWeight = ReservedXcmpWeight;
 	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
 	type ConsensusHook = ConsensusHook;
+}
+
+parameter_types! {
+	const BaseWeight: SystemTokenWeight = 1_000_000;
+}
+impl cumulus_pallet_parachain_configuration::Config for Runtime {
+	type RuntimeOrigin = RuntimeOrigin;
+	type RuntimeEvent = RuntimeEvent;
+	type BaseWeight = BaseWeight;
 }
 
 impl parachain_info::Config for Runtime {}
@@ -535,8 +529,9 @@ construct_runtime!(
 		ParachainSystem: cumulus_pallet_parachain_system::{
 			Pallet, Call, Config<T>, Storage, Inherent, Event<T>, ValidateUnsigned,
 		} = 1,
-		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
-		ParachainInfo: parachain_info::{Pallet, Storage, Config<T>} = 3,
+		ParachainConfig: cumulus_pallet_parachain_configuration::{Pallet, Call, Config<T>, Storage, Event<T>} = 2,
+		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 3,
+		ParachainInfo: parachain_info::{Pallet, Storage, Config<T>} = 4,
 
 		// The main stage
 		URAuth: pallet_urauth::{Pallet, Call, Storage, Config<T>, Event<T>} = 5,
@@ -544,7 +539,7 @@ construct_runtime!(
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 11,
-		SystemTokenTxPayment: pallet_system_token_tx_payment::{Pallet, Call, Storage, Event<T>} = 12,
+		SystemTokenTxPayment: pallet_system_token_tx_payment::{Pallet, Event<T>} = 12,
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>, Config<T>} = 13,
 
 		// Collator support. the order of these 5 are important and shall not change.
@@ -562,7 +557,6 @@ construct_runtime!(
 
 		AssetLink: pallet_asset_link::{Pallet, Call, Storage, Event<T>} = 34,
 		SystemTokenAggregator: system_token_aggregator::{Pallet, Event<T>} = 35,
-		SystemTokenOracle: pallet_system_token_oracle::{Pallet, Call, Storage, ValidateUnsigned, Origin} = 36,
 
 		// Governance
 		Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>, HoldReason} = 40,

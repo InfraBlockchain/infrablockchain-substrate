@@ -1,0 +1,43 @@
+[package]
+name = "cumulus-pallet-parachain-configuration"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+description = "Adds functionality to handle Cumulus-based chain policy which is governed by Relay-chain"
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
+scale-info = { version = "2.9.0", default-features = false, features = ["derive"] }
+
+# Substrate
+frame-support = { path = "../../../substrate/frame/support", default-features = false}
+frame-system = { path = "../../../substrate/frame/system", default-features = false}
+sp-runtime = { path = "../../../substrate/primitives/runtime", default-features = false}
+sp-std = { path = "../../../substrate/primitives/std", default-features = false}
+
+# Polkadot
+primitives = { path = "../../../infrablockchain/primitives", default-features = false}
+
+# Cumulus
+cumulus-pallet-parachain-system = { path = "../parachain-system", default-features = false}
+cumulus-pallet-xcm = { path = "../xcm", default-features = false }
+
+[features]
+default = [ "std" ]
+std = [
+	"codec/std",
+	"scale-info/std",
+	"frame-support/std",
+	"frame-system/std",
+	"primitives/std",
+	"sp-runtime/std",
+	"sp-std/std",
+    "cumulus-pallet-parachain-system/std",
+    "cumulus-pallet-xcm/std",
+]
+try-runtime = [
+	"cumulus-pallet-parachain-system/try-runtime",
+	"frame-support/try-runtime",
+	"frame-system/try-runtime",
+	"sp-runtime/try-runtime",
+]

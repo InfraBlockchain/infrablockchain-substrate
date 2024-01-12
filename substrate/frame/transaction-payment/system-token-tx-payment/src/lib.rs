@@ -40,8 +40,6 @@ use frame_support::{
 	},
 	DefaultNoBound, PalletId,
 };
-use frame_system::pallet_prelude::*;
-use pallet_system_token_oracle::{ensure_system_token_origin, Origin as SystemTokenOrigin};
 use pallet_transaction_payment::OnChargeTransaction;
 use scale_info::TypeInfo;
 use softfloat::F64;
@@ -53,7 +51,7 @@ use sp_runtime::{
 	transaction_validity::{TransactionValidity, TransactionValidityError, ValidTransaction},
 	types::{
 		AssetId as InfraAssetId, ExtrinsicMetadata, SystemTokenId, SystemTokenLocalAssetProvider,
-		VoteAccountId,
+		VoteAccountId, Mode, RuntimeConfigProvider
 	},
 	FixedPointOperand,
 };
@@ -70,11 +68,10 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config + pallet_transaction_payment::Config {
-		type RuntimeOrigin: From<SystemTokenOrigin>
-			+ From<<Self as frame_system::Config>::RuntimeOrigin>
-			+ Into<Result<SystemTokenOrigin, <Self as Config>::RuntimeOrigin>>;
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+		/// Configuration of Runtime set by Relay-chain governance
+		type RuntimeConfigProvider: RuntimeConfigProvider;
 		/// The fungibles instance used to pay for transactions in assets.
 		type Assets: Balanced<Self::AccountId>
 			+ SystemTokenLocalAssetProvider<InfraAssetId, Self::AccountId>;
@@ -92,56 +89,6 @@ pub mod pallet {
 	#[pallet::pallet]
 	pub struct Pallet<T>(_);
 
-	#[pallet::storage]
-	#[pallet::unbounded]
-	pub type FeeTable<T: Config> =
-		StorageMap<_, Twox128, ExtrinsicMetadata, BalanceOf<T>, OptionQuery>;
-
-	#[pallet::storage]
-	/// The fee rate imposed to parachain. The fee rate 1_000 actually equals 1.
-	/// It is initilzed as 1_000(1.0), then it SHOULD be only set by a dmp call from RELAY CHAIN.
-	pub(super) type ParaFeeRate<T: Config> = StorageValue<_, BalanceOf<T>, OptionQuery>;
-
-	#[pallet::storage]
-	pub(super) type State<T: Config> = StorageValue<_, RuntimeState, ValueQuery>;
-
-	#[pallet::call]
-	impl<T: Config> Pallet<T> {
-		#[pallet::call_index(0)]
-		pub fn set_fee_table(
-			origin: OriginFor<T>,
-			pallet_name: Vec<u8>,
-			call_name: Vec<u8>,
-			fee: BalanceOf<T>,
-		) -> DispatchResult {
-			ensure_system_token_origin(<T as Config>::RuntimeOrigin::from(origin))?;
-			let extrinsic_metadata = ExtrinsicMetadata::new(pallet_name, call_name);
-			FeeTable::<T>::insert(&extrinsic_metadata, fee);
-			Self::deposit_event(Event::<T>::FeeTableUpdated { metadata: extrinsic_metadata, fee });
-			Ok(())
-		}
-
-		#[pallet::call_index(1)]
-		pub fn set_para_fee_rate(
-			origin: OriginFor<T>,
-			para_fee_rate: BalanceOf<T>,
-		) -> DispatchResult {
-			ensure_system_token_origin(<T as Config>::RuntimeOrigin::from(origin))?;
-
-			ParaFeeRate::<T>::set(Some(para_fee_rate));
-
-			Self::deposit_event(Event::ParaFeeRateUpdated { para_fee_rate });
-			Ok(())
-		}
-
-		#[pallet::call_index(2)]
-		pub fn set_runtime_state(origin: OriginFor<T>) -> DispatchResult {
-			ensure_system_token_origin(<T as Config>::RuntimeOrigin::from(origin))?;
-			Self::do_set_runtime_state()?;
-			Ok(())
-		}
-	}
-
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
@@ -154,22 +101,11 @@ pub mod pallet {
 		},
 		/// Currently, Runtime is in bootstrap mode.
 		OnBootstrapping,
-		/// Fee Tabe has been updated
-		FeeTableUpdated {
-			metadata: ExtrinsicMetadata,
-			fee: BalanceOf<T>,
-		},
-		/// Para fee rate has been updated
-		ParaFeeRateUpdated {
-			para_fee_rate: BalanceOf<T>,
-		},
-		BootstrapEnded,
 	}
 
 	#[pallet::error]
 	pub enum Error<T> {
 		ErrorConvertToAssetBalance,
-		NotAllowedToChangeState,
 	}
 
 	impl<T: Config> Pallet<T> {
@@ -181,24 +117,12 @@ pub mod pallet {
 
 impl<T: Config> Pallet<T> {
 	fn check_bootstrap_and_filter(call: &T::RuntimeCall) -> Result<bool, TransactionValidityError> {
-		match (State::<T>::get(), T::BootstrapCallFilter::contains(call)) {
-			(RuntimeState::Bootstrap, false) =>
+		match (T::RuntimeConfigProvider::runtime_state(), T::BootstrapCallFilter::contains(call)) {
+			(Mode::Bootstrap, false) =>
 				Err(TransactionValidityError::Invalid(InvalidTransaction::InvalidBootstrappingCall)),
-			(RuntimeState::Bootstrap, true) => Ok(true),
-			(RuntimeState::Normal, _) => Ok(false),
+			(Mode::Bootstrap, true) => Ok(true),
+			(Mode::Normal, _) => Ok(false),
 		}
-	}
-
-	pub fn do_set_runtime_state() -> DispatchResult {
-		if State::<T>::get() == RuntimeState::Normal {
-			return Ok(())
-		}
-		let l = T::Assets::system_token_list();
-		ensure!(!l.is_empty(), Error::<T>::NotAllowedToChangeState);
-		// ToDo: Check whether a parachain has enough system token to pay
-		State::<T>::put(RuntimeState::Normal);
-		Self::deposit_event(Event::<T>::BootstrapEnded);
-		Ok(())
 	}
 }
 
@@ -301,6 +225,7 @@ where
 	T::RuntimeCall:
 		Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo> + GetCallMetadata,
 	AssetBalanceOf<T>: Send + Sync + FixedPointOperand + IsType<u128>,
+	<<T as Config>::RuntimeConfigProvider as RuntimeConfigProvider>::Balance: IsType<BalanceOf<T>>,
 	AssetIdOf<T>: Send + Sync + IsType<ChargeSystemTokenAssetIdOf<T>>,
 	BalanceOf<T>: Send
 		+ Sync
@@ -391,7 +316,7 @@ where
 			match initial_payment {
 				// Ibs only pay with some asset
 				InitialPayment::Asset(already_withdrawn) => {
-					let metadata = ExtrinsicMetadata::new(
+					let ext_metadata = ExtrinsicMetadata::new(
 						call_metadata.pallet_name,
 						call_metadata.function_name,
 					);
@@ -400,9 +325,9 @@ where
 					let actual_fee: BalanceOf<T> =
 						// `fee` will be calculated based on the 'fee table'.
 						// The fee will be directly applied to the `final_fee` without any refunds.
-						if let Some(fee) = FeeTable::<T>::get(metadata) {
+						if let Some(fee) = T::RuntimeConfigProvider::fee_for(ext_metadata) {
 							refundable = false;
-							fee
+							fee.into()
 						} else {
 							// The `fee` will be calculated according to the original fee calculation logic.
 							pallet_transaction_payment::Pallet::<T>::compute_actual_fee(

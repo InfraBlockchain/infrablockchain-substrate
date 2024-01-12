@@ -1,11 +1,22 @@
 use crate::{
 	codec::{Decode, Encode},
 	scale_info::TypeInfo,
+	serde::{Deserialize, Serialize},
+	RuntimeDebug, MaxEncodedLen
 };
 use sp_std::vec::Vec;
 
+#[allow(missing_docs)]
+#[derive(Encode, Decode, Eq, Clone, PartialEq, RuntimeDebug, MaxEncodedLen, TypeInfo, Default)]
+pub enum Mode {
+	#[default]
+	Bootstrap,
+	Normal,
+}
+
 #[derive(
-	Clone, Encode, Decode, Eq, PartialEq, PartialOrd, Ord, sp_core::RuntimeDebug, Default, TypeInfo,
+	Clone, Encode, Decode, Eq, PartialEq, PartialOrd, Ord, RuntimeDebug, Default, TypeInfo, Serialize,
+	Deserialize,
 )]
 /// We used it for getting fee from fee table.
 pub struct ExtrinsicMetadata {

@@ -21,7 +21,6 @@ scale-info = { version = "2.9.0", default-features = false, features = ["derive"
 smallvec = "1.11.0"
 
 # InfraBlockchain
-pallet-system-token-oracle = { path = "../../../../../substrate/frame/oracle", default-features = false }
 pallet-system-token-tx-payment = { path = "../../../../../substrate/frame/transaction-payment/system-token-tx-payment", default-features = false }
 pallet-assets = { path = "../../../../../substrate/frame/assets", default-features = false }
 pallet-asset-link = { package = "infra-asset-link", path = "../../../../../infrablockchain/xcm/infra-asset-link", default-features = false }
@@ -75,6 +74,7 @@ xcm-executor = { package = "staging-xcm-executor", path = "../../../../../infrab
 runtime-parachains = { path = "../../../../../infrablockchain/runtime/parachains", default-features = false }
 
 # Cumulus
+cumulus-pallet-parachain-configuration = { path = "../../../../pallets/parachain-configuration", default-features = false }
 cumulus-pallet-aura-ext = { path = "../../../../pallets/aura-ext", default-features = false }
 cumulus-pallet-dmp-queue = { path = "../../../../pallets/dmp-queue", default-features = false }
 cumulus-pallet-parachain-system = { path = "../../../../pallets/parachain-system", default-features = false, features = [
@@ -94,7 +94,6 @@ default = ["std"]
 std = [
 	"pallet-uniques/std",
 	"pallet-system-token-tx-payment/std",
-	"pallet-system-token-oracle/std",
 	"pallet-assets/std",
 	"assets-common/std",
 	"runtime-parachains/std",
@@ -102,6 +101,7 @@ std = [
 	"cumulus-pallet-aura-ext/std",
 	"cumulus-pallet-dmp-queue/std",
 	"cumulus-pallet-parachain-system/std",
+	"cumulus-pallet-parachain-configuration/std",
 	"cumulus-pallet-session-benchmarking/std",
 	"cumulus-pallet-xcm/std",
 	"cumulus-pallet-xcmp-queue/std",

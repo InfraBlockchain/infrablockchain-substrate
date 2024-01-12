@@ -269,8 +269,8 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 }
 
 impl pallet_system_token_tx_payment::Config for Runtime {
-	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeEvent = RuntimeEvent;
+	type RuntimeConfigProvider = ParachainConfig;
 	type Assets = Assets;
 	type OnChargeSystemToken = TransactionFeeCharger<
 		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
@@ -523,6 +523,15 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type ConsensusHook = ConsensusHook;
 }
 
+parameter_types! {
+	const BaseWeight: SystemTokenWeight = 1_000_000;
+}
+impl cumulus_pallet_parachain_configuration::Config for Runtime {
+	type RuntimeOrigin = RuntimeOrigin;
+	type RuntimeEvent = RuntimeEvent;
+	type BaseWeight = BaseWeight;
+}
+
 impl parachain_info::Config for Runtime {}
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
@@ -690,13 +699,16 @@ construct_runtime!(
 		ParachainSystem: cumulus_pallet_parachain_system::{
 			Pallet, Call, Config<T>, Storage, Inherent, Event<T>, ValidateUnsigned,
 		} = 1,
-		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
-		ParachainInfo: parachain_info::{Pallet, Storage, Config<T>} = 3,
+		ParachainConfig: cumulus_pallet_parachain_configuration::{
+			Pallet, Call, Config<T>, Storage, Event<T>
+		} = 2,
+		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 3,
+		ParachainInfo: parachain_info::{Pallet, Storage, Config<T>} = 4,
 
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 11,
-		SystemTokenTxPayment: pallet_system_token_tx_payment::{Pallet, Call, Storage, Event<T>} = 12,
+		SystemTokenTxPayment: pallet_system_token_tx_payment::{Pallet, Event<T>} = 12,
 
 		// Collator support. the order of these 5 are important and shall not change.
 		Authorship: pallet_authorship::{Pallet, Storage} = 20,

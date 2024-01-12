@@ -53,11 +53,3 @@ pub struct Detail<T: Config> {
 	pub converted_fee: AssetBalanceOf<T>,
 	pub tip: Option<AssetBalanceOf<T>>,
 }
-
-#[allow(missing_docs)]
-#[derive(Encode, Decode, Eq, Clone, PartialEq, RuntimeDebug, MaxEncodedLen, TypeInfo, Default)]
-pub enum RuntimeState {
-	#[default]
-	Bootstrap,
-	Normal,
-}

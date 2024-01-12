@@ -310,8 +310,8 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 }
 
 impl pallet_system_token_tx_payment::Config for Runtime {
-	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeEvent = RuntimeEvent;
+	type RuntimeConfigProvider = ParachainConfig;
 	type Assets = Assets;
 	type OnChargeSystemToken = TransactionFeeCharger<
 		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
@@ -564,6 +564,15 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type ConsensusHook = ConsensusHook;
 }
 
+parameter_types! {
+	const BaseWeight: SystemTokenWeight = 1_000_000;
+}
+impl cumulus_pallet_parachain_configuration::Config for Runtime {
+	type RuntimeOrigin = RuntimeOrigin;
+	type RuntimeEvent = RuntimeEvent;
+	type BaseWeight = BaseWeight;
+}
+
 impl parachain_info::Config for Runtime {}
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
@@ -645,20 +654,6 @@ impl pallet_collator_selection::Config for Runtime {
 }
 
 parameter_types! {
-	pub const BaseSystemTokenWeight: SystemTokenWeight = BASE_SYSTEM_TOKEN_WEIGHT;
-	pub const IsOffChain: bool = false;
-	pub const UnsignedPriority: TransactionPriority = 0;
-}
-
-impl pallet_system_token_oracle::Config for Runtime {
-	type SystemTokenOracle = ();
-	type RequestPeriod = SessionLength;
-	type BaseWeight = BaseSystemTokenWeight;
-	type IsOffChain = IsOffChain;
-	type UnsignedPriority = UnsignedPriority;
-}
-
-parameter_types! {
 	pub const CollectionDeposit: Balance = 10 * UNITS; // 10 UNIT deposit to create uniques class
 	pub const ItemDeposit: Balance = UNITS / 100; // 1 / 100 UNIT deposit to create uniques instance
 	pub const KeyLimit: u32 = 32;	// Max 32 bytes per key
@@ -730,13 +725,14 @@ construct_runtime!(
 		ParachainSystem: cumulus_pallet_parachain_system::{
 			Pallet, Call, Config<T>, Storage, Inherent, Event<T>, ValidateUnsigned,
 		} = 1,
-		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
-		ParachainInfo: parachain_info::{Pallet, Storage, Config<T>} = 3,
+		ParachainConfig: cumulus_pallet_parachain_configuration::{Pallet, Call, Config<T>, Storage, Event<T>} = 2,
+		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 3,
+		ParachainInfo: parachain_info::{Pallet, Storage, Config<T>} = 4,
 
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 11,
-		SystemTokenTxPayment: pallet_system_token_tx_payment::{Pallet, Call, Storage, Event<T>} = 12,
+		SystemTokenTxPayment: pallet_system_token_tx_payment::{Pallet, Event<T>} = 12,
 
 		// Collator support. the order of these 5 are important and shall not change.
 		Authorship: pallet_authorship::{Pallet, Storage} = 20,
@@ -761,7 +757,6 @@ construct_runtime!(
 		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
 		AssetLink: pallet_asset_link = 52,
 		SystemTokenAggregator: system_token_aggregator = 53,
-		SystemTokenOracle: pallet_system_token_oracle::{Pallet, Storage, Call, ValidateUnsigned, Origin} = 54,
 
 		// DID.
 		DIDModule: did::{Pallet, Call, Storage, Event<T>, Config<T>} = 61,
