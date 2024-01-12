@@ -1,4 +1,14 @@
 use frame_system::pallet_prelude::BlockNumberFor;
+use sp_runtime::{traits::Convert, Perbill};
+
+use frame_support::weights::Weight;
+
+use sp_staking::{
+	offence::{DisableStrategy, OffenceDetails, OnOffenceHandler},
+	EraIndex, SessionIndex,
+};
+
+use pallet_staking::{BalanceOf, Exposure, ExposureOf};
 
 use crate::*;
 
@@ -82,6 +92,59 @@ impl<AccountId> SessionInterface<AccountId> for () {
 	}
 	fn prune_historical_up_to(_: SessionIndex) {
 		()
+	}
+}
+
+// pub trait OnOffenceHandler<AccountId> {
+// 	fn on_offence(offenders: Vec<AccountId>);
+// }
+
+impl<T: Config + pallet_staking::Config>
+	OnOffenceHandler<T::AccountId, pallet_session::historical::IdentificationTuple<T>, Weight>
+	for Pallet<T>
+where
+	T: pallet_session::Config<ValidatorId = <T as frame_system::Config>::AccountId>,
+	T: pallet_session::historical::Config<
+		FullIdentification = Exposure<<T as frame_system::Config>::AccountId, BalanceOf<T>>,
+		FullIdentificationOf = ExposureOf<T>,
+	>,
+	T::SessionHandler: pallet_session::SessionHandler<<T as frame_system::Config>::AccountId>,
+	T::SessionManager: pallet_session::SessionManager<<T as frame_system::Config>::AccountId>,
+	T::ValidatorIdOf: Convert<
+		<T as frame_system::Config>::AccountId,
+		Option<<T as frame_system::Config>::AccountId>,
+	>,
+{
+	fn on_offence(
+		offenders: &[OffenceDetails<
+			T::AccountId,
+			pallet_session::historical::IdentificationTuple<T>,
+		>],
+		_slash_fraction: &[Perbill],
+		_slash_session: SessionIndex,
+		_disable_strategy: DisableStrategy,
+	) -> Weight {
+		let mut old_kicked_out_validators = KickedOutValidators::<T>::get();
+		let mut seed_trust_validators = SeedTrustValidators::<T>::get();
+		let mut pot_validators = PotValidators::<T>::get();
+
+		for offence_detail in offenders {
+			let offender = &offence_detail.offender.0;
+			// Add to kicked out validators if not already present
+			if !old_kicked_out_validators.contains(&offender) {
+				old_kicked_out_validators.push(offender.clone());
+			}
+
+			// Remove from SeedTrustValidators and PotValidators if present
+			seed_trust_validators.retain(|validator| validator != offender);
+			pot_validators.retain(|validator| validator != offender);
+		}
+
+		KickedOutValidators::<T>::put(old_kicked_out_validators);
+		SeedTrustValidators::<T>::put(seed_trust_validators);
+		PotValidators::<T>::put(pot_validators);
+		let consumed_weight = Weight::from_parts(0, 0);
+		consumed_weight
 	}
 }
 
@@ -261,6 +324,9 @@ impl<T: Config> Pallet<T> {
 	fn do_elect_seed_trust_validators(seed_trust_slots: u32) -> Vec<T::AccountId> {
 		log!(trace, "Elect seed trust validators");
 		let seed_trust_validators = SeedTrustValidatorPool::<T>::get();
+
+		// If some validators of seed_trust_validators are kicked-out, they can't participate
+		// ActiveValidatorSet
 		let new = seed_trust_validators
 			.iter()
 			.take(seed_trust_slots as usize)

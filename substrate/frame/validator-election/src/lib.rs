@@ -306,6 +306,8 @@ pub mod pallet {
 		NewEraTriggered { era_index: EraIndex },
 		/// New pool status has been set
 		PoolStatusSet { status: Pool },
+		/// Validator has been reinstated
+		ValidatorReinstated { validator_reinstated: T::AccountId },
 	}
 
 	#[pallet::error]
@@ -346,6 +348,12 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::unbounded]
 	pub type PotValidators<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
+
+	/// Validators kicked out due to being offline
+	#[pallet::storage]
+	#[pallet::unbounded]
+	#[pallet::getter(fn kicked_out_validators)]
+	pub type KickedOutValidators<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
 
 	/// Number of seed trust validators that can be elected
 	#[pallet::storage]
@@ -430,6 +438,20 @@ pub mod pallet {
 			ensure_root(origin)?;
 			PoolStatus::<T>::put(status);
 			Self::deposit_event(Event::<T>::PoolStatusSet { status });
+
+			Ok(())
+		}
+
+		#[pallet::call_index(4)]
+		pub fn reinstate_kicked_out(origin: OriginFor<T>, who: T::AccountId) -> DispatchResult {
+			ensure_root(origin)?;
+
+			let mut kicked_out_validators = KickedOutValidators::<T>::get();
+			kicked_out_validators.retain(|validator| validator != &who);
+
+			KickedOutValidators::<T>::put(kicked_out_validators);
+
+			Self::deposit_event(Event::<T>::ValidatorReinstated { validator_reinstated: who });
 
 			Ok(())
 		}

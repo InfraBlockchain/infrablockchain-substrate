@@ -96,6 +96,7 @@ use frame_system::{
 	pallet_prelude::*,
 };
 pub use pallet::*;
+// use pallet_validator_election::OnOffenceHandler;
 use scale_info::TypeInfo;
 use sp_application_crypto::RuntimeAppPublic;
 use sp_runtime::{
@@ -305,6 +306,8 @@ pub mod pallet {
 
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
+
+		// type OnOffenceHandler: OnOffenceHandler<Self::AccountId>;
 	}
 
 	#[pallet::event]
@@ -780,6 +783,7 @@ impl<T: Config> OneSessionHandler<T::AccountId> for Pallet<T> {
 		let current_validators = T::ValidatorSet::validators();
 
 		let offenders = current_validators
+			.clone()
 			.into_iter()
 			.enumerate()
 			.filter(|(index, id)| !Self::is_online_aux(*index as u32, id))
@@ -789,6 +793,17 @@ impl<T: Config> OneSessionHandler<T::AccountId> for Pallet<T> {
 				).map(|full_id| (id, full_id))
 			})
 			.collect::<Vec<IdentificationTuple<T>>>();
+
+		// let offenders2 = current_validators
+		// 	.into_iter()
+		// 	.enumerate()
+		// 	.filter(|(index, _id)| !Self::is_online_aux(*index as u32, _id))
+		// 	.map(|(_, id)| {
+		// 		// Assuming ValidatorId<T> can be directly converted to T::AccountId
+		// 		let account_id: T::AccountId = id.into();
+		// 		account_id
+		// 	})
+		// 	.collect::<Vec<T::AccountId>>();
 
 		// Remove all received heartbeats and number of authored blocks from the
 		// current session, they have already been processed and won't be needed
@@ -802,6 +817,7 @@ impl<T: Config> OneSessionHandler<T::AccountId> for Pallet<T> {
 			Self::deposit_event(Event::<T>::AllGood);
 		} else {
 			Self::deposit_event(Event::<T>::SomeOffline { offline: offenders.clone() });
+			// T::OnOffenceHandler::punish_validators(offenders2);
 
 			let validator_set_count = keys.len() as u32;
 			let offence = UnresponsivenessOffence { session_index, validator_set_count, offenders };

@@ -11617,6 +11617,7 @@ dependencies = [
  "pallet-assets",
  "pallet-authorship",
  "pallet-session",
+ "pallet-staking",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -11626,6 +11627,7 @@ dependencies = [
  "sp-io",
  "sp-keyring",
  "sp-runtime",
+ "sp-staking",
  "sp-std 8.0.0",
  "sp-tracing 10.0.0",
 ]
