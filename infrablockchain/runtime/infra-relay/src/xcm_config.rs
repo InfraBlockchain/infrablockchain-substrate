@@ -19,7 +19,7 @@
 use super::{
 	parachains_origin, AccountId, AllPalletsWithSystem, AssetLink, Assets, Authorship, Balance,
 	Balances, ParaId, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, ValidatorCollective,
-	WeightToFee, XcmPallet,
+	WeightToFee, XcmPallet, system_token_manager,
 };
 use frame_support::{
 	match_types, parameter_types,
@@ -298,7 +298,9 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 			) |
 			RuntimeCall::XcmPallet(pallet_xcm::Call::limited_reserve_transfer_assets {
 				..
-			}) => true,
+			}) |
+			RuntimeCall::SystemTokenManager(system_token_manager::Call::set_exchange_rate { .. })
+			=> true,
 			_ => false,
 		}
 	}

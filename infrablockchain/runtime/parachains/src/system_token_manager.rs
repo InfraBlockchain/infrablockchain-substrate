@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{configuration, dmp, paras, system_token_helper};
+use crate::{configuration, dmp, paras, system_token_helper, Origin as ParachainOrigin, ParaId, ensure_parachain};
 pub use frame_support::{
 	pallet_prelude::*,
 	traits::{infra_support::system_token::SystemTokenInterface, UnixTime},
@@ -23,6 +23,7 @@ pub use frame_support::{
 use frame_system::pallet_prelude::*;
 pub use pallet::*;
 use pallet_asset_link::AssetIdOf;
+use pallet_system_token::{Fiat, ExchangeRate, StandardUnixTime};
 use softfloat::F64;
 use sp_runtime::{
 	traits::StaticLookup,
@@ -38,6 +39,7 @@ use pallet_transaction_payment::BalanceOf;
 
 #[frame_support::pallet(dev_mode)]
 pub mod pallet {
+	
 	use super::*;
 
 	#[pallet::config]
@@ -49,7 +51,9 @@ pub mod pallet {
 		+ pallet_assets::Config
 		+ pallet_asset_link::Config
 		+ pallet_system_token_tx_payment::Config
-	{
+	{	
+		type RuntimeOrigin: From<<Self as frame_system::Config>::RuntimeOrigin>
+			+ Into<Result<ParachainOrigin, <Self as Config>::RuntimeOrigin>>;
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Time used for computing registration date.
@@ -63,6 +67,9 @@ pub mod pallet {
 		/// Max number of `paraId` that are using `original` system token
 		#[pallet::constant]
 		type MaxOriginalUsedParaIds: Get<u32>;
+		/// The ParaId of the asset hub system parachain.
+		#[pallet::constant]
+		type AssetHubId: Get<u32>;
 	}
 
 	#[pallet::event]
@@ -138,10 +145,18 @@ pub mod pallet {
 		SystemTokenMetadataNotProvided,
 		/// Asset metadata is not provided when registered `original` system token
 		AssetMetadataNotProvided,
+		/// The paraid making the call is not the asset hub system parachain
+		NotAssetHub,
 	}
 
 	#[pallet::pallet]
 	pub struct Pallet<T>(_);
+
+	#[pallet::storage]
+	pub type RequestStandardTime<T: Config> = StorageValue<_, StandardUnixTime, ValueQuery>;
+
+	#[pallet::storage]
+	pub type ExchangeRates<T: Config> = StorageMap<_, Twox64Concat, Fiat, ExchangeRate, OptionQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn original_system_token_metadata)]
@@ -265,7 +280,6 @@ pub mod pallet {
 		// `try_register_original` and `try_promote` will be called,
 		// which will change `original` system token state
 		#[pallet::call_index(0)]
-		#[pallet::weight(1_000)]
 		pub fn register_system_token(
 			origin: OriginFor<T>,
 			system_token_type: SystemTokenType,
@@ -314,7 +328,6 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(1)]
-		#[pallet::weight(1_000)]
 		// Description:
 		// Deregister all `original` and `wrapped` system token registered on runtime.
 		// Deregistered system token is no longer used as `transaction fee`
@@ -344,7 +357,6 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(2)]
-		#[pallet::weight(1_000)]
 		// Description:
 		// Suspend all `original` and `wrapped` system token registered on runtime.
 		// Suspended system token is no longer used as `transaction fee`
@@ -375,7 +387,6 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(3)]
-		#[pallet::weight(1_000)]
 		// Description:
 		// Unsuspend all `original` and `wrapped` system token registered on runtime.
 		// Unsuspended system token is no longer used as `transaction fee`
@@ -405,7 +416,6 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(4)]
-		#[pallet::weight(1_000)]
 		// Description:
 		// Update the weight of system token, which can affect on PoT vote
 		//
@@ -432,7 +442,6 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(5)]
-		#[pallet::weight(1_000)]
 		// Description:
 		// Try send DMP for encoded `update_para_fee_rate` to given `para_id`
 		//
@@ -461,7 +470,6 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(6)]
-		#[pallet::weight(1_000)]
 		// Description:
 		// Setting fee for parachain-specific calls(extrinsics).
 		//
@@ -500,6 +508,22 @@ pub mod pallet {
 
 			Ok(())
 		}
+
+		#[pallet::call_index(7)]
+		pub fn set_exchange_rate(
+			origin: OriginFor<T>,
+			standard_unix_time: StandardUnixTime,
+			exchange_rates: Vec<(Fiat, ExchangeRate)>,
+		) -> DispatchResult {
+			Self::ensure_root_or_para(origin, <T as Config>::AssetHubId::get().into())?;
+
+			RequestStandardTime::<T>::put(standard_unix_time);
+			for (currency, rate) in exchange_rates {
+				ExchangeRates::<T>::insert(currency, rate);
+			}
+
+			Ok(())
+		}
 	}
 }
 
@@ -511,6 +535,21 @@ where
 {
 	fn unix_time() -> u128 {
 		T::UnixTime::now().as_millis()
+	}
+
+	fn ensure_root_or_para(
+		origin: <T as frame_system::Config>::RuntimeOrigin,
+		id: ParaId,
+	) -> DispatchResult {
+		if let Ok(para_id) = ensure_parachain(<T as Config>::RuntimeOrigin::from(origin.clone()))
+		{
+			// Check if matching para id...
+			ensure!(para_id == id, Error::<T>::NotAssetHub);
+		} else {
+			// Check if root...
+			ensure_root(origin.clone())?;
+		}
+		Ok(())
 	}
 
 	fn system_token_metadata(

@@ -179,7 +179,7 @@ use sp_std::prelude::*;
 
 use frame_system::Config as SystemConfig;
 pub use pallet::*;
-use pallet_system_token::{ensure_system_token_origin, Origin as SystemTokenOrigin, SystemTokenHelper};
+use pallet_system_token::{ensure_system_token_origin, Origin as SystemTokenOrigin};
 pub use weights::WeightInfo;
 
 type AccountIdLookupOf<T> = <<T as frame_system::Config>::Lookup as StaticLookup>::Source;
@@ -284,9 +284,6 @@ pub mod pallet {
 			Self::AssetId,
 			Success = Self::AccountId,
 		>;
-
-		/// Helper for System Token
-		type SystemTokenHelper: SystemTokenHelper;
 
 		/// The origin which may forcibly create or destroy an asset or otherwise alter privileged
 		/// attributes.

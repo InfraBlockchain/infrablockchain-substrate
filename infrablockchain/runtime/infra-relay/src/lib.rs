@@ -64,6 +64,7 @@ use pallet_session::historical as session_historical;
 use pallet_system_token_tx_payment::{HandleCredit, TransactionFeeCharger};
 use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
 use pallet_validator_election::SessionIndex;
+use pallet_system_token::BASE_SYSTEM_TOKEN_WEIGHT;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use primitives::{
 	slashing, AccountId, AccountIndex, Balance, BlockNumber, CandidateEvent, CandidateHash,
@@ -82,7 +83,7 @@ use sp_runtime::{
 		Verify,
 	},
 	transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
-	types::{VoteAccountId, VoteWeight},
+	types::{VoteAccountId, VoteWeight, SystemTokenWeight},
 	ApplyExtrinsicResult, FixedU128, KeyTypeId, Perbill, Percent, Permill,
 };
 
@@ -101,7 +102,7 @@ pub use pallet_timestamp::Call as TimestampCall;
 pub use sp_runtime::BuildStorage;
 
 /// Constant values used within the runtime.
-use infra_relay_runtime_constants::{currency::*, fee::*, time::*};
+use infra_relay_runtime_constants::{currency::*, fee::*, time::*, system_parachain::ASSET_HUB_ID};
 
 // Weights used in the runtime.
 mod weights;
@@ -1123,20 +1124,27 @@ impl pallet_asset_link::Config for Runtime {
 	type WeightInfo = ();
 }
 
+parameter_types! {
+	pub const AssetHubId: u32 = ASSET_HUB_ID;
+}
+
 impl system_token_manager::Config for Runtime {
+	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeEvent = RuntimeEvent;
 	type UnixTime = Timestamp;
 	type StringLimit = ConstU32<128>;
 	type MaxSystemTokens = ConstU32<10>;
 	type MaxOriginalUsedParaIds = ConstU32<10>;
+	type AssetHubId = AssetHubId;
 }
 
 parameter_types! {
 	pub const RequestPeriod: BlockNumber = prod_or_fast!(DAYS, 5u32);
-	pub const BaseSystemTokenWeight: sp_runtime::types::SystemTokenWeight = 1_000_000;
+	pub const BaseSystemTokenWeight: SystemTokenWeight = BASE_SYSTEM_TOKEN_WEIGHT;
 	pub const IsOffChain: bool = false;
 }
 impl pallet_system_token::Config for Runtime {
+	type SystemTokenOracle = ();
 	type RequestPeriod = RequestPeriod;
 	type BaseWeight = BaseSystemTokenWeight;
 	type IsOffChain = IsOffChain;
@@ -1384,7 +1392,6 @@ impl pallet_assets::Config for Runtime {
 	type CallbackHandle = ();
 	type WeightInfo = ();
 	type RemoveItemsLimit = ConstU32<1000>;
-	type SystemTokenHelper = SystemTokenHelper;
 }
 
 parameter_types! {

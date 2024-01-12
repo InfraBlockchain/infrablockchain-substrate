@@ -18,7 +18,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 mod types;
-use types::*;
+pub use types::*;
 
 use lite_json::JsonValue;
 use frame_support::{error::BadOrigin, pallet_prelude::*};
@@ -53,6 +53,8 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config + SendTransactionTypes<Call<Self>> {
+
+		type SystemTokenOracle: SystemTokenOracleInterface;
 
 		#[pallet::constant]
 		type RequestPeriod: Get<BlockNumberFor<Self>>;
@@ -150,10 +152,7 @@ pub mod pallet {
 			// This ensures that the function can only be called via unsigned transaction.
 			ensure_none(origin)?;
 			
-			RequestStandardTime::<T>::put(standard_time);
-			for (currency, rate) in exchange_rates {
-				ExchangeRates::<T>::insert(currency, rate);
-			}
+			T::SystemTokenOracle::exchange_rates_at(standard_time, exchange_rates);
 
 			Ok(())
 		}
@@ -240,24 +239,6 @@ impl<T: Config> Pallet<T> {
 			};
 		}
 		Ok(exchange_rates)
-	}
-}
-
-pub trait SystemTokenHelper {
-	/// The base weight of system token for this Runtime.
-	/// Usually, this refers to USD.
-	fn base_weight() -> SystemTokenWeight;
-
-	fn exchange_rate_for(currency: &Fiat) -> Result<u64, DispatchError>;
-}
-
-impl<T: Config> SystemTokenHelper for pallet::Pallet<T> {
-	fn base_weight() -> SystemTokenWeight {
-		T::BaseWeight::get()
-	}
-
-	fn exchange_rate_for(currency: &Fiat) -> Result<u64, DispatchError> {
-		Ok(ExchangeRates::<T>::get(currency).ok_or(Error::<T>::CurrencyNotFound)?)
 	}
 }
 
