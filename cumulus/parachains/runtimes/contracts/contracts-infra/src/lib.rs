@@ -40,13 +40,15 @@ use sp_runtime::{
 	traits::{
 		AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, TryConvertInto as JustTry,
 	},
-	transaction_validity::{TransactionSource, TransactionValidity},
+	types::SystemTokenWeight,
+	transaction_validity::{TransactionSource, TransactionValidity, TransactionPriority},
 	ApplyExtrinsicResult,
 };
 use xcm_config::{NativeLocation, XcmConfig, XcmOriginToTransactDispatchOrigin};
 use xcm_executor::XcmExecutor;
 
 use frame_system::{EnsureRoot, EnsureSigned};
+use pallet_system_token::BASE_SYSTEM_TOKEN_WEIGHT;
 
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -379,12 +381,13 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
 }
 
 parameter_types! {
-	pub const BaseSystemTokenWeight: sp_runtime::types::SystemTokenWeight = 1_000_000;
+	pub const BaseSystemTokenWeight: SystemTokenWeight = BASE_SYSTEM_TOKEN_WEIGHT;
 	pub const IsOffChain: bool = false;
-	pub const UnsignedPriority: sp_runtime::transaction_validity::TransactionPriority = 0;
+	pub const UnsignedPriority: TransactionPriority = 0;
 }
 
 impl pallet_system_token::Config for Runtime {
+	type SystemTokenOracle = ();
 	type RequestPeriod = AggregatedPeriod;
 	type BaseWeight = BaseSystemTokenWeight;
 	type IsOffChain = IsOffChain;
@@ -524,7 +527,6 @@ impl pallet_assets::Config for Runtime {
 	type Freezer = ();
 	type Extra = ();
 	type CallbackHandle = ();
-	type SystemTokenHelper = SystemTokenHelper;
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = ();
 }

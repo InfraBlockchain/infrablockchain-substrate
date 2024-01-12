@@ -59,6 +59,7 @@ mod wasm {
 	const _: Option<&[u8]> = WASM_BINARY_BLOATY;
 }
 
+use pallet_assets::BASE_SYSTEM_TOKEN_WEIGHT;
 #[cfg(feature = "std")]
 pub use wasm::WASM_BINARY;
 
@@ -76,7 +77,8 @@ use sp_runtime::{
 	traits::{
 		AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, TryConvertInto as JustTry,
 	},
-	transaction_validity::{TransactionSource, TransactionValidity},
+	types::SystemTokenWeight,
+	transaction_validity::{TransactionSource, TransactionValidity, TransactionPriority},
 	ApplyExtrinsicResult,
 };
 
@@ -359,7 +361,6 @@ impl pallet_assets::Config for Runtime {
 	type CallbackHandle = ();
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = ();
-	type SystemTokenHelper = SystemTokenHelper;
 }
 
 parameter_types! {
@@ -644,12 +645,13 @@ impl pallet_collator_selection::Config for Runtime {
 }
 
 parameter_types! {
-	pub const BaseSystemTokenWeight: sp_runtime::types::SystemTokenWeight = 1_000_000;
+	pub const BaseSystemTokenWeight: SystemTokenWeight = BASE_SYSTEM_TOKEN_WEIGHT;
 	pub const IsOffChain: bool = false;
-	pub const UnsignedPriority: sp_runtime::transaction_validity::TransactionPriority = 0;
+	pub const UnsignedPriority: TransactionPriority = 0;
 }
 
 impl pallet_system_token::Config for Runtime {
+	type SystemTokenOracle = ();
 	type RequestPeriod = SessionLength;
 	type BaseWeight = BaseSystemTokenWeight;
 	type IsOffChain = IsOffChain;

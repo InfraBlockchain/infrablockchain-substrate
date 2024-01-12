@@ -56,6 +56,7 @@ pub mod constants;
 use constants::{currency::*, fee::WeightToFee};
 mod weights;
 pub mod xcm_config;
+pub mod system_token;
 
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use sp_api::impl_runtime_apis;
@@ -65,6 +66,7 @@ use sp_runtime::{
 	traits::{
 		AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, TryConvertInto as JustTry,
 	},
+	types::SystemTokenWeight,
 	transaction_validity::{TransactionSource, TransactionValidity, TransactionPriority},
 	ApplyExtrinsicResult,
 };
@@ -92,6 +94,7 @@ use frame_system::{
 };
 
 use pallet_system_token_tx_payment::{CreditToBucket, TransactionFeeCharger};
+use pallet_system_token::BASE_SYSTEM_TOKEN_WEIGHT;
 use parachains_common::{
 	constants::*, impls::DealWithFees, infra_relay::consensus::*, opaque::*, types::*,
 };
@@ -317,7 +320,6 @@ impl pallet_assets::Config for Runtime {
 	type CallbackHandle = ();
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = ();
-	type SystemTokenHelper = SystemTokenHelper;
 }
 
 parameter_types! {
@@ -603,12 +605,13 @@ impl pallet_collator_selection::Config for Runtime {
 
 parameter_types! {
 	pub const RequestPeriod: BlockNumber = prod_or_fast!(DAYS, 5u32);
-	pub const BaseSystemTokenWeight: sp_runtime::types::SystemTokenWeight = 1_000_000;
+	pub const BaseSystemTokenWeight: SystemTokenWeight = BASE_SYSTEM_TOKEN_WEIGHT;
 	pub const IsOffChain: bool = true;
 	pub const UnsignedPriority: TransactionPriority = TransactionPriority::max_value();
 }
 
 impl pallet_system_token::Config for Runtime {
+	type SystemTokenOracle = system_token::SystemTokenOracle;
 	type RequestPeriod = RequestPeriod;
 	type BaseWeight = BaseSystemTokenWeight;
 	type IsOffChain = IsOffChain;

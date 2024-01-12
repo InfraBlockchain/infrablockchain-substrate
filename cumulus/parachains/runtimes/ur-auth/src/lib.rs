@@ -23,7 +23,8 @@ use sp_runtime::{
 	traits::{
 		AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, TryConvertInto as JustTry,
 	},
-	transaction_validity::{TransactionSource, TransactionValidity},
+	types::SystemTokenWeight,
+	transaction_validity::{TransactionSource, TransactionValidity, TransactionPriority},
 	ApplyExtrinsicResult,
 };
 
@@ -48,6 +49,7 @@ use frame_system::{
 	EnsureRoot, EnsureSigned,
 };
 use pallet_system_token_tx_payment::{CreditToBucket, TransactionFeeCharger};
+use pallet_system_token::BASE_SYSTEM_TOKEN_WEIGHT;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{
 	types::{VoteAssetId, VoteWeight},
@@ -164,18 +166,18 @@ impl pallet_assets::Config for Runtime {
 	type Freezer = ();
 	type Extra = ();
 	type CallbackHandle = ();
-	type SystemTokenHelper = SystemTokenHelper;
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = ();
 }
 
 parameter_types! {
-	pub const BaseSystemTokenWeight: sp_runtime::types::SystemTokenWeight = 1_000_000;
+	pub const BaseSystemTokenWeight: SystemTokenWeight = BASE_SYSTEM_TOKEN_WEIGHT;
+	pub const UnsignedPriority: TransactionPriority = 0;
 	pub const IsOffChain: bool = false;
-	pub const UnsignedPriority: sp_runtime::transaction_validity::TransactionPriority = 0;
 }
 
 impl pallet_system_token::Config for Runtime {
+	type SystemTokenOracle = ();
 	type RequestPeriod = SessionLength;
 	type BaseWeight = BaseSystemTokenWeight;
 	type IsOffChain = IsOffChain;
