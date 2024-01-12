@@ -41,7 +41,7 @@ use frame_support::{
 	DefaultNoBound, PalletId,
 };
 use frame_system::pallet_prelude::*;
-use pallet_system_token::{ensure_system_token_origin, Origin as SystemTokenOrigin};
+use pallet_system_token_oracle::{ensure_system_token_origin, Origin as SystemTokenOrigin};
 use pallet_transaction_payment::OnChargeTransaction;
 use scale_info::TypeInfo;
 use softfloat::F64;

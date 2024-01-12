@@ -23,7 +23,7 @@ pub use frame_support::{
 use frame_system::pallet_prelude::*;
 pub use pallet::*;
 use pallet_asset_link::AssetIdOf;
-use pallet_system_token::{Fiat, ExchangeRate, StandardUnixTime};
+use pallet_system_token_oracle::{Fiat, ExchangeRate, StandardUnixTime};
 use softfloat::F64;
 use sp_runtime::{
 	traits::StaticLookup,

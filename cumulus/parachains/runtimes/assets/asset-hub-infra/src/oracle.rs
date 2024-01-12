@@ -1,7 +1,7 @@
 
 use crate::*;
 use codec::{Decode, Encode};
-use pallet_system_token::{StandardUnixTime, Fiat, ExchangeRate, SystemTokenOracleInterface};
+use pallet_system_token_oracle::{StandardUnixTime, Fiat, ExchangeRate, SystemTokenOracleInterface};
 use xcm::latest::prelude::*;
 
 /// A type containing the encoding of the system token manager pallet in the Relay chain runtime. Used to
@@ -27,7 +27,7 @@ enum SystemTokenManagerCalls {
 pub struct SystemTokenOracle;
 impl SystemTokenOracleInterface for SystemTokenOracle {
     fn exchange_rates_at(standard_time: StandardUnixTime, exchange_rates: Vec<(Fiat, ExchangeRate)>) {
-        use crate::system_token::SystemTokenManagerCalls::SetExchangeRates;
+        use crate::oracle::SystemTokenManagerCalls::SetExchangeRates;
         let set_exchange_rate_call = RelayRuntimePallets::SystemTokenManager(SetExchangeRates(standard_time, exchange_rates));
         let message = Xcm(vec![
             Instruction::UnpaidExecution {
@@ -43,11 +43,11 @@ impl SystemTokenOracleInterface for SystemTokenOracle {
 
         match InfraXcm::send_xcm(Here, MultiLocation::parent(), message.clone()) {
 			Ok(_) => log::info!(
-				target: "runtime::system-token",
+				target: "runtime::system-token-oracle",
 				"Instruction to `exchange rate` sent successfully."
 			),
 			Err(e) => log::error!(
-				target: "runtime::system-token",
+				target: "runtime::system-token-oracle",
 				"Instruction to `exchange rate` failed to send: {:?}",
 				e
 			),

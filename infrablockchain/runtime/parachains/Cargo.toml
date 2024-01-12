@@ -24,9 +24,9 @@ rand_chacha = { version = "0.3.1", default-features = false }
 static_assertions = { version = "1.1.0", optional = true }
 softfloat = { path = "../../../substrate/primitives/softfloat", default-features = false }
 
-# infra-related
+# InfraBlockchain
 pallet-validator-election = { path = "../../../substrate/frame/validator-election", default-features = false }
-pallet-system-token = { path = "../../../substrate/frame/system-token", default-features = false }
+pallet-system-token-oracle = { path = "../../../substrate/frame/oracle", default-features = false }
 pallet-transaction-payment = { path = "../../../substrate/frame/transaction-payment", default-features = false }
 pallet-system-token-tx-payment = { path = "../../../substrate/frame/transaction-payment/system-token-tx-payment", default-features = false }
 
@@ -102,7 +102,7 @@ std = [
 	"pallet-asset-link/std",
 	"pallet-xcm/std",
 	"pallet-validator-election/std",
-	"pallet-system-token/std",
+	"pallet-system-token-oracle/std",
 	"pallet-transaction-payment/std",
 	"pallet-system-token-tx-payment/std",
 	"pallet-authority-discovery/std",

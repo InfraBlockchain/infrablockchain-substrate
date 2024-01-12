@@ -41,7 +41,7 @@ pallet-transaction-payment-rpc-runtime-api = { path = "../../../../../substrate/
 pallet-uniques = { path = "../../../../../substrate/frame/uniques", default-features = false }
 pallet-utility = { path = "../../../../../substrate/frame/utility", default-features = false }
 pallet-sudo = { path = "../../../../../substrate/frame/sudo", default-features = false }
-pallet-system-token = { path = "../../../../../substrate/frame/system-token", default-features = false }
+pallet-system-token-oracle = { path = "../../../../../substrate/frame/oracle", default-features = false }
 pallet-system-token-tx-payment = { path = "../../../../../substrate/frame/transaction-payment/system-token-tx-payment", default-features = false }
 
 
@@ -158,7 +158,7 @@ std = [
 	"frame-system-rpc-runtime-api/std",
 	"frame-system/std",
 	"pallet-system-token-tx-payment/std",
-	"pallet-system-token/std",
+	"pallet-system-token-oracle/std",
 	"pallet-assets/std",
 	"pallet-aura/std",
 	"pallet-authorship/std",

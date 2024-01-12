@@ -1,12 +1,12 @@
 [package]
-name = "pallet-system-token"
+name = "pallet-system-token-oracle"
 version = "0.1.0"
 authors.workspace = true
 edition.workspace = true
 license = "Apache-2.0"
 homepage = "https://infrablockchain.net"
 repository.workspace = true
-description = "FRAME pallet to mange any kind of system token related"
+description = "Oracle pallet which mostly related to System Token"
 readme = "README.md"
 
 [package.metadata.docs.rs]

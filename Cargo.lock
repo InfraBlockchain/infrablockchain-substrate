@@ -730,7 +730,7 @@ dependencies = [
  "pallet-proxy",
  "pallet-session",
  "pallet-sudo",
- "pallet-system-token",
+ "pallet-system-token-oracle",
  "pallet-system-token-tx-payment",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -2406,7 +2406,7 @@ dependencies = [
  "pallet-multisig",
  "pallet-session",
  "pallet-sudo",
- "pallet-system-token",
+ "pallet-system-token-oracle",
  "pallet-system-token-tx-payment",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -3851,7 +3851,7 @@ dependencies = [
  "pallet-proxy",
  "pallet-session",
  "pallet-sudo",
- "pallet-system-token",
+ "pallet-system-token-oracle",
  "pallet-system-token-tx-payment",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -6084,7 +6084,7 @@ dependencies = [
  "pallet-session",
  "pallet-session-benchmarking",
  "pallet-sudo",
- "pallet-system-token",
+ "pallet-system-token-oracle",
  "pallet-system-token-tx-payment",
  "pallet-timestamp",
  "pallet-tips",
@@ -9526,7 +9526,7 @@ dependencies = [
  "frame-system",
  "log",
  "pallet-balances",
- "pallet-system-token",
+ "pallet-system-token-oracle",
  "parity-scale-codec",
  "scale-info",
  "sp-core",
@@ -11159,7 +11159,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-system-token"
+name = "pallet-system-token-oracle"
 version = "0.1.0"
 dependencies = [
  "frame-support",
@@ -11188,7 +11188,7 @@ dependencies = [
  "pallet-assets",
  "pallet-authorship",
  "pallet-balances",
- "pallet-system-token",
+ "pallet-system-token-oracle",
  "pallet-transaction-payment",
  "parity-scale-codec",
  "scale-info",
@@ -13501,7 +13501,7 @@ dependencies = [
  "pallet-message-queue",
  "pallet-session",
  "pallet-staking",
- "pallet-system-token",
+ "pallet-system-token-oracle",
  "pallet-system-token-tx-payment",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -18623,7 +18623,7 @@ dependencies = [
  "pallet-scheduler",
  "pallet-session",
  "pallet-sudo",
- "pallet-system-token",
+ "pallet-system-token-oracle",
  "pallet-system-token-tx-payment",
  "pallet-timestamp",
  "pallet-transaction-payment",

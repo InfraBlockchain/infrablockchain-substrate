@@ -49,7 +49,7 @@ use frame_system::{
 	EnsureRoot, EnsureSigned,
 };
 use pallet_system_token_tx_payment::{CreditToBucket, TransactionFeeCharger};
-use pallet_system_token::BASE_SYSTEM_TOKEN_WEIGHT;
+use pallet_system_token_oracle::BASE_SYSTEM_TOKEN_WEIGHT;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{
 	types::{VoteAssetId, VoteWeight},
@@ -176,7 +176,7 @@ parameter_types! {
 	pub const IsOffChain: bool = false;
 }
 
-impl pallet_system_token::Config for Runtime {
+impl pallet_system_token_oracle::Config for Runtime {
 	type SystemTokenOracle = ();
 	type RequestPeriod = SessionLength;
 	type BaseWeight = BaseSystemTokenWeight;
@@ -562,7 +562,7 @@ construct_runtime!(
 
 		AssetLink: pallet_asset_link::{Pallet, Call, Storage, Event<T>} = 34,
 		SystemTokenAggregator: system_token_aggregator::{Pallet, Event<T>} = 35,
-		SystemTokenHelper: pallet_system_token::{Pallet, Call, Storage, ValidateUnsigned, Origin} = 36,
+		SystemTokenOracle: pallet_system_token_oracle::{Pallet, Call, Storage, ValidateUnsigned, Origin} = 36,
 
 		// Governance
 		Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>, HoldReason} = 40,

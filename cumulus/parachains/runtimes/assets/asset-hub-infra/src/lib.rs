@@ -56,7 +56,7 @@ pub mod constants;
 use constants::{currency::*, fee::WeightToFee};
 mod weights;
 pub mod xcm_config;
-pub mod system_token;
+pub mod oracle;
 
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use sp_api::impl_runtime_apis;
@@ -94,7 +94,7 @@ use frame_system::{
 };
 
 use pallet_system_token_tx_payment::{CreditToBucket, TransactionFeeCharger};
-use pallet_system_token::BASE_SYSTEM_TOKEN_WEIGHT;
+use pallet_system_token_oracle::BASE_SYSTEM_TOKEN_WEIGHT;
 use parachains_common::{
 	constants::*, impls::DealWithFees, infra_relay::consensus::*, opaque::*, types::*,
 };
@@ -610,8 +610,8 @@ parameter_types! {
 	pub const UnsignedPriority: TransactionPriority = TransactionPriority::max_value();
 }
 
-impl pallet_system_token::Config for Runtime {
-	type SystemTokenOracle = system_token::SystemTokenOracle;
+impl pallet_system_token_oracle::Config for Runtime {
+	type SystemTokenOracle = oracle::SystemTokenOracle;
 	type RequestPeriod = RequestPeriod;
 	type BaseWeight = BaseSystemTokenWeight;
 	type IsOffChain = IsOffChain;
@@ -721,7 +721,7 @@ construct_runtime!(
 		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
 		AssetLink: pallet_asset_link = 52,
 		SystemTokenAggregator: system_token_aggregator = 53,
-		SystemTokenHelper: pallet_system_token::{Pallet, Call, Storage, ValidateUnsigned, Origin} = 54,
+		SystemTokenOracle: pallet_system_token_oracle::{Pallet, Call, Storage, ValidateUnsigned, Origin} = 54,
 	}
 );
 

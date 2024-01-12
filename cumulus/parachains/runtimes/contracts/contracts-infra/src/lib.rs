@@ -48,7 +48,7 @@ use xcm_config::{NativeLocation, XcmConfig, XcmOriginToTransactDispatchOrigin};
 use xcm_executor::XcmExecutor;
 
 use frame_system::{EnsureRoot, EnsureSigned};
-use pallet_system_token::BASE_SYSTEM_TOKEN_WEIGHT;
+use pallet_system_token_oracle::BASE_SYSTEM_TOKEN_WEIGHT;
 
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -386,7 +386,7 @@ parameter_types! {
 	pub const UnsignedPriority: TransactionPriority = 0;
 }
 
-impl pallet_system_token::Config for Runtime {
+impl pallet_system_token_oracle::Config for Runtime {
 	type SystemTokenOracle = ();
 	type RequestPeriod = AggregatedPeriod;
 	type BaseWeight = BaseSystemTokenWeight;
@@ -582,7 +582,7 @@ construct_runtime!(
 		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
 		AssetLink: pallet_asset_link = 52,
 		SystemTokenAggregator: system_token_aggregator = 53,
-		SystemTokenHelper: pallet_system_token::{Pallet, Storage, Call, ValidateUnsigned, Origin} = 54,
+		SystemTokenOracle: pallet_system_token_oracle::{Pallet, Storage, Call, ValidateUnsigned, Origin} = 54,
 	}
 );
 

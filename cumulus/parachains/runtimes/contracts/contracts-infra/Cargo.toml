@@ -21,7 +21,7 @@ scale-info = { version = "2.9.0", default-features = false, features = ["derive"
 smallvec = "1.11.0"
 
 # InfraBlockchain
-pallet-system-token = { path = "../../../../../substrate/frame/system-token", default-features = false }
+pallet-system-token-oracle = { path = "../../../../../substrate/frame/oracle", default-features = false }
 pallet-system-token-tx-payment = { path = "../../../../../substrate/frame/transaction-payment/system-token-tx-payment", default-features = false }
 pallet-assets = { path = "../../../../../substrate/frame/assets", default-features = false }
 pallet-asset-link = { package = "infra-asset-link", path = "../../../../../infrablockchain/xcm/infra-asset-link", default-features = false }
@@ -94,7 +94,7 @@ default = ["std"]
 std = [
 	"pallet-uniques/std",
 	"pallet-system-token-tx-payment/std",
-	"pallet-system-token/std",
+	"pallet-system-token-oracle/std",
 	"pallet-assets/std",
 	"assets-common/std",
 	"runtime-parachains/std",

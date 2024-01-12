@@ -64,7 +64,7 @@ use pallet_session::historical as session_historical;
 use pallet_system_token_tx_payment::{HandleCredit, TransactionFeeCharger};
 use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
 use pallet_validator_election::SessionIndex;
-use pallet_system_token::BASE_SYSTEM_TOKEN_WEIGHT;
+use pallet_system_token_oracle::BASE_SYSTEM_TOKEN_WEIGHT;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use primitives::{
 	slashing, AccountId, AccountIndex, Balance, BlockNumber, CandidateEvent, CandidateHash,
@@ -1143,7 +1143,7 @@ parameter_types! {
 	pub const BaseSystemTokenWeight: SystemTokenWeight = BASE_SYSTEM_TOKEN_WEIGHT;
 	pub const IsOffChain: bool = false;
 }
-impl pallet_system_token::Config for Runtime {
+impl pallet_system_token_oracle::Config for Runtime {
 	type SystemTokenOracle = ();
 	type RequestPeriod = RequestPeriod;
 	type BaseWeight = BaseSystemTokenWeight;
@@ -1427,7 +1427,7 @@ construct_runtime! {
 		Babe: pallet_babe::{Pallet, Call, Storage, Config<T>, ValidateUnsigned} = 2,
 
 		// Since this module depends on Babe
-		SystemTokenHelper: pallet_system_token::{Pallet, Call, Storage, ValidateUnsigned, Origin} = 20,
+		SystemTokenOracle: pallet_system_token_oracle::{Pallet, Call, Storage, ValidateUnsigned, Origin} = 20,
 
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 3,
 		Indices: pallet_indices::{Pallet, Call, Storage, Config<T>, Event<T>} = 4,

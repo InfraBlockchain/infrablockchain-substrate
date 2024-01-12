@@ -24,7 +24,6 @@ use frame_support::{
 	match_types, parameter_types,
 	traits::{ConstU32, Contains, Everything, Nothing, PalletInfoAccess},
 };
-use pallet_system_token::Origin as SystemTokenOrigin;
 use pallet_xcm::XcmPassthrough;
 use parachain_primitives::primitives::Sibling;
 use parachains_common::xcm_config::AssetFeeAsExistentialDepositMultiplier;
@@ -45,7 +44,7 @@ parameter_types! {
 	pub UniversalLocationNetworkId: NetworkId = UniversalLocation::get().global_consensus().unwrap();
 	pub const NativeLocation: MultiLocation = Here.into_location();
 	pub const RelayNetwork: Option<NetworkId> = Some(NetworkId::InfraRelay);
-	pub RelayChainOrigin: RuntimeOrigin = SystemTokenOrigin::SystemTokenBody.into();
+	pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
 	pub UniversalLocation: InteriorMultiLocation =
 		X2(GlobalConsensus(RelayNetwork::get().unwrap()), Parachain(ParachainInfo::parachain_id().into()));
 	pub TrustBackedAssetsPalletLocation: MultiLocation =

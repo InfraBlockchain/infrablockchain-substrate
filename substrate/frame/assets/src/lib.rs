@@ -179,7 +179,7 @@ use sp_std::prelude::*;
 
 use frame_system::Config as SystemConfig;
 pub use pallet::*;
-use pallet_system_token::{ensure_system_token_origin, Origin as SystemTokenOrigin};
+use pallet_system_token_oracle::{ensure_system_token_origin, Origin as SystemTokenOrigin};
 pub use weights::WeightInfo;
 
 type AccountIdLookupOf<T> = <<T as frame_system::Config>::Lookup as StaticLookup>::Source;

@@ -8,7 +8,6 @@ use frame_support::{
 	match_types, parameter_types,
 	traits::{ConstU32, Contains, Everything, Nothing, PalletInfoAccess},
 };
-use pallet_system_token::Origin as SystemTokenOrigin;
 use pallet_xcm::XcmPassthrough;
 use parachain_primitives::primitives::Sibling;
 use parachains_common::{types::AssetId, xcm_config::AssetFeeAsExistentialDepositMultiplier};
@@ -31,7 +30,7 @@ parameter_types! {
 		interior:Junctions::X1(Parachain(1000))
 	};
 	pub const RelayNetwork: Option<NetworkId> = None;
-	pub RelayChainOrigin: RuntimeOrigin = SystemTokenOrigin::SystemTokenBody.into();
+	pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
 	pub UniversalLocation: InteriorMultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
 	pub CheckingAccount: AccountId = InfraXcm::check_account();
 	pub TrustBackedAssetsPalletLocation: MultiLocation =

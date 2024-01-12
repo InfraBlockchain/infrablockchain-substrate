@@ -650,7 +650,7 @@ parameter_types! {
 	pub const UnsignedPriority: TransactionPriority = 0;
 }
 
-impl pallet_system_token::Config for Runtime {
+impl pallet_system_token_oracle::Config for Runtime {
 	type SystemTokenOracle = ();
 	type RequestPeriod = SessionLength;
 	type BaseWeight = BaseSystemTokenWeight;
@@ -761,7 +761,7 @@ construct_runtime!(
 		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
 		AssetLink: pallet_asset_link = 52,
 		SystemTokenAggregator: system_token_aggregator = 53,
-		SystemTokenHelper: pallet_system_token::{Pallet, Storage, Call, ValidateUnsigned, Origin} = 54,
+		SystemTokenOracle: pallet_system_token_oracle::{Pallet, Storage, Call, ValidateUnsigned, Origin} = 54,
 
 		// DID.
 		DIDModule: did::{Pallet, Call, Storage, Event<T>, Config<T>} = 61,
