@@ -700,7 +700,7 @@ construct_runtime!(
 			Pallet, Call, Config<T>, Storage, Inherent, Event<T>, ValidateUnsigned,
 		} = 1,
 		ParachainConfig: cumulus_pallet_parachain_configuration::{
-			Pallet, Call, Config<T>, Storage, Event<T>
+			Pallet, Call, Storage, Event<T>
 		} = 2,
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 3,
 		ParachainInfo: parachain_info::{Pallet, Storage, Config<T>} = 4,

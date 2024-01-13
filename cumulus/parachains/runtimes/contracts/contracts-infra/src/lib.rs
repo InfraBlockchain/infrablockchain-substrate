@@ -542,7 +542,7 @@ construct_runtime!(
 		ParachainSystem: cumulus_pallet_parachain_system::{
 			Pallet, Call, Config<T>, Storage, Inherent, Event<T>, ValidateUnsigned,
 		} = 1,
-		ParachainConfig: cumulus_pallet_parachain_configuration::{Pallet, Call, Config<T>, Storage, Event<T>} = 2,
+		ParachainConfig: cumulus_pallet_parachain_configuration::{Pallet, Call, Storage, Event<T>} = 2,
 		RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip::{Pallet, Storage} = 3,
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 4,
 		ParachainInfo: parachain_info::{Pallet, Storage, Config<T>} = 5,

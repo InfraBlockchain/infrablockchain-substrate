@@ -28,8 +28,8 @@ use softfloat::F64;
 use sp_runtime::{
 	traits::StaticLookup,
 	types::{
-		AssetId as InfraAssetId, PalletId as InfraPalletId, ParaId as InfraParaId, SystemTokenId,
-		SystemTokenWeight, VoteWeight, RELAY_CHAIN_PARA_ID,
+		SystemTokenAssetId, SystemTokenPalletId, SystemTokenParaId, SystemTokenId,
+		SystemTokenWeight, SystemTokenBalance, VoteWeight, RELAY_CHAIN_PARA_ID,
 	},
 };
 use sp_std::prelude::*;
@@ -89,7 +89,7 @@ pub mod pallet {
 		/// and decimal.
 		SetSystemTokenWeight { original: SystemTokenId, property: SystemTokenProperty },
 		/// Update the fee rate of the parachain. The default value is 1_000.
-		SetParaFeeRate { para_id: InfraParaId, para_fee_rate: BalanceOf<T> },
+		SetParaFeeRate { para_id: SystemTokenParaId, para_fee_rate: BalanceOf<T> },
 		/// Update the fee table of the parachain
 		SetFeeTable { para_call_metadata: ParaCallMetadata, fee: BalanceOf<T> },
 		/// Suspend a `original` system token.
@@ -224,7 +224,7 @@ pub mod pallet {
 	pub type ParaIdSystemTokens<T: Config> = StorageMap<
 		_,
 		Blake2_128Concat,
-		InfraParaId,
+		SystemTokenParaId,
 		BoundedVec<SystemTokenId, T::MaxSystemTokens>,
 		OptionQuery,
 	>;
@@ -246,15 +246,15 @@ pub mod pallet {
 		_,
 		Blake2_128Concat,
 		SystemTokenId,
-		BoundedVec<InfraParaId, T::MaxOriginalUsedParaIds>,
+		BoundedVec<SystemTokenParaId, T::MaxOriginalUsedParaIds>,
 		OptionQuery,
 	>;
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T>
 	where
-		<T as pallet_assets::Config>::AssetIdParameter: From<InfraAssetId>,
-		AssetIdOf<T>: From<InfraAssetId>,
+		<T as pallet_assets::Config>::AssetIdParameter: From<SystemTokenAssetId>,
+		AssetIdOf<T>: From<SystemTokenAssetId>,
 	{
 		// Description:
 		// Register system token after creating local asset on original chain.
@@ -454,8 +454,8 @@ pub mod pallet {
 		// - para_fee_rate: Fee rate for specific parachain expected to be updated
 		pub fn update_para_fee_rate(
 			origin: OriginFor<T>,
-			para_id: InfraParaId,
-			pallet_id: InfraPalletId,
+			para_id: SystemTokenParaId,
+			pallet_id: SystemTokenPalletId,
 			para_fee_rate: BalanceOf<T>,
 		) -> DispatchResult {
 			ensure_root(origin)?;
@@ -530,8 +530,8 @@ pub mod pallet {
 // System token related interal methods
 impl<T: Config> Pallet<T>
 where
-	<T as pallet_assets::Config>::AssetIdParameter: From<InfraAssetId>,
-	AssetIdOf<T>: From<InfraAssetId>,
+	<T as pallet_assets::Config>::AssetIdParameter: From<SystemTokenAssetId>,
+	AssetIdOf<T>: From<SystemTokenAssetId>,
 {
 	fn unix_time() -> u128 {
 		T::UnixTime::now().as_millis()
@@ -877,7 +877,7 @@ where
 	///
 	/// - `TooManySystemTokensOnPara`: Maximum number of elements has been reached for BoundedVec
 	fn try_push_sys_token_for_para_id(
-		para_id: InfraParaId,
+		para_id: SystemTokenParaId,
 		system_token_id: &SystemTokenId,
 	) -> DispatchResult {
 		ParaIdSystemTokens::<T>::try_mutate_exists(
@@ -905,7 +905,7 @@ where
 	///
 	/// - `TooManyUsed`: Number of para ids using `original` system tokens has reached
 	///   `MaxSystemTokenUsedParaIds`
-	fn try_push_para_id(para_id: InfraParaId, original: &SystemTokenId) -> DispatchResult {
+	fn try_push_para_id(para_id: SystemTokenParaId, original: &SystemTokenId) -> DispatchResult {
 		SystemTokenUsedParaIds::<T>::try_mutate_exists(
 			original,
 			|maybe_para_id_list| -> Result<(), DispatchError> {
@@ -945,7 +945,7 @@ where
 	/// **Description:**
 	///
 	/// Try remove `SystemTokenUsedParaIds` for system token id
-	fn try_remove_para_id(original: SystemTokenId, para_id: InfraParaId) -> DispatchResult {
+	fn try_remove_para_id(original: SystemTokenId, para_id: SystemTokenParaId) -> DispatchResult {
 		SystemTokenUsedParaIds::<T>::try_mutate_exists(
 			original,
 			|maybe_para_ids| -> Result<(), DispatchError> {
@@ -967,8 +967,8 @@ where
 // XCM-related internal methods
 impl<T: Config> Pallet<T>
 where
-	<T as pallet_assets::Config>::AssetIdParameter: From<InfraAssetId>,
-	AssetIdOf<T>: From<InfraAssetId>,
+	<T as pallet_assets::Config>::AssetIdParameter: From<SystemTokenAssetId>,
+	AssetIdOf<T>: From<SystemTokenAssetId>,
 {
 	/// **Description:**
 	///
@@ -1152,6 +1152,17 @@ impl<T: Config> SystemTokenInterface for Pallet<T> {
 	}
 }
 
+pub trait ParachainConfigInterface {
+	fn set_base_weight();
+	fn set_fee_table(pallet_name: Vec<u8>, call_name: Vec<u8>, fee: SystemTokenBalance);
+	fn set_fee_rate(fee_rate: SystemTokenWeight);
+	fn set_runtime_state();
+	fn set_system_token_weight(asset_id: SystemTokenAssetId, weight: SystemTokenWeight);
+	fn register_system_token(asset_id: SystemTokenAssetId, weight: SystemTokenWeight);
+	fn create_system_token(asset_id: SystemTokenAssetId, weight: SystemTokenWeight);
+	fn deregister_system_token(asset_id);
+}
+
 pub mod types {
 
 	use super::*;
@@ -1184,8 +1195,8 @@ pub mod types {
 
 	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, Default, TypeInfo)]
 	pub struct ParaCallMetadata {
-		pub(crate) para_id: InfraParaId,
-		pub(crate) pallet_id: InfraPalletId,
+		pub(crate) para_id: SystemTokenParaId,
+		pub(crate) pallet_id: SystemTokenPalletId,
 		pub(crate) pallet_name: Vec<u8>,
 		pub(crate) call_name: Vec<u8>,
 	}

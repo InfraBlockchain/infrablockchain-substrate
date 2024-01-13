@@ -42,6 +42,8 @@ use runtime_parachains::{
 	validator_reward_manager,
 };
 
+pub use system_token_manager::ParachainConfigInterface;
+
 use authority_discovery_primitives::AuthorityId as AuthorityDiscoveryId;
 use beefy_primitives::ecdsa_crypto::{AuthorityId as BeefyId, Signature as BeefySignature};
 use frame_support::{
@@ -83,7 +85,7 @@ use sp_runtime::{
 		Verify,
 	},
 	transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
-	types::{VoteAccountId, VoteWeight, SystemTokenWeight},
+	types::{VoteAccountId, VoteWeight, SystemTokenWeight, SystemTokenbalance},
 	ApplyExtrinsicResult, FixedU128, KeyTypeId, Perbill, Percent, Permill,
 };
 
@@ -108,6 +110,7 @@ use infra_relay_runtime_constants::{currency::*, fee::*, time::*, system_paracha
 mod weights;
 
 pub mod xcm_config;
+pub mod para_config;
 
 impl_runtime_weights!(infra_relay_runtime_constants);
 

@@ -13,16 +13,17 @@ use serde::{Deserialize, Serialize};
 /// ParaId of Relay Chain
 pub const RELAY_CHAIN_PARA_ID: ParaId = 0;
 
-/// Identifier of parachain
+/// General para id type for System Token
 pub type ParaId = u32;
-/// Identifier of pallet
+/// General pallet id type for System Token
 pub type PalletId = u8;
-/// Identifier of asset
+/// General asset id type for System Token
 pub type AssetId = u32;
-/// Weight of system token.
-///
-/// For example,
+/// Generale weight type for System Token
 pub type SystemTokenWeight = u128;
+/// General balance type for System Token
+pub type SystemTokenBalance = u128;
+
 /// Data structure for Original system tokens
 #[derive(
 	Clone,
