@@ -31,7 +31,6 @@ use frame_support::{
 	dispatch::{DispatchInfo, DispatchResult, PostDispatchInfo},
 	pallet_prelude::*,
 	traits::{
-		infra_support::pot::VotingHandler,
 		tokens::{
 			fungibles::{Balanced, Credit, Inspect},
 			WithdrawConsequence,
@@ -49,10 +48,7 @@ use sp_runtime::{
 		Zero,
 	},
 	transaction_validity::{TransactionValidity, TransactionValidityError, ValidTransaction},
-	types::{
-		AssetId as InfraAssetId, ExtrinsicMetadata, SystemTokenId, SystemTokenLocalAssetProvider,
-		VoteAccountId, Mode, RuntimeConfigProvider
-	},
+	types::{token::*, vote::*, fee::*, infra_core::*},
 	FixedPointOperand,
 };
 
@@ -70,15 +66,13 @@ pub mod pallet {
 	pub trait Config: frame_system::Config + pallet_transaction_payment::Config {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-		/// Configuration of Runtime set by Relay-chain governance
-		type RuntimeConfigProvider: RuntimeConfigProvider;
+		/// Interface that is related to transaction for Infrablockchain Runtime
+		type InfraTxInterface: RuntimeConfigProvider + VotingHandler;
 		/// The fungibles instance used to pay for transactions in assets.
 		type Assets: Balanced<Self::AccountId>
-			+ SystemTokenLocalAssetProvider<InfraAssetId, Self::AccountId>;
+			+ SystemTokenLocalAssetProvider<SystemTokenAssetId, Self::AccountId>;
 		/// The actual transaction charging logic that charges the fees.
 		type OnChargeSystemToken: OnChargeSystemToken<Self>;
-		/// The type that handles the voting.
-		type VotingHandler: VotingHandler;
 		/// Filters for bootstrappring runtime.
 		type BootstrapCallFilter: Contains<Self::RuntimeCall>;
 		/// Id for handling fee(e.g SoverignAccount for some Runtime).
@@ -117,7 +111,7 @@ pub mod pallet {
 
 impl<T: Config> Pallet<T> {
 	fn check_bootstrap_and_filter(call: &T::RuntimeCall) -> Result<bool, TransactionValidityError> {
-		match (T::RuntimeConfigProvider::runtime_state(), T::BootstrapCallFilter::contains(call)) {
+		match (T::InfraTxInterface::runtime_state(), T::BootstrapCallFilter::contains(call)) {
 			(Mode::Bootstrap, false) =>
 				Err(TransactionValidityError::Invalid(InvalidTransaction::InvalidBootstrappingCall)),
 			(Mode::Bootstrap, true) => Ok(true),
@@ -224,8 +218,8 @@ impl<T: Config> SignedExtension for ChargeSystemToken<T>
 where
 	T::RuntimeCall:
 		Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo> + GetCallMetadata,
-	AssetBalanceOf<T>: Send + Sync + FixedPointOperand + IsType<u128>,
-	<<T as Config>::RuntimeConfigProvider as RuntimeConfigProvider>::Balance: IsType<BalanceOf<T>>,
+	AssetBalanceOf<T>: Send + Sync + FixedPointOperand + IsType<SystemTokenBalance>,
+	BalanceOf<T>: From<SystemTokenBalance>,
 	AssetIdOf<T>: Send + Sync + IsType<ChargeSystemTokenAssetIdOf<T>>,
 	BalanceOf<T>: Send
 		+ Sync
@@ -325,7 +319,7 @@ where
 					let actual_fee: BalanceOf<T> =
 						// `fee` will be calculated based on the 'fee table'.
 						// The fee will be directly applied to the `final_fee` without any refunds.
-						if let Some(fee) = T::RuntimeConfigProvider::fee_for(ext_metadata) {
+						if let Some(fee) = T::InfraTxInterface::fee_for(ext_metadata) {
 							refundable = false;
 							fee.into()
 						} else {
@@ -365,7 +359,7 @@ where
 
 							// Update vote
 							let vote_weight = F64::from_i128(converted_fee.into() as i128);
-							T::VotingHandler::update_pot_vote(
+							T::InfraTxInterface::update_pot_vote(
 								vote_candidate.clone().into(),
 								system_token_id.clone(),
 								vote_weight,

@@ -201,7 +201,6 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				pallet_collator_selection::Call::leave_intent { .. },
 			) |
 			RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
-			RuntimeCall::SystemTokenTxPayment(..) |
 			RuntimeCall::XcmpQueue(..) |
 			RuntimeCall::DmpQueue(..) |
 			RuntimeCall::AssetLink(pallet_asset_link::Call::link_system_token { .. }) |

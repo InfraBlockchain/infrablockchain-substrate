@@ -39,7 +39,7 @@ pub trait OnChargeSystemToken<T: Config> {
 	/// The underlying integer type in which fees are calculated.
 	type Balance: Balance;
 	/// The type used to identify the assets used for transaction payment.
-	type SystemTokenAssetId: AssetId + From<sp_runtime::types::token::AssetId>;
+	type SystemTokenAssetId: AssetId + From<SystemTokenAssetId>;
 	/// The type used to store the intermediate values between pre- and post-dispatch.
 	type LiquidityInfo;
 
@@ -101,7 +101,7 @@ where
 	T: Config,
 	CON: ConversionToAssetBalance<BalanceOf<T>, AssetIdOf<T>, AssetBalanceOf<T>>,
 	HC: HandleCredit<T::AccountId, T::Assets>,
-	AssetIdOf<T>: AssetId + From<sp_runtime::types::token::AssetId>,
+	AssetIdOf<T>: AssetId + From<SystemTokenAssetId>,
 	AssetBalanceOf<T>: From<BalanceOf<T>>,
 	ConvertBalance: MaybeEquivalence<u128, AssetBalanceOf<T>>,
 {
@@ -149,10 +149,13 @@ where
 		let mut converted_fee = CON::to_asset_balance(fee, system_token_asset_id.clone())
 			.map_err(|_| TransactionValidityError::from(InvalidTransaction::Payment))?
 			.max(min_converted_fee);
-		let fee_rate: AssetBalanceOf<T> = ConvertBalance::convert(&T::RuntimeConfigProvider::fee_rate()).ok_or(
+		let fee_rate = T::InfraTxInterface::fee_rate().map_err(|_|
 			TransactionValidityError::from(InvalidTransaction::Payment),
 		)?;
-		converted_fee = converted_fee * fee_rate;
+		let converted_fee_rate: AssetBalanceOf<T> = ConvertBalance::convert(&fee_rate).ok_or(
+			TransactionValidityError::from(InvalidTransaction::Payment),
+		)?;
+		converted_fee = converted_fee * converted_fee_rate;
 		let can_withdraw = <T::Assets as Inspect<T::AccountId>>::can_withdraw(
 			system_token_asset_id.clone(),
 			who,

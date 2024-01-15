@@ -10,7 +10,7 @@ use frame_system::pallet_prelude::BlockNumberFor;
 use parity_scale_codec::Encode;
 use sp_runtime::{
 	traits::AccountIdConversion,
-	types::{PalletId, ParaId},
+	types::token::*,
 };
 use sp_std::{boxed::Box, vec, vec::Vec};
 
@@ -51,7 +51,7 @@ pub fn inspect_account_and_check_is_owner<T: pallet_assets::Config>(asset_id: &T
 			pallet_assets::Pallet::<T>::freezer(asset_id.clone()).map_or(default_acc, |a| a)
 }
 
-fn encode_pallet_call(pallet_id: PalletId, mut encoded_call: Vec<u8>) -> Vec<u8> {
+fn encode_pallet_call(pallet_id: SystemTokenPalletId, mut encoded_call: Vec<u8>) -> Vec<u8> {
 	let mut encoded: Vec<u8> = [pallet_id].into();
 	encoded.append(&mut encoded_call);
 	encoded
@@ -75,7 +75,7 @@ fn transact_xcm(
 	.encode()
 }
 
-fn build_xcm(pallet_id: PalletId, call: Vec<u8>) -> Vec<u8> {
+fn build_xcm(pallet_id: SystemTokenPalletId, call: Vec<u8>) -> Vec<u8> {
 	let encoded_call = encode_pallet_call(pallet_id, call);
 	// ToDo: Need to change to Asset
 	let fees = MultiAsset { id: Concrete(Here.into()), fun: Fungible(10000) };
@@ -85,14 +85,14 @@ fn build_xcm(pallet_id: PalletId, call: Vec<u8>) -> Vec<u8> {
 }
 
 pub fn try_queue_dmp<T: Config>(
-	para_id: ParaId,
-	pallet_id: PalletId,
+	para_id: SystemTokenParaId,
+	pallet_id: SystemTokenPalletId,
 	encoded_call: Vec<u8>,
 ) -> DispatchResult {
 	let config = <configuration::Pallet<T>>::config();
 	let xcm = build_xcm(pallet_id, encoded_call);
 	if let Err(dmp::QueueDownwardMessageError::ExceedsMaxMessageSize) =
-		<dmp::Pallet<T>>::queue_downward_message(&config, ParaId::from(para_id).into(), xcm)
+		<dmp::Pallet<T>>::queue_downward_message(&config, SystemTokenParaId::from(para_id).into(), xcm)
 	{
 		log::error!(
 			target: "runtime::system_token_manager",

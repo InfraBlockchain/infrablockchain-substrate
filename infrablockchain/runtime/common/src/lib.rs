@@ -26,11 +26,11 @@ pub mod elections;
 pub mod impls;
 pub mod paras_registrar;
 pub mod paras_sudo_wrapper;
-pub mod pot;
 pub mod purchase;
 pub mod slot_range;
 pub mod slots;
 pub mod traits;
+pub mod infra_core;
 
 #[cfg(feature = "try-runtime")]
 pub mod try_runtime;

@@ -298,13 +298,10 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	>;
 }
 
-parameter_types! {
-	const BaseWeight: SystemTokenWeight = 1_000_000;
-}
-impl cumulus_pallet_parachain_configuration::Config for Runtime {
+impl cumulus_pallet_infra_parachain_core::Config for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeEvent = RuntimeEvent;
-	type BaseWeight = BaseWeight;
+	type CollectVote = ParachainSystem;
 }
 
 impl pallet_insecure_randomness_collective_flip::Config for Runtime {}
@@ -473,14 +470,13 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 
 impl pallet_system_token_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type RuntimeConfigProvider = ParachainConfig;
+	type InfraTxInterface = InfraParaCore;
 	type Assets = Assets;
 	type OnChargeSystemToken = TransactionFeeCharger<
 		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
 		CreditToBucket<Runtime>,
 		JustTry,
 	>;
-	type VotingHandler = ParachainSystem;
 	type BootstrapCallFilter = BootstrapCallFilter;
 	type PalletId = FeeTreasuryId;
 }
@@ -501,7 +497,6 @@ parameter_types! {
 pub type RootOrigin = EnsureRoot<AccountId>;
 
 impl pallet_assets::Config for Runtime {
-	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
 	type AssetId = AssetId;
@@ -542,7 +537,7 @@ construct_runtime!(
 		ParachainSystem: cumulus_pallet_parachain_system::{
 			Pallet, Call, Config<T>, Storage, Inherent, Event<T>, ValidateUnsigned,
 		} = 1,
-		ParachainConfig: cumulus_pallet_parachain_configuration::{Pallet, Call, Storage, Event<T>} = 2,
+		InfraParaCore: cumulus_pallet_infra_parachain_core::{Pallet, Call, Storage, Event<T>} = 2,
 		RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip::{Pallet, Storage} = 3,
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 4,
 		ParachainInfo: parachain_info::{Pallet, Storage, Config<T>} = 5,

@@ -298,8 +298,7 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 			) |
 			RuntimeCall::XcmPallet(pallet_xcm::Call::limited_reserve_transfer_assets {
 				..
-			}) |
-			RuntimeCall::SystemTokenManager(system_token_manager::Call::set_exchange_rate { .. })
+			})
 			=> true,
 			_ => false,
 		}

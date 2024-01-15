@@ -172,7 +172,7 @@ use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Saturating, StaticLookup, Zero},
-	types::{SystemTokenId, SystemTokenLocalAssetProvider, SystemTokenWeight},
+	types::token::*,
 	ArithmeticError, DispatchError, TokenError,
 };
 use sp_std::prelude::*;
@@ -226,10 +226,6 @@ pub mod pallet {
 	#[pallet::config]
 	/// The module configuration trait.
 	pub trait Config<I: 'static = ()>: frame_system::Config {
-		type RuntimeOrigin: From<SystemTokenOrigin>
-			+ From<<Self as frame_system::Config>::RuntimeOrigin>
-			+ Into<Result<SystemTokenOrigin, <Self as Config<I>>::RuntimeOrigin>>;
-
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self, I>>
 			+ IsType<<Self as frame_system::Config>::RuntimeEvent>;
@@ -259,7 +255,7 @@ pub mod pallet {
 			+ Clone
 			+ MaybeSerializeDeserialize
 			+ MaxEncodedLen
-			+ IsType<sp_runtime::types::AssetId>;
+			+ IsType<SystemTokenAssetId>;
 
 		/// Wrapper around `Self::AssetId` to use in dispatchable call signatures. Allows the use
 		/// of compact encoding in instances of the pallet, which will prevent breaking changes
@@ -1687,7 +1683,7 @@ pub mod pallet {
 			dest: AccountIdLookupOf<T>,
 			#[pallet::compact] amount: T::Balance,
 		) -> DispatchResult {
-			ensure_system_token_origin(<T as Config<I>>::RuntimeOrigin::from(origin))?;
+			T::ForceOrigin::ensure_origin(origin)?;
 			let source = T::Lookup::lookup(source)?;
 			let dest = T::Lookup::lookup(dest)?;
 			let id: T::AssetId = id.into();
@@ -1710,7 +1706,7 @@ pub mod pallet {
 			id: T::AssetIdParameter,
 			system_token_weight: Option<SystemTokenWeight>,
 		) -> DispatchResult {
-			ensure_system_token_origin(<T as Config<I>>::RuntimeOrigin::from(origin))?;
+			T::ForceOrigin::ensure_origin(origin)?;
 			let id: T::AssetId = id.into();
 			let mut details = Asset::<T, I>::get(&id).ok_or(Error::<T, I>::Unknown)?;
 			let mut system_token_weight = system_token_weight;
@@ -1740,7 +1736,7 @@ pub mod pallet {
 			id: T::AssetIdParameter,
 			is_unlink: bool,
 		) -> DispatchResult {
-			ensure_system_token_origin(<T as Config<I>>::RuntimeOrigin::from(origin))?;
+			T::ForceOrigin::ensure_origin(origin)?;
 			let asset_id: T::AssetId = id.into();
 			Self::try_do_unlink(&asset_id, is_unlink)?;
 
@@ -1784,7 +1780,7 @@ pub mod pallet {
 			asset_link_parents: u8,
 			system_token_weight: Option<SystemTokenWeight>,
 		) -> DispatchResult {
-			ensure_system_token_origin(<T as Config<I>>::RuntimeOrigin::from(origin))?;
+			T::ForceOrigin::ensure_origin(origin)?;
 			Self::do_create_asset_with_metadata(
 				id,
 				owner,
@@ -1817,7 +1813,7 @@ pub mod pallet {
 			id: T::AssetIdParameter,
 			system_token_weight: Option<SystemTokenWeight>,
 		) -> DispatchResult {
-			ensure_system_token_origin(<T as Config<I>>::RuntimeOrigin::from(origin))?;
+			T::ForceOrigin::ensure_origin(origin)?;
 			ensure!(system_token_weight.is_some(), Error::<T, I>::WeightMissing);
 
 			let asset_id: T::AssetId = id.into();

@@ -18,7 +18,7 @@
 use crate::{configuration, dmp, paras, system_token_helper, Origin as ParachainOrigin, ParaId, ensure_parachain};
 pub use frame_support::{
 	pallet_prelude::*,
-	traits::{infra_support::system_token::SystemTokenInterface, UnixTime},
+	traits::UnixTime,
 };
 use frame_system::pallet_prelude::*;
 pub use pallet::*;
@@ -27,15 +27,10 @@ use pallet_system_token_oracle::{Fiat, ExchangeRate, StandardUnixTime};
 use softfloat::F64;
 use sp_runtime::{
 	traits::StaticLookup,
-	types::{
-		SystemTokenAssetId, SystemTokenPalletId, SystemTokenParaId, SystemTokenId,
-		SystemTokenWeight, SystemTokenBalance, VoteWeight, RELAY_CHAIN_PARA_ID,
-	},
+	types::{token::*, vote::*, infra_core::*},
 };
 use sp_std::prelude::*;
 use types::*;
-
-use pallet_transaction_payment::BalanceOf;
 
 #[frame_support::pallet(dev_mode)]
 pub mod pallet {
@@ -50,12 +45,13 @@ pub mod pallet {
 		+ dmp::Config
 		+ pallet_assets::Config
 		+ pallet_asset_link::Config
-		+ pallet_system_token_tx_payment::Config
 	{	
 		type RuntimeOrigin: From<<Self as frame_system::Config>::RuntimeOrigin>
 			+ Into<Result<ParachainOrigin, <Self as Config>::RuntimeOrigin>>;
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+		/// Core interface for InfraBlockchain Runtime
+		type InfraCoreInterface: InfraConfigInterface + RuntimeConfigProvider + VotingHandler;
 		/// Time used for computing registration date.
 		type UnixTime: UnixTime;
 		/// The string limit for name and symbol of system token.
@@ -89,9 +85,9 @@ pub mod pallet {
 		/// and decimal.
 		SetSystemTokenWeight { original: SystemTokenId, property: SystemTokenProperty },
 		/// Update the fee rate of the parachain. The default value is 1_000.
-		SetParaFeeRate { para_id: SystemTokenParaId, para_fee_rate: BalanceOf<T> },
+		SetParaFeeRate { para_id: SystemTokenParaId, para_fee_rate: SystemTokenBalance },
 		/// Update the fee table of the parachain
-		SetFeeTable { para_call_metadata: ParaCallMetadata, fee: BalanceOf<T> },
+		SetFeeTable { para_call_metadata: ParaCallMetadata, fee: SystemTokenBalance },
 		/// Suspend a `original` system token.
 		OriginalSystemTokenSuspended { original: SystemTokenId },
 		/// Unsuspend the `original` system token.
@@ -452,18 +448,14 @@ pub mod pallet {
 		// - para_id: Destination of DMP
 		// - pallet_id: Pallet index of `update_fee_para_rate`
 		// - para_fee_rate: Fee rate for specific parachain expected to be updated
-		pub fn update_para_fee_rate(
+		pub fn set_para_fee_rate(
 			origin: OriginFor<T>,
 			para_id: SystemTokenParaId,
 			pallet_id: SystemTokenPalletId,
-			para_fee_rate: BalanceOf<T>,
+			para_fee_rate: SystemTokenBalance,
 		) -> DispatchResult {
 			ensure_root(origin)?;
-
-			let encoded_call: Vec<u8> =
-				pallet_system_token_tx_payment::Call::<T>::set_para_fee_rate { para_fee_rate }
-					.encode();
-			system_token_helper::try_queue_dmp::<T>(para_id, pallet_id, encoded_call)?;
+			T::InfraCoreInterface::set_fee_rate(para_id, para_fee_rate);
 			Self::deposit_event(Event::<T>::SetParaFeeRate { para_id, para_fee_rate });
 
 			Ok(())
@@ -490,20 +482,13 @@ pub mod pallet {
 		pub fn set_fee_table(
 			origin: OriginFor<T>,
 			para_call_metadata: ParaCallMetadata,
-			fee: BalanceOf<T>,
+			fee: SystemTokenBalance,
 		) -> DispatchResult {
 			ensure_root(origin)?;
 
 			let ParaCallMetadata { para_id, pallet_id, pallet_name, call_name } =
 				para_call_metadata.clone();
-			let encoded_call: Vec<u8> = pallet_system_token_tx_payment::Call::<T>::set_fee_table {
-				pallet_name,
-				call_name,
-				fee,
-			}
-			.encode();
-			system_token_helper::try_queue_dmp::<T>(para_id, pallet_id, encoded_call)?;
-
+			T::InfraCoreInterface::set_fee_table(para_id, pallet_name, call_name, fee);
 			Self::deposit_event(Event::<T>::SetFeeTable { para_call_metadata, fee });
 
 			Ok(())
@@ -1098,7 +1083,6 @@ where
 				0,
 				Some(system_token_weight),
 			)?;
-			pallet_system_token_tx_payment::pallet::Pallet::<T>::do_set_runtime_state()?;
 		} else {
 			// Parachain
 			let encoded_call: Vec<u8> = pallet_assets::Call::<T>::force_create_with_metadata {
@@ -1124,6 +1108,7 @@ where
 }
 
 impl<T: Config> SystemTokenInterface for Pallet<T> {
+
 	fn is_system_token(original: &SystemTokenId) -> bool {
 		<OriginalSystemTokenMetadata<T>>::get(original).is_some()
 	}
@@ -1139,28 +1124,22 @@ impl<T: Config> SystemTokenInterface for Pallet<T> {
 	}
 	fn adjusted_weight(original: &SystemTokenId, vote_weight: VoteWeight) -> VoteWeight {
 		if let Some(p) = <SystemTokenProperties<T>>::get(original) {
-			let system_token_weight = {
-				let w: u128 = p.system_token_weight.map_or(BASE_WEIGHT, |w| w);
-				let system_token_weight = F64::from_i128(w as i128);
-				system_token_weight
-			};
-			let base_weight = F64::from_i128(BASE_WEIGHT as i128);
-			// Since the base_weight cannot be zero, this division is guaranteed to be safe.
-			return vote_weight.mul(system_token_weight).div(base_weight)
+			if let Ok(base_weight) = T::InfraCoreInterface::base_weight() {
+				let system_token_weight = {
+					let w: u128 = p.system_token_weight.map_or(base_weight, |w| w);
+					let system_token_weight = F64::from_i128(w as i128);
+					system_token_weight
+				};
+				let converted_base_weight = F64::from_i128(base_weight as i128);
+				
+				// Since the base_weight cannot be zero, this division is guaranteed to be safe.
+				return vote_weight.mul(system_token_weight).div(converted_base_weight)
+			} else {
+				return vote_weight
+			}
 		}
 		vote_weight
 	}
-}
-
-pub trait ParachainConfigInterface {
-	fn set_base_weight();
-	fn set_fee_table(pallet_name: Vec<u8>, call_name: Vec<u8>, fee: SystemTokenBalance);
-	fn set_fee_rate(fee_rate: SystemTokenWeight);
-	fn set_runtime_state();
-	fn set_system_token_weight(asset_id: SystemTokenAssetId, weight: SystemTokenWeight);
-	fn register_system_token(asset_id: SystemTokenAssetId, weight: SystemTokenWeight);
-	fn create_system_token(asset_id: SystemTokenAssetId, weight: SystemTokenWeight);
-	fn deregister_system_token(asset_id);
 }
 
 pub mod types {
@@ -1190,8 +1169,6 @@ pub mod types {
 		#[default]
 		Pending,
 	}
-
-	pub const BASE_WEIGHT: u128 = 1_000_000;
 
 	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, Default, TypeInfo)]
 	pub struct ParaCallMetadata {

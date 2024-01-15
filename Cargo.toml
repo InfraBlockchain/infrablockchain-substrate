@@ -57,7 +57,7 @@ members = [
 	"cumulus/pallets/solo-to-para",
 	"cumulus/pallets/xcm",
 	"cumulus/pallets/xcmp-queue",
-	"cumulus/pallets/parachain-configuration",
+	"cumulus/pallets/infra-parachain-core",
 	"cumulus/parachain-template/node",
 	"cumulus/parachain-template/pallets/template",
 	"cumulus/parachain-template/runtime",

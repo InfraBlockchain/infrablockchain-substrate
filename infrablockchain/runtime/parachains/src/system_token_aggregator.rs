@@ -37,7 +37,7 @@ pub use pallet::*;
 use sp_runtime::{
 	self,
 	traits::Zero,
-	types::{AssetId, SystemTokenLocalAssetProvider},
+	types::token::*,
 };
 use sp_std::prelude::*;
 use xcm::opaque::lts::MultiLocation;
@@ -59,7 +59,7 @@ pub mod pallet {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		#[pallet::constant]
 		type Period: Get<BlockNumberFor<Self>>;
-		type AssetMultiLocationGetter: AssetMultiLocationGetter<AssetId>;
+		type AssetMultiLocationGetter: AssetMultiLocationGetter<SystemTokenAssetId>;
 		type IsRelay: Get<bool>;
 	}
 

@@ -23,7 +23,7 @@
 use pallet_transaction_payment::CurrencyAdapter;
 use runtime_common::{
 	auctions, crowdloan, impl_runtime_weights, impls::DealWithFees, paras_registrar,
-	paras_sudo_wrapper, pot as relay_pot, prod_or_fast, slots, BlockHashCount, BlockLength,
+	paras_sudo_wrapper, infra_core, prod_or_fast, slots, BlockHashCount, BlockLength,
 	SlowAdjustingFeeUpdate,
 };
 
@@ -41,8 +41,6 @@ use runtime_parachains::{
 	shared as parachains_shared, system_token_aggregator, system_token_manager,
 	validator_reward_manager,
 };
-
-pub use system_token_manager::ParachainConfigInterface;
 
 use authority_discovery_primitives::AuthorityId as AuthorityDiscoveryId;
 use beefy_primitives::ecdsa_crypto::{AuthorityId as BeefyId, Signature as BeefySignature};
@@ -85,7 +83,7 @@ use sp_runtime::{
 		Verify,
 	},
 	transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
-	types::{VoteAccountId, VoteWeight, SystemTokenWeight, SystemTokenbalance},
+	types::{vote::*, token::*, infra_core::*},
 	ApplyExtrinsicResult, FixedU128, KeyTypeId, Perbill, Percent, Permill,
 };
 
@@ -357,10 +355,6 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 	#[cfg(not(feature = "fast-runtime"))]
 	fn contains(call: &RuntimeCall) -> bool {
 		match call {
-			RuntimeCall::SystemTokenManager(
-				system_token_manager::Call::register_system_token { .. } |
-				system_token_manager::Call::deregister_system_token { .. },
-			) |
 			RuntimeCall::Council(
 				pallet_collective::Call::propose { .. } |
 				pallet_collective::Call::vote { .. } |
@@ -382,23 +376,27 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 }
 
 impl pallet_system_token_tx_payment::Config for Runtime {
-	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeEvent = RuntimeEvent;
+	type InfraTxInterface = InfraCore;
 	type Assets = Assets;
 	type OnChargeSystemToken = TransactionFeeCharger<
 		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
 		CreditToBucket,
 		JustTry,
 	>;
-	type VotingHandler = Pot;
 	type BootstrapCallFilter = BootstrapCallFilter;
 	type PalletId = FeeTreasuryId;
 }
 
-impl relay_pot::Config for Runtime {
+parameter_types! {
+	pub const InfrablockchainBaseWeight: SystemTokenWeight = 1_000_000;
+}
+
+impl infra_core::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type VotingHandler = ValidatorElection;
+	type VotingInterface = ValidatorElection;
 	type SystemTokenInterface = SystemTokenManager;
+	type BaseWeight = InfrablockchainBaseWeight;
 }
 
 parameter_types! {
@@ -1134,6 +1132,7 @@ parameter_types! {
 impl system_token_manager::Config for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeEvent = RuntimeEvent;
+	type InfraCoreInterface = InfraCore;
 	type UnixTime = Timestamp;
 	type StringLimit = ConstU32<128>;
 	type MaxSystemTokens = ConstU32<10>;
@@ -1375,7 +1374,6 @@ impl auctions::Config for Runtime {
 
 type AssetId = u32;
 impl pallet_assets::Config for Runtime {
-	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
 	type AssetId = AssetId;
@@ -1420,24 +1418,24 @@ construct_runtime! {
 		AssetRate: pallet_asset_rate::{Pallet, Call, Storage, Event<T>} = 39,
 
 		// InfraBlockchain Support
-		SystemTokenManager: system_token_manager::{Pallet, Call, Storage, Event<T>} = 21,
+		InfraCore: infra_core::{Pallet, Call, Storage, Event<T>} = 20,
+		SystemTokenManager: system_token_manager::{Pallet, Storage, Event<T>} = 21,
 		ValidatorRewardManager: validator_reward_manager::{Pallet, Call, Storage, Event<T>} = 22,
 		AssetLink: pallet_asset_link = 24,
-		Pot: relay_pot::{Pallet, Storage, Event<T>} = 25,
-		SystemTokenAggregator: system_token_aggregator = 26,
+		SystemTokenAggregator: system_token_aggregator = 25,
 
 		// Babe must be before session.
 		Babe: pallet_babe::{Pallet, Call, Storage, Config<T>, ValidateUnsigned} = 2,
 
 		// Since this module depends on Babe
-		SystemTokenOracle: pallet_system_token_oracle::{Pallet, Call, Storage, ValidateUnsigned, Origin} = 20,
+		SystemTokenOracle: pallet_system_token_oracle::{Pallet, Call, Storage, ValidateUnsigned, Origin} = 26,
 
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 3,
 		Indices: pallet_indices::{Pallet, Call, Storage, Config<T>, Event<T>} = 4,
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 5,
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>, Config<T>} = 6,
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 31,
-		SystemTokenTxPayment: pallet_system_token_tx_payment::{Pallet, Call, Storage, Event<T>} = 32,
+		SystemTokenTxPayment: pallet_system_token_tx_payment::{Pallet, Storage, Event<T>} = 32,
 
 		// Consensus support.
 		// Authorship must be before session in order to note author in the correct session and era

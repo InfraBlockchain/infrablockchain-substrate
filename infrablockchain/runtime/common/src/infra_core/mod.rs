@@ -1,13 +1,12 @@
 
-#[cfg_attr(not(feature = "std"), no_std)]
-
 use frame_support::pallet_prelude::*;
-use frame_support::traits::tokens::{Balance, AssetId};
 use frame_system::pallet_prelude::*;
-use cumulus_pallet_xcm::{ensure_relay, Origin};
-use sp_runtime::types::{SystemTokenWeight, SystemTokenBalance, SystemTokenAssetId, ExtrinsicMetadata, Mode, RuntimeConfigProvider};
-
+use frame_system::ensure_root;
 pub use pallet::*;
+use parity_scale_codec::Encode;
+use sp_runtime::types::{token::*, fee::*, vote::*, infra_core::*};
+use sp_std::vec::Vec;
+use pallet_validator_election::VotingInterface;
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct SystemTokenDetails {
@@ -39,23 +38,22 @@ pub enum SystemTokenStatus {
 
 #[frame_support::pallet(dev_mode)]
 pub mod pallet {
-
-	use super::*;
-
-	#[pallet::config]
-	pub trait Config: frame_system::Config {
-		/// Runtime Origin for the System Token pallet.
-		type RuntimeOrigin: From<<Self as frame_system::Config>::RuntimeOrigin>
-			+ Into<Result<Origin, <Self as Config>::RuntimeOrigin>>;
-		/// The overarching event type.
-		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-	}
-
-	#[pallet::pallet]
-	pub struct Pallet<T>(_);
-
-	#[pallet::storage]
-	pub type BaseWeight<T: Config> = StorageValue<_, SystemTokenWeight, OptionQuery>;
+    use super::*;
+    
+    #[pallet::pallet]
+    pub struct Pallet<T>(_);
+    
+    #[pallet::config]
+    pub trait Config: frame_system::Config {
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+        /// Updating vote type
+		type VotingInterface: VotingInterface<Self>;
+		/// Managing System Token
+		type SystemTokenInterface: SystemTokenInterface;
+        /// Base system token weight for InfraBlockchain
+        #[pallet::constant]
+        type BaseWeight: Get<SystemTokenWeight>;
+    }
 
 	#[pallet::storage]
 	pub type FeeRate<T: Config> = StorageValue<_, SystemTokenWeight, OptionQuery>;
@@ -63,52 +61,39 @@ pub mod pallet {
 	#[pallet::storage]
 	pub(super) type RuntimeState<T: Config> = StorageValue<_, Mode, ValueQuery>;
 
-	#[pallet::storage]
+    #[pallet::storage]
 	pub type FeeTable<T: Config> =
-		StorageMap<_, Twox128, ExtrinsicMetadata, SystemTokenBalance<T>, OptionQuery>;
-
-	#[pallet::storage]
+		StorageMap<_, Twox128, ExtrinsicMetadata, SystemTokenBalance, OptionQuery>;
+    
+    #[pallet::storage]
 	pub type SystemToken<T: Config> = StorageMap<_, Blake2_128Concat, SystemTokenAssetId, SystemTokenDetails, OptionQuery>;
 
-
-	#[pallet::event]
+    #[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
+		Voted { who: VoteAccountId, system_token_id: SystemTokenId, vote_weight: VoteWeight },
 		/// System Token has been regierested by Relay-chain governance
 		Registered,
 		/// System Token has been deregistered by Relay-chain governance
 		Deregistered,
 		/// Fee table for has been updated by Relay-chain governance
-		FeeTableUpdated { extrinsic_metadata: ExtrinsicMetadata, fee: SystemTokenBalance<T> },
+		FeeTableUpdated { extrinsic_metadata: ExtrinsicMetadata, fee: SystemTokenBalance },
 		/// Weight of System Token has been updated by Relay-chain governance
 		SystemTokenWeightUpdated { asset_id: SystemTokenAssetId },
 		/// Bootstrap has been ended by Relay-chain governance. 
 		BootstrapEnded
 	}
 
-	#[pallet::error]
+    #[pallet::error]
 	pub enum Error<T> {
-		/// Mode of Runtime cannot be changed(e.g SystemTokenMissing)
 		NotAllowedToChangeState,
-		/// System Token is not registered
 		SystemTokenMissing,
-		/// Base System Token weight has not been set 
-		BaseWeightMissing,
+		NotSystemToken,
+		OnUpdateVote, 
 	}
 
-	#[pallet::call]
+    #[pallet::call]
 	impl<T: Config> Pallet<T> {
-
-		/// Base system token weight configuration will be set by Relay-chain governance
-		/// 
-		/// Origin
-		/// Relay-chain governance
-		#[pallet::call_index(0)]
-		pub fn set_base_weight(origin: OriginFor<T>) -> DispatchResult {
-			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
-			BaseWeight::<T>::put(T::BaseWeight::get());
-			Ok(())
-		}
 
 		/// Fee table for Runtime will be set by Relay-chain governance
 		/// 
@@ -119,9 +104,9 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			pallet_name: Vec<u8>,
 			call_name: Vec<u8>,
-			fee: SystemTokenBalance<T>,
+			fee: SystemTokenBalance,
 		) -> DispatchResult {
-			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
+			ensure_root(origin)?;
 			let extrinsic_metadata = ExtrinsicMetadata::new(pallet_name, call_name);
 			FeeTable::<T>::insert(&extrinsic_metadata, fee);
 			Self::deposit_event(Event::<T>::FeeTableUpdated { extrinsic_metadata, fee });
@@ -137,7 +122,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			fee_rate: SystemTokenWeight,
 		) -> DispatchResult {
-			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
+			ensure_root(origin)?;
 			FeeRate::<T>::put(fee_rate);
 			Ok(())
 		}
@@ -148,7 +133,7 @@ pub mod pallet {
 		/// Relay-chain governance
 		#[pallet::call_index(3)]
 		pub fn set_runtime_state(origin: OriginFor<T>) -> DispatchResult {
-			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
+			ensure_root(origin)?;
 			Self::do_set_runtime_state()?;
 			Ok(())
 		}
@@ -163,7 +148,7 @@ pub mod pallet {
 			asset_id: SystemTokenAssetId,
 			system_token_weight: SystemTokenWeight
 		) -> DispatchResult {
-			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
+			ensure_root(origin)?;
 			let mut system_token_detail = SystemToken::<T>::get(&asset_id).ok_or(Error::<T>::SystemTokenMissing)?;
 			system_token_detail.set_weight(system_token_weight);
 			SystemToken::<T>::insert(&asset_id, system_token_detail);
@@ -181,7 +166,7 @@ pub mod pallet {
 			asset_id: SystemTokenAssetId,
 			system_token_weight: SystemTokenWeight
 		) -> DispatchResult {
-			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
+			ensure_root(origin)?;
 			// Assets::promote()
 			Ok(())
 		}
@@ -196,8 +181,8 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			asset_id: SystemTokenAssetId,
 			system_token_weight: SystemTokenWeight
-		) -> DispachResult {
-			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
+		) -> DispatchResult {
+			ensure_root(origin)?;
 			// Assets::create()
 			Ok(())
 		}
@@ -207,7 +192,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			asset_id: SystemTokenAssetId,
 		) -> DispatchResult {
-			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
+			ensure_root(origin)?;
 			// Assets::demote()
 			Ok(())
 		}
@@ -227,13 +212,36 @@ impl<T: Config> Pallet<T> {
 	}
 }
 
-impl<T: Config> RuntimeConfigProvider for Pallet<T> {
-	type Balance = SystemTokenBalance<T>;
-	fn fee_rate() -> SystemTokenWeight {
-		let base_weight = BaseWeight::<T>::get().ok_or(Error::<T>::BaseWeightMissing)?;
-		FeeRate::<T>::get().map_or(base_weight, |x| x)
+impl<T: Config> VotingHandler for Pallet<T> {
+
+	fn update_pot_vote(
+		who: VoteAccountId,
+		system_token_id: SystemTokenId,
+		vote_weight: VoteWeight,
+	) {
+		// Validity Check
+		// Check whether it is registered system token
+		if !T::SystemTokenInterface::is_system_token(&system_token_id) {
+			return
+		}
+		let weight = T::SystemTokenInterface::adjusted_weight(&system_token_id, vote_weight);
+		T::VotingInterface::update_vote_status(who.clone(), weight);
+		Self::deposit_event(Event::<T>::Voted { who, system_token_id, vote_weight: weight });
 	}
-	fn fee_for(ext: ExtrinsicMetadata) -> Option<SystemTokenBalance<T>> {
+}
+
+impl<T: Config> RuntimeConfigProvider for Pallet<T> {
+	
+	type Error = DispatchError;
+
+	fn base_weight() -> Result<SystemTokenWeight, Self::Error> {
+		Ok(T::BaseWeight::get())
+	}
+
+	fn fee_rate() -> Result<SystemTokenWeight, Self::Error> {
+		Ok(T::BaseWeight::get())
+	}
+	fn fee_for(ext: ExtrinsicMetadata) -> Option<SystemTokenBalance> {
 		FeeTable::<T>::get(&ext)
 	}
 	fn runtime_state() -> Mode {

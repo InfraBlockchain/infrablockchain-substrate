@@ -29,7 +29,7 @@ use bitvec::{order::Lsb0 as BitOrderLsb0, vec::BitVec};
 use frame_support::{
 	defensive,
 	pallet_prelude::*,
-	traits::{infra_support::system_token::SystemTokenInterface, Defensive, EnqueueMessage},
+	traits::{Defensive, EnqueueMessage},
 	BoundedSlice,
 };
 use frame_system::pallet_prelude::*;
@@ -48,7 +48,7 @@ use scale_info::TypeInfo;
 use softfloat::F64;
 use sp_runtime::{
 	traits::One,
-	types::{convert_pot_votes, PotVote, VoteAccountId, VoteWeight},
+	types::{vote::*, token::SystemTokenInterface},
 	DispatchError, SaturatedConversion, Saturating,
 };
 #[cfg(feature = "std")]

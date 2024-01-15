@@ -38,7 +38,7 @@ use scale_info::TypeInfo;
 use softfloat::F64;
 use sp_runtime::{
 	traits::{Convert, StaticLookup},
-	types::{ParaId, SystemTokenId, VoteWeight},
+	types::{vote::*, token::*},
 };
 use sp_std::prelude::*;
 type AccountIdLookupOf<T> = <<T as frame_system::Config>::Lookup as StaticLookup>::Source;
@@ -108,7 +108,7 @@ pub mod pallet {
 		Twox64Concat,
 		SessionIndex,
 		Twox64Concat,
-		ParaId,
+		SystemTokenParaId,
 		Vec<ValidatorReward>,
 		OptionQuery,
 	>;
@@ -193,7 +193,7 @@ pub mod pallet {
 impl<T: Config> Pallet<T> {
 	fn aggregate_reward(
 		session_index: SessionIndex,
-		para_id: ParaId,
+		para_id: SystemTokenParaId,
 		system_token_id: SystemTokenId,
 		amount: VoteWeight,
 	) {
@@ -268,7 +268,7 @@ impl<T: Config> Pallet<T> {
 impl<T: Config> RewardInterface for Pallet<T> {
 	fn aggregate_reward(
 		session_index: SessionIndex,
-		para_id: ParaId,
+		para_id: SystemTokenParaId,
 		system_token_id: SystemTokenId,
 		amount: VoteWeight,
 	) {

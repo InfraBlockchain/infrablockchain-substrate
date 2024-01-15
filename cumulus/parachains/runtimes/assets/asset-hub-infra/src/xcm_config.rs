@@ -197,7 +197,6 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				pallet_collator_selection::Call::register_as_candidate { .. } |
 				pallet_collator_selection::Call::leave_intent { .. },
 			) |
-			RuntimeCall::SystemTokenTxPayment(..) |
 			RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
 			RuntimeCall::XcmpQueue(..) |
 			RuntimeCall::DmpQueue(..) |

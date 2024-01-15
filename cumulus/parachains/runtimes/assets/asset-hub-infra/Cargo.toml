@@ -78,7 +78,7 @@ pallet-asset-link = { package = "infra-asset-link", path = "../../../../../infra
 xcm-primitives = { path = "../../../../../infrablockchain/xcm/xcm-primitives", default-features = false }
 
 # Cumulus
-cumulus-pallet-parachain-configuration = { path = "../../../../pallets/parachain-configuration", default-features = false }
+cumulus-pallet-infra-parachain-core = { path = "../../../../pallets/infra-parachain-core", default-features = false }
 cumulus-pallet-aura-ext = { path = "../../../../pallets/aura-ext", default-features = false }
 cumulus-pallet-dmp-queue = { path = "../../../../pallets/dmp-queue", default-features = false }
 cumulus-pallet-parachain-system = { path = "../../../../pallets/parachain-system", default-features = false, features = [
@@ -196,7 +196,7 @@ std = [
 	"xcm/std",
 	"cumulus-pallet-aura-ext/std",
 	"cumulus-pallet-dmp-queue/std",
-	"cumulus-pallet-parachain-configuration/std",
+	"cumulus-pallet-infra-parachain-core/std",
 	"cumulus-pallet-parachain-system/std",
 	"cumulus-pallet-xcm/std",
 	"cumulus-pallet-xcmp-queue/std",

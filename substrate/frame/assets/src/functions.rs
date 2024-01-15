@@ -1106,9 +1106,9 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 }
 
 impl<T: Config<I>, I: 'static>
-	SystemTokenLocalAssetProvider<sp_runtime::types::AssetId, T::AccountId> for Pallet<T, I>
+	SystemTokenLocalAssetProvider<SystemTokenAssetId, T::AccountId> for Pallet<T, I>
 {
-	fn system_token_list() -> Vec<sp_runtime::types::AssetId> {
+	fn system_token_list() -> Vec<SystemTokenAssetId> {
 		let assets = Asset::<T, I>::iter_keys();
 		let token_list = assets
 			.into_iter()
@@ -1117,16 +1117,16 @@ impl<T: Config<I>, I: 'static>
 					.filter(|detail| detail.is_sufficient)
 					.map(|_| asset.into())
 			})
-			.collect::<Vec<sp_runtime::types::AssetId>>();
+			.collect::<Vec<SystemTokenAssetId>>();
 		token_list
 	}
 
 	/// Returns most balance for the given asset id.
 	fn get_most_account_system_token_balance(
-		asset_ids: impl IntoIterator<Item = sp_runtime::types::AssetId>,
+		asset_ids: impl IntoIterator<Item = SystemTokenAssetId>,
 		account: T::AccountId,
-	) -> sp_runtime::types::AssetId {
-		let mut most_balance: (sp_runtime::types::AssetId, T::Balance) = Default::default();
+	) -> SystemTokenAssetId {
+		let mut most_balance: (SystemTokenAssetId, T::Balance) = Default::default();
 		for asset_id in asset_ids {
 			if let Some(balance) = Self::maybe_balance(asset_id.into(), account.clone()) {
 				if most_balance.1 < balance {

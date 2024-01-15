@@ -1,4 +1,6 @@
 
+use xcm::latest::prelude::*;
+
 use crate::*;
 
 /// A type containing the information of Configuration pallet in parachain runtime. 
@@ -30,9 +32,8 @@ pub enum ParachainConfigCalls {
     Deregister(SystemTokenAssetId),
 }
 
-pub struct ParachainConfigProvider;
-impl ParachainConfigInterface for ParachainConfigProvider {
-    fn set_base_weight() {
+impl InfraConfigInterface for infra_core::pallet::Pallet<Runtime> {
+    fn set_base_weight(para_id: SystemTokenParaId) {
         use crate::para_config::ParachainConfigCalls::SetBaseWeight;
         let set_base_weight_call = ParachainRuntimePallets::ParachainConfig(SetBaseWeight);
         let message = Xcm(vec![
@@ -47,7 +48,7 @@ impl ParachainConfigInterface for ParachainConfigProvider {
             },
         ]);
 
-        match InfraXcm::send_xcm(Here, MultiLocation::parent(), message.clone()) {
+        match XcmPallet::send_xcm(Here, MultiLocation::new(1, X1(Parachain(para_id))), message.clone()) {
             Ok(_) => log::info!(
                 target: "runtime::parachain-config",
                 "Instruction to `set base weight` sent successfully."
@@ -60,7 +61,7 @@ impl ParachainConfigInterface for ParachainConfigProvider {
         }
     }
 
-    fn set_fee_table(pallet_name: Vec<u8>, call_name: Vec<u8>, fee: SystemTokenBalance) {
+    fn set_fee_table(para_id: SystemTokenParaId, pallet_name: Vec<u8>, call_name: Vec<u8>, fee: SystemTokenBalance) {
         use crate::para_config::ParachainConfigCalls::SetFeeTable;
         let set_fee_table_call = ParachainRuntimePallets::ParachainConfig(SetFeeTable(pallet_name, call_name, fee));
         let message = Xcm(vec![
@@ -75,7 +76,7 @@ impl ParachainConfigInterface for ParachainConfigProvider {
             },
         ]);
 
-        match InfraXcm::send_xcm(Here, MultiLocation::parent(), message.clone()) {
+        match XcmPallet::send_xcm(Here, MultiLocation::new(1, X1(Parachain(para_id))), message.clone()) {
             Ok(_) => log::info!(
                 target: "runtime::parachain-config",
                 "Instruction to `set fee table` sent successfully."
@@ -88,7 +89,7 @@ impl ParachainConfigInterface for ParachainConfigProvider {
         }
     }
 
-    fn set_fee_rate(fee_rate: SystemTokenWeight) {
+    fn set_fee_rate(para_id: SystemTokenParaId, fee_rate: SystemTokenWeight) {
         use crate::para_config::ParachainConfigCalls::SetFeeRate;
         let set_fee_rate_call = ParachainRuntimePallets::ParachainConfig(SetFeeRate(fee_rate));
         let message = Xcm(vec![
@@ -103,7 +104,7 @@ impl ParachainConfigInterface for ParachainConfigProvider {
             },
         ]);
 
-        match InfraXcm::send_xcm(Here, MultiLocation::parent(), message.clone()) {
+        match XcmPallet::send_xcm(Here, MultiLocation::new(1, X1(Parachain(para_id))), message.clone()) {
             Ok(_) => log::info!(
                 target: "runtime::parachain-config",
                 "Instruction to `set fee rate` sent successfully."
@@ -116,7 +117,7 @@ impl ParachainConfigInterface for ParachainConfigProvider {
         }
     }
 
-    fn set_runtime_state() {
+    fn set_runtime_state(para_id: SystemTokenParaId) {
         use crate::para_config::ParachainConfigCalls::SetRuntimeState;
         let set_runtime_state_call = ParachainRuntimePallets::ParachainConfig(SetRuntimeState);
         let message = Xcm(vec![
@@ -131,7 +132,7 @@ impl ParachainConfigInterface for ParachainConfigProvider {
             },
         ]);
 
-        match InfraXcm::send_xcm(Here, MultiLocation::parent(), message.clone()) {
+        match XcmPallet::send_xcm(Here, MultiLocation::new(1, X1(Parachain(para_id))), message.clone()) {
             Ok(_) => log::info!(
                 target: "runtime::parachain-config",
                 "Instruction to `set runtime state` sent successfully."
@@ -144,9 +145,9 @@ impl ParachainConfigInterface for ParachainConfigProvider {
         }
     }
 
-    fn set_system_token_weight(asset_id: SystemTokenAssetId, weight: SystemTokenWeight) {
+    fn set_system_token_weight(para_id: SystemTokenParaId, asset_id: SystemTokenAssetId, weight: SystemTokenWeight) {
         use crate::para_config::ParachainConfigCalls::SetSystemTokenWeight;
-        let set_system_token_weight_call = ParachainRuntimePallets::ParachainConfig(SetSystemTokenWeight(system_token_id, weight));
+        let set_system_token_weight_call = ParachainRuntimePallets::ParachainConfig(SetSystemTokenWeight(asset_id, weight));
         let message = Xcm(vec![
             Instruction::UnpaidExecution {
                 weight_limit: WeightLimit::Unlimited,
@@ -159,7 +160,7 @@ impl ParachainConfigInterface for ParachainConfigProvider {
             },
         ]);
 
-        match InfraXcm::send_xcm(Here, MultiLocation::parent(), message.clone()) {
+        match XcmPallet::send_xcm(Here, MultiLocation::new(1, X1(Parachain(para_id))), message.clone()) {
             Ok(_) => log::info!(
                 target: "runtime::parachain-config",
                 "Instruction to `set system token weight` sent successfully."
@@ -172,9 +173,9 @@ impl ParachainConfigInterface for ParachainConfigProvider {
         }
     }
 
-    fn register_system_token(asset_id: SystemTokenAssetId, weight: SystemTokenWeight) {
+    fn register_system_token(para_id: SystemTokenParaId, asset_id: SystemTokenAssetId, weight: SystemTokenWeight) {
         use crate::para_config::ParachainConfigCalls::Register;
-        let register_call = ParachainRuntimePallets::ParachainConfig(Register(system_token_id, weight));
+        let register_call = ParachainRuntimePallets::ParachainConfig(Register(asset_id, weight));
         let message = Xcm(vec![
             Instruction::UnpaidExecution {
                 weight_limit: WeightLimit::Unlimited,
@@ -187,7 +188,7 @@ impl ParachainConfigInterface for ParachainConfigProvider {
             },
         ]);
 
-        match InfraXcm::send_xcm(Here, MultiLocation::parent(), message.clone()) {
+        match XcmPallet::send_xcm(Here, MultiLocation::new(1, X1(Parachain(para_id))), message.clone()) {
             Ok(_) => log::info!(
                 target: "runtime::parachain-config",
                 "Instruction to `register system token` sent successfully."
@@ -200,9 +201,9 @@ impl ParachainConfigInterface for ParachainConfigProvider {
         }
     }
 
-    fn create_system_token(asset_id: SystemTokenAssetId, weight: SystemTokenWeight) {
+    fn create_system_token(para_id: SystemTokenParaId, asset_id: SystemTokenAssetId, weight: SystemTokenWeight) {
         use crate::para_config::ParachainConfigCalls::Create;
-        let create_call = ParachainRuntimePallets::ParachainConfig(Create(system_token_id, weight));
+        let create_call = ParachainRuntimePallets::ParachainConfig(Create(asset_id, weight));
         let message = Xcm(vec![
             Instruction::UnpaidExecution {
                 weight_limit: WeightLimit::Unlimited,
@@ -215,7 +216,7 @@ impl ParachainConfigInterface for ParachainConfigProvider {
             },
         ]);
 
-        match InfraXcm::send_xcm(Here, MultiLocation::parent(), message.clone()) {
+        match XcmPallet::send_xcm(Here, MultiLocation::new(1, X1(Parachain(para_id))), message.clone()) {
             Ok(_) => log::info!(
                 target: "runtime::parachain-config",
                 "Instruction to `create system token` sent successfully."
@@ -228,9 +229,9 @@ impl ParachainConfigInterface for ParachainConfigProvider {
         }
     }
 
-    fn deregister_system_token(asset_id: SystemTokenAssetId) {
+    fn deregister_system_token(para_id: SystemTokenParaId, asset_id: SystemTokenAssetId) {
         use crate::para_config::ParachainConfigCalls::Deregister;
-        let deregister_call = ParachainRuntimePallets::ParachainConfig(Deregister(system_token_id));
+        let deregister_call = ParachainRuntimePallets::ParachainConfig(Deregister(asset_id));
         let message = Xcm(vec![
             Instruction::UnpaidExecution {
                 weight_limit: WeightLimit::Unlimited,
@@ -243,7 +244,7 @@ impl ParachainConfigInterface for ParachainConfigProvider {
             },
         ]);
 
-        match InfraXcm::send_xcm(Here, MultiLocation::parent(), message.clone()) {
+        match XcmPallet::send_xcm(Here, MultiLocation::new(1, X1(Parachain(para_id))), message.clone()) {
             Ok(_) => log::info!(
                 target: "runtime::parachain-config",
                 "Instruction to `deregister system token` sent successfully."
