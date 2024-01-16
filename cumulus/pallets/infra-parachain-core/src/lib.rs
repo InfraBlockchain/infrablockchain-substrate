@@ -4,25 +4,12 @@
 use frame_support::pallet_prelude::*;
 use frame_system::pallet_prelude::*;
 use cumulus_pallet_xcm::{ensure_relay, Origin};
-use sp_runtime::types::{token::*, fee::*, vote::*, infra_core::*};
+use sp_runtime::{
+	types::{token::*, fee::*, vote::*, infra_core::*},
+	traits::StaticLookup
+};
 use sp_std::vec::Vec;
 pub use pallet::*;
-
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
-pub struct SystemTokenDetails {
-	pub weight: SystemTokenWeight,
-	pub status: SystemTokenStatus
-}
-
-impl SystemTokenDetails {
-	pub fn set_weight(&mut self, weight: SystemTokenWeight) {
-		self.weight = weight;
-	}
-
-	pub fn set_status(&mut self, status: SystemTokenStatus) {
-		self.status = status;
-	}
-}
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub enum SystemTokenStatus {
@@ -35,6 +22,8 @@ pub enum SystemTokenStatus {
 	/// System Token is deregistered by some reasons
 	Deregistered,
 }
+
+type AccountIdLookupOf<T> = <<T as frame_system::Config>::Lookup as StaticLookup>::Source;
 
 #[frame_support::pallet(dev_mode)]
 pub mod pallet {
@@ -67,10 +56,6 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type FeeTable<T: Config> =
 		StorageMap<_, Twox128, ExtrinsicMetadata, SystemTokenBalance, OptionQuery>;
-
-	#[pallet::storage]
-	pub type SystemToken<T: Config> = StorageMap<_, Blake2_128Concat, SystemTokenAssetId, SystemTokenDetails, OptionQuery>;
-
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -134,7 +119,7 @@ pub mod pallet {
 		/// Origin
 		/// Relay-chain governance
 		#[pallet::call_index(2)]
-		pub fn set_fee_rate(
+		pub fn set_para_fee_rate(
 			origin: OriginFor<T>,
 			fee_rate: SystemTokenWeight,
 		) -> DispatchResult {
@@ -159,16 +144,13 @@ pub mod pallet {
 		/// Origin
 		/// Relay-chain governance
 		#[pallet::call_index(5)]
-		pub fn set_system_token_weight(
+		pub fn update_system_token_weight(
 			origin: OriginFor<T>,
 			asset_id: SystemTokenAssetId,
 			system_token_weight: SystemTokenWeight
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
-			let mut system_token_detail = SystemToken::<T>::get(&asset_id).ok_or(Error::<T>::SystemTokenMissing)?;
-			system_token_detail.set_weight(system_token_weight);
-			SystemToken::<T>::insert(&asset_id, system_token_detail);
-			Self::deposit_event(Event::<T>::SystemTokenWeightUpdated { asset_id });
+			// LocalAssetManager::update_system_token_weight(asset_id, system_token_weight)?;
 			Ok(())
 		}
 
@@ -177,39 +159,54 @@ pub mod pallet {
 		/// Origin
 		/// Relay-chain governance
 		#[pallet::call_index(6)]
-		pub fn register(
+		pub fn register_system_token(
 			origin: OriginFor<T>,
 			asset_id: SystemTokenAssetId,
 			system_token_weight: SystemTokenWeight
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
-			// Assets::promote()
+			// T::LocalAssetManager::promote()
 			Ok(())
 		}
 		
 		/// Discription 
 		/// Asset which referes to `wrapped` System Token will be created by Relay-chain governance
 		/// 
+		/// Parameters
+		/// - `asset_id`: AssetId of `wrapped` System Token
+		/// - `system_token_id`: SystemTokenId of `original` System Token
+		/// - `system_token_weight`: Weight of `wrapped` System Token. Need for `AssetLink`
+		/// 
 		/// Origin
 		/// Relay-chain governance
 		#[pallet::call_index(7)]
-		pub fn create(
+		pub fn create_wrapped_local(
 			origin: OriginFor<T>,
 			asset_id: SystemTokenAssetId,
-			system_token_weight: SystemTokenWeight
+			min_balance: SystemTokenBalance,
+			name: Vec<u8>,
+			symbol: Vec<u8>,
+			decimals: u8,
+			system_token_weight: SystemTokenWeight,
+			asset_link_parent: u8,
+			original: SystemTokenId,
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
-			// Assets::create()
+			// ToDo: RelayChain account to be 'owner'
+			// LocalAssetManager::create_wrapped(owner, asset_id, min_balance, name, symbol, decimals, system_token_weight)?; 
+			// AssetLink::link(original, asset_link_parent, asset_id);
 			Ok(())
 		}
 
 		#[pallet::call_index(8)]
-		pub fn deregister(
+		pub fn deregister_system_token(
 			origin: OriginFor<T>,
 			asset_id: SystemTokenAssetId,
+			is_unlink: bool
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
-			// Assets::demote()
+			// LocalAssetManager::demote(asset_id)?;
+			// if is_unlink { // Do Something }
 			Ok(())
 		}
 	}
@@ -220,8 +217,8 @@ impl<T: Config> Pallet<T> {
 		if RuntimeState::<T>::get() == Mode::Normal {
 			return Ok(())
 		}
-		ensure!(SystemToken::<T>::iter_keys().count() != 0, Error::<T>::NotAllowedToChangeState);
-		// ToDo: Check whether a parachain has enough system token to pay
+		// TODO-1: Check whether it is allowed to change `Normal` state
+		// TODO-2: Check whether a parachain has enough system token to pay
 		RuntimeState::<T>::put(Mode::Normal);
 		Self::deposit_event(Event::<T>::BootstrapEnded);
 		Ok(())

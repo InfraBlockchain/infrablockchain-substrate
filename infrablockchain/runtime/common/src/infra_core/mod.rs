@@ -55,6 +55,8 @@ pub mod pallet {
 		type VotingInterface: VotingInterface<Self>;
 		/// Managing System Token
 		type SystemTokenInterface: SystemTokenInterface;
+		/// Type that interacts with local asset
+		type LocalAssetManager: LocalAssetManager<Self::AccountId>;
 		/// Type that delivers XCM messages
 		type XcmRouter: SendXcm;
         /// Base system token weight for InfraBlockchain

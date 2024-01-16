@@ -155,6 +155,8 @@ mod functions;
 
 mod impl_fungibles;
 mod impl_stored_map;
+mod impl_infra_related;
+
 pub mod types;
 pub use types::*;
 
@@ -237,7 +239,8 @@ pub mod pallet {
 			+ Copy
 			+ MaybeSerializeDeserialize
 			+ MaxEncodedLen
-			+ TypeInfo;
+			+ TypeInfo
+			+ IsType<SystemTokenBalance>;
 
 		/// The Links connecting system tokens between chains.
 		type AssetLink: AssetLinkInterface<Self::AssetId>;
@@ -686,7 +689,7 @@ pub mod pallet {
 			T::ForceOrigin::ensure_origin(origin)?;
 			let owner = T::Lookup::lookup(owner)?;
 			let id: T::AssetId = id.into();
-			Self::do_force_create(id, owner, is_sufficient, min_balance)
+			Self::do_force_create(id, &owner, is_sufficient, min_balance, None)
 		}
 
 		/// Start the process of destroying a fungible asset class.
@@ -1689,147 +1692,6 @@ pub mod pallet {
 
 			let f = TransferFlags { keep_alive: false, best_effort: false, burn_dust: false };
 			Self::do_transfer(id, &source, &dest, amount, None, f).map(|_| ())
-		}
-
-		/// Promote local ass to be used as System Token
-		///
-		///
-		/// Origin must be System Token Origin
-		///
-		/// - `id`: The identifier of the asset.
-		/// - `system_token_weight`: Weight of system token for fee payment
-		#[pallet::call_index(33)]
-		#[pallet::weight(T::WeightInfo::set_min_balance())]
-		pub fn promote(
-			origin: OriginFor<T>,
-			id: T::AssetIdParameter,
-			system_token_weight: Option<SystemTokenWeight>,
-		) -> DispatchResult {
-			T::ForceOrigin::ensure_origin(origin)?;
-			let id: T::AssetId = id.into();
-			let mut details = Asset::<T, I>::get(&id).ok_or(Error::<T, I>::Unknown)?;
-			let mut system_token_weight = system_token_weight;
-			let weight = system_token_weight.take().ok_or(Error::<T, I>::WeightMissing)?;
-			ensure!(!details.is_sufficient, Error::<T, I>::IncorrectStatus);
-			details.is_sufficient = true;
-			details.system_token_weight = Some(weight);
-
-			Asset::<T, I>::insert(&id, details);
-			Self::deposit_event(Event::Promoted { asset_id: id, system_token_weight: weight});
-			Ok(())
-		}
-
-		/// Demote System Token, which cannot be used as transaction fee
-		///
-		///
-		/// Origin must be Signed and the sender has to be the root
-		///
-		/// - `id`: The identifier of the asset.
-		/// - `is_sufficient`: The new value of `is_sufficient`.
-		///
-		/// Emits `AssetIsSufficientChanged` event when successful.
-		#[pallet::call_index(34)]
-		#[pallet::weight(T::WeightInfo::set_min_balance())]
-		pub fn demote(
-			origin: OriginFor<T>,
-			id: T::AssetIdParameter,
-			is_unlink: bool,
-		) -> DispatchResult {
-			T::ForceOrigin::ensure_origin(origin)?;
-			let asset_id: T::AssetId = id.into();
-			Self::try_do_unlink(&asset_id, is_unlink)?;
-
-			Self::deposit_event(Event::Demoted { asset_id });
-
-			Ok(())
-		}
-
-		/// Issue a new class of fungible assets with metadata from a privileged origin.
-		///
-		/// This new asset class has no assets initially.
-		///
-		/// The origin must conform to `ForceOrigin`.
-		///
-		/// Unlike `create`, no funds are reserved.
-		///
-		/// - `id`: The identifier of the new asset. This must not be currently in use to identify
-		/// an existing asset.
-		/// - `owner`: The owner of this class of assets. The owner has full superuser permissions
-		/// over this asset, but may later change and configure the permissions using
-		/// `transfer_ownership` and `set_team`.
-		/// - `min_balance`: The minimum balance of this new asset that any single account must
-		/// have. If an account's balance is reduced below this, then it collapses to zero.
-		///
-		/// Emits `ForceCreated` event when successful.
-		///
-		/// Weight: `O(1)`
-		#[pallet::call_index(35)]
-		#[pallet::weight(T::WeightInfo::force_set_metadata(name.len() as u32, symbol.len() as u32))]
-		pub fn force_create_with_metadata(
-			origin: OriginFor<T>,
-			id: T::AssetIdParameter,
-			owner: AccountIdLookupOf<T>,
-			is_sufficient: bool,
-			#[pallet::compact] min_balance: T::Balance,
-			name: Vec<u8>,
-			symbol: Vec<u8>,
-			decimals: u8,
-			is_frozen: bool,
-			system_token_id: SystemTokenId,
-			asset_link_parents: u8,
-			system_token_weight: Option<SystemTokenWeight>,
-		) -> DispatchResult {
-			T::ForceOrigin::ensure_origin(origin)?;
-			Self::do_create_asset_with_metadata(
-				id,
-				owner,
-				is_sufficient,
-				min_balance,
-				name,
-				symbol,
-				decimals,
-				is_frozen,
-				system_token_id,
-				asset_link_parents,
-				system_token_weight,
-			)?;
-			Ok(())
-		}
-
-		/// Sets the system_token_weight of an AssetDetails.
-		///
-		///
-		/// Origin must be Signed and the sender has to be the root
-		///
-		/// - `id`: The identifier of the asset.
-		/// - `system_token_weight`: The new value of `system_token_weight`.
-		///
-		/// Emits `AssetSystemTokenWeightChanged` event when successful.
-		#[pallet::call_index(36)]
-		#[pallet::weight(T::WeightInfo::set_min_balance())]
-		pub fn update_system_token_weight(
-			origin: OriginFor<T>,
-			id: T::AssetIdParameter,
-			system_token_weight: Option<SystemTokenWeight>,
-		) -> DispatchResult {
-			T::ForceOrigin::ensure_origin(origin)?;
-			ensure!(system_token_weight.is_some(), Error::<T, I>::WeightMissing);
-
-			let asset_id: T::AssetId = id.into();
-			let mut asset = Asset::<T, I>::get(asset_id).ok_or(Error::<T, I>::Unknown)?;
-			let mut system_token_weight = system_token_weight;
-			let new_weight = system_token_weight.take().ok_or(Error::<T, I>::WeightMissing)?;
-
-			ensure!(asset.is_sufficient, Error::<T, I>::IncorrectStatus);
-			let old_weight = asset.system_token_weight.take().ok_or(Error::<T, I>::WeightMissing)?;
-
-			Self::do_update_system_token_weight(id, system_token_weight)?;
-			Self::deposit_event(Event::AssetSystemTokenWeightChanged {
-				asset_id: id.into(),
-				from: old_weight,
-				to: new_weight,
-			});
-			Ok(())
 		}
 	}
 

@@ -58,20 +58,52 @@ impl SystemTokenId {
 	pub fn new(para_id: u32, pallet_id: u8, asset_id: SystemTokenAssetId) -> Self {
 		Self { para_id, pallet_id, asset_id }
 	}
+
+	/// Clone `self` and return new instance of `SystemTokenId`
+	pub fn asset_id(&self) -> SystemTokenAssetId {
+		self.clone().asset_id
+	}
 }
 
-/// API for local asset
-pub trait SystemTokenLocalAssetProvider<Asset, Account> {
+/// API for interacting with local assets on Runtime
+pub trait LocalAssetProvider<Asset, Account> {
 	/// Get a list of local assets created on local chain
 	fn system_token_list() -> Vec<Asset>;
-	/// Get the most account balance
+	/// Get the most account balance of given `asset_id`
 	fn get_most_account_system_token_balance(
 		asset_ids: impl IntoIterator<Item = Asset>,
 		account: Account,
 	) -> Asset;
 }
 
-/// System tokens API.
+/// API to create/destory local assets related to System Token
+pub trait LocalAssetManager<Account> {
+	type Error;
+	/// Create local asset with metadata which refers to `wrapped` System Token
+	fn create_wrapped_local(
+		owner: Account,
+		asset_id: SystemTokenAssetId,
+		min_balance: SystemTokenBalance,
+		name: Vec<u8>,
+		symbol: Vec<u8>,
+		decimals: u8,
+		system_token_weight: SystemTokenWeight
+	) -> Result<(), Self::Error>;
+	/// Promote local asset to System Token when registered(e.g `is_sufficient` to `true`)
+	fn promote(
+		asset_id: SystemTokenAssetId,
+		system_token_weight: SystemTokenWeight
+	) -> Result<(), Self::Error>;
+	/// Demote System Token to local asset(e.g `is_sufficient` to `false`)
+	fn demote(asset_id: SystemTokenAssetId) -> Result<(), Self::Error>;
+	/// Update weight of System Token(e.g Exhange rate has been changed)
+	fn update_system_token_weight(
+		asset_id: SystemTokenAssetId,
+		system_token_weight: SystemTokenWeight
+	) -> Result<(), Self::Error>;
+}
+
+/// API for interacting with registered System Token 
 pub trait SystemTokenInterface {
 
 	/// Check the system token is registered.

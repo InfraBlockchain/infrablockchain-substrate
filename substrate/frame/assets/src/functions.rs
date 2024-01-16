@@ -698,9 +698,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	///   considered dust and cleaned up.
 	pub(super) fn do_force_create(
 		id: T::AssetId,
-		owner: T::AccountId,
+		owner: &T::AccountId,
 		is_sufficient: bool,
 		min_balance: T::Balance,
+		system_token_weight: Option<SystemTokenWeight>,
 	) -> DispatchResult {
 		ensure!(!Asset::<T, I>::contains_key(&id), Error::<T, I>::InUse);
 		ensure!(!min_balance.is_zero(), Error::<T, I>::MinBalanceZero);
@@ -719,10 +720,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 				sufficients: 0,
 				approvals: 0,
 				status: AssetStatus::Live,
-				system_token_weight: None,
+				system_token_weight,
 			},
 		);
-		ensure!(T::CallbackHandle::created(&id, &owner).is_ok(), Error::<T, I>::CallbackFailed);
+		ensure!(T::CallbackHandle::created(&id, owner).is_ok(), Error::<T, I>::CallbackFailed);
 		Self::deposit_event(Event::ForceCreated { asset_id: id, owner: owner.clone() });
 		Ok(())
 	}
@@ -1015,7 +1016,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	}
 }
 
-// Custom impl
+// Infra-related impls
 impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	pub fn asset_detail(
 		asset_id: &T::AssetId,
@@ -1023,61 +1024,48 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		Asset::<T, I>::get(asset_id)
 	}
 
-	pub fn do_create_asset_with_metadata(
-		id: T::AssetIdParameter,
-		owner: AccountIdLookupOf<T>,
-		is_sufficient: bool,
-		min_balance: T::Balance,
-		name: Vec<u8>,
-		symbol: Vec<u8>,
-		decimals: u8,
-		is_frozen: bool,
-		system_token_id: SystemTokenId,
-		asset_link_parents: u8,
-		system_token_weight: Option<SystemTokenWeight>,
+	/// Try promote local `asset` to System Token
+	pub fn try_promote(
+		asset_id: SystemTokenAssetId,
+		system_token_weight: SystemTokenWeight
 	) -> DispatchResult {
-		let id: T::AssetId = id.into();
-		ensure!(!Asset::<T, I>::contains_key(&id), Error::<T, I>::InUse);
-		let owner = T::Lookup::lookup(owner)?;
-		let bounded_name: BoundedVec<u8, T::StringLimit> =
-			name.clone().try_into().map_err(|_| Error::<T, I>::BadMetadata)?;
-		let bounded_symbol: BoundedVec<u8, T::StringLimit> =
-			symbol.clone().try_into().map_err(|_| Error::<T, I>::BadMetadata)?;
-		Self::do_force_create(id.clone(), owner, is_sufficient, min_balance)?;
-		T::AssetLink::link_system_token(asset_link_parents, &id, system_token_id)?;
-		let mut details = Asset::<T, I>::get(&id).ok_or(Error::<T, I>::Unknown)?;
-		details.system_token_weight = system_token_weight;
-		Asset::<T, I>::insert(&id, details);
-		Metadata::<T, I>::try_mutate_exists(&id, |metadata| -> DispatchResult {
-			let deposit = metadata.take().map_or(Zero::zero(), |m| m.deposit);
-			*metadata = Some(AssetMetadata {
-				deposit,
-				name: bounded_name,
-				symbol: bounded_symbol,
-				decimals,
-				is_frozen,
-			});
-			Self::deposit_event(Event::MetadataSet {
-				asset_id: id.clone(),
-				name,
-				symbol,
-				decimals,
-				is_frozen,
-			});
-
+		let id: T::AssetId = asset_id.into();
+		Asset::<T, I>::try_mutate_exists(id, |maybe_detail| -> DispatchResult {
+			let mut asset_detail = maybe_detail.take().ok_or(Error::<T, I>::Unknown)?;
+			asset_detail.is_sufficient = true;
+			asset_detail.system_token_weight = Some(system_token_weight);
+			*maybe_detail = Some(asset_detail);
 			Ok(())
 		})?;
 		Ok(())
 	}
 
-	pub fn do_update_system_token_weight(
-		id: T::AssetIdParameter,
+	/// Try create `wrapped` System Token's local asset with `original` System Token's metadata
+	pub fn try_create_wrapped_local(
+		asset_id: SystemTokenAssetId,
+		owner: AccountIdLookupOf<T>,
+		min_balance: SystemTokenBalance,
+		name: Vec<u8>,
+		symbol: Vec<u8>,
+		decimals: u8,
 		system_token_weight: Option<SystemTokenWeight>,
 	) -> DispatchResult {
-		let id: T::AssetId = id.into();
+		let id: T::AssetId = asset_id.into();
+		let owner = T::Lookup::lookup(owner)?;
+		ensure!(!Asset::<T, I>::contains_key(&id), Error::<T, I>::InUse);
+		Self::do_force_create(id.clone(), &owner, true, min_balance.into(), system_token_weight)?;
+		Self::do_set_metadata(id, &owner, name, symbol, decimals)?;
+		Ok(())
+	}
+
+	pub fn try_update_system_token_weight(
+		asset_id: SystemTokenAssetId,
+		system_token_weight: SystemTokenWeight,
+	) -> DispatchResult {
+		let id: T::AssetId = asset_id.into();
 		Asset::<T, I>::try_mutate_exists(&id, |maybe_detail| -> DispatchResult {
 			let mut asset_detail = maybe_detail.take().ok_or(Error::<T, I>::Unknown)?;
-			asset_detail.system_token_weight = system_token_weight;
+			asset_detail.system_token_weight = Some(system_token_weight);
 			*maybe_detail = Some(asset_detail);
 			Ok(())
 		})?;
@@ -1085,28 +1073,23 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		Ok(())
 	}
 
-	pub fn try_do_unlink(
-		asset_id: &T::AssetId,
-		is_unlink: bool
+	pub fn try_demote(
+		asset_id: SystemTokenAssetId,
 	) -> DispatchResult {
-		Asset::<T, I>::try_mutate_exists(asset_id, |maybe_detail| -> DispatchResult {
+		let id: T::AssetId = asset_id.into();
+		Asset::<T, I>::try_mutate_exists(id, |maybe_detail| -> DispatchResult {
 			let mut asset_detail = maybe_detail.take().ok_or(Error::<T, I>::Unknown)?;
 			asset_detail.is_sufficient = false;
 			*maybe_detail = Some(asset_detail);
 
 			Ok(())
 		})?;
-
-		if is_unlink {
-			T::AssetLink::unlink_system_token(asset_id)?;
-		}
-
 		Ok(())
 	}
 }
 
 impl<T: Config<I>, I: 'static>
-	SystemTokenLocalAssetProvider<SystemTokenAssetId, T::AccountId> for Pallet<T, I>
+LocalAssetProvider<SystemTokenAssetId, T::AccountId> for Pallet<T, I>
 {
 	fn system_token_list() -> Vec<SystemTokenAssetId> {
 		let assets = Asset::<T, I>::iter_keys();

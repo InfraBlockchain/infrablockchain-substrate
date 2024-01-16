@@ -15,20 +15,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{configuration, dmp, paras, system_token_helper, Origin as ParachainOrigin, ParaId, ensure_parachain};
+use crate::{configuration, dmp, paras, Origin as ParachainOrigin, ParaId, ensure_parachain};
 pub use frame_support::{
 	pallet_prelude::*,
 	traits::UnixTime,
 };
 use frame_system::pallet_prelude::*;
 pub use pallet::*;
-use pallet_asset_link::AssetIdOf;
 use pallet_system_token_oracle::{Fiat, ExchangeRate, StandardUnixTime};
 use softfloat::F64;
-use sp_runtime::{
-	traits::StaticLookup,
-	types::{token::*, vote::*, infra_core::*},
-};
+use sp_runtime::types::{token::*, vote::*, infra_core::*};
 use sp_std::prelude::*;
 use types::*;
 
@@ -38,13 +34,9 @@ pub mod pallet {
 	use super::*;
 
 	#[pallet::config]
-	pub trait Config:
-		frame_system::Config
+	pub trait Config: frame_system::Config
 		+ configuration::Config
 		+ paras::Config
-		+ dmp::Config
-		+ pallet_assets::Config
-		+ pallet_asset_link::Config
 	{	
 		type RuntimeOrigin: From<<Self as frame_system::Config>::RuntimeOrigin>
 			+ Into<Result<ParachainOrigin, <Self as Config>::RuntimeOrigin>>;
@@ -247,11 +239,7 @@ pub mod pallet {
 	>;
 
 	#[pallet::call]
-	impl<T: Config> Pallet<T>
-	where
-		<T as pallet_assets::Config>::AssetIdParameter: From<SystemTokenAssetId>,
-		AssetIdOf<T>: From<SystemTokenAssetId>,
-	{
+	impl<T: Config> Pallet<T> {
 		// Description:
 		// Register system token after creating local asset on original chain.
 		//
@@ -282,7 +270,7 @@ pub mod pallet {
 			system_token_weight: SystemTokenWeight,
 			wrapped_for_relay_chain: Option<SystemTokenId>,
 			system_token_metadata: Option<SystemTokenMetadata<BoundedVec<u8, StringLimitOf<T>>>>,
-			asset_metadata: Option<AssetMetadata<BoundedVec<u8, StringLimitOf<T>>, T::Balance>>,
+			asset_metadata: Option<AssetMetadata<BoundedVec<u8, StringLimitOf<T>>, SystemTokenBalance>>,
 		) -> DispatchResult {
 			ensure_root(origin)?;
 			let (original, wrapped) = match system_token_type {
@@ -451,11 +439,10 @@ pub mod pallet {
 		pub fn set_para_fee_rate(
 			origin: OriginFor<T>,
 			para_id: SystemTokenParaId,
-			pallet_id: SystemTokenPalletId,
 			para_fee_rate: SystemTokenBalance,
 		) -> DispatchResult {
 			ensure_root(origin)?;
-			T::InfraCoreInterface::set_fee_rate(para_id, para_fee_rate);
+			T::InfraCoreInterface::set_para_fee_rate(para_id, para_fee_rate);
 			Self::deposit_event(Event::<T>::SetParaFeeRate { para_id, para_fee_rate });
 
 			Ok(())
@@ -486,7 +473,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_root(origin)?;
 
-			let ParaCallMetadata { para_id, pallet_id, pallet_name, call_name } =
+			let ParaCallMetadata { para_id, pallet_name, call_name, ..} =
 				para_call_metadata.clone();
 			T::InfraCoreInterface::set_fee_table(para_id, pallet_name, call_name, fee);
 			Self::deposit_event(Event::<T>::SetFeeTable { para_call_metadata, fee });
@@ -513,11 +500,7 @@ pub mod pallet {
 }
 
 // System token related interal methods
-impl<T: Config> Pallet<T>
-where
-	<T as pallet_assets::Config>::AssetIdParameter: From<SystemTokenAssetId>,
-	AssetIdOf<T>: From<SystemTokenAssetId>,
-{
+impl<T: Config> Pallet<T> {
 	fn unix_time() -> u128 {
 		T::UnixTime::now().as_millis()
 	}
@@ -549,8 +532,8 @@ where
 	}
 
 	fn asset_metadata(
-		asset_metadata: AssetMetadata<BoundedVec<u8, StringLimitOf<T>>, T::Balance>,
-	) -> Result<AssetMetadata<BoundedVec<u8, StringLimitOf<T>>, T::Balance>, DispatchError> {
+		asset_metadata: AssetMetadata<BoundedVec<u8, StringLimitOf<T>>, SystemTokenBalance>,
+	) -> Result<AssetMetadata<BoundedVec<u8, StringLimitOf<T>>, SystemTokenBalance>, DispatchError> {
 		let AssetMetadata { name, symbol, decimals, min_balance } = asset_metadata;
 
 		let name = name.clone().try_into().map_err(|_| Error::<T>::BadMetadata)?;
@@ -596,7 +579,7 @@ where
 		original: &SystemTokenId,
 		system_token_weight: SystemTokenWeight,
 		system_token_metadata: SystemTokenMetadata<BoundedVec<u8, StringLimitOf<T>>>,
-		asset_metadata: AssetMetadata<BoundedVec<u8, StringLimitOf<T>>, T::Balance>,
+		asset_metadata: AssetMetadata<BoundedVec<u8, StringLimitOf<T>>, SystemTokenBalance>,
 	) -> DispatchResult {
 		ensure!(
 			!OriginalSystemTokenMetadata::<T>::contains_key(&original),
@@ -607,6 +590,7 @@ where
 		let SystemTokenId { para_id, .. } = original.clone();
 		Self::try_push_sys_token_for_para_id(para_id, &original)?;
 		Self::try_push_para_id(para_id, &original)?;
+		// TODO: What if register System Token on Relay Chain?
 		Self::try_promote(&original, Some(system_token_weight))?;
 		SystemTokenProperties::<T>::insert(
 			&original,
@@ -950,11 +934,7 @@ where
 }
 
 // XCM-related internal methods
-impl<T: Config> Pallet<T>
-where
-	<T as pallet_assets::Config>::AssetIdParameter: From<SystemTokenAssetId>,
-	AssetIdOf<T>: From<SystemTokenAssetId>,
-{
+impl<T: Config> Pallet<T> {
 	/// **Description:**
 	///
 	/// Try change state of `wrapped` system token, which is `sufficient` and unlink the system
@@ -972,15 +952,8 @@ where
 	/// Otherwise, send DMP of `demote` to expected `para_id`
 	/// destination
 	fn try_demote(wrapped: SystemTokenId, is_unlink: bool) -> DispatchResult {
-		let SystemTokenId { para_id, pallet_id, asset_id } = wrapped;
-		if para_id == 0u32 {
-			// Relay Chain
-			pallet_assets::pallet::Pallet::<T>::try_do_unlink(&asset_id.into(), is_unlink)?;
-		} else {
-			// Parachain
-			let encoded_call = pallet_assets::Call::<T>::demote { id: asset_id.into(), is_unlink }.encode();
-			system_token_helper::try_queue_dmp::<T>(para_id, pallet_id, encoded_call)?;
-		}
+		let SystemTokenId { para_id, asset_id, .. } = wrapped;
+		T::InfraCoreInterface::deregister_system_token(para_id, asset_id, is_unlink);
 
 		Ok(())
 	}
@@ -994,14 +967,9 @@ where
 		system_token_id: &SystemTokenId,
 		system_token_weight: Option<SystemTokenWeight>,
 	) -> DispatchResult {
-		let SystemTokenId { para_id, pallet_id, asset_id } = system_token_id.clone();
-		let encoded_call = pallet_assets::Call::<T>::promote {
-			id: asset_id.into(),
-			system_token_weight,
-		}
-		.encode();
-		system_token_helper::try_queue_dmp::<T>(para_id, pallet_id, encoded_call)?;
-
+		let SystemTokenId { para_id, asset_id, .. } = system_token_id.clone();
+		let weight = system_token_weight.ok_or(Error::<T>::WeightMissing)?;
+		T::InfraCoreInterface::register_system_token(para_id, asset_id, weight);
 		Ok(())
 	}
 
@@ -1024,22 +992,7 @@ where
 		system_token_weight: SystemTokenWeight,
 	) -> DispatchResult {
 		let SystemTokenId { para_id, pallet_id, asset_id } = wrapped.clone();
-
-		if para_id == 0u32 {
-			// Relay Chain
-			pallet_assets::pallet::Pallet::<T>::do_update_system_token_weight(
-				asset_id.into(),
-				Some(system_token_weight),
-			)?
-		} else {
-			// Parachain
-			let encoded_call = pallet_assets::Call::<T>::update_system_token_weight {
-				id: asset_id.into(),
-				system_token_weight: Some(system_token_weight),
-			}
-			.encode();
-			system_token_helper::try_queue_dmp::<T>(para_id, pallet_id, encoded_call)?;
-		}
+		T::InfraCoreInterface::update_system_token_weight(para_id, asset_id, system_token_weight);
 
 		Ok(())
 	}
@@ -1066,42 +1019,19 @@ where
 			.ok_or(Error::<T>::WrappedNotRegistered)?;
 		let (_, asset_metadata) =
 			OriginalSystemTokenMetadata::<T>::get(&original).ok_or(Error::<T>::MetadataNotFound)?;
-		let SystemTokenId { para_id, pallet_id, asset_id } = wrapped;
-		let root = system_token_helper::root_account::<T>();
-		if para_id == RELAY_CHAIN_PARA_ID {
-			// Relay Chain
-			pallet_assets::pallet::Pallet::<T>::do_create_asset_with_metadata(
-				asset_id.into(),
-				T::Lookup::unlookup(root),
-				true,
-				asset_metadata.min_balance,
-				asset_metadata.name.to_vec(),
-				asset_metadata.symbol.to_vec(),
-				asset_metadata.decimals,
-				false,
-				original,
-				0,
-				Some(system_token_weight),
-			)?;
-		} else {
-			// Parachain
-			let encoded_call: Vec<u8> = pallet_assets::Call::<T>::force_create_with_metadata {
-				id: asset_id.into(),
-				owner: T::Lookup::unlookup(root),
-				min_balance: asset_metadata.min_balance,
-				is_sufficient: true,
-				name: asset_metadata.name.to_vec(),
-				symbol: asset_metadata.symbol.to_vec(),
-				decimals: asset_metadata.decimals,
-				is_frozen: false,
-				system_token_id: original,
-				asset_link_parents: 1,
-				system_token_weight: Some(system_token_weight),
-			}
-			.encode();
-
-			system_token_helper::try_queue_dmp::<T>(para_id, pallet_id, encoded_call)?;
-		}
+		let SystemTokenId { para_id, asset_id, .. } = wrapped;
+		let parent_for_asset_link: u8 = if para_id == RELAY_CHAIN_PARA_ID { 0 } else { 1 };
+		T::InfraCoreInterface::create_wrapped_local(
+			para_id, 
+			asset_id, 
+			asset_metadata.min_balance, 
+			asset_metadata.name.to_vec(), 
+			asset_metadata.symbol.to_vec(), 
+			asset_metadata.decimals, 
+			system_token_weight, 
+			parent_for_asset_link, 
+			original
+		);
 
 		Ok(())
 	}
@@ -1151,7 +1081,7 @@ pub mod types {
 	pub type StringLimitOf<T> = <T as Config>::StringLimit;
 	pub type IbsSystemTokenMetadata<T> = (
 		SystemTokenMetadata<BoundedVec<u8, StringLimitOf<T>>>,
-		AssetMetadata<BoundedVec<u8, StringLimitOf<T>>, <T as pallet_assets::Config>::Balance>,
+		AssetMetadata<BoundedVec<u8, StringLimitOf<T>>, SystemTokenBalance>,
 	);
 
 	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, TypeInfo)]

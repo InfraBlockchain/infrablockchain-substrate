@@ -87,6 +87,12 @@ pub struct AssetDetails<Balance, AccountId, DepositBalance> {
 	pub(super) system_token_weight: Option<SystemTokenWeight>,
 }
 
+impl<Balance, AccountId, DepositBalance> AssetDetails<Balance, AccountId, DepositBalance> {
+	pub fn set_system_token_weight(&mut self, weight: SystemTokenWeight) {
+		self.system_token_weight = Some(weight);
+	}
+}
+
 /// Data concerning an approval.
 #[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, Default, MaxEncodedLen, TypeInfo)]
 pub struct Approval<Balance, DepositBalance> {
