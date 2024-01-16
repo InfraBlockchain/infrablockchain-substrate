@@ -64,7 +64,6 @@ use pallet_session::historical as session_historical;
 use pallet_system_token_tx_payment::{HandleCredit, TransactionFeeCharger};
 use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
 use pallet_validator_election::SessionIndex;
-use pallet_system_token_oracle::BASE_SYSTEM_TOKEN_WEIGHT;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use primitives::{
 	slashing, AccountId, AccountIndex, Balance, BlockNumber, CandidateEvent, CandidateHash,
@@ -83,7 +82,7 @@ use sp_runtime::{
 		Verify,
 	},
 	transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
-	types::{vote::*, token::*, infra_core::*},
+	types::{vote::*, token::*},
 	ApplyExtrinsicResult, FixedU128, KeyTypeId, Perbill, Percent, Permill,
 };
 
@@ -103,12 +102,12 @@ pub use sp_runtime::BuildStorage;
 
 /// Constant values used within the runtime.
 use infra_relay_runtime_constants::{currency::*, fee::*, time::*, system_parachain::ASSET_HUB_ID};
+use xcm_config::XcmRouter;
 
 // Weights used in the runtime.
 mod weights;
 
 pub mod xcm_config;
-pub mod para_config;
 
 impl_runtime_weights!(infra_relay_runtime_constants);
 
@@ -396,6 +395,7 @@ impl infra_core::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type VotingInterface = ValidatorElection;
 	type SystemTokenInterface = SystemTokenManager;
+	type XcmRouter = XcmRouter;
 	type BaseWeight = InfrablockchainBaseWeight;
 }
 
@@ -1140,19 +1140,6 @@ impl system_token_manager::Config for Runtime {
 	type AssetHubId = AssetHubId;
 }
 
-parameter_types! {
-	pub const RequestPeriod: BlockNumber = prod_or_fast!(DAYS, 5u32);
-	pub const BaseSystemTokenWeight: SystemTokenWeight = BASE_SYSTEM_TOKEN_WEIGHT;
-	pub const IsOffChain: bool = false;
-}
-impl pallet_system_token_oracle::Config for Runtime {
-	type SystemTokenOracle = ();
-	type RequestPeriod = RequestPeriod;
-	type BaseWeight = BaseSystemTokenWeight;
-	type IsOffChain = IsOffChain;
-	type UnsignedPriority = SystemTokenHelperUnsignedPriority;
-}
-
 impl validator_reward_manager::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type ValidatorSet = Historical;
@@ -1426,9 +1413,6 @@ construct_runtime! {
 
 		// Babe must be before session.
 		Babe: pallet_babe::{Pallet, Call, Storage, Config<T>, ValidateUnsigned} = 2,
-
-		// Since this module depends on Babe
-		SystemTokenOracle: pallet_system_token_oracle::{Pallet, Call, Storage, ValidateUnsigned, Origin} = 26,
 
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 3,
 		Indices: pallet_indices::{Pallet, Call, Storage, Config<T>, Event<T>} = 4,

@@ -31,18 +31,6 @@ use sp_std::{vec::Vec, prelude::ToOwned};
 
 pub use pallet::*;
 
-/// Ensure that the origin `o` represents a relay chain.
-/// Returns `Ok` that effected the extrinsic or an `Err` otherwise.
-pub fn ensure_system_token_origin<OuterOrigin>(o: OuterOrigin) -> Result<(), BadOrigin>
-where
-	OuterOrigin: Into<Result<Origin, OuterOrigin>>,
-{
-	match o.into() {
-		Ok(Origin::SystemTokenBody) => Ok(()),
-		_ => Err(BadOrigin),
-	}
-}
-
 #[frame_support::pallet(dev_mode)]
 pub mod pallet {
 
@@ -106,23 +94,6 @@ pub mod pallet {
 		CurrencyNotFound,
 		/// Error on parsing
 		ParseError,
-	}
-
-	/// Origin for the parachains.
-	#[pallet::origin]
-	#[derive(
-		PartialEq,
-		Eq,
-		Clone,
-		Encode,
-		Decode,
-		sp_core::RuntimeDebug,
-		scale_info::TypeInfo,
-		MaxEncodedLen,
-	)]
-	pub enum Origin {
-		/// It comes from a relay chain
-		SystemTokenBody,
 	}
 
 	#[pallet::hooks]

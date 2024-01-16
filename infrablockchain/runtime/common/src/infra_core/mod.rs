@@ -2,11 +2,16 @@
 use frame_support::pallet_prelude::*;
 use frame_system::pallet_prelude::*;
 use frame_system::ensure_root;
-pub use pallet::*;
 use parity_scale_codec::Encode;
 use sp_runtime::types::{token::*, fee::*, vote::*, infra_core::*};
 use sp_std::vec::Vec;
 use pallet_validator_election::VotingInterface;
+use xcm::latest::prelude::*;
+
+mod impls;
+mod types;
+
+pub use pallet::*;
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct SystemTokenDetails {
@@ -50,6 +55,8 @@ pub mod pallet {
 		type VotingInterface: VotingInterface<Self>;
 		/// Managing System Token
 		type SystemTokenInterface: SystemTokenInterface;
+		/// Type that delivers XCM messages
+		type XcmRouter: SendXcm;
         /// Base system token weight for InfraBlockchain
         #[pallet::constant]
         type BaseWeight: Get<SystemTokenWeight>;
@@ -209,42 +216,5 @@ impl<T: Config> Pallet<T> {
 		RuntimeState::<T>::put(Mode::Normal);
 		Self::deposit_event(Event::<T>::BootstrapEnded);
 		Ok(())
-	}
-}
-
-impl<T: Config> VotingHandler for Pallet<T> {
-
-	fn update_pot_vote(
-		who: VoteAccountId,
-		system_token_id: SystemTokenId,
-		vote_weight: VoteWeight,
-	) {
-		// Validity Check
-		// Check whether it is registered system token
-		if !T::SystemTokenInterface::is_system_token(&system_token_id) {
-			return
-		}
-		let weight = T::SystemTokenInterface::adjusted_weight(&system_token_id, vote_weight);
-		T::VotingInterface::update_vote_status(who.clone(), weight);
-		Self::deposit_event(Event::<T>::Voted { who, system_token_id, vote_weight: weight });
-	}
-}
-
-impl<T: Config> RuntimeConfigProvider for Pallet<T> {
-	
-	type Error = DispatchError;
-
-	fn base_weight() -> Result<SystemTokenWeight, Self::Error> {
-		Ok(T::BaseWeight::get())
-	}
-
-	fn fee_rate() -> Result<SystemTokenWeight, Self::Error> {
-		Ok(T::BaseWeight::get())
-	}
-	fn fee_for(ext: ExtrinsicMetadata) -> Option<SystemTokenBalance> {
-		FeeTable::<T>::get(&ext)
-	}
-	fn runtime_state() -> Mode {
-		RuntimeState::<T>::get()
 	}
 }

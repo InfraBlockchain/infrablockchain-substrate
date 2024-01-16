@@ -729,7 +729,7 @@ construct_runtime!(
 		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
 		AssetLink: pallet_asset_link = 52,
 		SystemTokenAggregator: system_token_aggregator = 53,
-		SystemTokenOracle: pallet_system_token_oracle::{Pallet, Call, Storage, ValidateUnsigned, Origin} = 54,
+		SystemTokenOracle: pallet_system_token_oracle::{Pallet, Call, Storage, ValidateUnsigned} = 54,
 	}
 );
 

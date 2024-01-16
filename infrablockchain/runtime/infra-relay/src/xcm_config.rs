@@ -19,7 +19,7 @@
 use super::{
 	parachains_origin, AccountId, AllPalletsWithSystem, AssetLink, Assets, Authorship, Balance,
 	Balances, ParaId, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, ValidatorCollective,
-	WeightToFee, XcmPallet, system_token_manager,
+	WeightToFee, XcmPallet,
 };
 use frame_support::{
 	match_types, parameter_types,
