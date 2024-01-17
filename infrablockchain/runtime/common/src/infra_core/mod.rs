@@ -91,15 +91,15 @@ pub mod pallet {
 		/// Current Runtime state is not ready to change
 		NotAllowedToChangeState,
 		/// Error occured while registering System Token
-		ErrorRegisterSystemToken { asset_id: SystemTokenAssetId },
+		ErrorRegisterSystemToken,
 		/// Error occured while updating weight of System Token
-		ErrorUpdateWeight { asset_id: SystemTokenAssetId },
+		ErrorUpdateWeight,
 		/// Error occured while creating wrapped local asset
-		ErrorCreateWrappedLocal { asset_id: SystemTokenAssetId },
+		ErrorCreateWrappedLocal,
 		/// Error occured while linking asset
-		ErrorLinkAsset { asset_id: SystemTokenAssetId },
+		ErrorLinkAsset,
 		/// Error occured while deregistering asset
-		ErrorDeregisterSystemToken { asset_id: SystemTokenAssetId },
+		ErrorDeregisterSystemToken,
 	}
 
     #[pallet::call]
@@ -167,7 +167,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_root(origin)?;
 			T::LocalAssetManager::update_system_token_weight(asset_id, system_token_weight)
-				.map_err(|_| Error::<T>::ErrorUpdateWeight { asset_id })?;
+				.map_err(|_| Error::<T>::ErrorUpdateWeight)?;
 			Self::deposit_event(Event::<T>::SystemTokenWeightUpdated { asset_id });
 			Ok(())
 		}
@@ -184,7 +184,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_root(origin)?;
 			T::LocalAssetManager::promote(asset_id, system_token_weight)
-				.map_err(|_| Error::<T>::ErrorRegisterSystemToken { asset_id })?;
+				.map_err(|_| Error::<T>::ErrorRegisterSystemToken)?;
 			Ok(())
 		}
 		
@@ -207,9 +207,9 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_root(origin)?;
 			T::LocalAssetManager::create_wrapped_local(asset_id, min_balance, name, symbol, decimals, system_token_weight)
-				.map_err(|_| Error::<T>::ErrorCreateWrappedLocal { asset_id })?;
+				.map_err(|_| Error::<T>::ErrorCreateWrappedLocal)?;
             T::AssetLink::link(&asset_id, asset_link_parent, original)
-				.map_err(|_| Error::<T>::ErrorLinkAsset { asset_id })?;
+				.map_err(|_| Error::<T>::ErrorLinkAsset)?;
 			Ok(())
 		}
 
@@ -220,7 +220,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_root(origin)?;
 			T::LocalAssetManager::demote(asset_id)
-				.map_err(|_| Error::<T>::ErrorRegisterSystemToken { asset_id })?;
+				.map_err(|_| Error::<T>::ErrorRegisterSystemToken)?;
 			Ok(())
 		}
 	}

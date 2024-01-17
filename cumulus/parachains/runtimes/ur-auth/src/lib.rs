@@ -349,7 +349,7 @@ impl cumulus_pallet_infra_parachain_core::Config for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeEvent = RuntimeEvent;
 	type LocalAssetManager = Assets;
-	type AssetLinkInterface = AssetLink;
+	type AssetLink = AssetLink;
 	type CollectVote = ParachainSystem;
 }
 
@@ -432,7 +432,6 @@ impl pallet_collator_selection::Config for Runtime {
 
 impl pallet_asset_link::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type ReserveAssetModifierOrigin = EnsureRoot<AccountId>;
 	type Assets = Assets;
 	type WeightInfo = ();
 }
@@ -549,7 +548,7 @@ construct_runtime!(
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
-		AssetLink: pallet_asset_link::{Pallet, Call, Storage, Event<T>} = 34,
+		AssetLink: pallet_asset_link::{Pallet, Storage, Event<T>} = 34,
 		SystemTokenAggregator: system_token_aggregator::{Pallet, Event<T>} = 35,
 
 		// Governance

@@ -104,7 +104,7 @@ impl<T: Config> InfraConfigInterface for Pallet<T> {
     ) {
         if para_id == RELAY_CHAIN_PARA_ID {
             // TODO: Error handling
-            let _ = T::LocalAssetManager::create_wrapped_local(asset_id, min_balance, name, symbol, decimals, weight);
+            let _ = T::LocalAssetManager::create_wrapped_local(asset_id, min_balance, name, symbol, decimals, system_token_weight);
             let _ = T::AssetLink::link(&asset_id, asset_link_parent, original);
         } else {
             let create_call = ParachainRuntimePallets::ParachainConfig(

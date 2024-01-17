@@ -524,7 +524,7 @@ impl cumulus_pallet_infra_parachain_core::Config for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeEvent = RuntimeEvent;
 	type LocalAssetManager = Assets;
-	type AssetLinkInterface = AssetLink;
+	type AssetLink = AssetLink;
 	type CollectVote = ParachainSystem;
 }
 
@@ -657,7 +657,6 @@ impl pallet_uniques::Config for Runtime {
 
 impl pallet_asset_link::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type ReserveAssetModifierOrigin = EnsureRoot<AccountId>;
 	type Assets = Assets;
 	type WeightInfo = ();
 }
@@ -727,7 +726,7 @@ construct_runtime!(
 		// The main stage.
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>, Config<T>} = 50,
 		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
-		AssetLink: pallet_asset_link = 52,
+		AssetLink: pallet_asset_link::{Pallet, Storage, Event<T>} = 52,
 		SystemTokenAggregator: system_token_aggregator = 53,
 		SystemTokenOracle: pallet_system_token_oracle::{Pallet, Call, Storage, ValidateUnsigned} = 54,
 	}

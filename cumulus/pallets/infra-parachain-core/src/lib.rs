@@ -80,17 +80,17 @@ pub mod pallet {
 		/// Base System Token weight has not been set 
 		BaseWeightMissing,
 		/// Error occured while updating weight of System Token
-		ErrorUpdateWeight { asset_id: SystemTokenAssetId },
+		ErrorUpdateWeight,
 		/// Error occured while registering System Token
-		ErrorRegisterSystemToken { asset_id: SystemTokenAssetId },
+		ErrorRegisterSystemToken,
 		/// Error occured while deregistering System Token
-		ErrorDeregisterSystemToken { asset_id: SystemTokenAssetId },
+		ErrorDeregisterSystemToken,
 		/// Error occured while creating wrapped local asset
-		ErrorCreateWrappedLocalAsset { asset_id: SystemTokenAssetId },
+		ErrorCreateWrappedLocalAsset,
 		/// Error occured while linking asset
-		ErrorLinkAsset { asset_id: SystemTokenAssetId },
+		ErrorLinkAsset,
 		/// Error occured while unlinking asset
-		ErrorUnlinkAsset { asset_id: SystemTokenAssetId },
+		ErrorUnlinkAsset,
 	}
 
 	#[pallet::call]
@@ -169,7 +169,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
 			T::LocalAssetManager::update_system_token_weight(asset_id, system_token_weight)
-				.map_err(|_| Error::<T>::ErrorUpdateWeight { asset_id })?;
+				.map_err(|_| Error::<T>::ErrorUpdateWeight)?;
 			Ok(())
 		}
 
@@ -185,7 +185,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
 			T::LocalAssetManager::promote(asset_id, system_token_weight)
-				.map_err(|_| Error::<T>::ErrorRegisterSystemToken { asset_id })?;
+				.map_err(|_| Error::<T>::ErrorRegisterSystemToken)?;
 			Ok(())
 		}
 		
@@ -213,9 +213,9 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
 			T::LocalAssetManager::create_wrapped_local(asset_id, min_balance, name, symbol, decimals, system_token_weight)
-				.map_err(|_| Error::<T>::ErrorCreateWrappedLocalAsset { asset_id })?; 
+				.map_err(|_| Error::<T>::ErrorCreateWrappedLocalAsset)?; 
 			T::AssetLink::link(&asset_id, asset_link_parent, original)
-				.map_err(|_| Error::<T>::ErrorLinkAsset { asset_id })?;
+				.map_err(|_| Error::<T>::ErrorLinkAsset)?;
 			Ok(())
 		}
 
@@ -227,9 +227,9 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
 			T::LocalAssetManager::demote(asset_id)
-				.map_err(|_| Error::<T>::ErrorDeregisterSystemToken { asset_id })?;
+				.map_err(|_| Error::<T>::ErrorDeregisterSystemToken)?;
 			if is_unlink { 
-				T::AssetLink::unlink(&asset_id).map_err(|_| Error::<T>::ErrorUnlinkAsset { asset_id })?;
+				T::AssetLink::unlink(&asset_id).map_err(|_| Error::<T>::ErrorUnlinkAsset)?;
 			}
 			Ok(())
 		}

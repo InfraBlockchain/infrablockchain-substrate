@@ -192,7 +192,6 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 			RuntimeCall::XcmpQueue(..) |
 			RuntimeCall::DmpQueue(..) |
 			RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. }) |
-			RuntimeCall::AssetLink(pallet_asset_link::Call::link_system_token { .. }) |
 			RuntimeCall::Assets(
 				pallet_assets::Call::force_set_metadata { .. } |
 				pallet_assets::Call::create { .. } |
