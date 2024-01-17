@@ -77,11 +77,11 @@ pub trait LocalAssetProvider<Asset, Account> {
 }
 
 /// API to create/destory local assets related to System Token
-pub trait LocalAssetManager<Account> {
+pub trait LocalAssetManager {
+	
 	type Error;
 	/// Create local asset with metadata which refers to `wrapped` System Token
 	fn create_wrapped_local(
-		owner: Account,
 		asset_id: SystemTokenAssetId,
 		min_balance: SystemTokenBalance,
 		name: Vec<u8>,
@@ -128,6 +128,34 @@ impl SystemTokenInterface for () {
 	}
 	fn adjusted_weight(_system_token: &SystemTokenId, _vote_weight: VoteWeight) -> VoteWeight {
 		Default::default()
+	}
+}
+
+pub trait AssetLinkInterface<AssetId> {
+
+	type Error;
+	
+	fn link(
+		asset_id: &AssetId,
+		parents: u8,
+		original: SystemTokenId,
+	) -> Result<(), Self::Error>;
+	fn unlink(asset_id: &AssetId) -> Result<(), Self::Error>;
+}
+
+impl<AssetId> AssetLinkInterface<AssetId> for () {
+
+	type Error = ();
+
+	fn link(
+		_asset_id: &AssetId,
+		_parents: u8,
+		_original: SystemTokenId,
+	) -> Result<(), Self::Error> {
+		Ok(())
+	}
+	fn unlink(_asset_id: &AssetId) -> Result<(), Self::Error> {
+		Ok(())
 	}
 }
 

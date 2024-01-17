@@ -42,26 +42,24 @@ impl<T: Config> RuntimeConfigProvider for Pallet<T> {
 // TODO: Find a way to dispatch XCM locally. Then it would be much clearer
 impl<T: Config> InfraConfigInterface for Pallet<T> {
     fn set_base_weight(para_id: SystemTokenParaId) {
-        let set_base_weight_call = ParachainRuntimePallets::ParachainConfig(ParachainConfigCalls::SetBaseWeight);
-        Self::send_xcm_for(set_base_weight_call.encode(), para_id);
+        if para_id != RELAY_CHAIN_PARA_ID {
+            let set_base_weight_call = ParachainRuntimePallets::ParachainConfig(ParachainConfigCalls::SetBaseWeight);
+            Self::send_xcm_for(set_base_weight_call.encode(), para_id);
+        }
     }
 
     fn set_fee_table(para_id: SystemTokenParaId, pallet_name: Vec<u8>, call_name: Vec<u8>, fee: SystemTokenBalance) {
-        if para_id == RELAY_CHAIN_PARA_ID {
-            // Do something locally
-        } else {
+        if para_id != RELAY_CHAIN_PARA_ID {
             let set_fee_table_call = ParachainRuntimePallets::ParachainConfig(ParachainConfigCalls::SetFeeTable(pallet_name, call_name, fee));
             Self::send_xcm_for(set_fee_table_call.encode(), para_id);
-        }
+        } 
     }
 
     fn set_para_fee_rate(para_id: SystemTokenParaId, fee_rate: SystemTokenWeight) {
-        if para_id == RELAY_CHAIN_PARA_ID {
-            // Do something locally
-        } else {
+        if para_id != RELAY_CHAIN_PARA_ID {
             let set_fee_rate_call = ParachainRuntimePallets::ParachainConfig(ParachainConfigCalls::SetParaFeeRate(fee_rate));
             Self::send_xcm_for(set_fee_rate_call.encode(), para_id);
-        }
+        } 
     }
 
     fn set_runtime_state(para_id: SystemTokenParaId) {
@@ -75,7 +73,8 @@ impl<T: Config> InfraConfigInterface for Pallet<T> {
 
     fn update_system_token_weight(para_id: SystemTokenParaId, asset_id: SystemTokenAssetId, system_token_weight: SystemTokenWeight) {
         if para_id == RELAY_CHAIN_PARA_ID {
-            // Do something locally
+            // TODO: Error handling
+            let _ = T::LocalAssetManager::update_system_token_weight(asset_id, system_token_weight);
         } else {
             let update_system_token_weight_call = ParachainRuntimePallets::ParachainConfig(ParachainConfigCalls::UpdateSystemTokenWeight(asset_id, system_token_weight));
             Self::send_xcm_for(update_system_token_weight_call.encode(), para_id);
@@ -84,7 +83,8 @@ impl<T: Config> InfraConfigInterface for Pallet<T> {
 
     fn register_system_token(para_id: SystemTokenParaId, asset_id: SystemTokenAssetId, system_token_weight: SystemTokenWeight) {
         if para_id == RELAY_CHAIN_PARA_ID {
-            // Do something locally
+            // TODO: Error handling
+            let _ = T::LocalAssetManager::promote(asset_id, system_token_weight);
         } else {
             let register_call = ParachainRuntimePallets::ParachainConfig(ParachainConfigCalls::RegisterSystemToken(asset_id, system_token_weight));
             Self::send_xcm_for(register_call.encode(), para_id);
@@ -103,10 +103,9 @@ impl<T: Config> InfraConfigInterface for Pallet<T> {
         original: SystemTokenId
     ) {
         if para_id == RELAY_CHAIN_PARA_ID {
-            // TODO
-            // - AssetLink
-            // - Owner
-            // T::LocalAssetManager::create_wrapped_local(asset_id, min_balance, name, symbol, decimals, weight, original)
+            // TODO: Error handling
+            let _ = T::LocalAssetManager::create_wrapped_local(asset_id, min_balance, name, symbol, decimals, weight);
+            let _ = T::AssetLink::link(&asset_id, asset_link_parent, original);
         } else {
             let create_call = ParachainRuntimePallets::ParachainConfig(
                 ParachainConfigCalls::CreateWrappedLocal(
@@ -125,7 +124,8 @@ impl<T: Config> InfraConfigInterface for Pallet<T> {
 
     fn deregister_system_token(para_id: SystemTokenParaId, asset_id: SystemTokenAssetId, is_unlink: bool) {
         if para_id == RELAY_CHAIN_PARA_ID {
-            // Do something locally
+            // TODO: Error handling
+            let _ = T::LocalAssetManager::demote(asset_id);
         } else {
             let deregister_call = ParachainRuntimePallets::ParachainConfig(ParachainConfigCalls::DeregisterSystemToken(asset_id, is_unlink));
             Self::send_xcm_for(deregister_call.encode(), para_id);

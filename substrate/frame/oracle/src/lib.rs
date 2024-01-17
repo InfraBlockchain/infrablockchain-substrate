@@ -21,7 +21,7 @@ mod types;
 pub use types::*;
 
 use lite_json::JsonValue;
-use frame_support::{error::BadOrigin, pallet_prelude::*};
+use frame_support::pallet_prelude::*;
 use frame_system::pallet_prelude::*;
 use frame_system::offchain::{
 	SubmitTransaction, SendTransactionTypes

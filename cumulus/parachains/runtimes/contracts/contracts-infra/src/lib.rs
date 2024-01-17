@@ -40,8 +40,7 @@ use sp_runtime::{
 	traits::{
 		AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, TryConvertInto as JustTry,
 	},
-	types::SystemTokenWeight,
-	transaction_validity::{TransactionSource, TransactionValidity, TransactionPriority},
+	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,
 };
 use xcm_config::{NativeLocation, XcmConfig, XcmOriginToTransactDispatchOrigin};
@@ -301,6 +300,8 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 impl cumulus_pallet_infra_parachain_core::Config for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeEvent = RuntimeEvent;
+	type LocalAssetManager = Assets;
+	type AssetLinkInterface = AssetLink;
 	type CollectVote = ParachainSystem;
 }
 
@@ -500,7 +501,6 @@ impl pallet_assets::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
 	type AssetId = AssetId;
-	type AssetLink = AssetLink;
 	type AssetIdParameter = codec::Compact<AssetId>;
 	type Currency = Balances;
 	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;

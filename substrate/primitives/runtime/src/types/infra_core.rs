@@ -9,13 +9,19 @@ use sp_std::vec::Vec;
 #[allow(missing_docs)]
 /// API that handles Runtime configuration including System Token
 pub trait InfraConfigInterface {
+    /// Set base weight for the `para_id` parachain by Relay-chain governance
     fn set_base_weight(para_id: SystemTokenParaId);
+    /// Set fee table for the `para_id` parachain by Relay-chain governance
 	fn set_fee_table(para_id: SystemTokenParaId, pallet_name: Vec<u8>, call_name: Vec<u8>, fee: SystemTokenBalance);
+    /// Set fee rate for the `para_id` parachain by Relay-chain governance
 	fn set_para_fee_rate(para_id: SystemTokenParaId, fee_rate: SystemTokenWeight);
+    /// Set runtime state configuration for the `para_id` parachain by Relay-chain governance
 	fn set_runtime_state(para_id: SystemTokenParaId);
+    /// Update weight of System Token for the `para_id` parachain by Relay-chain governance
 	fn update_system_token_weight(para_id: SystemTokenParaId, asset_id: SystemTokenAssetId, system_token_weight: SystemTokenWeight);
-	fn register_system_token(para_id: SystemTokenParaId, asset_id: SystemTokenAssetId, system_token_weight: SystemTokenWeight);
-	/// Create local asset for `Wrapped` System Token
+	/// Register `original` System Token's local asset for the `para_id` parachain by Relay-chain governance
+    fn register_system_token(para_id: SystemTokenParaId, asset_id: SystemTokenAssetId, system_token_weight: SystemTokenWeight);
+	/// Create local asset for `Wrapped` System Token for the `para_id` parachain by Relay-chain governance
     fn create_wrapped_local(
         para_id: SystemTokenParaId, 
         asset_id: SystemTokenAssetId, 

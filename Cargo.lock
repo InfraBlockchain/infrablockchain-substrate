@@ -13486,6 +13486,7 @@ dependencies = [
  "staging-xcm",
  "staging-xcm-builder",
  "static_assertions",
+ "xcm-primitives",
 ]
 
 [[package]]

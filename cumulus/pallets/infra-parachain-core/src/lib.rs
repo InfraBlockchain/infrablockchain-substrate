@@ -4,10 +4,7 @@
 use frame_support::pallet_prelude::*;
 use frame_system::pallet_prelude::*;
 use cumulus_pallet_xcm::{ensure_relay, Origin};
-use sp_runtime::{
-	types::{token::*, fee::*, vote::*, infra_core::*},
-	traits::StaticLookup
-};
+use sp_runtime::types::{token::*, fee::*, vote::*, infra_core::*};
 use sp_std::vec::Vec;
 pub use pallet::*;
 
@@ -23,8 +20,6 @@ pub enum SystemTokenStatus {
 	Deregistered,
 }
 
-type AccountIdLookupOf<T> = <<T as frame_system::Config>::Lookup as StaticLookup>::Source;
-
 #[frame_support::pallet(dev_mode)]
 pub mod pallet {
 
@@ -37,6 +32,10 @@ pub mod pallet {
 			+ Into<Result<Origin, <Self as Config>::RuntimeOrigin>>;
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+		/// Type that interacts with local asset
+		type LocalAssetManager: LocalAssetManager;
+		/// Type that links local asset with System Token
+		type AssetLink: AssetLinkInterface<SystemTokenAssetId>;
 		/// Handler for TaaV
 		type CollectVote: CollectVote;
 	}
@@ -80,6 +79,18 @@ pub mod pallet {
 		SystemTokenMissing,
 		/// Base System Token weight has not been set 
 		BaseWeightMissing,
+		/// Error occured while updating weight of System Token
+		ErrorUpdateWeight { asset_id: SystemTokenAssetId },
+		/// Error occured while registering System Token
+		ErrorRegisterSystemToken { asset_id: SystemTokenAssetId },
+		/// Error occured while deregistering System Token
+		ErrorDeregisterSystemToken { asset_id: SystemTokenAssetId },
+		/// Error occured while creating wrapped local asset
+		ErrorCreateWrappedLocalAsset { asset_id: SystemTokenAssetId },
+		/// Error occured while linking asset
+		ErrorLinkAsset { asset_id: SystemTokenAssetId },
+		/// Error occured while unlinking asset
+		ErrorUnlinkAsset { asset_id: SystemTokenAssetId },
 	}
 
 	#[pallet::call]
@@ -135,7 +146,14 @@ pub mod pallet {
 		#[pallet::call_index(3)]
 		pub fn set_runtime_state(origin: OriginFor<T>) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
-			Self::do_set_runtime_state()?;
+			if RuntimeState::<T>::get() == Mode::Normal {
+				return Ok(())
+			}
+			// TODO-1: Check whether it is allowed to change `Normal` state
+			// TODO-2: Check whether a parachain has enough system token to pay
+			RuntimeState::<T>::put(Mode::Normal);
+			Self::deposit_event(Event::<T>::BootstrapEnded);
+
 			Ok(())
 		}
 
@@ -150,7 +168,8 @@ pub mod pallet {
 			system_token_weight: SystemTokenWeight
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
-			// LocalAssetManager::update_system_token_weight(asset_id, system_token_weight)?;
+			T::LocalAssetManager::update_system_token_weight(asset_id, system_token_weight)
+				.map_err(|_| Error::<T>::ErrorUpdateWeight { asset_id })?;
 			Ok(())
 		}
 
@@ -165,7 +184,8 @@ pub mod pallet {
 			system_token_weight: SystemTokenWeight
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
-			// T::LocalAssetManager::promote()
+			T::LocalAssetManager::promote(asset_id, system_token_weight)
+				.map_err(|_| Error::<T>::ErrorRegisterSystemToken { asset_id })?;
 			Ok(())
 		}
 		
@@ -192,9 +212,10 @@ pub mod pallet {
 			original: SystemTokenId,
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
-			// ToDo: RelayChain account to be 'owner'
-			// LocalAssetManager::create_wrapped(owner, asset_id, min_balance, name, symbol, decimals, system_token_weight)?; 
-			// AssetLink::link(original, asset_link_parent, asset_id);
+			T::LocalAssetManager::create_wrapped_local(asset_id, min_balance, name, symbol, decimals, system_token_weight)
+				.map_err(|_| Error::<T>::ErrorCreateWrappedLocalAsset { asset_id })?; 
+			T::AssetLink::link(&asset_id, asset_link_parent, original)
+				.map_err(|_| Error::<T>::ErrorLinkAsset { asset_id })?;
 			Ok(())
 		}
 
@@ -205,23 +226,13 @@ pub mod pallet {
 			is_unlink: bool
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
-			// LocalAssetManager::demote(asset_id)?;
-			// if is_unlink { // Do Something }
+			T::LocalAssetManager::demote(asset_id)
+				.map_err(|_| Error::<T>::ErrorDeregisterSystemToken { asset_id })?;
+			if is_unlink { 
+				T::AssetLink::unlink(&asset_id).map_err(|_| Error::<T>::ErrorUnlinkAsset { asset_id })?;
+			}
 			Ok(())
 		}
-	}
-}
-
-impl<T: Config> Pallet<T> {
-	pub fn do_set_runtime_state() -> DispatchResult {
-		if RuntimeState::<T>::get() == Mode::Normal {
-			return Ok(())
-		}
-		// TODO-1: Check whether it is allowed to change `Normal` state
-		// TODO-2: Check whether a parachain has enough system token to pay
-		RuntimeState::<T>::put(Mode::Normal);
-		Self::deposit_event(Event::<T>::BootstrapEnded);
-		Ok(())
 	}
 }
 

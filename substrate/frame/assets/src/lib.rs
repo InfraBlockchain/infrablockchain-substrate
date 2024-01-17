@@ -173,7 +173,7 @@ use frame_support::{
 use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
 use sp_runtime::{
-	traits::{AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Saturating, StaticLookup, Zero},
+	traits::{AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Saturating, StaticLookup, Zero, AccountIdConversion},
 	types::token::*,
 	ArithmeticError, DispatchError, TokenError,
 };
@@ -241,9 +241,6 @@ pub mod pallet {
 			+ MaxEncodedLen
 			+ TypeInfo
 			+ IsType<SystemTokenBalance>;
-
-		/// The Links connecting system tokens between chains.
-		type AssetLink: AssetLinkInterface<Self::AssetId>;
 
 		/// Max number of items to destroy per `destroy_accounts` and `destroy_approvals` call.
 		///
@@ -1716,28 +1713,6 @@ pub mod pallet {
 		fn contains(asset: &T::AssetId, who: &T::AccountId) -> bool {
 			Account::<T, I>::contains_key(asset, who)
 		}
-	}
-}
-
-pub trait AssetLinkInterface<AssetId> {
-	fn link_system_token(
-		parents: u8,
-		asset_id: &AssetId,
-		system_token_id: SystemTokenId,
-	) -> DispatchResult;
-	fn unlink_system_token(asset_id: &AssetId) -> DispatchResult;
-}
-
-impl<AssetId> AssetLinkInterface<AssetId> for () {
-	fn link_system_token(
-		_parents: u8,
-		_asset_id: &AssetId,
-		_system_token_id: SystemTokenId,
-	) -> DispatchResult {
-		Ok(())
-	}
-	fn unlink_system_token(_asset_id: &AssetId) -> DispatchResult {
-		Ok(())
 	}
 }
 

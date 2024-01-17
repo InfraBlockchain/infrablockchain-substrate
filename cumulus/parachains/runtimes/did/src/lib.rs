@@ -13,38 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! # Infra Asset Hub MainNet Runtime
-//!
-//! Infra Asset System is a parachain that provides an interface to create, manage, and use assets.
-//! Assets may be fungible or non-fungible.
-//!
-//! ## Assets
-//!
-//! - Fungibles: Configuration of `pallet-assets`.
-//! - Non-Fungibles (NFTs): Configuration of `pallet-uniques`.
-//!
-//! ## Other Functionality
-//!
-//! ### Native Balances
-//!
-//! Infra Asset System uses its parent DOT token as its native asset.
-//!
-//! ### Governance
-//!
-//! As a common good parachain, Infra Asset System defers its governance (namely, its `Root`
-//! origin), to its Relay Chain parent, Polkadot.
-//!
-//! ### Collator Selection
-//!
-//! Infra Asset System uses `pallet-collator-selection`, a simple first-come-first-served
-//! registration system where collators can reserve a small bond to join the block producer set.
-//! There is no slashing.
-//!
-//! ### XCM
-//!
-//! Because Infra Asset System is fully under the control of the Relay Chain, it is meant to be a
-//! `TrustedTeleporter`.
-
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(enable_alloc_error_handler, feature(alloc_error_handler))]
 #![recursion_limit = "256"]
@@ -59,7 +27,6 @@ mod wasm {
 	const _: Option<&[u8]> = WASM_BINARY_BLOATY;
 }
 
-use pallet_assets::BASE_SYSTEM_TOKEN_WEIGHT;
 #[cfg(feature = "std")]
 pub use wasm::WASM_BINARY;
 
@@ -77,8 +44,7 @@ use sp_runtime::{
 	traits::{
 		AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, TryConvertInto as JustTry,
 	},
-	types::SystemTokenWeight,
-	transaction_validity::{TransactionSource, TransactionValidity, TransactionPriority},
+	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,
 };
 
@@ -341,7 +307,6 @@ impl pallet_assets::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
 	type AssetId = AssetId;
-	type AssetLink = AssetLink;
 	type AssetIdParameter = codec::Compact<AssetId>;
 	type Currency = Balances;
 	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
@@ -565,6 +530,8 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 impl cumulus_pallet_infra_parachain_core::Config for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeEvent = RuntimeEvent;
+	type LocalAssetManager = Assets;
+	type AssetLinkInterface = AssetLink;
 	type CollectVote = ParachainSystem;
 }
 

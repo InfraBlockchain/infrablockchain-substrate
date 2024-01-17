@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{configuration, dmp, paras, Origin as ParachainOrigin, ParaId, ensure_parachain};
+use crate::{configuration, paras, Origin as ParachainOrigin, ParaId, ensure_parachain};
 pub use frame_support::{
 	pallet_prelude::*,
 	traits::UnixTime,
@@ -991,7 +991,7 @@ impl<T: Config> Pallet<T> {
 		wrapped: &SystemTokenId,
 		system_token_weight: SystemTokenWeight,
 	) -> DispatchResult {
-		let SystemTokenId { para_id, pallet_id, asset_id } = wrapped.clone();
+		let SystemTokenId { para_id, asset_id, .. } = wrapped.clone();
 		T::InfraCoreInterface::update_system_token_weight(para_id, asset_id, system_token_weight);
 
 		Ok(())

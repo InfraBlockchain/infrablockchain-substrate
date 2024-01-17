@@ -1043,7 +1043,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	/// Try create `wrapped` System Token's local asset with `original` System Token's metadata
 	pub fn try_create_wrapped_local(
 		asset_id: SystemTokenAssetId,
-		owner: AccountIdLookupOf<T>,
+		owner: T::AccountId,
 		min_balance: SystemTokenBalance,
 		name: Vec<u8>,
 		symbol: Vec<u8>,
@@ -1051,7 +1051,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		system_token_weight: Option<SystemTokenWeight>,
 	) -> DispatchResult {
 		let id: T::AssetId = asset_id.into();
-		let owner = T::Lookup::lookup(owner)?;
 		ensure!(!Asset::<T, I>::contains_key(&id), Error::<T, I>::InUse);
 		Self::do_force_create(id.clone(), &owner, true, min_balance.into(), system_token_weight)?;
 		Self::do_set_metadata(id, &owner, name, symbol, decimals)?;

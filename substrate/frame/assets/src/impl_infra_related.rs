@@ -1,10 +1,11 @@
 
 use super::*;
 
-impl<T: Config<I>, I: 'static> LocalAssetManager<AccountIdLookupOf<T>> for Pallet<T, I> {
+impl<T: Config<I>, I: 'static> LocalAssetManager for Pallet<T, I> {
+
     type Error = DispatchResult;
+
     fn create_wrapped_local(
-            owner: AccountIdLookupOf<T>,
             asset_id: SystemTokenAssetId,
             min_balance: SystemTokenBalance,
             name: Vec<u8>,
@@ -12,6 +13,7 @@ impl<T: Config<I>, I: 'static> LocalAssetManager<AccountIdLookupOf<T>> for Palle
             decimals: u8, 
             system_token_weight: SystemTokenWeight
     ) -> Result<(), Self::Error> {
+        let owner: T::AccountId = frame_support::PalletId(*b"infra/rt").into_account_truncating();
         Self::try_create_wrapped_local(
             asset_id, 
             owner, 
