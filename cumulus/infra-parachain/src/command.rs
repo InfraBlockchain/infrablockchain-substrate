@@ -516,8 +516,6 @@ pub fn run() -> Result<()> {
 				info!("Parachain id: {:?}", id);
 				info!("Parachain Account: {}", parachain_account);
 				info!("Is collating: {}", if config.role.is_authority() { "yes" } else { "no" });
-				info!("Off-Chain enabled: {}", if config.offchain_worker.enabled { "yes" } else { "no" });
-				
 				match config.chain_spec.runtime() {
 					Runtime::AssetHubInfra => crate::service::start_generic_aura_node::<
 						asset_hub_runtime::RuntimeApi,

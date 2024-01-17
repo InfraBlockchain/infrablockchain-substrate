@@ -2,7 +2,7 @@ use crate::{
 	codec::{Decode, Encode},
 	scale_info::TypeInfo,
 	serde::{Deserialize, Serialize},
-	RuntimeDebug, MaxEncodedLen
+	MaxEncodedLen, RuntimeDebug,
 };
 use sp_std::vec::Vec;
 
@@ -15,7 +15,17 @@ pub enum Mode {
 }
 
 #[derive(
-	Clone, Encode, Decode, Eq, PartialEq, PartialOrd, Ord, RuntimeDebug, Default, TypeInfo, Serialize,
+	Clone,
+	Encode,
+	Decode,
+	Eq,
+	PartialEq,
+	PartialOrd,
+	Ord,
+	RuntimeDebug,
+	Default,
+	TypeInfo,
+	Serialize,
 	Deserialize,
 )]
 /// We used it for getting fee from fee table.

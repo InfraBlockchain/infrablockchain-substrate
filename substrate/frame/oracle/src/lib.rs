@@ -20,14 +20,14 @@
 mod types;
 pub use types::*;
 
-use lite_json::JsonValue;
 use frame_support::pallet_prelude::*;
-use frame_system::pallet_prelude::*;
-use frame_system::offchain::{
-	SubmitTransaction, SendTransactionTypes
+use frame_system::{
+	offchain::{SendTransactionTypes, SubmitTransaction},
+	pallet_prelude::*,
 };
-use sp_runtime::{types::SystemTokenWeight, offchain::http, traits::Zero};
-use sp_std::{vec::Vec, prelude::ToOwned};
+use lite_json::JsonValue;
+use sp_runtime::{offchain::http, traits::Zero, types::SystemTokenWeight};
+use sp_std::{prelude::ToOwned, vec::Vec};
 
 pub use pallet::*;
 
@@ -41,7 +41,6 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config + SendTransactionTypes<Call<Self>> {
-
 		type SystemTokenOracle: SystemTokenOracleInterface;
 
 		#[pallet::constant]
@@ -64,15 +63,15 @@ pub mod pallet {
 
 	/// Exhange rate for each currency
 	#[pallet::storage]
-	pub type ExchangeRates<T: Config> = StorageMap<_, Twox64Concat, Fiat, ExchangeRate, OptionQuery>;
+	pub type ExchangeRates<T: Config> =
+		StorageMap<_, Twox64Concat, Fiat, ExchangeRate, OptionQuery>;
 
 	#[pallet::validate_unsigned]
 	impl<T: Config> ValidateUnsigned for Pallet<T> {
 		type Call = Call<T>;
-		
+
 		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
 			if let Call::submit_exchange_rates_unsigned { standard_time, .. } = call {
-				
 				// TODO: Needs to add some validity check for the transaction
 				// - Make it signed payload
 
@@ -97,12 +96,10 @@ pub mod pallet {
 	}
 
 	#[pallet::hooks]
-	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> 
-	{
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn offchain_worker(block_number: BlockNumberFor<T>) {
 			if block_number % T::RequestPeriod::get() == Zero::zero() && T::IsOffChain::get() {
 				if let Ok(_) = Self::fetch_exchange_rate() {
-
 				} else {
 					log::warn!(target: LOG_TARGET, "Failed to fetch exchange rate")
 				}
@@ -122,7 +119,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			// This ensures that the function can only be called via unsigned transaction.
 			ensure_none(origin)?;
-			
+
 			T::SystemTokenOracle::exchange_rates_at(standard_time, exchange_rates);
 
 			Ok(())
@@ -133,9 +130,9 @@ pub mod pallet {
 impl<T: Config> Pallet<T> {
 	/// Fetch the exchange rate from the oracle.
 	fn fetch_exchange_rate() -> Result<(), http::Error> {
-		let deadline = sp_io::offchain::timestamp().add(sp_core::offchain::Duration::from_millis(2000));
-		let request =
-			sp_runtime::offchain::http::Request::get(API_END_POINT);
+		let deadline =
+			sp_io::offchain::timestamp().add(sp_core::offchain::Duration::from_millis(2000));
+		let request = sp_runtime::offchain::http::Request::get(API_END_POINT);
 		let pending = request.deadline(deadline).send().map_err(|_| http::Error::IoError)?;
 		let response = pending.try_wait(deadline).map_err(|_| http::Error::DeadlineReached)??;
 		if response.code != 200 {
@@ -153,7 +150,7 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	fn parse_json(exchange_rate_str: &str) -> Result<(), DispatchError>{
+	fn parse_json(exchange_rate_str: &str) -> Result<(), DispatchError> {
 		let val = lite_json::parse_json(exchange_rate_str);
 		if let Ok(val) = val {
 			match val {
@@ -161,7 +158,8 @@ impl<T: Config> Pallet<T> {
 					let standard_time = Self::standard_time(&obj)?;
 					let exchange_rates = Self::exchange_rates(&obj)?;
 
-					let call = Call::submit_exchange_rates_unsigned { standard_time, exchange_rates };
+					let call =
+						Call::submit_exchange_rates_unsigned { standard_time, exchange_rates };
 					SubmitTransaction::<T, Call<T>>::submit_unsigned_transaction(call.into())
 						.map_err(|()| "Unable to submit unsigned transaction.")?;
 
@@ -174,35 +172,45 @@ impl<T: Config> Pallet<T> {
 		}
 	}
 
-	fn standard_time(obj: &Vec<(Vec<char>, JsonValue)>) -> Result<StandardUnixTime, DispatchError>{
-		if let Some((_, v)) = obj.iter().find(|(k, _)| k.iter().copied().eq("time_last_update_unix".chars())) {
+	fn standard_time(obj: &Vec<(Vec<char>, JsonValue)>) -> Result<StandardUnixTime, DispatchError> {
+		if let Some((_, v)) =
+			obj.iter().find(|(k, _)| k.iter().copied().eq("time_last_update_unix".chars()))
+		{
 			match v {
 				JsonValue::Number(n) => {
 					log::info!("Standard Time => {:?}", n.integer);
 					return Ok(n.integer)
 				},
-				_ => return Err(Error::<T>::ParseError.into())
+				_ => return Err(Error::<T>::ParseError.into()),
 			}
 		} else {
 			return Err(Error::<T>::ParseError.into())
 		}
 	}
 
-	fn exchange_rates(obj: &Vec<(Vec<char>, JsonValue)>) -> Result<Vec<(Fiat, ExchangeRate)>, DispatchError> {
-		let exchange_obj = if let Some((_, v)) = obj.into_iter().find(|(k, _)| k.iter().copied().eq("conversion_rates".chars())) {
+	fn exchange_rates(
+		obj: &Vec<(Vec<char>, JsonValue)>,
+	) -> Result<Vec<(Fiat, ExchangeRate)>, DispatchError> {
+		let exchange_obj = if let Some((_, v)) =
+			obj.into_iter().find(|(k, _)| k.iter().copied().eq("conversion_rates".chars()))
+		{
 			match v {
 				JsonValue::Object(obj) => obj,
-				_ => return Err(Error::<T>::ParseError.into())
+				_ => return Err(Error::<T>::ParseError.into()),
 			}
 		} else {
 			return Err(Error::<T>::ParseError.into())
 		};
 		let mut exchange_rates: Vec<(Fiat, ExchangeRate)> = Vec::new();
 		for (k, v) in exchange_obj.into_iter() {
-			let byte_vec = k.iter().flat_map(|&c| c.encode_utf8(&mut [0; 4]).as_bytes().to_owned()).collect::<Vec<u8>>();
+			let byte_vec = k
+				.iter()
+				.flat_map(|&c| c.encode_utf8(&mut [0; 4]).as_bytes().to_owned())
+				.collect::<Vec<u8>>();
 			match v {
 				JsonValue::Number(n) => {
-					let fiat: Fiat = byte_vec.try_into().map_err(|_| Error::<T>::CurrencyNotFound)?;
+					let fiat: Fiat =
+						byte_vec.try_into().map_err(|_| Error::<T>::CurrencyNotFound)?;
 					log::info!("Currency => {:?}, Rates => {:?}", fiat, n.integer);
 					exchange_rates.push((fiat, n.integer));
 				},
@@ -212,4 +220,3 @@ impl<T: Config> Pallet<T> {
 		Ok(exchange_rates)
 	}
 }
-

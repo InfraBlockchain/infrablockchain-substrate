@@ -34,11 +34,7 @@ pub use crate::system_token_helper;
 use frame_support::{pallet_prelude::*, traits::OriginTrait};
 use frame_system::pallet_prelude::BlockNumberFor;
 pub use pallet::*;
-use sp_runtime::{
-	self,
-	traits::Zero,
-	types::token::*,
-};
+use sp_runtime::{self, traits::Zero, types::token::*};
 use sp_std::prelude::*;
 use xcm::opaque::lts::MultiLocation;
 use xcm_primitives::AssetMultiLocationGetter;

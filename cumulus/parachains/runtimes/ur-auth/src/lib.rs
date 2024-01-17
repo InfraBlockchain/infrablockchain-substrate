@@ -179,9 +179,8 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 				pallet_assets::Call::create { .. } |
 				pallet_assets::Call::set_metadata { .. } |
 				pallet_assets::Call::mint { .. },
-			) 
-			| RuntimeCall::InfraXcm(pallet_xcm::Call::limited_teleport_assets { .. })
-			=> true,
+			) |
+			RuntimeCall::InfraXcm(pallet_xcm::Call::limited_teleport_assets { .. }) => true,
 			_ => false,
 		}
 	}

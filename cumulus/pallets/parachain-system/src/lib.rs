@@ -52,7 +52,7 @@ use sp_runtime::{
 		InvalidTransaction, TransactionLongevity, TransactionSource, TransactionValidity,
 		ValidTransaction,
 	},
-	types::{vote::*, token::*},
+	types::{token::*, vote::*},
 	DispatchError, RuntimeDebug,
 };
 use sp_std::{cmp, collections::btree_map::BTreeMap, prelude::*};
@@ -954,11 +954,7 @@ pub mod pallet {
 }
 
 impl<T: Config> CollectVote for Pallet<T> {
-	fn collect_vote(
-			who: VoteAccountId, 
-			system_token_id: SystemTokenId, 
-			vote_weight: VoteWeight
-	) {
+	fn collect_vote(who: VoteAccountId, system_token_id: SystemTokenId, vote_weight: VoteWeight) {
 		let pot_votes = if let Some(mut old) = CollectedPotVotes::<T>::get() {
 			old.update_vote_weight(system_token_id, who, vote_weight);
 			old

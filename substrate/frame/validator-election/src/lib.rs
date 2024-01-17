@@ -28,7 +28,7 @@ pub use pallet::*;
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::MaybeDisplay,
-	types::{vote::*, token::*},
+	types::{token::*, vote::*},
 	RuntimeDebug,
 };
 

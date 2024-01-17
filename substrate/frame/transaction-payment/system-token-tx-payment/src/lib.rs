@@ -48,7 +48,7 @@ use sp_runtime::{
 		Zero,
 	},
 	transaction_validity::{TransactionValidity, TransactionValidityError, ValidTransaction},
-	types::{token::*, vote::*, fee::*, infra_core::*},
+	types::{fee::*, infra_core::*, token::*, vote::*},
 	FixedPointOperand,
 };
 

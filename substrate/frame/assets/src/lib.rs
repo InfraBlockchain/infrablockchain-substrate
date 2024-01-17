@@ -154,8 +154,8 @@ pub use extra_mutator::*;
 mod functions;
 
 mod impl_fungibles;
-mod impl_stored_map;
 mod impl_infra_related;
+mod impl_stored_map;
 
 pub mod types;
 pub use types::*;
@@ -173,7 +173,10 @@ use frame_support::{
 use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
 use sp_runtime::{
-	traits::{AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Saturating, StaticLookup, Zero, AccountIdConversion},
+	traits::{
+		AccountIdConversion, AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Saturating,
+		StaticLookup, Zero,
+	},
 	types::token::*,
 	ArithmeticError, DispatchError, TokenError,
 };
@@ -531,7 +534,7 @@ pub mod pallet {
 		Blocked { asset_id: T::AssetId, who: T::AccountId },
 		/// Local asset has promoted to System Token
 		Promoted { asset_id: T::AssetId, system_token_weight: SystemTokenWeight },
-		/// System Token has demoted 
+		/// System Token has demoted
 		Demoted { asset_id: T::AssetId },
 		/// The is_sufficient of an asset has been updated by the asset owner.
 		AssetSystemTokenWeightChanged {

@@ -22,9 +22,8 @@
 
 use pallet_transaction_payment::CurrencyAdapter;
 use runtime_common::{
-	auctions, crowdloan, impl_runtime_weights, impls::DealWithFees, paras_registrar,
-	paras_sudo_wrapper, infra_core, prod_or_fast, slots, BlockHashCount, BlockLength,
-	SlowAdjustingFeeUpdate,
+	auctions, crowdloan, impl_runtime_weights, impls::DealWithFees, infra_core, paras_registrar,
+	paras_sudo_wrapper, prod_or_fast, slots, BlockHashCount, BlockLength, SlowAdjustingFeeUpdate,
 };
 
 use runtime_parachains::{
@@ -82,7 +81,7 @@ use sp_runtime::{
 		Verify,
 	},
 	transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
-	types::{vote::*, token::*},
+	types::{token::*, vote::*},
 	ApplyExtrinsicResult, FixedU128, KeyTypeId, Perbill, Percent, Permill,
 };
 
@@ -101,7 +100,7 @@ pub use pallet_timestamp::Call as TimestampCall;
 pub use sp_runtime::BuildStorage;
 
 /// Constant values used within the runtime.
-use infra_relay_runtime_constants::{currency::*, fee::*, time::*, system_parachain::ASSET_HUB_ID};
+use infra_relay_runtime_constants::{currency::*, fee::*, system_parachain::ASSET_HUB_ID, time::*};
 use xcm_config::XcmRouter;
 
 // Weights used in the runtime.

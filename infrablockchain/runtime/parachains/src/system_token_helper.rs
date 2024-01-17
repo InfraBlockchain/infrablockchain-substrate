@@ -8,10 +8,7 @@ use frame_support::{
 };
 use frame_system::pallet_prelude::BlockNumberFor;
 use parity_scale_codec::Encode;
-use sp_runtime::{
-	traits::AccountIdConversion,
-	types::token::*,
-};
+use sp_runtime::{traits::AccountIdConversion, types::token::*};
 use sp_std::{boxed::Box, vec, vec::Vec};
 
 use xcm::{
@@ -92,8 +89,11 @@ pub fn try_queue_dmp<T: Config>(
 	let config = <configuration::Pallet<T>>::config();
 	let xcm = build_xcm(pallet_id, encoded_call);
 	if let Err(dmp::QueueDownwardMessageError::ExceedsMaxMessageSize) =
-		<dmp::Pallet<T>>::queue_downward_message(&config, SystemTokenParaId::from(para_id).into(), xcm)
-	{
+		<dmp::Pallet<T>>::queue_downward_message(
+			&config,
+			SystemTokenParaId::from(para_id).into(),
+			xcm,
+		) {
 		log::error!(
 			target: "runtime::system_token_manager",
 			"sending 'dmp' failed."

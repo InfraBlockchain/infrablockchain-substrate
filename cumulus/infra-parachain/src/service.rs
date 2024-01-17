@@ -45,11 +45,11 @@ pub use parachains_common::{
 
 use cumulus_client_consensus_relay_chain::Verifier as RelayChainVerifier;
 use futures::{lock::Mutex, prelude::*};
+use sc_client_api::Backend;
 use sc_consensus::{
 	import_queue::{BasicQueue, Verifier as VerifierT},
 	BlockImportParams, ImportQueue,
 };
-use sc_client_api::Backend;
 use sc_executor::{HeapAllocStrategy, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY};
 use sc_network::{config::FullNetworkConfiguration, NetworkBlock};
 use sc_network_sync::SyncingService;
@@ -469,28 +469,28 @@ where
 		})
 		.await?;
 
-		if parachain_config.offchain_worker.enabled {
-			use futures::FutureExt;
-	
-			task_manager.spawn_handle().spawn(
-				"offchain-workers-runner",
-				"offchain-work",
-				sc_offchain::OffchainWorkers::new(sc_offchain::OffchainWorkerOptions {
-					runtime_api_provider: client.clone(),
-					keystore: Some(params.keystore_container.keystore()),
-					offchain_db: backend.clone().offchain_storage(),
-					transaction_pool: Some(OffchainTransactionPoolFactory::new(
-						transaction_pool.clone(),
-					)),
-					network_provider: network.clone(),
-					is_validator: parachain_config.role.is_authority(),
-					enable_http_requests: true,
-					custom_extensions: move |_| vec![],
-				})
-				.run(client.clone(), task_manager.spawn_handle())
-				.boxed(),
-			);
-		}
+	if parachain_config.offchain_worker.enabled {
+		use futures::FutureExt;
+
+		task_manager.spawn_handle().spawn(
+			"offchain-workers-runner",
+			"offchain-work",
+			sc_offchain::OffchainWorkers::new(sc_offchain::OffchainWorkerOptions {
+				runtime_api_provider: client.clone(),
+				keystore: Some(params.keystore_container.keystore()),
+				offchain_db: backend.clone().offchain_storage(),
+				transaction_pool: Some(OffchainTransactionPoolFactory::new(
+					transaction_pool.clone(),
+				)),
+				network_provider: network.clone(),
+				is_validator: parachain_config.role.is_authority(),
+				enable_http_requests: true,
+				custom_extensions: move |_| vec![],
+			})
+			.run(client.clone(), task_manager.spawn_handle())
+			.boxed(),
+		);
+	}
 
 	let rpc_builder = {
 		let client = client.clone();

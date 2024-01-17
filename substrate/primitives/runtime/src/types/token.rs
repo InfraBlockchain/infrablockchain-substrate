@@ -3,8 +3,8 @@
 use crate::{
 	codec::{Decode, Encode, MaxEncodedLen},
 	scale_info::TypeInfo,
-	RuntimeDebug,
 	types::vote::*,
+	RuntimeDebug,
 };
 use sp_std::prelude::*;
 
@@ -78,7 +78,6 @@ pub trait LocalAssetProvider<Asset, Account> {
 
 /// API to create/destory local assets related to System Token
 pub trait LocalAssetManager {
-	
 	type Error;
 	/// Create local asset with metadata which refers to `wrapped` System Token
 	fn create_wrapped_local(
@@ -87,43 +86,37 @@ pub trait LocalAssetManager {
 		name: Vec<u8>,
 		symbol: Vec<u8>,
 		decimals: u8,
-		system_token_weight: SystemTokenWeight
+		system_token_weight: SystemTokenWeight,
 	) -> Result<(), Self::Error>;
 	/// Promote local asset to System Token when registered(e.g `is_sufficient` to `true`)
 	fn promote(
 		asset_id: SystemTokenAssetId,
-		system_token_weight: SystemTokenWeight
+		system_token_weight: SystemTokenWeight,
 	) -> Result<(), Self::Error>;
 	/// Demote System Token to local asset(e.g `is_sufficient` to `false`)
 	fn demote(asset_id: SystemTokenAssetId) -> Result<(), Self::Error>;
 	/// Update weight of System Token(e.g Exhange rate has been changed)
 	fn update_system_token_weight(
 		asset_id: SystemTokenAssetId,
-		system_token_weight: SystemTokenWeight
+		system_token_weight: SystemTokenWeight,
 	) -> Result<(), Self::Error>;
 }
 
-/// API for interacting with registered System Token 
+/// API for interacting with registered System Token
 pub trait SystemTokenInterface {
-
 	/// Check the system token is registered.
 	fn is_system_token(system_token: &SystemTokenId) -> bool;
 	/// Convert para system token to original system token.
-	fn convert_to_original_system_token(
-		wrapped_token: &SystemTokenId,
-	) -> Option<SystemTokenId>;
+	fn convert_to_original_system_token(wrapped_token: &SystemTokenId) -> Option<SystemTokenId>;
 	/// Adjust the vote weight calculating exchange rate.
 	fn adjusted_weight(system_token: &SystemTokenId, vote_weight: VoteWeight) -> VoteWeight;
 }
 
 impl SystemTokenInterface for () {
-
 	fn is_system_token(_system_token: &SystemTokenId) -> bool {
 		false
 	}
-	fn convert_to_original_system_token(
-		_wrapped_token: &SystemTokenId,
-	) -> Option<SystemTokenId> {
+	fn convert_to_original_system_token(_wrapped_token: &SystemTokenId) -> Option<SystemTokenId> {
 		None
 	}
 	fn adjusted_weight(_system_token: &SystemTokenId, _vote_weight: VoteWeight) -> VoteWeight {
@@ -132,19 +125,13 @@ impl SystemTokenInterface for () {
 }
 
 pub trait AssetLinkInterface<AssetId> {
-
 	type Error;
-	
-	fn link(
-		asset_id: &AssetId,
-		parents: u8,
-		original: SystemTokenId,
-	) -> Result<(), Self::Error>;
+
+	fn link(asset_id: &AssetId, parents: u8, original: SystemTokenId) -> Result<(), Self::Error>;
 	fn unlink(asset_id: &AssetId) -> Result<(), Self::Error>;
 }
 
 impl<AssetId> AssetLinkInterface<AssetId> for () {
-
 	type Error = ();
 
 	fn link(
@@ -158,4 +145,3 @@ impl<AssetId> AssetLinkInterface<AssetId> for () {
 		Ok(())
 	}
 }
-

@@ -48,7 +48,7 @@ use scale_info::TypeInfo;
 use softfloat::F64;
 use sp_runtime::{
 	traits::One,
-	types::{vote::*, token::SystemTokenInterface},
+	types::{token::SystemTokenInterface, vote::*},
 	DispatchError, SaturatedConversion, Saturating,
 };
 #[cfg(feature = "std")]

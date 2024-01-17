@@ -1,12 +1,11 @@
-
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use cumulus_pallet_xcm::{ensure_relay, Origin};
 use frame_support::pallet_prelude::*;
 use frame_system::pallet_prelude::*;
-use cumulus_pallet_xcm::{ensure_relay, Origin};
-use sp_runtime::types::{token::*, fee::*, vote::*, infra_core::*};
-use sp_std::vec::Vec;
 pub use pallet::*;
+use sp_runtime::types::{fee::*, infra_core::*, token::*, vote::*};
+use sp_std::vec::Vec;
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub enum SystemTokenStatus {
@@ -67,8 +66,8 @@ pub mod pallet {
 		FeeTableUpdated { extrinsic_metadata: ExtrinsicMetadata, fee: SystemTokenBalance },
 		/// Weight of System Token has been updated by Relay-chain governance
 		SystemTokenWeightUpdated { asset_id: SystemTokenAssetId },
-		/// Bootstrap has been ended by Relay-chain governance. 
-		BootstrapEnded
+		/// Bootstrap has been ended by Relay-chain governance.
+		BootstrapEnded,
 	}
 
 	#[pallet::error]
@@ -77,7 +76,7 @@ pub mod pallet {
 		NotAllowedToChangeState,
 		/// System Token is not registered
 		SystemTokenMissing,
-		/// Base System Token weight has not been set 
+		/// Base System Token weight has not been set
 		BaseWeightMissing,
 		/// Error occured while updating weight of System Token
 		ErrorUpdateWeight,
@@ -95,20 +94,22 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-
 		/// Base system token weight configuration will be set by Relay-chain governance
-		/// 
+		///
 		/// Origin
 		/// Relay-chain governance
 		#[pallet::call_index(0)]
-		pub fn set_base_weight(origin: OriginFor<T>, base_weight: SystemTokenWeight) -> DispatchResult {
+		pub fn set_base_weight(
+			origin: OriginFor<T>,
+			base_weight: SystemTokenWeight,
+		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
 			BaseWeight::<T>::put(base_weight);
 			Ok(())
 		}
 
 		/// Fee table for Runtime will be set by Relay-chain governance
-		/// 
+		///
 		/// Origin
 		/// Relay-chain governance
 		#[pallet::call_index(1)]
@@ -126,7 +127,7 @@ pub mod pallet {
 		}
 
 		/// Fee rate for Runtime will be set by Relay-chain governance
-		/// 
+		///
 		/// Origin
 		/// Relay-chain governance
 		#[pallet::call_index(2)]
@@ -140,7 +141,7 @@ pub mod pallet {
 		}
 
 		/// Set runtime state configuration for this parachain by Relay-chain governance
-		/// 
+		///
 		/// Origin
 		/// Relay-chain governance
 		#[pallet::call_index(3)]
@@ -158,14 +159,14 @@ pub mod pallet {
 		}
 
 		/// System Token weight configuration is set by Relay-chain governance
-		/// 
+		///
 		/// Origin
 		/// Relay-chain governance
 		#[pallet::call_index(5)]
 		pub fn update_system_token_weight(
 			origin: OriginFor<T>,
 			asset_id: SystemTokenAssetId,
-			system_token_weight: SystemTokenWeight
+			system_token_weight: SystemTokenWeight,
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
 			T::LocalAssetManager::update_system_token_weight(asset_id, system_token_weight)
@@ -174,29 +175,29 @@ pub mod pallet {
 		}
 
 		/// Register System Token for Cumulus-based parachain Runtime.
-		/// 
+		///
 		/// Origin
 		/// Relay-chain governance
 		#[pallet::call_index(6)]
 		pub fn register_system_token(
 			origin: OriginFor<T>,
 			asset_id: SystemTokenAssetId,
-			system_token_weight: SystemTokenWeight
+			system_token_weight: SystemTokenWeight,
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
 			T::LocalAssetManager::promote(asset_id, system_token_weight)
 				.map_err(|_| Error::<T>::ErrorRegisterSystemToken)?;
 			Ok(())
 		}
-		
-		/// Discription 
+
+		/// Discription
 		/// Asset which referes to `wrapped` System Token will be created by Relay-chain governance
-		/// 
+		///
 		/// Parameters
 		/// - `asset_id`: AssetId of `wrapped` System Token
 		/// - `system_token_id`: SystemTokenId of `original` System Token
 		/// - `system_token_weight`: Weight of `wrapped` System Token. Need for `AssetLink`
-		/// 
+		///
 		/// Origin
 		/// Relay-chain governance
 		#[pallet::call_index(7)]
@@ -212,8 +213,15 @@ pub mod pallet {
 			original: SystemTokenId,
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
-			T::LocalAssetManager::create_wrapped_local(asset_id, min_balance, name, symbol, decimals, system_token_weight)
-				.map_err(|_| Error::<T>::ErrorCreateWrappedLocalAsset)?; 
+			T::LocalAssetManager::create_wrapped_local(
+				asset_id,
+				min_balance,
+				name,
+				symbol,
+				decimals,
+				system_token_weight,
+			)
+			.map_err(|_| Error::<T>::ErrorCreateWrappedLocalAsset)?;
 			T::AssetLink::link(&asset_id, asset_link_parent, original)
 				.map_err(|_| Error::<T>::ErrorLinkAsset)?;
 			Ok(())
@@ -223,12 +231,12 @@ pub mod pallet {
 		pub fn deregister_system_token(
 			origin: OriginFor<T>,
 			asset_id: SystemTokenAssetId,
-			is_unlink: bool
+			is_unlink: bool,
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
 			T::LocalAssetManager::demote(asset_id)
 				.map_err(|_| Error::<T>::ErrorDeregisterSystemToken)?;
-			if is_unlink { 
+			if is_unlink {
 				T::AssetLink::unlink(&asset_id).map_err(|_| Error::<T>::ErrorUnlinkAsset)?;
 			}
 			Ok(())
@@ -237,7 +245,6 @@ pub mod pallet {
 }
 
 impl<T: Config> RuntimeConfigProvider for Pallet<T> {
-
 	type Error = DispatchError;
 
 	fn base_weight() -> Result<SystemTokenWeight, Self::Error> {

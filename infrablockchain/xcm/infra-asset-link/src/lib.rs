@@ -3,14 +3,12 @@
 /// Edit this file to define custom logic or remove it if it is not needed.
 /// Learn more about FRAME and the core library of Substrate FRAME pallets:
 /// <https://docs.substrate.io/reference/frame-pallets/>
-/// 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 pub mod weights;
 pub use weights::*;
 
-use frame_support::pallet_prelude::*;
-use frame_support::traits::tokens::fungibles::Inspect;
+use frame_support::{pallet_prelude::*, traits::tokens::fungibles::Inspect};
 use sp_runtime::types::token::*;
 use xcm::latest::prelude::*;
 use xcm_primitives::AssetMultiLocationGetter;
@@ -73,18 +71,13 @@ impl<T: Config> AssetMultiLocationGetter<AssetIdOf<T>> for Pallet<T> {
 	}
 }
 
-impl<T: Config> AssetLinkInterface<AssetIdOf<T>> for Pallet<T> 
+impl<T: Config> AssetLinkInterface<AssetIdOf<T>> for Pallet<T>
 where
 	AssetIdOf<T>: From<SystemTokenAssetId>,
 {
-
 	type Error = DispatchError;
 
-	fn link(
-		asset_id: &AssetIdOf<T>,
-		parents: u8,
-		original: SystemTokenId,
-	) -> DispatchResult {
+	fn link(asset_id: &AssetIdOf<T>, parents: u8, original: SystemTokenId) -> DispatchResult {
 		ensure!(T::Assets::asset_exists(asset_id.clone()), Error::<T>::AssetDoesNotExist);
 		ensure!(
 			!AssetIdMultiLocation::<T>::contains_key(&asset_id),
@@ -103,10 +96,7 @@ where
 		AssetIdMultiLocation::<T>::insert(&id, &asset_multi_location);
 		AssetMultiLocationId::<T>::insert(&asset_multi_location, id.clone());
 
-		Self::deposit_event(Event::AssetLinked {
-			asset_id: id,
-			asset_multi_location,
-		});
+		Self::deposit_event(Event::AssetLinked { asset_id: id, asset_multi_location });
 
 		Ok(())
 	}

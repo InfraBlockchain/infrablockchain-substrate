@@ -38,7 +38,7 @@ use scale_info::TypeInfo;
 use softfloat::F64;
 use sp_runtime::{
 	traits::{Convert, StaticLookup},
-	types::{vote::*, token::*},
+	types::{token::*, vote::*},
 };
 use sp_std::prelude::*;
 type AccountIdLookupOf<T> = <<T as frame_system::Config>::Lookup as StaticLookup>::Source;

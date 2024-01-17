@@ -1027,7 +1027,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	/// Try promote local `asset` to System Token
 	pub fn try_promote(
 		asset_id: SystemTokenAssetId,
-		system_token_weight: SystemTokenWeight
+		system_token_weight: SystemTokenWeight,
 	) -> DispatchResult {
 		let id: T::AssetId = asset_id.into();
 		Asset::<T, I>::try_mutate_exists(id, |maybe_detail| -> DispatchResult {
@@ -1072,9 +1072,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		Ok(())
 	}
 
-	pub fn try_demote(
-		asset_id: SystemTokenAssetId,
-	) -> DispatchResult {
+	pub fn try_demote(asset_id: SystemTokenAssetId) -> DispatchResult {
 		let id: T::AssetId = asset_id.into();
 		Asset::<T, I>::try_mutate_exists(id, |maybe_detail| -> DispatchResult {
 			let mut asset_detail = maybe_detail.take().ok_or(Error::<T, I>::Unknown)?;
@@ -1087,8 +1085,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	}
 }
 
-impl<T: Config<I>, I: 'static>
-LocalAssetProvider<SystemTokenAssetId, T::AccountId> for Pallet<T, I>
+impl<T: Config<I>, I: 'static> LocalAssetProvider<SystemTokenAssetId, T::AccountId>
+	for Pallet<T, I>
 {
 	fn system_token_list() -> Vec<SystemTokenAssetId> {
 		let assets = Asset::<T, I>::iter_keys();

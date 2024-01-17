@@ -54,9 +54,9 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 pub mod constants;
 use constants::{currency::*, fee::WeightToFee};
+pub mod oracle;
 mod weights;
 pub mod xcm_config;
-pub mod oracle;
 
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use sp_api::impl_runtime_apis;
@@ -66,8 +66,8 @@ use sp_runtime::{
 	traits::{
 		AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, TryConvertInto as JustTry,
 	},
+	transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
 	types::SystemTokenWeight,
-	transaction_validity::{TransactionSource, TransactionValidity, TransactionPriority},
 	ApplyExtrinsicResult,
 };
 
@@ -93,8 +93,8 @@ use frame_system::{
 	EnsureRoot, EnsureSigned,
 };
 
-use pallet_system_token_tx_payment::{CreditToBucket, TransactionFeeCharger};
 use pallet_system_token_oracle::BASE_SYSTEM_TOKEN_WEIGHT;
+use pallet_system_token_tx_payment::{CreditToBucket, TransactionFeeCharger};
 use parachains_common::{
 	constants::*, impls::DealWithFees, infra_relay::consensus::*, opaque::*, types::*,
 };
@@ -108,7 +108,7 @@ pub use sp_runtime::BuildStorage;
 
 // Polkadot imports
 use pallet_xcm::{EnsureXcm, IsMajorityOfBody};
-use runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate, prod_or_fast};
+use runtime_common::{prod_or_fast, BlockHashCount, SlowAdjustingFeeUpdate};
 use runtime_parachains::system_token_aggregator;
 use xcm::latest::BodyId;
 use xcm_executor::XcmExecutor;
@@ -254,9 +254,8 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 				pallet_assets::Call::create { .. } |
 				pallet_assets::Call::set_metadata { .. } |
 				pallet_assets::Call::mint { .. },
-			)  
-			| RuntimeCall::InfraXcm(pallet_xcm::Call::limited_teleport_assets { .. })
-			=> true,
+			) |
+			RuntimeCall::InfraXcm(pallet_xcm::Call::limited_teleport_assets { .. }) => true,
 			_ => false,
 		}
 	}

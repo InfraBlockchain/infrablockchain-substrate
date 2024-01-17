@@ -15,29 +15,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{configuration, paras, Origin as ParachainOrigin, ParaId, ensure_parachain};
-pub use frame_support::{
-	pallet_prelude::*,
-	traits::UnixTime,
-};
+use crate::{configuration, ensure_parachain, paras, Origin as ParachainOrigin, ParaId};
+pub use frame_support::{pallet_prelude::*, traits::UnixTime};
 use frame_system::pallet_prelude::*;
 pub use pallet::*;
-use pallet_system_token_oracle::{Fiat, ExchangeRate, StandardUnixTime};
+use pallet_system_token_oracle::{ExchangeRate, Fiat, StandardUnixTime};
 use softfloat::F64;
-use sp_runtime::types::{token::*, vote::*, infra_core::*};
+use sp_runtime::types::{infra_core::*, token::*, vote::*};
 use sp_std::prelude::*;
 use types::*;
 
 #[frame_support::pallet(dev_mode)]
 pub mod pallet {
-	
+
 	use super::*;
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config
-		+ configuration::Config
-		+ paras::Config
-	{	
+	pub trait Config: frame_system::Config + configuration::Config + paras::Config {
 		type RuntimeOrigin: From<<Self as frame_system::Config>::RuntimeOrigin>
 			+ Into<Result<ParachainOrigin, <Self as Config>::RuntimeOrigin>>;
 		/// The overarching event type.
@@ -144,7 +138,8 @@ pub mod pallet {
 	pub type RequestStandardTime<T: Config> = StorageValue<_, StandardUnixTime, ValueQuery>;
 
 	#[pallet::storage]
-	pub type ExchangeRates<T: Config> = StorageMap<_, Twox64Concat, Fiat, ExchangeRate, OptionQuery>;
+	pub type ExchangeRates<T: Config> =
+		StorageMap<_, Twox64Concat, Fiat, ExchangeRate, OptionQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn original_system_token_metadata)]
@@ -270,7 +265,9 @@ pub mod pallet {
 			system_token_weight: SystemTokenWeight,
 			wrapped_for_relay_chain: Option<SystemTokenId>,
 			system_token_metadata: Option<SystemTokenMetadata<BoundedVec<u8, StringLimitOf<T>>>>,
-			asset_metadata: Option<AssetMetadata<BoundedVec<u8, StringLimitOf<T>>, SystemTokenBalance>>,
+			asset_metadata: Option<
+				AssetMetadata<BoundedVec<u8, StringLimitOf<T>>, SystemTokenBalance>,
+			>,
 		) -> DispatchResult {
 			ensure_root(origin)?;
 			let (original, wrapped) = match system_token_type {
@@ -473,7 +470,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_root(origin)?;
 
-			let ParaCallMetadata { para_id, pallet_name, call_name, ..} =
+			let ParaCallMetadata { para_id, pallet_name, call_name, .. } =
 				para_call_metadata.clone();
 			T::InfraCoreInterface::set_fee_table(para_id, pallet_name, call_name, fee);
 			Self::deposit_event(Event::<T>::SetFeeTable { para_call_metadata, fee });
@@ -509,8 +506,7 @@ impl<T: Config> Pallet<T> {
 		origin: <T as frame_system::Config>::RuntimeOrigin,
 		id: ParaId,
 	) -> DispatchResult {
-		if let Ok(para_id) = ensure_parachain(<T as Config>::RuntimeOrigin::from(origin.clone()))
-		{
+		if let Ok(para_id) = ensure_parachain(<T as Config>::RuntimeOrigin::from(origin.clone())) {
 			// Check if matching para id...
 			ensure!(para_id == id, Error::<T>::NotAssetHub);
 		} else {
@@ -533,7 +529,8 @@ impl<T: Config> Pallet<T> {
 
 	fn asset_metadata(
 		asset_metadata: AssetMetadata<BoundedVec<u8, StringLimitOf<T>>, SystemTokenBalance>,
-	) -> Result<AssetMetadata<BoundedVec<u8, StringLimitOf<T>>, SystemTokenBalance>, DispatchError> {
+	) -> Result<AssetMetadata<BoundedVec<u8, StringLimitOf<T>>, SystemTokenBalance>, DispatchError>
+	{
 		let AssetMetadata { name, symbol, decimals, min_balance } = asset_metadata;
 
 		let name = name.clone().try_into().map_err(|_| Error::<T>::BadMetadata)?;
@@ -1022,15 +1019,15 @@ impl<T: Config> Pallet<T> {
 		let SystemTokenId { para_id, asset_id, .. } = wrapped;
 		let parent_for_asset_link: u8 = if para_id == RELAY_CHAIN_PARA_ID { 0 } else { 1 };
 		T::InfraCoreInterface::create_wrapped_local(
-			para_id, 
-			asset_id, 
-			asset_metadata.min_balance, 
-			asset_metadata.name.to_vec(), 
-			asset_metadata.symbol.to_vec(), 
-			asset_metadata.decimals, 
-			system_token_weight, 
-			parent_for_asset_link, 
-			original
+			para_id,
+			asset_id,
+			asset_metadata.min_balance,
+			asset_metadata.name.to_vec(),
+			asset_metadata.symbol.to_vec(),
+			asset_metadata.decimals,
+			system_token_weight,
+			parent_for_asset_link,
+			original,
 		);
 
 		Ok(())
@@ -1038,7 +1035,6 @@ impl<T: Config> Pallet<T> {
 }
 
 impl<T: Config> SystemTokenInterface for Pallet<T> {
-
 	fn is_system_token(original: &SystemTokenId) -> bool {
 		<OriginalSystemTokenMetadata<T>>::get(original).is_some()
 	}
@@ -1061,7 +1057,7 @@ impl<T: Config> SystemTokenInterface for Pallet<T> {
 					system_token_weight
 				};
 				let converted_base_weight = F64::from_i128(base_weight as i128);
-				
+
 				// Since the base_weight cannot be zero, this division is guaranteed to be safe.
 				return vote_weight.mul(system_token_weight).div(converted_base_weight)
 			} else {

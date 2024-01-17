@@ -1,11 +1,9 @@
-
 use frame_support::pallet_prelude::*;
-use frame_system::pallet_prelude::*;
-use frame_system::ensure_root;
-use parity_scale_codec::Encode;
-use sp_runtime::types::{token::*, fee::*, vote::*, infra_core::*};
-use sp_std::vec::Vec;
+use frame_system::{ensure_root, pallet_prelude::*};
 use pallet_validator_election::VotingInterface;
+use parity_scale_codec::Encode;
+use sp_runtime::types::{fee::*, infra_core::*, token::*, vote::*};
+use sp_std::vec::Vec;
 use xcm::latest::prelude::*;
 
 mod impls;
@@ -33,15 +31,15 @@ pub enum SystemTokenStatus {
 #[frame_support::pallet(dev_mode)]
 pub mod pallet {
 
-    use super::*;
-    
-    #[pallet::pallet]
-    pub struct Pallet<T>(_);
-    
-    #[pallet::config]
-    pub trait Config: frame_system::Config {
-        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-        /// Updating vote type
+	use super::*;
+
+	#[pallet::pallet]
+	pub struct Pallet<T>(_);
+
+	#[pallet::config]
+	pub trait Config: frame_system::Config {
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+		/// Updating vote type
 		type VotingInterface: VotingInterface<Self>;
 		/// Managing System Token
 		type SystemTokenInterface: SystemTokenInterface;
@@ -51,10 +49,10 @@ pub mod pallet {
 		type AssetLink: AssetLinkInterface<SystemTokenAssetId>;
 		/// Type that delivers XCM messages
 		type XcmRouter: SendXcm;
-        /// Base system token weight for InfraBlockchain
-        #[pallet::constant]
-        type BaseWeight: Get<SystemTokenWeight>;
-    }
+		/// Base system token weight for InfraBlockchain
+		#[pallet::constant]
+		type BaseWeight: Get<SystemTokenWeight>;
+	}
 
 	#[pallet::storage]
 	pub type FeeRate<T: Config> = StorageValue<_, SystemTokenWeight, OptionQuery>;
@@ -62,31 +60,45 @@ pub mod pallet {
 	#[pallet::storage]
 	pub(super) type RuntimeState<T: Config> = StorageValue<_, Mode, ValueQuery>;
 
-    #[pallet::storage]
+	#[pallet::storage]
 	pub type FeeTable<T: Config> =
 		StorageMap<_, Twox128, ExtrinsicMetadata, SystemTokenBalance, OptionQuery>;
 
-    #[pallet::event]
+	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		Voted { who: VoteAccountId, system_token_id: SystemTokenId, vote_weight: VoteWeight },
+		Voted {
+			who: VoteAccountId,
+			system_token_id: SystemTokenId,
+			vote_weight: VoteWeight,
+		},
 		/// System Token has been regierested by Relay-chain governance
 		Registered,
 		/// System Token has been deregistered by Relay-chain governance
 		Deregistered,
 		/// Fee table for has been updated by Relay-chain governance
-		FeeTableUpdated { extrinsic_metadata: ExtrinsicMetadata, fee: SystemTokenBalance },
+		FeeTableUpdated {
+			extrinsic_metadata: ExtrinsicMetadata,
+			fee: SystemTokenBalance,
+		},
 		/// Weight of System Token has been updated by Relay-chain governance
-		SystemTokenWeightUpdated { asset_id: SystemTokenAssetId },
-		/// Bootstrap has been ended by Relay-chain governance. 
+		SystemTokenWeightUpdated {
+			asset_id: SystemTokenAssetId,
+		},
+		/// Bootstrap has been ended by Relay-chain governance.
 		BootstrapEnded,
 		/// Asset is linked since it has registered as System Token by Relay-chain governance
-		AssetLinked { asset_id: SystemTokenAssetId, multi_loc: MultiLocation },
+		AssetLinked {
+			asset_id: SystemTokenAssetId,
+			multi_loc: MultiLocation,
+		},
 		/// Asset is unlinked by Relay-chain governance
-		AssetUnlinked { asset_id: SystemTokenAssetId }
+		AssetUnlinked {
+			asset_id: SystemTokenAssetId,
+		},
 	}
 
-    #[pallet::error]
+	#[pallet::error]
 	pub enum Error<T> {
 		/// Current Runtime state is not ready to change
 		NotAllowedToChangeState,
@@ -102,11 +114,10 @@ pub mod pallet {
 		ErrorDeregisterSystemToken,
 	}
 
-    #[pallet::call]
+	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-
 		/// Fee table for Runtime will be set by Relay-chain governance
-		/// 
+		///
 		/// Origin
 		/// Relay-chain governance
 		#[pallet::call_index(0)]
@@ -124,21 +135,18 @@ pub mod pallet {
 		}
 
 		/// Fee rate for Runtime will be set by Relay-chain governance
-		/// 
+		///
 		/// Origin
 		/// Relay-chain governance
 		#[pallet::call_index(1)]
-		pub fn set_fee_rate(
-			origin: OriginFor<T>,
-			fee_rate: SystemTokenWeight,
-		) -> DispatchResult {
+		pub fn set_fee_rate(origin: OriginFor<T>, fee_rate: SystemTokenWeight) -> DispatchResult {
 			ensure_root(origin)?;
 			FeeRate::<T>::put(fee_rate);
 			Ok(())
 		}
 
 		/// Set runtime state configuration
-		/// 
+		///
 		/// Origin
 		/// Relay-chain governance
 		#[pallet::call_index(2)]
@@ -156,14 +164,14 @@ pub mod pallet {
 
 		/// Description
 		/// This method is for emergency case. Naturally it would be set automatically
-		/// 
+		///
 		/// Origin
 		/// Relay-chain governance
 		#[pallet::call_index(3)]
 		pub fn set_system_token_weight(
 			origin: OriginFor<T>,
 			asset_id: SystemTokenAssetId,
-			system_token_weight: SystemTokenWeight
+			system_token_weight: SystemTokenWeight,
 		) -> DispatchResult {
 			ensure_root(origin)?;
 			T::LocalAssetManager::update_system_token_weight(asset_id, system_token_weight)
@@ -180,17 +188,17 @@ pub mod pallet {
 		pub fn register_system_token(
 			origin: OriginFor<T>,
 			asset_id: SystemTokenAssetId,
-			system_token_weight: SystemTokenWeight
+			system_token_weight: SystemTokenWeight,
 		) -> DispatchResult {
 			ensure_root(origin)?;
 			T::LocalAssetManager::promote(asset_id, system_token_weight)
 				.map_err(|_| Error::<T>::ErrorRegisterSystemToken)?;
 			Ok(())
 		}
-		
+
 		/// Description
 		/// This method is for emergency case. Naturally it would be set automatically
-		/// 
+		///
 		/// Origin
 		/// Relay-chain governance
 		#[pallet::call_index(5)]
@@ -203,12 +211,19 @@ pub mod pallet {
 			decimals: u8,
 			asset_link_parent: u8,
 			original: SystemTokenId,
-			system_token_weight: SystemTokenWeight
+			system_token_weight: SystemTokenWeight,
 		) -> DispatchResult {
 			ensure_root(origin)?;
-			T::LocalAssetManager::create_wrapped_local(asset_id, min_balance, name, symbol, decimals, system_token_weight)
-				.map_err(|_| Error::<T>::ErrorCreateWrappedLocal)?;
-            T::AssetLink::link(&asset_id, asset_link_parent, original)
+			T::LocalAssetManager::create_wrapped_local(
+				asset_id,
+				min_balance,
+				name,
+				symbol,
+				decimals,
+				system_token_weight,
+			)
+			.map_err(|_| Error::<T>::ErrorCreateWrappedLocal)?;
+			T::AssetLink::link(&asset_id, asset_link_parent, original)
 				.map_err(|_| Error::<T>::ErrorLinkAsset)?;
 			Ok(())
 		}
@@ -226,5 +241,4 @@ pub mod pallet {
 	}
 }
 
-impl<T: Config> Pallet<T> {
-}
+impl<T: Config> Pallet<T> {}

@@ -8,8 +8,8 @@ use softfloat::F64;
 use sp_core::crypto::AccountId32;
 use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 
-pub use types::*;
 pub use traits::*;
+pub use types::*;
 
 use serde::{Deserialize, Serialize};
 
@@ -56,7 +56,7 @@ pub mod types {
 		#[allow(missing_docs)]
 		pub vote_weight: VoteWeight,
 	}
-	
+
 	impl PotVote {
 		#[allow(missing_docs)]
 		pub fn new(
@@ -67,7 +67,7 @@ pub mod types {
 			Self { system_token_id, account_id, vote_weight }
 		}
 	}
-	
+
 	impl PotVote {
 		/// Type cast from PotVote to PotVoteU128
 		pub fn to_u128(&self) -> PotVoteU128 {
@@ -79,7 +79,7 @@ pub mod types {
 			}
 		}
 	}
-	
+
 	/// Old Pot vote type
 	#[derive(Encode, Decode, Clone, PartialEq, Eq, sp_core::RuntimeDebug, TypeInfo)]
 	#[cfg_attr(feature = "std", derive(Default, Hash))]
@@ -89,7 +89,7 @@ pub mod types {
 		pub account_id: VoteAccountId,
 		pub vote_weight: u128,
 	}
-	
+
 	#[derive(Encode, Decode, PartialEq, Eq, Clone, Debug, TypeInfo)]
 	#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 	/// Transaction-as-a-Vote
@@ -106,7 +106,7 @@ pub mod types {
 		#[codec(compact)]
 		pub max_vote_count: u32,
 	}
-	
+
 	/// An interface for dealing with vote info
 	impl PotVotes {
 		#[allow(missing_docs)]
@@ -119,7 +119,7 @@ pub mod types {
 			votes.insert((system_token_id, candidate), vote_weight);
 			Self { votes, vote_count: 1, max_vote_count: MAX_VOTE_NUM }
 		}
-	
+
 		/// Update vote weight for given key (asset id, account id).
 		/// Before we update the votes, check if vote count is exceeded for given period.
 		/// If it is not exceeded, we update the votes. Otherwise, we do nothing.
@@ -141,7 +141,7 @@ pub mod types {
 				self.votes.insert(key, vote_weight);
 			}
 		}
-	
+
 		/// Convert from `status of the votes` to `BoundedVec<_, Max>`
 		pub fn votes(&self) -> PotVotesResult {
 			let res = self
@@ -152,7 +152,7 @@ pub mod types {
 				.collect::<Vec<PotVote>>();
 			res.try_into().expect("PotVotesResult should be bounded")
 		}
-	
+
 		fn increase_vote_count_if_not_exceeds(&mut self) -> bool {
 			let temp = self.vote_count + 1;
 			if temp.le(&self.max_vote_count) {
@@ -169,11 +169,11 @@ pub mod traits {
 	use super::*;
 	/// An interface for dealing with vote info
 	pub trait VotingHandler {
-		/// API for updating PoT vote 
+		/// API for updating PoT vote
 		fn update_pot_vote(
-			who: VoteAccountId, 
-			system_token_id: SystemTokenId, 
-			vote_weight: VoteWeight
+			who: VoteAccountId,
+			system_token_id: SystemTokenId,
+			vote_weight: VoteWeight,
 		);
 	}
 
@@ -188,17 +188,17 @@ pub mod traits {
 
 	pub trait CollectVote {
 		fn collect_vote(
-			who: VoteAccountId, 
-			system_token_id: SystemTokenId, 
-			vote_weight: VoteWeight
+			who: VoteAccountId,
+			system_token_id: SystemTokenId,
+			vote_weight: VoteWeight,
 		);
 	}
 
 	impl CollectVote for () {
 		fn collect_vote(
-				_who: VoteAccountId, 
-				_system_token_id: SystemTokenId, 
-				_vote_weight: VoteWeight
+			_who: VoteAccountId,
+			_system_token_id: SystemTokenId,
+			_vote_weight: VoteWeight,
 		) {
 		}
 	}

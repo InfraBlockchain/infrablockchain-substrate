@@ -83,7 +83,8 @@ pub struct AssetDetails<Balance, AccountId, DepositBalance> {
 	pub(super) approvals: u32,
 	/// The status of the asset
 	pub(super) status: AssetStatus,
-	/// The system token weight compared with base system token. 'None' if it is not a system token.
+	/// The system token weight compared with base system token. 'None' if it is not a system
+	/// token.
 	pub(super) system_token_weight: Option<SystemTokenWeight>,
 }
 
@@ -330,8 +331,9 @@ where
 		// only sufficient assets have a min balance with reliable value
 		ensure!(asset.is_sufficient, ConversionError::AssetNotSufficient);
 		ensure!(asset.system_token_weight.is_some(), ConversionError::WeightMissing);
-		let system_token_weight = asset.system_token_weight.take().ok_or(ConversionError::WeightMissing)?;
-		
+		let system_token_weight =
+			asset.system_token_weight.take().ok_or(ConversionError::WeightMissing)?;
+
 		// ToDo
 		// 1. Acutal min ratio should be handled!
 		// 2. CON should be handled. Now it is Balance pallet
