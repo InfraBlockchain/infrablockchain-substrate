@@ -1405,7 +1405,7 @@ construct_runtime! {
 
 		// InfraBlockchain Support
 		InfraCore: infra_core::{Pallet, Call, Storage, Event<T>} = 20,
-		SystemTokenManager: system_token_manager::{Pallet, Storage, Event<T>} = 21,
+		SystemTokenManager: system_token_manager::{Pallet, Call, Storage, Event<T>} = 21,
 		ValidatorRewardManager: validator_reward_manager::{Pallet, Call, Storage, Event<T>} = 22,
 		AssetLink: pallet_asset_link::{Pallet, Storage, Event<T>} = 24,
 		SystemTokenAggregator: system_token_aggregator = 25,
