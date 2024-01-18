@@ -954,6 +954,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	/// Do set metadata
 	pub(super) fn do_set_metadata(
 		id: T::AssetId,
+		currency_type: Option<Fiat>,
 		from: &T::AccountId,
 		name: Vec<u8>,
 		symbol: Vec<u8>,
@@ -981,6 +982,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			}
 
 			*metadata = Some(AssetMetadata {
+				currency_type,
 				deposit: new_deposit,
 				name: bounded_name,
 				symbol: bounded_symbol,
@@ -1043,6 +1045,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	/// Try create `wrapped` System Token's local asset with `original` System Token's metadata
 	pub fn try_create_wrapped_local(
 		asset_id: SystemTokenAssetId,
+		currency_type: Option<Fiat>,
 		owner: T::AccountId,
 		min_balance: SystemTokenBalance,
 		name: Vec<u8>,
@@ -1053,7 +1056,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		let id: T::AssetId = asset_id.into();
 		ensure!(!Asset::<T, I>::contains_key(&id), Error::<T, I>::InUse);
 		Self::do_force_create(id.clone(), &owner, true, min_balance.into(), system_token_weight)?;
-		Self::do_set_metadata(id, &owner, name, symbol, decimals)?;
+		Self::do_set_metadata(id, currency_type, &owner, name, symbol, decimals)?;
 		Ok(())
 	}
 

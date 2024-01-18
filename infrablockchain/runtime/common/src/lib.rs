@@ -24,7 +24,7 @@ pub mod claims;
 pub mod crowdloan;
 pub mod elections;
 pub mod impls;
-pub mod infra_core;
+pub mod infra_relay_core;
 pub mod paras_registrar;
 pub mod paras_sudo_wrapper;
 pub mod purchase;

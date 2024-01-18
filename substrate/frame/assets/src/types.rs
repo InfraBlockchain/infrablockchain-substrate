@@ -203,6 +203,10 @@ pub struct AssetAccount<Balance, DepositBalance, Extra, AccountId> {
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Default, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 pub struct AssetMetadata<DepositBalance, BoundedString> {
+	/// Optional fiat currency type of this asset. 
+	/// 
+	/// It it is set, then the asset becomes potential System Token.
+	pub(super) currency_type: Option<Fiat>,
 	/// The balance deposited for this metadata.
 	///
 	/// This pays for the data stored in this struct.

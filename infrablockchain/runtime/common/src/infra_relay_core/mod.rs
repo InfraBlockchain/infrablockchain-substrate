@@ -49,10 +49,11 @@ pub mod pallet {
 		type AssetLink: AssetLinkInterface<SystemTokenAssetId>;
 		/// Type that delivers XCM messages
 		type XcmRouter: SendXcm;
-		/// Base system token weight for InfraBlockchain
-		#[pallet::constant]
-		type BaseWeight: Get<SystemTokenWeight>;
 	}
+
+	/// Base system token configuration for Runtime
+	#[pallet::storage]
+	pub type BaseConfiguration<T: Config> = StorageValue<_, BaseSystemTokenDetail, OptionQuery>;
 
 	#[pallet::storage]
 	pub type FeeRate<T: Config> = StorageValue<_, SystemTokenWeight, OptionQuery>;
@@ -63,6 +64,25 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type FeeTable<T: Config> =
 		StorageMap<_, Twox128, ExtrinsicMetadata, SystemTokenBalance, OptionQuery>;
+
+	#[pallet::genesis_config]
+	pub struct GenesisConfig<T: Config> {
+		pub base_detail: Option<(Fiat, SystemTokenWeight, SystemTokenDecimal)>,
+		pub _phantom: sp_std::marker::PhantomData<T>,
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
+		fn build(&self) {
+			if let Some(base_detail) = self.base_detail.clone() {
+				BaseConfiguration::<T>::put(BaseSystemTokenDetail {
+					currency: base_detail.0,
+					weight: base_detail.1,
+					decimal: base_detail.2,
+				});
+			}
+		}
+	}
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -112,6 +132,8 @@ pub mod pallet {
 		ErrorLinkAsset,
 		/// Error occured while deregistering asset
 		ErrorDeregisterSystemToken,
+		/// Base configuration should be set
+		BaseNotConfigured
 	}
 
 	#[pallet::call]
@@ -205,6 +227,7 @@ pub mod pallet {
 		pub fn create_wrapped_local(
 			origin: OriginFor<T>,
 			asset_id: SystemTokenAssetId,
+			currency_type: Option<Fiat>,
 			min_balance: SystemTokenBalance,
 			name: Vec<u8>,
 			symbol: Vec<u8>,
@@ -216,6 +239,7 @@ pub mod pallet {
 			ensure_root(origin)?;
 			T::LocalAssetManager::create_wrapped_local(
 				asset_id,
+				currency_type,
 				min_balance,
 				name,
 				symbol,

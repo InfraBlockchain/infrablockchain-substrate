@@ -21,13 +21,16 @@ impl<T: Config> VotingHandler for Pallet<T> {
 impl<T: Config> RuntimeConfigProvider for Pallet<T> {
 	type Error = DispatchError;
 
-	fn base_weight() -> Result<SystemTokenWeight, Self::Error> {
-		Ok(T::BaseWeight::get())
+	fn base_system_token_configuration() -> Result<BaseSystemTokenDetail, Self::Error> {
+		Ok(BaseConfiguration::<T>::get().ok_or(Error::<T>::BaseNotConfigured)?)
 	}
 
-	fn fee_rate() -> Result<SystemTokenWeight, Self::Error> {
-		Ok(T::BaseWeight::get())
+	fn para_fee_rate() -> Result<SystemTokenWeight, Self::Error> {
+		// Relay chain's fee rate is same as base weight
+		let base_detail = BaseConfiguration::<T>::get().ok_or(Error::<T>::BaseNotConfigured)?;
+		Ok(base_detail.weight)
 	}
+
 	fn fee_for(ext: ExtrinsicMetadata) -> Option<SystemTokenBalance> {
 		FeeTable::<T>::get(&ext)
 	}
@@ -36,13 +39,13 @@ impl<T: Config> RuntimeConfigProvider for Pallet<T> {
 	}
 }
 
-// TODO: Find a way to dispatch XCM locally. Then it would be much clearer
+// TODO: Find a way to dispatch XCM locally. Then it would be clearer
 impl<T: Config> InfraConfigInterface for Pallet<T> {
-	fn set_base_weight(para_id: SystemTokenParaId) {
+	fn set_base_config(para_id: SystemTokenParaId, base_system_token_detail: BaseSystemTokenDetail) {
 		if para_id != RELAY_CHAIN_PARA_ID {
-			let set_base_weight_call =
-				ParachainRuntimePallets::ParachainConfig(ParachainConfigCalls::SetBaseWeight);
-			Self::send_xcm_for(set_base_weight_call.encode(), para_id);
+			let set_base_config_call =
+				ParachainRuntimePallets::ParachainConfig(ParachainConfigCalls::SetBaseConfig(base_system_token_detail));
+			Self::send_xcm_for(set_base_config_call.encode(), para_id);
 		}
 	}
 
@@ -114,6 +117,7 @@ impl<T: Config> InfraConfigInterface for Pallet<T> {
 	fn create_wrapped_local(
 		para_id: SystemTokenParaId,
 		asset_id: SystemTokenAssetId,
+		currency_type: Option<Fiat>,
 		min_balance: SystemTokenBalance,
 		name: Vec<u8>,
 		symbol: Vec<u8>,
@@ -126,6 +130,7 @@ impl<T: Config> InfraConfigInterface for Pallet<T> {
 			// TODO: Error handling
 			let _ = T::LocalAssetManager::create_wrapped_local(
 				asset_id,
+				currency_type,
 				min_balance,
 				name,
 				symbol,
@@ -137,6 +142,7 @@ impl<T: Config> InfraConfigInterface for Pallet<T> {
 			let create_call =
 				ParachainRuntimePallets::ParachainConfig(ParachainConfigCalls::CreateWrappedLocal(
 					asset_id,
+					currency_type,
 					min_balance,
 					name,
 					symbol,
@@ -188,8 +194,8 @@ impl<T: Config> Pallet<T> {
 			),
 			Err(e) => log::error!(
 				target: "runtime::parachain-config",
-				"Instruction to `deregister system token` failed to send: {:?}",
-				e
+				"Error on sending XCM to parachain {:?} => {:?}",
+				dest, e
 			),
 		}
 	}

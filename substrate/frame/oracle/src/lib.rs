@@ -26,7 +26,7 @@ use frame_system::{
 	pallet_prelude::*,
 };
 use lite_json::JsonValue;
-use sp_runtime::{offchain::http, traits::Zero, types::SystemTokenWeight};
+use sp_runtime::{offchain::http, traits::Zero, types::token::*};
 use sp_std::{prelude::ToOwned, vec::Vec};
 
 pub use pallet::*;
@@ -45,13 +45,6 @@ pub mod pallet {
 
 		#[pallet::constant]
 		type RequestPeriod: Get<BlockNumberFor<Self>>;
-		/// The base weight of system token for this Runtime.
-		/// Usually, this refers to USD.
-		#[pallet::constant]
-		type BaseWeight: Get<SystemTokenWeight>;
-
-		#[pallet::constant]
-		type IsOffChain: Get<bool>;
 
 		#[pallet::constant]
 		type UnsignedPriority: Get<TransactionPriority>;
@@ -98,7 +91,7 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn offchain_worker(block_number: BlockNumberFor<T>) {
-			if block_number % T::RequestPeriod::get() == Zero::zero() && T::IsOffChain::get() {
+			if block_number % T::RequestPeriod::get() == Zero::zero() {
 				if let Ok(_) = Self::fetch_exchange_rate() {
 				} else {
 					log::warn!(target: LOG_TARGET, "Failed to fetch exchange rate")

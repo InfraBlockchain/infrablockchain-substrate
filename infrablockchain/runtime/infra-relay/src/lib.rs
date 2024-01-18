@@ -22,7 +22,7 @@
 
 use pallet_transaction_payment::CurrencyAdapter;
 use runtime_common::{
-	auctions, crowdloan, impl_runtime_weights, impls::DealWithFees, infra_core, paras_registrar,
+	auctions, crowdloan, impl_runtime_weights, impls::DealWithFees, infra_relay_core, paras_registrar,
 	paras_sudo_wrapper, prod_or_fast, slots, BlockHashCount, BlockLength, SlowAdjustingFeeUpdate,
 };
 
@@ -390,14 +390,13 @@ parameter_types! {
 	pub const InfrablockchainBaseWeight: SystemTokenWeight = 1_000_000;
 }
 
-impl infra_core::Config for Runtime {
+impl infra_relay_core::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type VotingInterface = ValidatorElection;
 	type SystemTokenInterface = SystemTokenManager;
 	type LocalAssetManager = Assets;
 	type AssetLink = AssetLink;
 	type XcmRouter = XcmRouter;
-	type BaseWeight = InfrablockchainBaseWeight;
 }
 
 parameter_types! {
@@ -1404,7 +1403,7 @@ construct_runtime! {
 		AssetRate: pallet_asset_rate::{Pallet, Call, Storage, Event<T>} = 39,
 
 		// InfraBlockchain Support
-		InfraCore: infra_core::{Pallet, Call, Storage, Event<T>} = 20,
+		InfraCore: infra_relay_core::{Pallet, Call, Storage, Event<T>} = 20,
 		SystemTokenManager: system_token_manager::{Pallet, Call, Storage, Event<T>} = 21,
 		ValidatorRewardManager: validator_reward_manager::{Pallet, Call, Storage, Event<T>} = 22,
 		AssetLink: pallet_asset_link::{Pallet, Storage, Event<T>} = 24,

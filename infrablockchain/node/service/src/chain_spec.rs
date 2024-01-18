@@ -295,6 +295,7 @@ fn infra_relay_staging_testnet_config_genesis(
 			seed_trust_slots: 2,
 			..Default::default()
 		},
+		..Default::default()
 	}
 }
 
@@ -817,6 +818,7 @@ pub fn infra_relay_testnet_genesis(
 			seed_trust_slots: 2,
 			..Default::default()
 		},
+		..Default::default()
 	}
 }
 

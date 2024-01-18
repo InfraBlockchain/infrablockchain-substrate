@@ -19,7 +19,6 @@ use crate::{configuration, ensure_parachain, paras, Origin as ParachainOrigin, P
 pub use frame_support::{pallet_prelude::*, traits::UnixTime};
 use frame_system::pallet_prelude::*;
 pub use pallet::*;
-use pallet_system_token_oracle::{ExchangeRate, Fiat, StandardUnixTime};
 use softfloat::F64;
 use sp_runtime::types::{infra_core::*, token::*, vote::*};
 use sp_std::prelude::*;
@@ -129,6 +128,8 @@ pub mod pallet {
 		AssetMetadataNotProvided,
 		/// The paraid making the call is not the asset hub system parachain
 		NotAssetHub,
+		/// Something wrong with the configuration
+		BadConfig,
 	}
 
 	#[pallet::pallet]
@@ -500,6 +501,14 @@ pub mod pallet {
 impl<T: Config> Pallet<T> {
 	fn unix_time() -> u128 {
 		T::UnixTime::now().as_millis()
+	}
+
+	fn calc_system_token_weight(currency: Fiat, original: SystemTokenId) -> Result<SystemTokenWeight, DispatchError> {
+		// SYSTEM_TOKEN_WEIGHT = BASE_WEIGHT * DECIMAL_RELATIVE_TO_BASE / EXCHANGE_RATE_RELATIVE_TO_BASE
+		let base_config = T::InfraCoreInterface::base_system_token_configuration().map_err(|_| Error::<T>::BadConfig)?;
+		let exchange_rate = ExchangeRates::<T>::get(&currency).ok_or(Error::<T>::NotFound)?;
+		let asset_metadata = OriginalSystemTokenMetadata::<T>::get(&original).ok_or(Error::<T>::MetadataNotFound)?;
+		Ok(Default::default())
 	}
 
 	fn ensure_root_or_para(
@@ -1050,13 +1059,13 @@ impl<T: Config> SystemTokenInterface for Pallet<T> {
 	}
 	fn adjusted_weight(original: &SystemTokenId, vote_weight: VoteWeight) -> VoteWeight {
 		if let Some(p) = <SystemTokenProperties<T>>::get(original) {
-			if let Ok(base_weight) = T::InfraCoreInterface::base_weight() {
+			if let Ok(base_config) = T::InfraCoreInterface::base_system_token_configuration() {
 				let system_token_weight = {
-					let w: u128 = p.system_token_weight.map_or(base_weight, |w| w);
+					let w: u128 = p.system_token_weight.map_or(base_config.weight, |w| w);
 					let system_token_weight = F64::from_i128(w as i128);
 					system_token_weight
 				};
-				let converted_base_weight = F64::from_i128(base_weight as i128);
+				let converted_base_weight = F64::from_i128(base_config.weight as i128);
 
 				// Since the base_weight cannot be zero, this division is guaranteed to be safe.
 				return vote_weight.mul(system_token_weight).div(converted_base_weight)

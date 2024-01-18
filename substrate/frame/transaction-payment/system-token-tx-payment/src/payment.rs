@@ -149,9 +149,9 @@ where
 		let mut converted_fee = CON::to_asset_balance(fee, system_token_asset_id.clone())
 			.map_err(|_| TransactionValidityError::from(InvalidTransaction::Payment))?
 			.max(min_converted_fee);
-		let fee_rate = T::InfraTxInterface::fee_rate()
+		let para_fee_rate = T::InfraTxInterface::para_fee_rate()
 			.map_err(|_| TransactionValidityError::from(InvalidTransaction::Payment))?;
-		let converted_fee_rate: AssetBalanceOf<T> = ConvertBalance::convert(&fee_rate)
+		let converted_fee_rate: AssetBalanceOf<T> = ConvertBalance::convert(&para_fee_rate)
 			.ok_or(TransactionValidityError::from(InvalidTransaction::Payment))?;
 		converted_fee = converted_fee * converted_fee_rate;
 		let can_withdraw = <T::Assets as Inspect<T::AccountId>>::can_withdraw(

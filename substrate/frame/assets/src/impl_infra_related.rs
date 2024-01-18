@@ -5,6 +5,7 @@ impl<T: Config<I>, I: 'static> LocalAssetManager for Pallet<T, I> {
 
 	fn create_wrapped_local(
 		asset_id: SystemTokenAssetId,
+		currency_type: Option<Fiat>,
 		min_balance: SystemTokenBalance,
 		name: Vec<u8>,
 		symbol: Vec<u8>,
@@ -14,6 +15,7 @@ impl<T: Config<I>, I: 'static> LocalAssetManager for Pallet<T, I> {
 		let owner: T::AccountId = frame_support::PalletId(*b"infra/rt").into_account_truncating();
 		Self::try_create_wrapped_local(
 			asset_id,
+			currency_type,
 			owner,
 			min_balance,
 			name,

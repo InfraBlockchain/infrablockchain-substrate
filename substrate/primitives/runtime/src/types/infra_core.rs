@@ -9,7 +9,7 @@ use sp_std::vec::Vec;
 /// API that handles Runtime configuration including System Token
 pub trait InfraConfigInterface {
 	/// Set base weight for the `para_id` parachain by Relay-chain governance
-	fn set_base_weight(para_id: SystemTokenParaId);
+	fn set_base_config(para_id: SystemTokenParaId, base_system_token_detail: BaseSystemTokenDetail);
 	/// Set fee table for the `para_id` parachain by Relay-chain governance
 	fn set_fee_table(
 		para_id: SystemTokenParaId,
@@ -39,6 +39,7 @@ pub trait InfraConfigInterface {
 	fn create_wrapped_local(
 		para_id: SystemTokenParaId,
 		asset_id: SystemTokenAssetId,
+		currency_type: Option<Fiat>,
 		min_balance: SystemTokenBalance,
 		name: Vec<u8>,
 		symbol: Vec<u8>,
@@ -57,14 +58,14 @@ pub trait InfraConfigInterface {
 /// API for providing Runtime(e.g parachain) configuration which would be set by Relay-chain
 /// governance
 pub trait RuntimeConfigProvider {
-	/// Error type for API
+	/// General error type
 	type Error;
 
 	/// Base system token weight of Runtime
-	fn base_weight() -> Result<SystemTokenWeight, Self::Error>;
+	fn base_system_token_configuration() -> Result<BaseSystemTokenDetail, Self::Error>;
 	/// Para fee rate of Runtime
-	fn fee_rate() -> Result<SystemTokenWeight, Self::Error>;
-	/// Fee for each extrinsic
+	fn para_fee_rate() -> Result<SystemTokenWeight, Self::Error>;
+	/// Fee for each extrinsic set in fee table
 	fn fee_for(ext: ExtrinsicMetadata) -> Option<SystemTokenBalance>;
 	/// State of Runtime
 	fn runtime_state() -> Mode;

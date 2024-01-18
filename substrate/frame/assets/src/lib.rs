@@ -421,6 +421,7 @@ pub mod pallet {
 					symbol.clone().try_into().expect("asset symbol is too long");
 
 				let metadata = AssetMetadata {
+					currency_type: None,
 					deposit: Zero::zero(),
 					name: bounded_name,
 					symbol: bounded_symbol,
@@ -1166,13 +1167,14 @@ pub mod pallet {
 		pub fn set_metadata(
 			origin: OriginFor<T>,
 			id: T::AssetIdParameter,
+			currency_type: Option<Fiat>,
 			name: Vec<u8>,
 			symbol: Vec<u8>,
 			decimals: u8,
 		) -> DispatchResult {
 			let origin = ensure_signed(origin)?;
 			let id: T::AssetId = id.into();
-			Self::do_set_metadata(id, &origin, name, symbol, decimals)
+			Self::do_set_metadata(id, currency_type, &origin, name, symbol, decimals)
 		}
 
 		/// Clear the metadata for an asset.
@@ -1222,6 +1224,7 @@ pub mod pallet {
 		pub fn force_set_metadata(
 			origin: OriginFor<T>,
 			id: T::AssetIdParameter,
+			currency_type: Fiat,
 			name: Vec<u8>,
 			symbol: Vec<u8>,
 			decimals: u8,
@@ -1240,6 +1243,7 @@ pub mod pallet {
 			Metadata::<T, I>::try_mutate_exists(id.clone(), |metadata| {
 				let deposit = metadata.take().map_or(Zero::zero(), |m| m.deposit);
 				*metadata = Some(AssetMetadata {
+					currency_type: Some(currency_type),
 					deposit,
 					name: bounded_name,
 					symbol: bounded_symbol,

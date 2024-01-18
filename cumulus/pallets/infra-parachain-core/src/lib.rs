@@ -42,11 +42,12 @@ pub mod pallet {
 	#[pallet::pallet]
 	pub struct Pallet<T>(_);
 
+	/// Base system token configuration set on Relay-chain Runtime
 	#[pallet::storage]
-	pub type BaseWeight<T: Config> = StorageValue<_, SystemTokenWeight, OptionQuery>;
+	pub type BaseConfiguration<T: Config> = StorageValue<_, BaseSystemTokenDetail, OptionQuery>;
 
 	#[pallet::storage]
-	pub type FeeRate<T: Config> = StorageValue<_, SystemTokenWeight, OptionQuery>;
+	pub type ParaFeeRate<T: Config> = StorageValue<_, SystemTokenWeight, OptionQuery>;
 
 	#[pallet::storage]
 	pub(super) type RuntimeState<T: Config> = StorageValue<_, Mode, ValueQuery>;
@@ -76,8 +77,8 @@ pub mod pallet {
 		NotAllowedToChangeState,
 		/// System Token is not registered
 		SystemTokenMissing,
-		/// Base System Token weight has not been set
-		BaseWeightMissing,
+		/// Base configuration set on Relay-chain has not been set
+		BaseConfigMissing,
 		/// Error occured while updating weight of System Token
 		ErrorUpdateWeight,
 		/// Error occured while registering System Token
@@ -99,12 +100,12 @@ pub mod pallet {
 		/// Origin
 		/// Relay-chain governance
 		#[pallet::call_index(0)]
-		pub fn set_base_weight(
+		pub fn set_base_config(
 			origin: OriginFor<T>,
-			base_weight: SystemTokenWeight,
+			base_system_token_detail: BaseSystemTokenDetail,
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
-			BaseWeight::<T>::put(base_weight);
+			BaseConfiguration::<T>::put(base_system_token_detail);
 			Ok(())
 		}
 
@@ -136,7 +137,7 @@ pub mod pallet {
 			fee_rate: SystemTokenWeight,
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
-			FeeRate::<T>::put(fee_rate);
+			ParaFeeRate::<T>::put(fee_rate);
 			Ok(())
 		}
 
@@ -150,6 +151,7 @@ pub mod pallet {
 			if RuntimeState::<T>::get() == Mode::Normal {
 				return Ok(())
 			}
+			ensure!(BaseConfiguration::<T>::get().is_some(), Error::<T>::NotAllowedToChangeState);
 			// TODO-1: Check whether it is allowed to change `Normal` state
 			// TODO-2: Check whether a parachain has enough system token to pay
 			RuntimeState::<T>::put(Mode::Normal);
@@ -204,6 +206,7 @@ pub mod pallet {
 		pub fn create_wrapped_local(
 			origin: OriginFor<T>,
 			asset_id: SystemTokenAssetId,
+			currency_type: Option<Fiat>,
 			min_balance: SystemTokenBalance,
 			name: Vec<u8>,
 			symbol: Vec<u8>,
@@ -215,6 +218,7 @@ pub mod pallet {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
 			T::LocalAssetManager::create_wrapped_local(
 				asset_id,
+				currency_type,
 				min_balance,
 				name,
 				symbol,
@@ -247,17 +251,25 @@ pub mod pallet {
 impl<T: Config> RuntimeConfigProvider for Pallet<T> {
 	type Error = DispatchError;
 
-	fn base_weight() -> Result<SystemTokenWeight, Self::Error> {
-		Ok(BaseWeight::<T>::get().ok_or(Error::<T>::BaseWeightMissing)?)
+	fn base_system_token_configuration() -> Result<BaseSystemTokenDetail, Self::Error> {
+		Ok(BaseConfiguration::<T>::get().ok_or(Error::<T>::BaseConfigMissing)?)
 	}
 
-	fn fee_rate() -> Result<SystemTokenWeight, Self::Error> {
-		let base_weight = BaseWeight::<T>::get().ok_or(Error::<T>::BaseWeightMissing)?;
-		Ok(FeeRate::<T>::get().map_or(base_weight, |x| x))
+	fn para_fee_rate() -> Result<SystemTokenWeight, Self::Error> {
+		let base_system_token_detail = BaseConfiguration::<T>::get().ok_or(Error::<T>::BaseConfigMissing)?;
+		Ok(
+			ParaFeeRate::<T>::try_mutate_exists(|maybe_para_fee_rate| -> Result<SystemTokenWeight, DispatchError> {
+				let pfr = maybe_para_fee_rate.take().map_or(base_system_token_detail.weight, |pfr| pfr);
+				*maybe_para_fee_rate = Some(pfr);
+				Ok(pfr)
+			})?
+		)
 	}
+
 	fn fee_for(ext: ExtrinsicMetadata) -> Option<SystemTokenBalance> {
 		FeeTable::<T>::get(&ext)
 	}
+
 	fn runtime_state() -> Mode {
 		RuntimeState::<T>::get()
 	}

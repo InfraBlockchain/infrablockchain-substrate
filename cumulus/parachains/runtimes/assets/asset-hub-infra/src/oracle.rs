@@ -1,8 +1,6 @@
 use crate::*;
 use codec::{Decode, Encode};
-use pallet_system_token_oracle::{
-	ExchangeRate, Fiat, StandardUnixTime, SystemTokenOracleInterface,
-};
+use pallet_system_token_oracle::SystemTokenOracleInterface;
 use xcm::latest::prelude::*;
 
 /// A type containing the encoding of the system token manager pallet in the Relay chain runtime.

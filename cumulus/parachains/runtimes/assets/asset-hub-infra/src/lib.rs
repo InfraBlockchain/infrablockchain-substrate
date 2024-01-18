@@ -67,7 +67,7 @@ use sp_runtime::{
 		AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, TryConvertInto as JustTry,
 	},
 	transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
-	types::SystemTokenWeight,
+	types::token::*,
 	ApplyExtrinsicResult,
 };
 
@@ -93,7 +93,6 @@ use frame_system::{
 	EnsureRoot, EnsureSigned,
 };
 
-use pallet_system_token_oracle::BASE_SYSTEM_TOKEN_WEIGHT;
 use pallet_system_token_tx_payment::{CreditToBucket, TransactionFeeCharger};
 use parachains_common::{
 	constants::*, impls::DealWithFees, infra_relay::consensus::*, opaque::*, types::*,
@@ -610,16 +609,12 @@ impl pallet_collator_selection::Config for Runtime {
 
 parameter_types! {
 	pub const RequestPeriod: BlockNumber = prod_or_fast!(DAYS, 5u32);
-	pub const BaseSystemTokenWeight: SystemTokenWeight = BASE_SYSTEM_TOKEN_WEIGHT;
-	pub const IsOffChain: bool = true;
 	pub const UnsignedPriority: TransactionPriority = TransactionPriority::max_value();
 }
 
 impl pallet_system_token_oracle::Config for Runtime {
 	type SystemTokenOracle = oracle::SystemTokenOracle;
 	type RequestPeriod = RequestPeriod;
-	type BaseWeight = BaseSystemTokenWeight;
-	type IsOffChain = IsOffChain;
 	type UnsignedPriority = UnsignedPriority;
 }
 
