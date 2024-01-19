@@ -1167,13 +1167,17 @@ pub mod pallet {
 		pub fn set_metadata(
 			origin: OriginFor<T>,
 			id: T::AssetIdParameter,
+			currency_type: Option<Fiat>,
 			name: Vec<u8>,
 			symbol: Vec<u8>,
 			decimals: u8,
 		) -> DispatchResult {
 			let origin = ensure_signed(origin)?;
 			let id: T::AssetId = id.into();
-			Self::do_set_metadata(id, None, &origin, name, symbol, decimals)
+			// TODO: 
+			// If currency type is specified, assume it would be System Token for the future.
+			// We should not let users set the metadata for free maybe?
+			Self::do_set_metadata(id, currency_type, &origin, name, symbol, decimals)
 		}
 
 		/// Clear the metadata for an asset.

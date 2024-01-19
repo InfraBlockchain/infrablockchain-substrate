@@ -109,6 +109,8 @@ pub mod pallet {
 		NoPermission,
 		/// Local asset does not exist
 		LocalAssetNotExist,
+		/// Error occured while getting metadata
+		ErrorOnGetMetadata
 	}
 
 	#[pallet::call]
@@ -285,12 +287,13 @@ pub mod pallet {
 		pub fn request_register_system_token(
 			origin: OriginFor<T>,
 			asset_id: SystemTokenId,
-			currency_type: Fiat,
 		) -> DispatchResult {
 			if let Some(acc) = ensure_signed_or_root(origin)? {
 				ensure!(ParaCoreOrigin::<T>::get() == Some(acc), Error::<T>::NoPermission);
 			}
 			ensure!(T::LocalAssetManager::asset_exists(asset_id.clone().into()), Error::<T>::LocalAssetNotExist);
+			let remote_asset_metadata = LocalAssetManager::<T>::get_metadata(asset_id)
+				.map_err(|_| Error::<T>::ErrorOnGetMetadata)?;
 			Ok(())
 		}
 	}
