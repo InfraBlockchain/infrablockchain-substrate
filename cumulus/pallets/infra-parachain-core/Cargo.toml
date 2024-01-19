@@ -9,11 +9,15 @@ description = "Adds functionality to handle Cumulus-based chain policy which is 
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 scale-info = { version = "2.9.0", default-features = false, features = ["derive"] }
 
-# Substrate
-frame-support = { path = "../../../substrate/frame/support", default-features = false}
-frame-system = { path = "../../../substrate/frame/system", default-features = false}
+# Primitives
 sp-runtime = { path = "../../../substrate/primitives/runtime", default-features = false}
 sp-std = { path = "../../../substrate/primitives/std", default-features = false}
+
+# FRAME 
+frame-support = { path = "../../../substrate/frame/support", default-features = false}
+frame-system = { path = "../../../substrate/frame/system", default-features = false}
+pallet-assets = { path = "../../../substrate/frame/assets", default-features = false}
+
 
 # Polkadot
 primitives = { path = "../../../infrablockchain/primitives", default-features = false}
@@ -29,6 +33,7 @@ std = [
 	"scale-info/std",
 	"frame-support/std",
 	"frame-system/std",
+	"pallet-assets/std",
 	"primitives/std",
 	"sp-runtime/std",
 	"sp-std/std",

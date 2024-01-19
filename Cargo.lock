@@ -3085,6 +3085,7 @@ dependencies = [
  "cumulus-pallet-xcm",
  "frame-support",
  "frame-system",
+ "pallet-assets",
  "parity-scale-codec",
  "primitives",
  "scale-info",

@@ -118,10 +118,12 @@ impl<T: Config> InfraConfigInterface for Pallet<T> {
 		para_id: SystemTokenParaId,
 		asset_id: SystemTokenAssetId,
 		currency_type: Option<Fiat>,
+		#[codec(compact)]
 		min_balance: SystemTokenBalance,
 		name: Vec<u8>,
 		symbol: Vec<u8>,
 		decimals: u8,
+		#[codec(compact)]
 		system_token_weight: SystemTokenWeight,
 		asset_link_parent: u8,
 		original: SystemTokenId,

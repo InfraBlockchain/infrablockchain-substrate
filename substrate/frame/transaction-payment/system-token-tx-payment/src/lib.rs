@@ -69,8 +69,7 @@ pub mod pallet {
 		/// Interface that is related to transaction for Infrablockchain Runtime
 		type InfraTxInterface: RuntimeConfigProvider + VotingHandler;
 		/// The fungibles instance used to pay for transactions in assets.
-		type Assets: Balanced<Self::AccountId>
-			+ LocalAssetProvider<SystemTokenAssetId, Self::AccountId>;
+		type Assets: Balanced<Self::AccountId> + LocalAssetManager<Self::AccountId>;
 		/// The actual transaction charging logic that charges the fees.
 		type OnChargeSystemToken: OnChargeSystemToken<Self>;
 		/// Filters for bootstrappring runtime.

@@ -200,15 +200,15 @@ impl<T: Config<I>, I: 'static> fungibles::metadata::Inspect<<T as SystemConfig>:
 	for Pallet<T, I>
 {
 	fn name(asset: T::AssetId) -> Vec<u8> {
-		Metadata::<T, I>::get(asset).name.to_vec()
+		Metadata::<T, I>::get(asset).map_or(Default::default(), |m| m).name.to_vec()
 	}
 
 	fn symbol(asset: T::AssetId) -> Vec<u8> {
-		Metadata::<T, I>::get(asset).symbol.to_vec()
+		Metadata::<T, I>::get(asset).map_or(Default::default(), |m| m).symbol.to_vec()
 	}
 
 	fn decimals(asset: T::AssetId) -> u8 {
-		Metadata::<T, I>::get(asset).decimals
+		Metadata::<T, I>::get(asset).map_or(Default::default(), |m| m).decimals
 	}
 }
 

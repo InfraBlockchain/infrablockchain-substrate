@@ -372,7 +372,7 @@ pub mod pallet {
 		Blake2_128Concat,
 		T::AssetId,
 		AssetMetadata<DepositBalanceOf<T, I>, BoundedVec<u8, T::StringLimit>>,
-		ValueQuery,
+		OptionQuery,
 	>;
 
 	#[pallet::genesis_config]
@@ -1093,7 +1093,7 @@ pub mod pallet {
 					return Ok(())
 				}
 
-				let metadata_deposit = Metadata::<T, I>::get(&id).deposit;
+				let metadata_deposit = Metadata::<T, I>::get(&id).map_or(Default::default(), |m| m).deposit;
 				let deposit = details.deposit + metadata_deposit;
 
 				// Move the deposit to the new owner.
@@ -1167,14 +1167,13 @@ pub mod pallet {
 		pub fn set_metadata(
 			origin: OriginFor<T>,
 			id: T::AssetIdParameter,
-			currency_type: Option<Fiat>,
 			name: Vec<u8>,
 			symbol: Vec<u8>,
 			decimals: u8,
 		) -> DispatchResult {
 			let origin = ensure_signed(origin)?;
 			let id: T::AssetId = id.into();
-			Self::do_set_metadata(id, currency_type, &origin, name, symbol, decimals)
+			Self::do_set_metadata(id, None, &origin, name, symbol, decimals)
 		}
 
 		/// Clear the metadata for an asset.

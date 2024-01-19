@@ -843,7 +843,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			ensure!(details.approvals == 0, Error::<T, I>::InUse);
 			ensure!(T::CallbackHandle::destroyed(&id).is_ok(), Error::<T, I>::CallbackFailed);
 
-			let metadata = Metadata::<T, I>::take(&id);
+			let metadata = Metadata::<T, I>::take(&id).map_or(Default::default(), |m| m);
 			T::Currency::unreserve(
 				&details.owner,
 				details.deposit.saturating_add(metadata.deposit),
@@ -1085,38 +1085,5 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			Ok(())
 		})?;
 		Ok(())
-	}
-}
-
-impl<T: Config<I>, I: 'static> LocalAssetProvider<SystemTokenAssetId, T::AccountId>
-	for Pallet<T, I>
-{
-	fn system_token_list() -> Vec<SystemTokenAssetId> {
-		let assets = Asset::<T, I>::iter_keys();
-		let token_list = assets
-			.into_iter()
-			.filter_map(|asset| {
-				Asset::<T, I>::get(&asset)
-					.filter(|detail| detail.is_sufficient)
-					.map(|_| asset.into())
-			})
-			.collect::<Vec<SystemTokenAssetId>>();
-		token_list
-	}
-
-	/// Returns most balance for the given asset id.
-	fn get_most_account_system_token_balance(
-		asset_ids: impl IntoIterator<Item = SystemTokenAssetId>,
-		account: T::AccountId,
-	) -> SystemTokenAssetId {
-		let mut most_balance: (SystemTokenAssetId, T::Balance) = Default::default();
-		for asset_id in asset_ids {
-			if let Some(balance) = Self::maybe_balance(asset_id.into(), account.clone()) {
-				if most_balance.1 < balance {
-					most_balance = (asset_id, balance);
-				}
-			}
-		}
-		most_balance.0
 	}
 }

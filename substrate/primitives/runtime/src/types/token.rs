@@ -30,8 +30,6 @@ pub type SystemTokenWeight = u128;
 pub type SystemTokenBalance = u128;
 /// General decimal type for System Token
 pub type SystemTokenDecimal = u8;
-/// General 
-pub type RemoteSystemTokenMetadata = (Fiat, SystemTokenDecimal, SystemTokenBalance);
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 /// Detail of base system token
@@ -94,6 +92,26 @@ impl SystemTokenId {
 	}
 }
 
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+pub struct RemoteSystemTokenMetadata<BoundedString> {
+	/// General Assets pallet index on Runtime
+	pub pallet_id: SystemTokenPalletId,
+	/// General asset id on Runtime
+	#[codec(compact)]
+	pub asset_id: SystemTokenAssetId,
+	/// Human readable name of System Token, which should be bounded
+	pub name: BoundedString,
+	/// Human readable symbol of System Token, which should be bounded
+	pub symbol: BoundedString,
+	/// Currency type of base system token
+	pub currency_type: Fiat,
+	/// Decimal of base system token
+	pub decimals: u8,
+	/// Weight of base system token
+	#[codec(compact)]
+	pub min_balance: SystemTokenBalance,
+}
+
 /// API for interacting with local assets on Runtime
 pub trait LocalAssetProvider<Asset, Account> {
 	/// Get a list of local assets created on local chain
@@ -105,9 +123,13 @@ pub trait LocalAssetProvider<Asset, Account> {
 	) -> Asset;
 }
 
-/// API to create/destory local assets related to System Token
+/// API to handle local assets which refers to System Token
 pub trait LocalAssetManager {
+	
+	type AccountId: MaxEncodedLen;
 	type Error;
+	type BoundedString: Encode;
+
 	/// Create local asset with metadata which refers to `wrapped` System Token
 	fn create_wrapped_local(
 		asset_id: SystemTokenAssetId,
@@ -130,6 +152,20 @@ pub trait LocalAssetManager {
 		asset_id: SystemTokenAssetId,
 		system_token_weight: SystemTokenWeight,
 	) -> Result<(), Self::Error>;
+	/// Get a list of System Token's local asset id
+	fn system_token_list() -> Vec<SystemTokenAssetId> { 
+		Vec::new()
+	}
+	/// Return most system token balance of given 'asset_id' and 'account'
+	fn get_most_system_token_balance_of(
+		asset_ids: impl IntoIterator<Item = SystemTokenAssetId>,
+		account: Self::AccountId,
+	) -> SystemTokenAssetId;
+
+	/// Retrieve metadata of given `asset_id` and return `RemoteSystemTokenMetadata`
+	fn get_metadata(
+		asset_id: SystemTokenAssetId,
+	) -> Result<RemoteSystemTokenMetadata<Self::BoundedString>, Self::Error>;
 }
 
 /// API for interacting with registered System Token

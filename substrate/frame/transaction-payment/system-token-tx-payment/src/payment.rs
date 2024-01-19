@@ -143,7 +143,7 @@ where
 				!l.is_empty(),
 				TransactionValidityError::from(InvalidTransaction::SystemTokenMissing)
 			);
-			T::Assets::get_most_account_system_token_balance(l, who.clone()).into()
+			T::Assets::get_most_system_token_balance_of(l, who.clone()).into()
 		};
 		let min_converted_fee = if fee.is_zero() { Zero::zero() } else { One::one() };
 		let mut converted_fee = CON::to_asset_balance(fee, system_token_asset_id.clone())

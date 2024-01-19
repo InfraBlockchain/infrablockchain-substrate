@@ -3,9 +3,10 @@
 use cumulus_pallet_xcm::{ensure_relay, Origin};
 use frame_support::pallet_prelude::*;
 use frame_system::pallet_prelude::*;
-pub use pallet::*;
 use sp_runtime::types::{fee::*, infra_core::*, token::*, vote::*};
 use sp_std::vec::Vec;
+
+pub use pallet::*;
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub enum SystemTokenStatus {
@@ -18,6 +19,8 @@ pub enum SystemTokenStatus {
 	/// System Token is deregistered by some reasons
 	Deregistered,
 }
+
+pub type Requests<T> = BoundedVec<RemoteSystemTokenMetadata<<T as frame_system::Config>::AccountId>, <T as Config>::MaxRequests>;
 
 #[frame_support::pallet(dev_mode)]
 pub mod pallet {
@@ -32,29 +35,38 @@ pub mod pallet {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Type that interacts with local asset
-		type LocalAssetManager: LocalAssetManager;
+		type LocalAssetManager: LocalAssetManager<Self::AccountId>;
 		/// Type that links local asset with System Token
 		type AssetLink: AssetLinkInterface<SystemTokenAssetId>;
 		/// Handler for TaaV
 		type CollectVote: CollectVote;
+		/// Maximum number of requests
+		#[pallet::constant]
+		type MaxRequests: Get<u32>;
 	}
 
 	#[pallet::pallet]
 	pub struct Pallet<T>(_);
 
+	#[pallet::storage]
+	pub type ParaCoreOrigin<T: Config> = StorageValue<_, T::AccountId>;
+
 	/// Base system token configuration set on Relay-chain Runtime
 	#[pallet::storage]
-	pub type BaseConfiguration<T: Config> = StorageValue<_, BaseSystemTokenDetail, OptionQuery>;
+	pub type BaseConfiguration<T: Config> = StorageValue<_, BaseSystemTokenDetail>;
 
 	#[pallet::storage]
-	pub type ParaFeeRate<T: Config> = StorageValue<_, SystemTokenWeight, OptionQuery>;
+	pub type ParaFeeRate<T: Config> = StorageValue<_, SystemTokenWeight>;
 
 	#[pallet::storage]
 	pub(super) type RuntimeState<T: Config> = StorageValue<_, Mode, ValueQuery>;
 
 	#[pallet::storage]
 	pub type FeeTable<T: Config> =
-		StorageMap<_, Twox128, ExtrinsicMetadata, SystemTokenBalance, OptionQuery>;
+		StorageMap<_, Twox128, ExtrinsicMetadata, SystemTokenBalance>;
+
+	#[pallet::storage]
+	pub type RequestQueue<T: Config> = StorageValue<_, Requests<T>, ValueQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -69,6 +81,8 @@ pub mod pallet {
 		SystemTokenWeightUpdated { asset_id: SystemTokenAssetId },
 		/// Bootstrap has been ended by Relay-chain governance.
 		BootstrapEnded,
+		/// Origin of this pallet has been set by Relay-chain governance.
+		SetParaCoreOrigin { who: T::AccountId }
 	}
 
 	#[pallet::error]
@@ -91,6 +105,10 @@ pub mod pallet {
 		ErrorLinkAsset,
 		/// Error occured while unlinking asset
 		ErrorUnlinkAsset,
+		/// No permission to call this function
+		NoPermission,
+		/// Local asset does not exist
+		LocalAssetNotExist,
 	}
 
 	#[pallet::call]
@@ -245,8 +263,39 @@ pub mod pallet {
 			}
 			Ok(())
 		}
+
+		/// Priviliged origin governed by Relay-chain
+		/// 
+		/// It can call extrinsic which is not allowed to call by other origin(e.g `request_register_system_token`)
+		#[pallet::call_index(9)]
+		pub fn set_para_core_origin(
+			origin: OriginFor<T>,
+			who: T::AccountId
+		) -> DispatchResult {
+			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
+			ParaCoreOrigin::<T>::put(&who);
+			Self::deposit_event(Event::<T>::SetParaCoreOrigin { who });
+			Ok(())
+		}
+
+		/// Request to register System Token
+		/// 
+		/// If succeed, request will be queued in `RequestQueue`
+		#[pallet::call_index(10)]
+		pub fn request_register_system_token(
+			origin: OriginFor<T>,
+			asset_id: SystemTokenId,
+			currency_type: Fiat,
+		) -> DispatchResult {
+			if let Some(acc) = ensure_signed_or_root(origin)? {
+				ensure!(ParaCoreOrigin::<T>::get() == Some(acc), Error::<T>::NoPermission);
+			}
+			ensure!(T::LocalAssetManager::asset_exists(asset_id.clone().into()), Error::<T>::LocalAssetNotExist);
+			Ok(())
+		}
 	}
 }
+
 
 impl<T: Config> RuntimeConfigProvider for Pallet<T> {
 	type Error = DispatchError;
