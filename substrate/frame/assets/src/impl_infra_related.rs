@@ -11,11 +11,10 @@ where
 
 	type AccountId = T::AccountId;
 	type Error = DispatchError;
-	type BoundedString = BoundedVec<u8, T::StringLimit>;
 
 	fn create_wrapped_local(
 		asset_id: SystemTokenAssetId,
-		currency_type: Option<Fiat>,
+		currency_type: Fiat,
 		min_balance: SystemTokenBalance,
 		name: Vec<u8>,
 		symbol: Vec<u8>,
@@ -57,6 +56,11 @@ where
 		Ok(())
 	}
 
+	fn request_register(asset_id: SystemTokenAssetId) -> Result<(), Self::Error> {
+		Self::try_request_register(asset_id)?;
+		Ok(())
+	}
+
 	fn system_token_list() -> Vec<SystemTokenAssetId> {
 		let assets = Asset::<T, I>::iter_keys();
 		let token_list = assets
@@ -88,7 +92,7 @@ where
 	// TODO: Check owner of the token
 	fn get_metadata(
 			asset_id: SystemTokenAssetId,
-		) -> Result<RemoteSystemTokenMetadata<Self::BoundedString>, Self::Error> {
+		) -> Result<RemoteAssetMetadata, Self::Error> {
 		let id: T::AssetId = asset_id.clone().into();
 		let asset_detail = Asset::<T, I>::get(&id).ok_or(Error::<T, I>::Unknown)?;
 		let AssetDetails { is_sufficient, min_balance, .. } = asset_detail;
@@ -100,7 +104,7 @@ where
 		let min_balance: SystemTokenBalance = min_balance.into();
 		let pallet_id = <Self as PalletInfoAccess>::index() as u8;
 		Ok(
-			RemoteSystemTokenMetadata {
+			RemoteAssetMetadata {
 				pallet_id,
 				asset_id,
 				name,

@@ -701,10 +701,12 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		owner: &T::AccountId,
 		is_sufficient: bool,
 		min_balance: T::Balance,
+		asset_status: Option<AssetStatus>,
 		system_token_weight: Option<SystemTokenWeight>,
 	) -> DispatchResult {
 		ensure!(!Asset::<T, I>::contains_key(&id), Error::<T, I>::InUse);
 		ensure!(!min_balance.is_zero(), Error::<T, I>::MinBalanceZero);
+		let status = asset_status.map_or(AssetStatus::InActive, |s| s);
 		Asset::<T, I>::insert(
 			&id,
 			AssetDetails {
@@ -719,7 +721,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 				accounts: 0,
 				sufficients: 0,
 				approvals: 0,
-				status: AssetStatus::Live,
+				status,
 				system_token_weight,
 			},
 		);
@@ -960,9 +962,9 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		symbol: Vec<u8>,
 		decimals: u8,
 	) -> DispatchResult {
-		let bounded_name: BoundedVec<u8, T::StringLimit> =
+		let bounded_name: BoundedSystemTokenName =
 			name.clone().try_into().map_err(|_| Error::<T, I>::BadMetadata)?;
-		let bounded_symbol: BoundedVec<u8, T::StringLimit> =
+		let bounded_symbol: BoundedSystemTokenSymbol =
 			symbol.clone().try_into().map_err(|_| Error::<T, I>::BadMetadata)?;
 
 		let d = Asset::<T, I>::get(&id).ok_or(Error::<T, I>::Unknown)?;
@@ -1034,6 +1036,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		let id: T::AssetId = asset_id.into();
 		Asset::<T, I>::try_mutate_exists(id, |maybe_detail| -> DispatchResult {
 			let mut asset_detail = maybe_detail.take().ok_or(Error::<T, I>::Unknown)?;
+			ensure!(asset_detail.status == AssetStatus::Requested, Error::<T, I>::IncorrectStatus);
 			asset_detail.is_sufficient = true;
 			asset_detail.system_token_weight = Some(system_token_weight);
 			*maybe_detail = Some(asset_detail);
@@ -1045,7 +1048,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	/// Try create `wrapped` System Token's local asset with `original` System Token's metadata
 	pub fn try_create_wrapped_local(
 		asset_id: SystemTokenAssetId,
-		currency_type: Option<Fiat>,
+		currency_type: Fiat,
 		owner: T::AccountId,
 		min_balance: SystemTokenBalance,
 		name: Vec<u8>,
@@ -1055,8 +1058,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	) -> DispatchResult {
 		let id: T::AssetId = asset_id.into();
 		ensure!(!Asset::<T, I>::contains_key(&id), Error::<T, I>::InUse);
-		Self::do_force_create(id.clone(), &owner, true, min_balance.into(), system_token_weight)?;
-		Self::do_set_metadata(id, currency_type, &owner, name, symbol, decimals)?;
+		Self::do_force_create(id.clone(), &owner, true, min_balance.into(), Some(AssetStatus::Live), system_token_weight)?;
+		Self::do_set_metadata(id, Some(currency_type), &owner, name, symbol, decimals)?;
 		Ok(())
 	}
 
@@ -1080,6 +1083,26 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		Asset::<T, I>::try_mutate_exists(id, |maybe_detail| -> DispatchResult {
 			let mut asset_detail = maybe_detail.take().ok_or(Error::<T, I>::Unknown)?;
 			asset_detail.is_sufficient = false;
+			*maybe_detail = Some(asset_detail);
+
+			Ok(())
+		})?;
+		Ok(())
+	}
+
+	/// Request for System Token 
+	/// 
+	/// Check
+	/// - Error if the asset is not exist
+	/// - Error if it is not `InActive` status
+	/// - Error if it is already `sufficient`
+	pub fn try_request_register(asset_id: SystemTokenAssetId) -> DispatchResult {
+		let id: T::AssetId = asset_id.into();
+		Asset::<T, I>::try_mutate_exists(id, |maybe_detail| -> DispatchResult {
+			let mut asset_detail = maybe_detail.take().ok_or(Error::<T, I>::Unknown)?;
+			ensure!(!asset_detail.is_sufficient, Error::<T, I>::IncorrectStatus);
+			ensure!(asset_detail.status == AssetStatus::InActive, Error::<T, I>::IncorrectStatus);
+			asset_detail.status = AssetStatus::Requested;
 			*maybe_detail = Some(asset_detail);
 
 			Ok(())

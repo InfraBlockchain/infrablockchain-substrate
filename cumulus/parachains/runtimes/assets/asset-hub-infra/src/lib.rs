@@ -516,7 +516,13 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type XcmpMessageHandler = XcmpQueue;
 	type ReservedXcmpWeight = ReservedXcmpWeight;
 	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
+	type LocalAssetManager = Assets;
 	type ConsensusHook = ConsensusHook;
+}
+
+parameter_types! { 
+	pub const MaxRequests: u32 = 1;
+	pub const RequestInterval: u32 = prod_or_fast!(DAYS, 10u32);
 }
 
 impl cumulus_pallet_infra_parachain_core::Config for Runtime {
@@ -524,7 +530,9 @@ impl cumulus_pallet_infra_parachain_core::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type LocalAssetManager = Assets;
 	type AssetLink = AssetLink;
-	type CollectVote = ParachainSystem;
+	type ParachainSystemInterface = ParachainSystem;
+	type RequestInterval = RequestInterval;
+	type MaxRequests = MaxRequests;
 }
 
 impl parachain_info::Config for Runtime {}
@@ -608,13 +616,13 @@ impl pallet_collator_selection::Config for Runtime {
 }
 
 parameter_types! {
-	pub const RequestPeriod: BlockNumber = prod_or_fast!(DAYS, 5u32);
+	pub const APIRequestPeriod: BlockNumber = prod_or_fast!(DAYS, 5u32);
 	pub const UnsignedPriority: TransactionPriority = TransactionPriority::max_value();
 }
 
 impl pallet_system_token_oracle::Config for Runtime {
 	type SystemTokenOracle = oracle::SystemTokenOracle;
-	type RequestPeriod = RequestPeriod;
+	type RequestPeriod = APIRequestPeriod;
 	type UnsignedPriority = UnsignedPriority;
 }
 

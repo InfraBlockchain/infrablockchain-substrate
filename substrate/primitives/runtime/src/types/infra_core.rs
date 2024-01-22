@@ -39,7 +39,7 @@ pub trait InfraConfigInterface {
 	fn create_wrapped_local(
 		para_id: SystemTokenParaId,
 		asset_id: SystemTokenAssetId,
-		currency_type: Option<Fiat>,
+		currency_type: Fiat,
 		min_balance: SystemTokenBalance,
 		name: Vec<u8>,
 		symbol: Vec<u8>,

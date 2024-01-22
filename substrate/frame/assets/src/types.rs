@@ -54,6 +54,12 @@ pub(super) enum AssetStatus {
 	/// The asset is currently being destroyed, and all actions are no longer permitted on the
 	/// asset. Once set to `Destroying`, the asset can never transition back to a `Live` state.
 	Destroying,
+	/// The asset is requested to be used as System Token 
+	Requested,
+	/// The asset has just been created and (potentially) wait for the approval of the System Token
+	InActive,
+	/// Currently the asset is suspended by some reasons(e.g malicious behavior detected)
+	Suspend
 }
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
@@ -91,6 +97,11 @@ pub struct AssetDetails<Balance, AccountId, DepositBalance> {
 impl<Balance, AccountId, DepositBalance> AssetDetails<Balance, AccountId, DepositBalance> {
 	pub fn set_system_token_weight(&mut self, weight: SystemTokenWeight) {
 		self.system_token_weight = Some(weight);
+	}
+
+	/// Change its status of asset to 'Requested' when it is requested to be used as System Token
+	pub fn set_request_status(&mut self) {
+		self.status = AssetStatus::Requested;
 	}
 }
 
@@ -202,7 +213,7 @@ pub struct AssetAccount<Balance, DepositBalance, Extra, AccountId> {
 }
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Default, RuntimeDebug, MaxEncodedLen, TypeInfo)]
-pub struct AssetMetadata<DepositBalance, BoundedString> {
+pub struct AssetMetadata<DepositBalance> {
 	/// Optional fiat currency type of this asset. 
 	/// 
 	/// It it is set, then the asset becomes potential System Token.
@@ -212,9 +223,9 @@ pub struct AssetMetadata<DepositBalance, BoundedString> {
 	/// This pays for the data stored in this struct.
 	pub(super) deposit: DepositBalance,
 	/// The user friendly name of this asset. Limited in length by `StringLimit`.
-	pub(super) name: BoundedString,
+	pub(super) name: BoundedSystemTokenName,
 	/// The ticker symbol for this asset. Limited in length by `StringLimit`.
-	pub(super) symbol: BoundedString,
+	pub(super) symbol: BoundedSystemTokenSymbol,
 	/// The number of decimals this asset uses to represent one unit.
 	pub(super) decimals: u8,
 	/// Whether the asset metadata may be changed by a non Force origin.

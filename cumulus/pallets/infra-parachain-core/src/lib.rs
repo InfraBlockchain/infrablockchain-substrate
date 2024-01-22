@@ -3,28 +3,14 @@
 use cumulus_pallet_xcm::{ensure_relay, Origin};
 use frame_support::pallet_prelude::*;
 use frame_system::pallet_prelude::*;
-use sp_runtime::types::{fee::*, infra_core::*, token::*, vote::*};
+use sp_runtime::{types::{fee::*, infra_core::*, token::*, vote::*}, Saturating};
 use sp_std::vec::Vec;
 
 pub use pallet::*;
 
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
-pub enum SystemTokenStatus {
-	/// Potential System Token is requsted
-	Requested,
-	/// System Token is registered by RC governance
-	Registered,
-	/// System Token is suspended by some reasons(e.g malicious behavior detected)
-	Suspend,
-	/// System Token is deregistered by some reasons
-	Deregistered,
-}
-
-pub type Requests<T> = BoundedVec<RemoteSystemTokenMetadata<<T as frame_system::Config>::AccountId>, <T as Config>::MaxRequests>;
-
 #[frame_support::pallet(dev_mode)]
 pub mod pallet {
-
+	
 	use super::*;
 
 	#[pallet::config]
@@ -35,14 +21,14 @@ pub mod pallet {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Type that interacts with local asset
-		type LocalAssetManager: LocalAssetManager<Self::AccountId>;
+		type LocalAssetManager: LocalAssetManager<AccountId = Self::AccountId>;
 		/// Type that links local asset with System Token
 		type AssetLink: AssetLinkInterface<SystemTokenAssetId>;
-		/// Handler for TaaV
-		type CollectVote: CollectVote;
-		/// Maximum number of requests
+		/// Type that interacts with Parachain System
+		type ParachainSystemInterface: CollectVote + AssetMetadataProvider;
+		/// Interval for requesting register when `RequestQueue` is full
 		#[pallet::constant]
-		type MaxRequests: Get<u32>;
+		type RequestInterval: Get<BlockNumberFor<Self>>;
 	}
 
 	#[pallet::pallet]
@@ -66,7 +52,10 @@ pub mod pallet {
 		StorageMap<_, Twox128, ExtrinsicMetadata, SystemTokenBalance>;
 
 	#[pallet::storage]
-	pub type RequestQueue<T: Config> = StorageValue<_, Requests<T>, ValueQuery>;
+	pub type RequestQueue<T: Config> = StorageValue<_, BoundedRequestedAssets, ValueQuery>;
+
+	#[pallet::storage]
+	pub type NextRequest<T: Config> = StorageValue<_, BlockNumberFor<T>, ValueQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -91,6 +80,8 @@ pub mod pallet {
 		NotAllowedToChangeState,
 		/// System Token is not registered
 		SystemTokenMissing,
+		/// System Token has not been requested
+		SystemTokenNotRequested,
 		/// Base configuration set on Relay-chain has not been set
 		BaseConfigMissing,
 		/// Error occured while updating weight of System Token
@@ -107,11 +98,29 @@ pub mod pallet {
 		ErrorUnlinkAsset,
 		/// No permission to call this function
 		NoPermission,
-		/// Local asset does not exist
-		LocalAssetNotExist,
 		/// Error occured while getting metadata
-		ErrorOnGetMetadata
+		ErrorOnGetMetadata,
+		/// Error occured while requesting register
+		ErrorOnRequestRegister,
+		/// Currently request queue for System Token registration is fully occupied
+		TooManyRequests,
+		/// System Token has already been requested
+		AlreadyRequested
 	}
+
+	#[pallet::hooks]
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn on_initialize(n: BlockNumberFor<T>) -> frame_support::weights::Weight {
+			if n >= NextRequest::<T>::get() {
+				let remote_asset_metadata = RequestQueue::<T>::get();
+				T::ParachainSystemInterface::requested(remote_asset_metadata.to_vec());
+				T::DbWeight::get().reads(1)
+			} else {
+				T::DbWeight::get().reads(1)
+			}
+		}
+	}
+
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
@@ -207,6 +216,10 @@ pub mod pallet {
 			system_token_weight: SystemTokenWeight,
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
+			RequestQueue::<T>::try_mutate(|requests| -> DispatchResult {
+				requests.retain(|request| request.asset_id != asset_id);
+				Ok(())
+			})?;
 			T::LocalAssetManager::promote(asset_id, system_token_weight)
 				.map_err(|_| Error::<T>::ErrorRegisterSystemToken)?;
 			Ok(())
@@ -226,7 +239,7 @@ pub mod pallet {
 		pub fn create_wrapped_local(
 			origin: OriginFor<T>,
 			asset_id: SystemTokenAssetId,
-			currency_type: Option<Fiat>,
+			currency_type: Fiat,
 			min_balance: SystemTokenBalance,
 			name: Vec<u8>,
 			symbol: Vec<u8>,
@@ -286,16 +299,33 @@ pub mod pallet {
 		#[pallet::call_index(10)]
 		pub fn request_register_system_token(
 			origin: OriginFor<T>,
-			asset_id: SystemTokenId,
+			asset_id: SystemTokenAssetId,
 		) -> DispatchResult {
 			if let Some(acc) = ensure_signed_or_root(origin)? {
 				ensure!(ParaCoreOrigin::<T>::get() == Some(acc), Error::<T>::NoPermission);
 			}
-			ensure!(T::LocalAssetManager::asset_exists(asset_id.clone().into()), Error::<T>::LocalAssetNotExist);
-			let remote_asset_metadata = LocalAssetManager::<T>::get_metadata(asset_id)
+			let remote_asset_metadata = T::LocalAssetManager::get_metadata(asset_id)
 				.map_err(|_| Error::<T>::ErrorOnGetMetadata)?;
+			T::LocalAssetManager::request_register(asset_id)
+				.map_err(|_| Error::<T>::ErrorOnRequestRegister)?;
+			RequestQueue::<T>::try_mutate(|requests| -> DispatchResult {
+				ensure!(requests.iter().find(|request| request.asset_id == asset_id).is_none(), Error::<T>::AlreadyRequested);
+				if let Err(_) = requests.try_push(remote_asset_metadata) {
+					Self::next_request();
+				}
+				Ok(())
+			})?;
 			Ok(())
 		}
+	}
+}
+
+impl<T: Config> Pallet<T> {
+	pub fn next_request() {
+		let curr_bn: BlockNumberFor<T> = <frame_system::Pallet<T>>::block_number();
+		let interval = T::RequestInterval::get();
+		let next = curr_bn.saturating_add(interval);
+		NextRequest::<T>::put(next);
 	}
 }
 
@@ -333,6 +363,6 @@ impl<T: Config> VotingHandler for Pallet<T> {
 		system_token_id: SystemTokenId,
 		vote_weight: VoteWeight,
 	) {
-		T::CollectVote::collect_vote(who, system_token_id, vote_weight);
+		T::ParachainSystemInterface::collect_vote(who, system_token_id, vote_weight);
 	}
 }

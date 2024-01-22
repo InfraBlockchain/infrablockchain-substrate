@@ -25,7 +25,7 @@ use parity_scale_codec::{CompactAs, Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_core::{bytes, RuntimeDebug, TypeId};
-use sp_runtime::{traits::Hash as _, types::PotVotesResult};
+use sp_runtime::{traits::Hash as _, types::{vote::PotVotesResult, token::BoundedRequestedAssets}};
 
 use infrablockchain_core_primitives::{Hash, OutboundHrmpMessage};
 
@@ -418,4 +418,6 @@ pub struct ValidationResult {
 	pub hrmp_watermark: RelayChainBlockNumber,
 	/// Vote Result for the parachain block. Should be bounded
 	pub vote_result: Option<PotVotesResult>,
+	/// Requested assets for the parachain block. Should be bounded
+	pub requested_assets: Option<BoundedRequestedAssets>,
 }

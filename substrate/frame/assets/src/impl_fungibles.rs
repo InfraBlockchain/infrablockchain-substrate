@@ -174,7 +174,7 @@ impl<T: Config<I>, I: 'static> fungibles::Create<T::AccountId> for Pallet<T, I> 
 		is_sufficient: bool,
 		min_balance: Self::Balance,
 	) -> DispatchResult {
-		Self::do_force_create(id, &admin, is_sufficient, min_balance, None)
+		Self::do_force_create(id, &admin, is_sufficient, min_balance, None, None)
 	}
 }
 

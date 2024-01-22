@@ -66,6 +66,7 @@ mod unincluded_segment;
 
 pub mod consensus_hook;
 pub mod relay_state_snapshot;
+
 #[macro_use]
 pub mod validate_block;
 
@@ -221,6 +222,9 @@ pub mod pallet {
 
 		/// Something that can check the associated relay parent block number.
 		type CheckAssociatedRelayNumber: CheckAssociatedRelayNumber;
+
+		/// Something that deals with Assets.
+		type LocalAssetManager: LocalAssetManager;
 
 		/// An entry-point for higher-level logic to manage the backlog of unincluded parachain
 		/// blocks and authorship rights for those blocks.
@@ -428,8 +432,9 @@ pub mod pallet {
 			HrmpOutboundMessages::<T>::kill();
 			CustomValidationHeadData::<T>::kill();
 			CollectedPotVotes::<T>::kill();
+			RequestedAssets::<T>::kill();
 
-			weight += T::DbWeight::get().writes(6);
+			weight += T::DbWeight::get().writes(8);
 
 			// Here, in `on_initialize` we must report the weight for both `on_initialize` and
 			// `on_finalize`.
@@ -689,6 +694,8 @@ pub mod pallet {
 		DownwardMessagesProcessed { weight_used: Weight, dmq_head: relay_chain::Hash },
 		/// An upward message was sent to the relay chain.
 		UpwardMessageSent { message_hash: Option<XcmHash> },
+		/// Requested assets' metadata 
+		AssetForSystemTokenRequestsed { requested_assets: Vec<RemoteAssetMetadata> }
 	}
 
 	#[pallet::error]
@@ -891,6 +898,9 @@ pub mod pallet {
 	#[pallet::storage]
 	pub(super) type CollectedPotVotes<T: Config> = StorageValue<_, PotVotes, OptionQuery>;
 
+	#[pallet::storage]
+	pub(super) type RequestedAssets<T: Config> = StorageValue<_, Vec<RemoteAssetMetadata>, OptionQuery>;
+
 	#[pallet::inherent]
 	impl<T: Config> ProvideInherent for Pallet<T> {
 		type Call = Call<T>;
@@ -962,6 +972,13 @@ impl<T: Config> CollectVote for Pallet<T> {
 			PotVotes::new(system_token_id, who, vote_weight)
 		};
 		CollectedPotVotes::<T>::put(pot_votes);
+	}
+}
+
+impl<T: Config> AssetMetadataProvider for Pallet<T> {
+	fn requested(assets: Vec<RemoteAssetMetadata>) {
+		RequestedAssets::<T>::put(&assets);
+		Self::deposit_event(Event::AssetForSystemTokenRequestsed { requested_assets: assets });
 	}
 }
 

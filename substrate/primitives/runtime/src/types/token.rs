@@ -6,6 +6,7 @@ use crate::{
 	types::vote::*,
 	RuntimeDebug,
 };
+use bounded_collections::{ConstU32, BoundedVec};
 use sp_std::prelude::*;
 
 #[cfg(feature = "std")]
@@ -30,6 +31,10 @@ pub type SystemTokenWeight = u128;
 pub type SystemTokenBalance = u128;
 /// General decimal type for System Token
 pub type SystemTokenDecimal = u8;
+/// Bounded name for System Token
+pub type BoundedSystemTokenName = BoundedVec<u8, ConstU32<20>>;
+/// Bounded symbol for System Token
+pub type BoundedSystemTokenSymbol = BoundedVec<u8, ConstU32<5>>;
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 /// Detail of base system token
@@ -92,17 +97,21 @@ impl SystemTokenId {
 	}
 }
 
+pub const MAX_REQUESTED_ASSETS: u32 = 2;
+/// Upper limit of number of assets to be requested
+pub type BoundedRequestedAssets = BoundedVec<RemoteAssetMetadata, ConstU32<MAX_REQUESTED_ASSETS>>;
+
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
-pub struct RemoteSystemTokenMetadata<BoundedString> {
+pub struct RemoteAssetMetadata {
 	/// General Assets pallet index on Runtime
 	pub pallet_id: SystemTokenPalletId,
 	/// General asset id on Runtime
 	#[codec(compact)]
 	pub asset_id: SystemTokenAssetId,
 	/// Human readable name of System Token, which should be bounded
-	pub name: BoundedString,
+	pub name: BoundedSystemTokenName,
 	/// Human readable symbol of System Token, which should be bounded
-	pub symbol: BoundedString,
+	pub symbol: BoundedSystemTokenSymbol,
 	/// Currency type of base system token
 	pub currency_type: Fiat,
 	/// Decimal of base system token
@@ -110,6 +119,18 @@ pub struct RemoteSystemTokenMetadata<BoundedString> {
 	/// Weight of base system token
 	#[codec(compact)]
 	pub min_balance: SystemTokenBalance,
+}
+
+impl MaxEncodedLen for RemoteAssetMetadata {
+	fn max_encoded_len() -> usize {
+		SystemTokenPalletId::max_encoded_len() 
+		+ SystemTokenAssetId::max_encoded_len()
+		+ BoundedSystemTokenSymbol::max_encoded_len()
+		+ BoundedSystemTokenName::max_encoded_len()
+		+ Fiat::max_encoded_len() 
+		+ u8::max_encoded_len()
+		+ SystemTokenBalance::max_encoded_len()
+	}
 }
 
 /// API for interacting with local assets on Runtime
@@ -128,12 +149,11 @@ pub trait LocalAssetManager {
 	
 	type AccountId: MaxEncodedLen;
 	type Error;
-	type BoundedString: Encode;
 
 	/// Create local asset with metadata which refers to `wrapped` System Token
 	fn create_wrapped_local(
 		asset_id: SystemTokenAssetId,
-		currency_type: Option<Fiat>,
+		currency_type: Fiat,
 		min_balance: SystemTokenBalance,
 		name: Vec<u8>,
 		symbol: Vec<u8>,
@@ -152,6 +172,8 @@ pub trait LocalAssetManager {
 		asset_id: SystemTokenAssetId,
 		system_token_weight: SystemTokenWeight,
 	) -> Result<(), Self::Error>;
+	/// Request register System Token 
+	fn request_register(asset_id: SystemTokenAssetId) -> Result<(), Self::Error>;
 	/// Get a list of System Token's local asset id
 	fn system_token_list() -> Vec<SystemTokenAssetId> { 
 		Vec::new()
@@ -162,10 +184,14 @@ pub trait LocalAssetManager {
 		account: Self::AccountId,
 	) -> SystemTokenAssetId;
 
-	/// Retrieve metadata of given `asset_id` and return `RemoteSystemTokenMetadata`
+	/// Retrieve metadata of given `asset_id` and return `RemoteAssetMetadata`, which is for Relay-chain
 	fn get_metadata(
 		asset_id: SystemTokenAssetId,
-	) -> Result<RemoteSystemTokenMetadata<Self::BoundedString>, Self::Error>;
+	) -> Result<RemoteAssetMetadata, Self::Error>;
+}
+
+pub trait AssetMetadataProvider {
+	fn requested(assets: Vec<RemoteAssetMetadata>);
 }
 
 /// API for interacting with registered System Token

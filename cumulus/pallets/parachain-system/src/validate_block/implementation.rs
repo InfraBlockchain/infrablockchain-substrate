@@ -217,6 +217,13 @@ where
 			None
 		};
 
+		let requested_assets: Option<BoundedRequestedAssets> = if let Some(requested) = crate::RequestedAssets::<PSC>::get() {
+			let r_a: BoundedRequestedAssets = requested.try_into().expect("Number of requested assets should not be greater than `MAX_REQUESTED_ASSET_NUM`");
+			Some(r_a)
+		} else {
+			None
+		}
+
 		ValidationResult {
 			head_data,
 			new_validation_code: new_validation_code.map(Into::into),
@@ -225,6 +232,7 @@ where
 			horizontal_messages,
 			hrmp_watermark,
 			vote_result,
+			requested_assets
 		}
 	})
 }
