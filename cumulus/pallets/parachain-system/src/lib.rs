@@ -223,9 +223,6 @@ pub mod pallet {
 		/// Something that can check the associated relay parent block number.
 		type CheckAssociatedRelayNumber: CheckAssociatedRelayNumber;
 
-		/// Something that deals with Assets.
-		type LocalAssetManager: LocalAssetManager;
-
 		/// An entry-point for higher-level logic to manage the backlog of unincluded parachain
 		/// blocks and authorship rights for those blocks.
 		///

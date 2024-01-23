@@ -227,15 +227,13 @@ pub mod pallet {
 		pub fn create_wrapped_local(
 			origin: OriginFor<T>,
 			asset_id: SystemTokenAssetId,
-			currency_type: Option<Fiat>,
-			#[codec(compact)]
+			currency_type: Fiat,
 			min_balance: SystemTokenBalance,
 			name: Vec<u8>,
 			symbol: Vec<u8>,
 			decimals: u8,
 			asset_link_parent: u8,
 			original: SystemTokenId,
-			#[codec(compact)]
 			system_token_weight: SystemTokenWeight,
 		) -> DispatchResult {
 			ensure_root(origin)?;

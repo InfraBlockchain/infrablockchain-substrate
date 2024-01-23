@@ -297,12 +297,17 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	>;
 }
 
+parameter_types! {
+	pub const RequestInterval: BlockNumber = 10;
+}
+
 impl cumulus_pallet_infra_parachain_core::Config for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeEvent = RuntimeEvent;
 	type LocalAssetManager = Assets;
+	type ParachainSystemInterface = ParachainSystem;
 	type AssetLink = AssetLink;
-	type CollectVote = ParachainSystem;
+	type RequestInterval = RequestInterval;
 }
 
 impl pallet_insecure_randomness_collective_flip::Config for Runtime {}
@@ -508,7 +513,6 @@ impl pallet_assets::Config for Runtime {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ApprovalDeposit = ApprovalDeposit;
 	type AssetAccountDeposit = DepositToMaintainAsset;
-	type StringLimit = StringLimit;
 	type RemoveItemsLimit = frame_support::traits::ConstU32<1000>;
 	type WeightInfo = weights::pallet_assets::WeightInfo<Runtime>;
 	type Freezer = ();

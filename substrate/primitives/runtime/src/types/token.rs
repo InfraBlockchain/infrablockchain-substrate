@@ -97,7 +97,7 @@ impl SystemTokenId {
 	}
 }
 
-pub const MAX_REQUESTED_ASSETS: u32 = 2;
+pub const MAX_REQUESTED_ASSETS: u32 = 1;
 /// Upper limit of number of assets to be requested
 pub type BoundedRequestedAssets = BoundedVec<RemoteAssetMetadata, ConstU32<MAX_REQUESTED_ASSETS>>;
 
@@ -204,7 +204,7 @@ pub trait SystemTokenInterface {
 	/// Adjust the vote weight calculating exchange rate.
 	fn adjusted_weight(system_token: &SystemTokenId, vote_weight: VoteWeight) -> VoteWeight;
 	/// Update the metadata for requested asset received from enshirned chain
-	fn update_requested_asset_metadata(para_id: SystemTokenParaId, metadata: RemoteAssetMetadata);
+	fn requested_asset_metadata(para_id: SystemTokenParaId, maybe_requested_assets: Option<BoundedRequestedAssets>);
 }
 
 impl SystemTokenInterface for () {
@@ -217,7 +217,7 @@ impl SystemTokenInterface for () {
 	fn adjusted_weight(_system_token: &SystemTokenId, _vote_weight: VoteWeight) -> VoteWeight {
 		Default::default()
 	}
-	fn update_requested_asset_metadata(_para_id: SystemTokenParaId, _metadata: RemoteAssetMetadata) { }
+	fn requested_asset_metadata(_para_id: SystemTokenParaId, _maybe_requested_assets: Option<BoundedRequestedAssets>) { }
 }
 
 pub trait AssetLinkInterface<AssetId> {

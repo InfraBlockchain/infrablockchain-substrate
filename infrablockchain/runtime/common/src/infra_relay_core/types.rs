@@ -23,7 +23,7 @@ pub enum ParachainConfigCalls {
 	#[codec(index = 6)]
 	CreateWrappedLocal(
 		SystemTokenAssetId,
-		Option<Fiat>,
+		Fiat,
 		SystemTokenBalance,
 		Vec<u8>,
 		Vec<u8>,

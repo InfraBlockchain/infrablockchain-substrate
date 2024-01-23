@@ -18,7 +18,7 @@
 //! Functions for the Assets pallet.
 
 use super::*;
-use frame_support::{defensive, traits::Get, BoundedVec};
+use frame_support::{defensive, traits::Get};
 
 #[must_use]
 pub(super) enum DeadConsequence {
@@ -1038,6 +1038,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			let mut asset_detail = maybe_detail.take().ok_or(Error::<T, I>::Unknown)?;
 			ensure!(asset_detail.status == AssetStatus::Requested, Error::<T, I>::IncorrectStatus);
 			asset_detail.is_sufficient = true;
+			asset_detail.status = AssetStatus::Live;
 			asset_detail.system_token_weight = Some(system_token_weight);
 			*maybe_detail = Some(asset_detail);
 			Ok(())

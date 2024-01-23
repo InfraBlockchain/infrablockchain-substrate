@@ -1061,21 +1061,25 @@ impl<T: Config> SystemTokenInterface for Pallet<T> {
 		}
 		vote_weight
 	}
-	fn update_requested_asset_metadata(para_id: SystemTokenParaId, metadata: RemoteAssetMetadata) {
-		let RemoteAssetMetadata { 
-			pallet_id, 
-			asset_id, 
-			name, 
-			symbol, 
-			currency_type, 
-			decimals, 
-			min_balance 
-		} = metadata;
-		let system_token_id = SystemTokenId::new(para_id, pallet_id, asset_id);
-		OriginalSystemTokenMetadata::<T>::insert(
-			system_token_id, 
-			SystemTokenMetadata::new(currency_type, name, symbol, decimals, min_balance)
-		);
+	fn requested_asset_metadata(para_id: SystemTokenParaId, maybe_requested_assets: Option<BoundedRequestedAssets>) {
+		if let Some(request_assets_metadata) = maybe_requested_assets {
+			for metadata in request_assets_metadata {
+				let RemoteAssetMetadata { 
+					pallet_id, 
+					asset_id, 
+					name, 
+					symbol, 
+					currency_type, 
+					decimals, 
+					min_balance 
+				} = metadata;
+				let system_token_id = SystemTokenId::new(para_id, pallet_id, asset_id);
+				OriginalSystemTokenMetadata::<T>::insert(
+					system_token_id, 
+					SystemTokenMetadata::new(currency_type, name, symbol, decimals, min_balance)
+				);
+			}
+		} 
 	}
 }
 

@@ -514,12 +514,10 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type XcmpMessageHandler = XcmpQueue;
 	type ReservedXcmpWeight = ReservedXcmpWeight;
 	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
-	type LocalAssetManager = Assets;
 	type ConsensusHook = ConsensusHook;
 }
 
 parameter_types! { 
-	pub const MaxRequests: u32 = 1;
 	pub const RequestInterval: u32 = prod_or_fast!(DAYS, 10u32);
 }
 

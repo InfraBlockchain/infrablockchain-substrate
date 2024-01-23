@@ -24,7 +24,10 @@ use sc_client_api::BlockBackend;
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_consensus::BlockStatus;
 use sp_core::traits::SpawnNamed;
-use sp_runtime::traits::{Block as BlockT, HashingFor, Header as HeaderT, Zero};
+use sp_runtime::{
+	traits::{Block as BlockT, HashingFor, Header as HeaderT, Zero},
+	types::token::BoundedRequestedAssets,
+};
 
 use cumulus_client_consensus_common::ParachainCandidate;
 use node_primitives::{BlockData, Collation, CollationSecondedSignal, MaybeCompressedPoV, PoV};
@@ -270,6 +273,20 @@ where
 				)
 			})
 			.ok()?;
+		let requested_assets = if let Some(r) = collation_info.requested_assets {
+			let requested_assets: BoundedRequestedAssets = r.try_into()
+				.map_err(|e| {
+					tracing::error!(
+						target: LOG_TARGET,
+						error = ?e,
+						"Number of requested assets should not be greater than `MAX_REQUESTED_ASSET_NUM",
+					)
+				})
+				.ok()?;
+			Some(requested_assets)
+		} else {
+			None
+		};
 
 		let collation = Collation {
 			upward_messages,
@@ -280,7 +297,7 @@ where
 			head_data: collation_info.head_data,
 			proof_of_validity: MaybeCompressedPoV::Compressed(pov),
 			vote_result: collation_info.vote_result,
-			requested_assets: collation_info.requested_assets,
+			requested_assets,
 		};
 
 		Some((collation, block_data))
