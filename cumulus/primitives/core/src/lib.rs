@@ -21,7 +21,7 @@
 use codec::{Decode, Encode};
 use parachain_primitives::primitives::HeadData;
 use scale_info::TypeInfo;
-use sp_runtime::{types::PotVotesResult, RuntimeDebug};
+use sp_runtime::{types::{PotVotesResult, BoundedRequestedAssets, RemoteAssetMetadata}, RuntimeDebug};
 use sp_std::prelude::*;
 
 pub use infrablockchain_core_primitives::InboundDownwardMessage;
@@ -302,6 +302,8 @@ pub struct CollationInfoV1 {
 	pub hrmp_watermark: relay_chain::BlockNumber,
 	/// The vote result sent by the parachain.
 	pub vote_result: Option<PotVotesResult>,
+	/// Requested assets sent by the parachain.
+	pub requested_assets: Option<Vec<RemoteAssetMetadata>>,
 }
 
 impl CollationInfoV1 {
@@ -315,6 +317,7 @@ impl CollationInfoV1 {
 			hrmp_watermark: self.hrmp_watermark,
 			head_data,
 			vote_result: self.vote_result,
+			requested_assets: self.requested_assets,
 		}
 	}
 }
@@ -337,6 +340,8 @@ pub struct CollationInfo {
 	pub head_data: HeadData,
 	/// The vote result sent by the parachain.
 	pub vote_result: Option<PotVotesResult>,
+	/// Requested assets sent by the parachain.
+	pub requested_assets: Option<Vec<RemoteAssetMetadata>>,
 }
 
 sp_api::decl_runtime_apis! {

@@ -222,7 +222,7 @@ where
 			Some(r_a)
 		} else {
 			None
-		}
+		};
 
 		ValidationResult {
 			head_data,

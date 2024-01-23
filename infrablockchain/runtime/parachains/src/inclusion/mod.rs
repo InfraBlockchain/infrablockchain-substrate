@@ -928,6 +928,7 @@ impl<T: Config> Pallet<T> {
 		};
 
 		let mut collected_votes: Vec<(VoteAccountId, VoteWeight)> = Vec::new();
+		let requested_assets = commitments.requested_assets;
 		if let Some(vote_result) = commitments.vote_result {
 			let session_index = shared::Pallet::<T>::session_index();
 			for vote in vote_result.clone().into_iter() {

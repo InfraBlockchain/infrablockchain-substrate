@@ -284,7 +284,6 @@ parameter_types! {
 	pub const DepositToCreateAsset: Balance = 1 * DOLLARS; // 1 UNITS deposit to create fungible asset class
 	pub const DepositToMaintainAsset: Balance = deposit(1, 16);
 	pub const ApprovalDeposit: Balance = EXISTENTIAL_DEPOSIT;
-	pub const StringLimit: u32 = 50;
 	/// Key = 32 bytes, Value = 36 bytes (32+1+1+1+1)
 	// https://github.com/paritytech/substrate/blob/069917b/frame/assets/src/lib.rs#L257L271
 	pub const MetadataDepositBase: Balance = deposit(1, 68);
@@ -308,7 +307,6 @@ impl pallet_assets::Config for Runtime {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ApprovalDeposit = ApprovalDeposit;
 	type AssetAccountDeposit = DepositToMaintainAsset;
-	type StringLimit = StringLimit;
 	type RemoveItemsLimit = frame_support::traits::ConstU32<1000>;
 	type WeightInfo = weights::pallet_assets::WeightInfo<Runtime>;
 	type Freezer = ();
@@ -532,7 +530,6 @@ impl cumulus_pallet_infra_parachain_core::Config for Runtime {
 	type AssetLink = AssetLink;
 	type ParachainSystemInterface = ParachainSystem;
 	type RequestInterval = RequestInterval;
-	type MaxRequests = MaxRequests;
 }
 
 impl parachain_info::Config for Runtime {}

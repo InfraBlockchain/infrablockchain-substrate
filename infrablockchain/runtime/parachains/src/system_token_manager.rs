@@ -130,6 +130,8 @@ pub mod pallet {
 		NotAssetHub,
 		/// Something wrong with the configuration
 		BadConfig,
+		/// System Token has not been requested
+		NotRequested,
 	}
 
 	#[pallet::pallet]
@@ -155,9 +157,9 @@ pub mod pallet {
 	///
 	/// **Value:**
 	///
-	/// Metadata(`SystemTokenMetadata`, `AssetMetadata`)
+	/// `SystemTokenMetadata`
 	pub type OriginalSystemTokenMetadata<T: Config> =
-		StorageMap<_, Blake2_128Concat, SystemTokenId, IbsSystemTokenMetadata<T>, OptionQuery>;
+		StorageMap<_, Blake2_128Concat, SystemTokenId, SystemTokenMetadata<BoundedStringOf<T>>, OptionQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn system_token_properties)]
@@ -263,25 +265,15 @@ pub mod pallet {
 		pub fn register_system_token(
 			origin: OriginFor<T>,
 			system_token_type: SystemTokenType,
-			system_token_weight: SystemTokenWeight,
 			wrapped_for_relay_chain: Option<SystemTokenId>,
-			system_token_metadata: Option<SystemTokenMetadata<BoundedVec<u8, StringLimitOf<T>>>>,
-			asset_metadata: Option<
-				AssetMetadata<BoundedVec<u8, StringLimitOf<T>>, SystemTokenBalance>,
-			>,
+			extended_metadata: Option<ExtendedMetadata>
 		) -> DispatchResult {
 			ensure_root(origin)?;
 			let (original, wrapped) = match system_token_type {
 				SystemTokenType::Original(original) => {
-					let system_token_metadata =
-						system_token_metadata.ok_or(Error::<T>::SystemTokenMetadataNotProvided)?;
-					let asset_metadata =
-						asset_metadata.ok_or(Error::<T>::AssetMetadataNotProvided)?;
 					Self::try_register_original(
 						&original,
-						system_token_weight,
-						system_token_metadata,
-						asset_metadata,
+						extended_metadata,
 					)?;
 					let wrapped =
 						wrapped_for_relay_chain.ok_or(Error::<T>::WrappedForRelayNotProvided)?;
@@ -289,13 +281,7 @@ pub mod pallet {
 					(original, wrapped)
 				},
 				SystemTokenType::Wrapped { original, wrapped } => {
-					ensure!(
-						!wrapped_for_relay_chain.is_some() &&
-							!system_token_metadata.is_some() &&
-							!asset_metadata.is_some(),
-						Error::<T>::BadAccess
-					);
-
+					ensure!(extended_metadata.is_none(), Error::<T>::BadAccess);
 					(original, wrapped)
 				},
 			};
@@ -503,12 +489,37 @@ impl<T: Config> Pallet<T> {
 		T::UnixTime::now().as_millis()
 	}
 
-	fn calc_system_token_weight(currency: Fiat, original: SystemTokenId) -> Result<SystemTokenWeight, DispatchError> {
-		// SYSTEM_TOKEN_WEIGHT = BASE_WEIGHT * DECIMAL_RELATIVE_TO_BASE / EXCHANGE_RATE_RELATIVE_TO_BASE
-		let base_config = T::InfraCoreInterface::base_system_token_configuration().map_err(|_| Error::<T>::BadConfig)?;
-		let exchange_rate = ExchangeRates::<T>::get(&currency).ok_or(Error::<T>::NotFound)?;
-		let asset_metadata = OriginalSystemTokenMetadata::<T>::get(&original).ok_or(Error::<T>::MetadataNotFound)?;
-		Ok(Default::default())
+	pub fn extend_metadata(metadata: &mut SystemTokenMetadata<BoundedStringOf<T>>, extended: Option<ExtendedMetadata>) -> Result<(), DispatchError> {
+		if let Some(extended) = extended {
+			let ExtendedMetadata { issuer, description, url } = extended;
+			let bounded_issuer = Self::bounded_metadata(issuer)?;
+			let bounded_description = Self::bounded_metadata(description)?;
+			let bounded_url = Self::bounded_metadata(url)?;
+			metadata.additional(bounded_issuer, bounded_description, bounded_url);
+		} 
+
+		Ok(())
+	}
+
+	fn bounded_metadata(byte: Option<Vec<u8>>) -> Result<Option<BoundedStringOf<T>>, DispatchError> {
+		if let Some(b) = byte {
+			let bounded = b.try_into().map_err(|_| Error::<T>::BadMetadata)?;
+			Ok(Some(bounded))
+		} else {
+			Ok(None)
+		}
+	} 
+
+	/// Calculate `original` system token weight based on `FORMULA`
+	/// 
+	/// `FORMULA` = `BASE_WEIGHT` * `DECIMAL_RELATIVE_TO_BASE` / `EXCHANGE_RATE_RELATIVE_TO_BASE
+	fn calc_system_token_weight(currency: Fiat, original: &SystemTokenId) -> Result<SystemTokenWeight, DispatchError> {
+		let BaseSystemTokenDetail { weight, decimal, .. } = T::InfraCoreInterface::base_system_token_configuration().map_err(|_| Error::<T>::BadConfig)?;
+		let SystemTokenMetadata { decimals, .. } = OriginalSystemTokenMetadata::<T>::get(original).ok_or(Error::<T>::MetadataNotFound)?;
+		let decimal_relative_to_base = decimal.saturating_sub(decimals);
+		let exchange_rate_relative_to_base = ExchangeRates::<T>::get(&currency).ok_or(Error::<T>::NotFound)?;
+		let system_token_weight = weight * (decimal_relative_to_base as u128) / (exchange_rate_relative_to_base as u128);
+		Ok(system_token_weight)
 	}
 
 	fn ensure_root_or_para(
@@ -525,28 +536,6 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	fn system_token_metadata(
-		system_token_metdata: SystemTokenMetadata<BoundedVec<u8, StringLimitOf<T>>>,
-	) -> Result<SystemTokenMetadata<BoundedVec<u8, StringLimitOf<T>>>, DispatchError> {
-		let SystemTokenMetadata { issuer, description, url } = system_token_metdata;
-		let issuer = issuer.clone().try_into().map_err(|_| Error::<T>::BadMetadata)?;
-		let description = description.clone().try_into().map_err(|_| Error::<T>::BadMetadata)?;
-		let url = url.clone().try_into().map_err(|_| Error::<T>::BadMetadata)?;
-
-		Ok(SystemTokenMetadata { issuer, description, url })
-	}
-
-	fn asset_metadata(
-		asset_metadata: AssetMetadata<BoundedVec<u8, StringLimitOf<T>>, SystemTokenBalance>,
-	) -> Result<AssetMetadata<BoundedVec<u8, StringLimitOf<T>>, SystemTokenBalance>, DispatchError>
-	{
-		let AssetMetadata { name, symbol, decimals, min_balance } = asset_metadata;
-
-		let name = name.clone().try_into().map_err(|_| Error::<T>::BadMetadata)?;
-		let symbol = symbol.clone().try_into().map_err(|_| Error::<T>::BadMetadata)?;
-
-		Ok(AssetMetadata { name, symbol, decimals, min_balance })
-	}
 	/// **Description:**
 	///
 	/// Try get list of `wrapped` system tokens which is mapped to `original`
@@ -583,16 +572,12 @@ impl<T: Config> Pallet<T> {
 	/// `OriginalSystemTokenConverter`, `OriginalSystemTokenMetadata`
 	fn try_register_original(
 		original: &SystemTokenId,
-		system_token_weight: SystemTokenWeight,
-		system_token_metadata: SystemTokenMetadata<BoundedVec<u8, StringLimitOf<T>>>,
-		asset_metadata: AssetMetadata<BoundedVec<u8, StringLimitOf<T>>, SystemTokenBalance>,
+		extended_metadata: Option<ExtendedMetadata>,
 	) -> DispatchResult {
-		ensure!(
-			!OriginalSystemTokenMetadata::<T>::contains_key(&original),
-			Error::<T>::OriginalAlreadyRegistered
-		);
-		let system_token_metadata = Self::system_token_metadata(system_token_metadata)?;
-		let asset_metadata = Self::asset_metadata(asset_metadata)?;
+		let mut system_token_metadata = OriginalSystemTokenMetadata::<T>::get(&original)
+			.ok_or(Error::<T>::NotRequested)?;
+		let system_token_weight = Self::calc_system_token_weight(system_token_metadata.currency_type(), original)?;
+		Self::extend_metadata(&mut system_token_metadata, extended_metadata)?;
 		let SystemTokenId { para_id, .. } = original.clone();
 		Self::try_push_sys_token_for_para_id(para_id, &original)?;
 		Self::try_push_para_id(para_id, &original)?;
@@ -612,7 +597,7 @@ impl<T: Config> Pallet<T> {
 
 		OriginalSystemTokenMetadata::<T>::insert(
 			&original,
-			(&system_token_metadata, &asset_metadata),
+			system_token_metadata,
 		);
 
 		Ok(())
@@ -1023,17 +1008,18 @@ impl<T: Config> Pallet<T> {
 	) -> DispatchResult {
 		let original = <OriginalSystemTokenConverter<T>>::get(&wrapped)
 			.ok_or(Error::<T>::WrappedNotRegistered)?;
-		let (_, asset_metadata) =
+		let original_metadata =
 			OriginalSystemTokenMetadata::<T>::get(&original).ok_or(Error::<T>::MetadataNotFound)?;
 		let SystemTokenId { para_id, asset_id, .. } = wrapped;
 		let parent_for_asset_link: u8 = if para_id == RELAY_CHAIN_PARA_ID { 0 } else { 1 };
 		T::InfraCoreInterface::create_wrapped_local(
 			para_id,
 			asset_id,
-			asset_metadata.min_balance,
-			asset_metadata.name.to_vec(),
-			asset_metadata.symbol.to_vec(),
-			asset_metadata.decimals,
+			original_metadata.currency_type,
+			original_metadata.min_balance,
+			original_metadata.name.to_vec(),
+			original_metadata.symbol.to_vec(),
+			original_metadata.decimals,
 			system_token_weight,
 			parent_for_asset_link,
 			original,
@@ -1075,6 +1061,22 @@ impl<T: Config> SystemTokenInterface for Pallet<T> {
 		}
 		vote_weight
 	}
+	fn update_requested_asset_metadata(para_id: SystemTokenParaId, metadata: RemoteAssetMetadata) {
+		let RemoteAssetMetadata { 
+			pallet_id, 
+			asset_id, 
+			name, 
+			symbol, 
+			currency_type, 
+			decimals, 
+			min_balance 
+		} = metadata;
+		let system_token_id = SystemTokenId::new(para_id, pallet_id, asset_id);
+		OriginalSystemTokenMetadata::<T>::insert(
+			system_token_id, 
+			SystemTokenMetadata::new(currency_type, name, symbol, decimals, min_balance)
+		);
+	}
 }
 
 pub mod types {
@@ -1083,11 +1085,7 @@ pub mod types {
 	use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 	use scale_info::TypeInfo;
 
-	pub type StringLimitOf<T> = <T as Config>::StringLimit;
-	pub type IbsSystemTokenMetadata<T> = (
-		SystemTokenMetadata<BoundedVec<u8, StringLimitOf<T>>>,
-		AssetMetadata<BoundedVec<u8, StringLimitOf<T>>, SystemTokenBalance>,
-	);
+	pub type BoundedStringOf<T> = BoundedVec<u8, <T as Config>::StringLimit>;
 
 	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, TypeInfo)]
 	pub enum SystemTokenType {
@@ -1113,34 +1111,69 @@ pub mod types {
 		pub(crate) call_name: Vec<u8>,
 	}
 
-	#[derive(
-		Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, Default, TypeInfo, MaxEncodedLen,
-	)]
-
-	/// Metadata of the `original` system token for Relay Chain
-	pub struct SystemTokenMetadata<BoundedString> {
+	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, Default, TypeInfo)]
+	pub struct ExtendedMetadata {
 		/// The user friendly name of issuer in real world
-		pub(crate) issuer: BoundedString,
+		pub(crate) issuer: Option<Vec<u8>>,
 		/// The description of the token
-		pub(crate) description: BoundedString,
+		pub(crate) description: Option<Vec<u8>>,
 		/// The url of related to the token or issuer
-		pub(crate) url: BoundedString,
+		pub(crate) url: Option<Vec<u8>>,
 	}
 
 	#[derive(
 		Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, Default, TypeInfo, MaxEncodedLen,
 	)]
-	/// Metadata of the `original` local asset based on parachain
-	pub struct AssetMetadata<BoundedString, Balance> {
+	/// Metadata of the `original` asset from enshrined runtime
+	pub struct SystemTokenMetadata<BoundedString> {
+		pub(crate) currency_type: Fiat,
 		/// The user friendly name of this system token.
-		pub(crate) name: BoundedString,
+		pub(crate) name: BoundedSystemTokenName,
 		/// The exchange symbol for this system token.
-		pub(crate) symbol: BoundedString,
+		pub(crate) symbol: BoundedSystemTokenSymbol,
 		/// The number of decimals this asset uses to represent one unit.
 		pub(crate) decimals: u8,
 		/// The minimum balance of this new asset that any single account must
 		/// have. If an account's balance is reduced below this, then it collapses to zero.
-		pub(crate) min_balance: Balance,
+		pub(crate) min_balance: SystemTokenBalance,
+		/// The user friendly name of issuer in real world
+		pub(crate) issuer: Option<BoundedString>,
+		/// The description of the token
+		pub(crate) description: Option<BoundedString>,
+		/// The url of related to the token or issuer
+		pub(crate) url: Option<BoundedString>,
+	}
+
+	impl<BoundedString> SystemTokenMetadata<BoundedString> {
+
+		pub fn currency_type(&self) -> Fiat {
+			self.currency_type.clone()
+		}
+
+		pub fn new(
+			currency_type: Fiat, 
+			name: BoundedSystemTokenName, 
+			symbol: BoundedSystemTokenSymbol,
+			decimals: u8,
+			min_balance: SystemTokenBalance,
+		) -> Self {
+			Self {
+				currency_type,
+				name,
+				symbol,
+				decimals,
+				min_balance,
+				issuer: None,
+				description: None,
+				url: None,
+			}
+		}
+
+		pub fn additional(&mut self, issuer: Option<BoundedString>, description: Option<BoundedString>, url: Option<BoundedString>) {
+			self.issuer = issuer;
+			self.description = description;
+			self.url = url;
+		}
 	}
 
 	#[derive(
@@ -1155,3 +1188,4 @@ pub mod types {
 		pub(crate) created_at: u128,
 	}
 }
+

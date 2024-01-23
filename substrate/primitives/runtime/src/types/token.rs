@@ -102,6 +102,7 @@ pub const MAX_REQUESTED_ASSETS: u32 = 2;
 pub type BoundedRequestedAssets = BoundedVec<RemoteAssetMetadata, ConstU32<MAX_REQUESTED_ASSETS>>;
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Default, Hash))]
 pub struct RemoteAssetMetadata {
 	/// General Assets pallet index on Runtime
 	pub pallet_id: SystemTokenPalletId,
@@ -202,6 +203,8 @@ pub trait SystemTokenInterface {
 	fn convert_to_original_system_token(wrapped_token: &SystemTokenId) -> Option<SystemTokenId>;
 	/// Adjust the vote weight calculating exchange rate.
 	fn adjusted_weight(system_token: &SystemTokenId, vote_weight: VoteWeight) -> VoteWeight;
+	/// Update the metadata for requested asset received from enshirned chain
+	fn update_requested_asset_metadata(para_id: SystemTokenParaId, metadata: RemoteAssetMetadata);
 }
 
 impl SystemTokenInterface for () {
@@ -214,6 +217,7 @@ impl SystemTokenInterface for () {
 	fn adjusted_weight(_system_token: &SystemTokenId, _vote_weight: VoteWeight) -> VoteWeight {
 		Default::default()
 	}
+	fn update_requested_asset_metadata(_para_id: SystemTokenParaId, _metadata: RemoteAssetMetadata) { }
 }
 
 pub trait AssetLinkInterface<AssetId> {
@@ -240,6 +244,7 @@ impl<AssetId> AssetLinkInterface<AssetId> for () {
 
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, MaxEncodedLen, TypeInfo, Default, serde::Serialize, serde::Deserialize)]
+#[cfg_attr(feature = "std", derive(Hash))]
 pub enum Fiat {
 	#[default]
 	USD,

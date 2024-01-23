@@ -304,7 +304,8 @@ impl<T: paras_inherent::Config> BenchBuilder<T> {
 			head_data: Self::mock_head_data(),
 			processed_downward_messages: 0,
 			hrmp_watermark: 0u32.into(),
-			vote_result: Default::default(),
+			vote_result: None,
+			requested_assets: None,
 		};
 		inclusion::PendingAvailability::<T>::insert(para_id, candidate_availability);
 		inclusion::PendingAvailabilityCommitments::<T>::insert(&para_id, commitments);

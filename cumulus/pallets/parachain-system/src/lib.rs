@@ -1426,6 +1426,7 @@ impl<T: Config> Pallet<T> {
 				.map_or_else(|| header.encode(), |v| v)
 				.into(),
 			vote_result,
+			requested_assets: RequestedAssets::<T>::get(),
 		}
 	}
 

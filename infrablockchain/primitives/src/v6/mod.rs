@@ -32,7 +32,7 @@ use inherents::InherentIdentifier;
 use primitives::RuntimeDebug;
 use runtime_primitives::{
 	traits::{AppVerify, Header as HeaderT},
-	types::PotVotesResult,
+	types::{PotVotesResult, BoundedRequestedAssets},
 };
 use sp_arithmetic::traits::{BaseArithmetic, Saturating};
 
@@ -672,6 +672,8 @@ pub struct CandidateCommitments<N = BlockNumber> {
 	pub hrmp_watermark: N,
 	/// Result of pot votes sent by the parachain
 	pub vote_result: Option<PotVotesResult>,
+	/// Requested assets for System Token,
+	pub requested_assets: Option<BoundedRequestedAssets>,
 }
 
 impl CandidateCommitments {
