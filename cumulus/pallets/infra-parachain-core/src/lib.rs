@@ -3,14 +3,17 @@
 use cumulus_pallet_xcm::{ensure_relay, Origin};
 use frame_support::pallet_prelude::*;
 use frame_system::pallet_prelude::*;
-use sp_runtime::{types::{fee::*, infra_core::*, token::*, vote::*}, Saturating};
+use sp_runtime::{
+	types::{fee::*, infra_core::*, token::*, vote::*},
+	Saturating,
+};
 use sp_std::vec::Vec;
 
 pub use pallet::*;
 
 #[frame_support::pallet(dev_mode)]
 pub mod pallet {
-	
+
 	use super::*;
 
 	#[pallet::config]
@@ -48,8 +51,7 @@ pub mod pallet {
 	pub(super) type RuntimeState<T: Config> = StorageValue<_, Mode, ValueQuery>;
 
 	#[pallet::storage]
-	pub type FeeTable<T: Config> =
-		StorageMap<_, Twox128, ExtrinsicMetadata, SystemTokenBalance>;
+	pub type FeeTable<T: Config> = StorageMap<_, Twox128, ExtrinsicMetadata, SystemTokenBalance>;
 
 	#[pallet::storage]
 	pub type RequestQueue<T: Config> = StorageValue<_, BoundedRequestedAssets, ValueQuery>;
@@ -71,7 +73,7 @@ pub mod pallet {
 		/// Bootstrap has been ended by Relay-chain governance.
 		BootstrapEnded,
 		/// Origin of this pallet has been set by Relay-chain governance.
-		SetParaCoreOrigin { who: T::AccountId }
+		SetParaCoreOrigin { who: T::AccountId },
 	}
 
 	#[pallet::error]
@@ -105,7 +107,7 @@ pub mod pallet {
 		/// Currently request queue for System Token registration is fully occupied
 		TooManyRequests,
 		/// System Token has already been requested
-		AlreadyRequested
+		AlreadyRequested,
 	}
 
 	#[pallet::hooks]
@@ -120,7 +122,6 @@ pub mod pallet {
 			}
 		}
 	}
-
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
@@ -280,13 +281,11 @@ pub mod pallet {
 		}
 
 		/// Priviliged origin governed by Relay-chain
-		/// 
-		/// It can call extrinsic which is not allowed to call by other origin(e.g `request_register_system_token`)
+		///
+		/// It can call extrinsic which is not allowed to call by other origin(e.g
+		/// `request_register_system_token`)
 		#[pallet::call_index(9)]
-		pub fn set_para_core_origin(
-			origin: OriginFor<T>,
-			who: T::AccountId
-		) -> DispatchResult {
+		pub fn set_para_core_origin(origin: OriginFor<T>, who: T::AccountId) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
 			ParaCoreOrigin::<T>::put(&who);
 			Self::deposit_event(Event::<T>::SetParaCoreOrigin { who });
@@ -294,7 +293,7 @@ pub mod pallet {
 		}
 
 		/// Request to register System Token
-		/// 
+		///
 		/// If succeed, request will be queued in `RequestQueue`
 		#[pallet::call_index(10)]
 		pub fn request_register_system_token(
@@ -309,7 +308,10 @@ pub mod pallet {
 			T::LocalAssetManager::request_register(asset_id)
 				.map_err(|_| Error::<T>::ErrorOnRequestRegister)?;
 			RequestQueue::<T>::try_mutate(|requests| -> DispatchResult {
-				ensure!(requests.iter().find(|request| request.asset_id == asset_id).is_none(), Error::<T>::AlreadyRequested);
+				ensure!(
+					requests.iter().find(|request| request.asset_id == asset_id).is_none(),
+					Error::<T>::AlreadyRequested
+				);
 				if let Err(_) = requests.try_push(remote_asset_metadata) {
 					Self::next_request();
 				}
@@ -329,7 +331,6 @@ impl<T: Config> Pallet<T> {
 	}
 }
 
-
 impl<T: Config> RuntimeConfigProvider for Pallet<T> {
 	type Error = DispatchError;
 
@@ -338,14 +339,16 @@ impl<T: Config> RuntimeConfigProvider for Pallet<T> {
 	}
 
 	fn para_fee_rate() -> Result<SystemTokenWeight, Self::Error> {
-		let base_system_token_detail = BaseConfiguration::<T>::get().ok_or(Error::<T>::BaseConfigMissing)?;
-		Ok(
-			ParaFeeRate::<T>::try_mutate_exists(|maybe_para_fee_rate| -> Result<SystemTokenWeight, DispatchError> {
-				let pfr = maybe_para_fee_rate.take().map_or(base_system_token_detail.weight, |pfr| pfr);
+		let base_system_token_detail =
+			BaseConfiguration::<T>::get().ok_or(Error::<T>::BaseConfigMissing)?;
+		Ok(ParaFeeRate::<T>::try_mutate_exists(
+			|maybe_para_fee_rate| -> Result<SystemTokenWeight, DispatchError> {
+				let pfr =
+					maybe_para_fee_rate.take().map_or(base_system_token_detail.weight, |pfr| pfr);
 				*maybe_para_fee_rate = Some(pfr);
 				Ok(pfr)
-			})?
-		)
+			},
+		)?)
 	}
 
 	fn fee_for(ext: ExtrinsicMetadata) -> Option<SystemTokenBalance> {

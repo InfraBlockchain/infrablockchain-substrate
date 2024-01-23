@@ -22,8 +22,9 @@
 
 use pallet_transaction_payment::CurrencyAdapter;
 use runtime_common::{
-	auctions, crowdloan, impl_runtime_weights, impls::DealWithFees, infra_relay_core, paras_registrar,
-	paras_sudo_wrapper, prod_or_fast, slots, BlockHashCount, BlockLength, SlowAdjustingFeeUpdate,
+	auctions, crowdloan, impl_runtime_weights, impls::DealWithFees, infra_relay_core,
+	paras_registrar, paras_sudo_wrapper, prod_or_fast, slots, BlockHashCount, BlockLength,
+	SlowAdjustingFeeUpdate,
 };
 
 use runtime_parachains::{

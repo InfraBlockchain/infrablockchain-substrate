@@ -32,7 +32,7 @@ use sp_externalities::{set_and_run_with_externalities, Externalities};
 use sp_io::KillStorageResult;
 use sp_runtime::{
 	traits::{Block as BlockT, Extrinsic, HashingFor, Header as HeaderT},
-	types::token::BoundedRequestedAssets
+	types::token::BoundedRequestedAssets,
 };
 use sp_std::prelude::*;
 use sp_trie::MemoryDB;
@@ -220,8 +220,12 @@ where
 			None
 		};
 
-		let requested_assets: Option<BoundedRequestedAssets> = if let Some(requested) = crate::RequestedAssets::<PSC>::get() {
-			let r_a: BoundedRequestedAssets = requested.try_into().expect("Number of requested assets should not be greater than `MAX_REQUESTED_ASSET_NUM`");
+		let requested_assets: Option<BoundedRequestedAssets> = if let Some(requested) =
+			crate::RequestedAssets::<PSC>::get()
+		{
+			let r_a: BoundedRequestedAssets = requested.try_into().expect(
+				"Number of requested assets should not be greater than `MAX_REQUESTED_ASSET_NUM`",
+			);
 			Some(r_a)
 		} else {
 			None
@@ -235,7 +239,7 @@ where
 			horizontal_messages,
 			hrmp_watermark,
 			vote_result,
-			requested_assets
+			requested_assets,
 		}
 	})
 }

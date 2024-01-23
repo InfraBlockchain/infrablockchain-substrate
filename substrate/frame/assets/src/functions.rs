@@ -1059,7 +1059,14 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	) -> DispatchResult {
 		let id: T::AssetId = asset_id.into();
 		ensure!(!Asset::<T, I>::contains_key(&id), Error::<T, I>::InUse);
-		Self::do_force_create(id.clone(), &owner, true, min_balance.into(), Some(AssetStatus::Live), system_token_weight)?;
+		Self::do_force_create(
+			id.clone(),
+			&owner,
+			true,
+			min_balance.into(),
+			Some(AssetStatus::Live),
+			system_token_weight,
+		)?;
 		Self::do_set_metadata(id, Some(currency_type), &owner, name, symbol, decimals)?;
 		Ok(())
 	}
@@ -1091,8 +1098,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		Ok(())
 	}
 
-	/// Request for System Token 
-	/// 
+	/// Request for System Token
+	///
 	/// Check
 	/// - Error if the asset is not exist
 	/// - Error if it is not `InActive` status

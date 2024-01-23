@@ -1089,7 +1089,8 @@ pub mod pallet {
 					return Ok(())
 				}
 
-				let metadata_deposit = Metadata::<T, I>::get(&id).map_or(Default::default(), |m| m).deposit;
+				let metadata_deposit =
+					Metadata::<T, I>::get(&id).map_or(Default::default(), |m| m).deposit;
 				let deposit = details.deposit + metadata_deposit;
 
 				// Move the deposit to the new owner.
@@ -1170,7 +1171,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			let origin = ensure_signed(origin)?;
 			let id: T::AssetId = id.into();
-			// TODO: 
+			// TODO:
 			// If currency type is specified, assume it would be System Token for the future.
 			// We should not let users set the metadata for free maybe?
 			Self::do_set_metadata(id, currency_type, &origin, name, symbol, decimals)

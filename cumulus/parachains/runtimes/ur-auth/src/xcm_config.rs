@@ -233,8 +233,7 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				pallet_assets::Call::touch { .. } |
 				pallet_assets::Call::refund { .. },
 			) |
-			RuntimeCall::InfraParaCore( .. )
-			=> true,
+			RuntimeCall::InfraParaCore(..) => true,
 			_ => false,
 		}
 	}

@@ -17,9 +17,9 @@
 //! XCM configuration for infrablockspace.
 
 use super::{
-	parachains_origin, AccountId, AllPalletsWithSystem, AssetLink, Assets, Authorship, Balance,
-	Balances, ParaId, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, ValidatorCollective,
-	WeightToFee, XcmPallet, system_token_manager
+	parachains_origin, system_token_manager, AccountId, AllPalletsWithSystem, AssetLink, Assets,
+	Authorship, Balance, Balances, ParaId, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
+	ValidatorCollective, WeightToFee, XcmPallet,
 };
 use frame_support::{
 	match_types, parameter_types,
@@ -296,8 +296,9 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				paras_registrar::Call::reserve { .. } |
 				paras_registrar::Call::add_lock { .. },
 			) |
-			RuntimeCall::SystemTokenManager(system_token_manager::Call::set_exchange_rate { .. }
-			) |
+			RuntimeCall::SystemTokenManager(system_token_manager::Call::set_exchange_rate {
+				..
+			}) |
 			RuntimeCall::XcmPallet(pallet_xcm::Call::limited_reserve_transfer_assets {
 				..
 			}) => true,

@@ -258,8 +258,7 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				pallet_uniques::Call::set_price { .. } |
 				pallet_uniques::Call::buy_item { .. },
 			) |
-			RuntimeCall::InfraParaCore( .. )
-			=> true,
+			RuntimeCall::InfraParaCore(..) => true,
 			_ => false,
 		}
 	}

@@ -6,7 +6,7 @@ use crate::{
 	types::vote::*,
 	RuntimeDebug,
 };
-use bounded_collections::{ConstU32, BoundedVec};
+use bounded_collections::{BoundedVec, ConstU32};
 use sp_std::prelude::*;
 
 #[cfg(feature = "std")]
@@ -49,11 +49,7 @@ pub struct BaseSystemTokenDetail {
 
 impl Default for BaseSystemTokenDetail {
 	fn default() -> Self {
-		Self {
-			currency: Fiat::USD,
-			weight: 1_000_000,
-			decimal: 4,
-		}
+		Self { currency: Fiat::USD, weight: 1_000_000, decimal: 4 }
 	}
 }
 
@@ -117,20 +113,20 @@ pub struct RemoteAssetMetadata {
 	pub currency_type: Fiat,
 	/// Decimal of base system token
 	pub decimals: u8,
-	/// Weight of base system token
+	/// Minimum balance of system token
 	#[codec(compact)]
 	pub min_balance: SystemTokenBalance,
 }
 
 impl MaxEncodedLen for RemoteAssetMetadata {
 	fn max_encoded_len() -> usize {
-		SystemTokenPalletId::max_encoded_len() 
-		+ SystemTokenAssetId::max_encoded_len()
-		+ BoundedSystemTokenSymbol::max_encoded_len()
-		+ BoundedSystemTokenName::max_encoded_len()
-		+ Fiat::max_encoded_len() 
-		+ u8::max_encoded_len()
-		+ SystemTokenBalance::max_encoded_len()
+		SystemTokenPalletId::max_encoded_len() +
+			SystemTokenAssetId::max_encoded_len() +
+			BoundedSystemTokenSymbol::max_encoded_len() +
+			BoundedSystemTokenName::max_encoded_len() +
+			Fiat::max_encoded_len() +
+			u8::max_encoded_len() +
+			SystemTokenBalance::max_encoded_len()
 	}
 }
 
@@ -147,7 +143,6 @@ pub trait LocalAssetProvider<Asset, Account> {
 
 /// API to handle local assets which refers to System Token
 pub trait LocalAssetManager {
-	
 	type AccountId: MaxEncodedLen;
 	type Error;
 
@@ -173,10 +168,10 @@ pub trait LocalAssetManager {
 		asset_id: SystemTokenAssetId,
 		system_token_weight: SystemTokenWeight,
 	) -> Result<(), Self::Error>;
-	/// Request register System Token 
+	/// Request register System Token
 	fn request_register(asset_id: SystemTokenAssetId) -> Result<(), Self::Error>;
 	/// Get a list of System Token's local asset id
-	fn system_token_list() -> Vec<SystemTokenAssetId> { 
+	fn system_token_list() -> Vec<SystemTokenAssetId> {
 		Vec::new()
 	}
 	/// Return most system token balance of given 'asset_id' and 'account'
@@ -185,10 +180,9 @@ pub trait LocalAssetManager {
 		account: Self::AccountId,
 	) -> SystemTokenAssetId;
 
-	/// Retrieve metadata of given `asset_id` and return `RemoteAssetMetadata`, which is for Relay-chain
-	fn get_metadata(
-		asset_id: SystemTokenAssetId,
-	) -> Result<RemoteAssetMetadata, Self::Error>;
+	/// Retrieve metadata of given `asset_id` and return `RemoteAssetMetadata`, which is for
+	/// Relay-chain
+	fn get_metadata(asset_id: SystemTokenAssetId) -> Result<RemoteAssetMetadata, Self::Error>;
 }
 
 pub trait AssetMetadataProvider {
@@ -204,7 +198,10 @@ pub trait SystemTokenInterface {
 	/// Adjust the vote weight calculating exchange rate.
 	fn adjusted_weight(system_token: &SystemTokenId, vote_weight: VoteWeight) -> VoteWeight;
 	/// Update the metadata for requested asset received from enshirned chain
-	fn requested_asset_metadata(para_id: SystemTokenParaId, maybe_requested_assets: Option<BoundedRequestedAssets>);
+	fn requested_asset_metadata(
+		para_id: SystemTokenParaId,
+		maybe_requested_assets: Option<BoundedRequestedAssets>,
+	);
 }
 
 impl SystemTokenInterface for () {
@@ -217,7 +214,11 @@ impl SystemTokenInterface for () {
 	fn adjusted_weight(_system_token: &SystemTokenId, _vote_weight: VoteWeight) -> VoteWeight {
 		Default::default()
 	}
-	fn requested_asset_metadata(_para_id: SystemTokenParaId, _maybe_requested_assets: Option<BoundedRequestedAssets>) { }
+	fn requested_asset_metadata(
+		_para_id: SystemTokenParaId,
+		_maybe_requested_assets: Option<BoundedRequestedAssets>,
+	) {
+	}
 }
 
 pub trait AssetLinkInterface<AssetId> {
@@ -242,8 +243,19 @@ impl<AssetId> AssetLinkInterface<AssetId> for () {
 	}
 }
 
-
-#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, MaxEncodedLen, TypeInfo, Default, serde::Serialize, serde::Deserialize)]
+#[derive(
+	Clone,
+	Encode,
+	Decode,
+	Eq,
+	PartialEq,
+	RuntimeDebug,
+	MaxEncodedLen,
+	TypeInfo,
+	Default,
+	serde::Serialize,
+	serde::Deserialize,
+)]
 #[cfg_attr(feature = "std", derive(Hash))]
 pub enum Fiat {
 	#[default]
@@ -582,4 +594,3 @@ impl TryFrom<Vec<u8>> for Fiat {
 		})
 	}
 }
-

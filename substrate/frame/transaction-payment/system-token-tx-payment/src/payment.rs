@@ -124,7 +124,7 @@ where
 	) -> Result<Self::LiquidityInfo, TransactionValidityError> {
 		// We don't know the precision of the underlying asset. Because the converted fee could be
 		// less than one (e.g. 0.5) but gets rounded down by integer division we introduce a minimum
-		// fee.  
+		// fee.
 
 		// If system token is specified, transaction fee will be used with this token.
 		// Otherwise, get all the system tokens on Runtime and find out the largest number of

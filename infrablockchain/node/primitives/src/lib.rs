@@ -39,7 +39,7 @@ use primitives::{
 pub use sp_consensus_babe::{
 	AllowedSlots as BabeAllowedSlots, BabeEpochConfiguration, Epoch as BabeEpoch,
 };
-use sp_runtime::types::{PotVotesResult, BoundedRequestedAssets};
+use sp_runtime::types::{BoundedRequestedAssets, PotVotesResult};
 
 pub mod approval;
 

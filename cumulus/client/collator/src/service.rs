@@ -274,7 +274,8 @@ where
 			})
 			.ok()?;
 		let requested_assets = if let Some(r) = collation_info.requested_assets {
-			let requested_assets: BoundedRequestedAssets = r.try_into()
+			let requested_assets: BoundedRequestedAssets = r
+				.try_into()
 				.map_err(|e| {
 					tracing::error!(
 						target: LOG_TARGET,

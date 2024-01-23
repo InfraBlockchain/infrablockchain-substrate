@@ -54,12 +54,12 @@ pub(super) enum AssetStatus {
 	/// The asset is currently being destroyed, and all actions are no longer permitted on the
 	/// asset. Once set to `Destroying`, the asset can never transition back to a `Live` state.
 	Destroying,
-	/// The asset is requested to be used as System Token 
+	/// The asset is requested to be used as System Token
 	Requested,
 	/// The asset has just been created and (potentially) wait for the approval of the System Token
 	InActive,
 	/// Currently the asset is suspended by some reasons(e.g malicious behavior detected)
-	Suspend
+	Suspend,
 }
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
@@ -214,8 +214,8 @@ pub struct AssetAccount<Balance, DepositBalance, Extra, AccountId> {
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Default, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 pub struct AssetMetadata<DepositBalance> {
-	/// Optional fiat currency type of this asset. 
-	/// 
+	/// Optional fiat currency type of this asset.
+	///
 	/// It it is set, then the asset becomes potential System Token.
 	pub(super) currency_type: Option<Fiat>,
 	/// The balance deposited for this metadata.

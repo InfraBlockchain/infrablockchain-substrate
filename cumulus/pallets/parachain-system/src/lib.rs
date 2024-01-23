@@ -691,8 +691,8 @@ pub mod pallet {
 		DownwardMessagesProcessed { weight_used: Weight, dmq_head: relay_chain::Hash },
 		/// An upward message was sent to the relay chain.
 		UpwardMessageSent { message_hash: Option<XcmHash> },
-		/// Requested assets' metadata 
-		AssetForSystemTokenRequestsed { requested_assets: Vec<RemoteAssetMetadata> }
+		/// Requested assets' metadata
+		AssetForSystemTokenRequestsed { requested_assets: Vec<RemoteAssetMetadata> },
 	}
 
 	#[pallet::error]
@@ -896,7 +896,8 @@ pub mod pallet {
 	pub(super) type CollectedPotVotes<T: Config> = StorageValue<_, PotVotes, OptionQuery>;
 
 	#[pallet::storage]
-	pub(super) type RequestedAssets<T: Config> = StorageValue<_, Vec<RemoteAssetMetadata>, OptionQuery>;
+	pub(super) type RequestedAssets<T: Config> =
+		StorageValue<_, Vec<RemoteAssetMetadata>, OptionQuery>;
 
 	#[pallet::inherent]
 	impl<T: Config> ProvideInherent for Pallet<T> {

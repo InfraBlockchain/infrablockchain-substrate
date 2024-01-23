@@ -133,7 +133,7 @@ pub mod pallet {
 		/// Error occured while deregistering asset
 		ErrorDeregisterSystemToken,
 		/// Base configuration should be set
-		BaseNotConfigured
+		BaseNotConfigured,
 	}
 
 	#[pallet::call]

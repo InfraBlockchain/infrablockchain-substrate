@@ -254,7 +254,9 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 				pallet_assets::Call::set_metadata { .. } |
 				pallet_assets::Call::mint { .. },
 			) |
-			RuntimeCall::SystemTokenOracle(pallet_system_token_oracle::Call::submit_exchange_rates_unsigned { .. }) |
+			RuntimeCall::SystemTokenOracle(
+				pallet_system_token_oracle::Call::submit_exchange_rates_unsigned { .. },
+			) |
 			RuntimeCall::InfraXcm(pallet_xcm::Call::limited_teleport_assets { .. }) => true,
 			_ => false,
 		}
@@ -517,7 +519,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type ConsensusHook = ConsensusHook;
 }
 
-parameter_types! { 
+parameter_types! {
 	pub const RequestInterval: u32 = prod_or_fast!(DAYS, 10u32);
 }
 

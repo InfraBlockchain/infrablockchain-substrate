@@ -41,10 +41,14 @@ impl<T: Config> RuntimeConfigProvider for Pallet<T> {
 
 // TODO: Find a way to dispatch XCM locally. Then it would be clearer
 impl<T: Config> InfraConfigInterface for Pallet<T> {
-	fn set_base_config(para_id: SystemTokenParaId, base_system_token_detail: BaseSystemTokenDetail) {
+	fn set_base_config(
+		para_id: SystemTokenParaId,
+		base_system_token_detail: BaseSystemTokenDetail,
+	) {
 		if para_id != RELAY_CHAIN_PARA_ID {
-			let set_base_config_call =
-				ParachainRuntimePallets::ParachainConfig(ParachainConfigCalls::SetBaseConfig(base_system_token_detail));
+			let set_base_config_call = ParachainRuntimePallets::ParachainConfig(
+				ParachainConfigCalls::SetBaseConfig(base_system_token_detail),
+			);
 			Self::send_xcm_for(set_base_config_call.encode(), para_id);
 		}
 	}

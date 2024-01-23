@@ -25,7 +25,10 @@ use parity_scale_codec::{CompactAs, Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_core::{bytes, RuntimeDebug, TypeId};
-use sp_runtime::{traits::Hash as _, types::{vote::PotVotesResult, token::BoundedRequestedAssets}};
+use sp_runtime::{
+	traits::Hash as _,
+	types::{token::BoundedRequestedAssets, vote::PotVotesResult},
+};
 
 use infrablockchain_core_primitives::{Hash, OutboundHrmpMessage};
 
