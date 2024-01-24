@@ -79,6 +79,6 @@ pub enum PurchaseStatus {
 }
 
 pub(crate) enum TransferFrom<T: Config> {
-	Origin(OriginFor<T>),
+	Origin(T::AccountId),
 	Escrow,
 }

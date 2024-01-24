@@ -7,7 +7,8 @@ use frame_support::{
 };
 
 use frame_system::pallet_prelude::*;
-use sp_runtime::traits::{AccountIdConversion, StaticLookup};
+use pallet_assets::TransferFlags;
+use sp_runtime::traits::AccountIdConversion;
 use sp_std::vec::Vec;
 
 pub use pallet::*;
@@ -171,8 +172,8 @@ pub mod pallet {
 				let escrow_account = Self::get_escrow_account();
 				// Self::transfer_to_escrow(origin, escrow_account, system_token_asset_id,
 				// total_amount)?;
-				Self::escrow_transfer(
-					TransferFrom::Origin(origin),
+				Self::transfer_escrow(
+					TransferFrom::Origin(data_buyer.clone()),
 					escrow_account,
 					system_token_asset_id,
 					total_amount,
@@ -300,7 +301,7 @@ where
 	) -> DispatchResult {
 		let platform_account = Self::get_platform_account();
 
-		Self::escrow_transfer(
+		Self::transfer_escrow(
 			TransferFrom::Escrow,
 			data_owner,
 			system_token_asset_id,
@@ -314,7 +315,7 @@ where
 			let distributed_fee = data_issuer_fee
 				.saturating_mul(*weight as u128)
 				.saturating_div(total_weight as u128);
-			Self::escrow_transfer(
+			Self::transfer_escrow(
 				TransferFrom::Escrow,
 				issuer.clone(),
 				system_token_asset_id,
@@ -322,7 +323,7 @@ where
 			)?;
 		}
 
-		Self::escrow_transfer(
+		Self::transfer_escrow(
 			TransferFrom::Escrow,
 			platform_account,
 			system_token_asset_id,
@@ -361,7 +362,7 @@ where
 		let remaining_deposit = price_per_data.into().saturating_mul(remainig_quantity);
 
 		if remainig_quantity > 0 {
-			Self::escrow_transfer(
+			Self::transfer_escrow(
 				TransferFrom::Escrow,
 				data_buyer.clone(),
 				system_token_asset_id,
@@ -403,31 +404,38 @@ where
 		(data_owner_fee, data_issuer_fee, platform_fee)
 	}
 
-	fn escrow_transfer(
+	fn transfer_escrow(
 		from: TransferFrom<T>,
 		to: T::AccountId,
 		system_token_asset_id: u32,
 		amount: u128,
 	) -> DispatchResult {
 		let balance = <T as pallet_assets::Config>::Balance::from(amount);
+		let f = TransferFlags { keep_alive: true, best_effort: false, burn_dust: false };
 
 		match from {
 			TransferFrom::Origin(origin) => {
-				pallet_assets::Pallet::<T>::transfer(
-					origin,
+				pallet_assets::Pallet::<T>::do_transfer(
 					system_token_asset_id.into(),
-					T::Lookup::unlookup(to),
+					&origin,
+					&to,
 					balance,
-				)?;
+					None,
+					f,
+				)
+				.map(|_| ())?;
 			},
 			TransferFrom::Escrow => {
 				let escrow = Self::get_escrow_account();
-				pallet_assets::Pallet::<T>::transfer(
-					frame_system::RawOrigin::Signed(escrow).into(),
+				pallet_assets::Pallet::<T>::do_transfer(
 					system_token_asset_id.into(),
-					T::Lookup::unlookup(to),
+					&escrow,
+					&to,
 					balance,
-				)?;
+					None,
+					f,
+				)
+				.map(|_| ())?;
 			},
 		}
 

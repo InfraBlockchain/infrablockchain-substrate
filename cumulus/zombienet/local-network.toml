@@ -2,8 +2,7 @@
 default_command = "./target/release/infra-relaychain"
 default_args = ["-lparachain=debug", "-l=xcm=trace"]
 chain = "infra-relay-local"
-# "/Users/bclabs-raf/downloads/archive/infrablockspace"
-# 
+
 [[relaychain.nodes]]
 name = "alice"
 validator = true
@@ -46,68 +45,68 @@ args = ["-lparachain=debug", "-l=xcm=trace"]
 rpc_port = 7600
 ws_port = 7601
 
-# [[parachains]]
-# id = 1000
-# chain = "asset-hub-infra-local"
-# cumulus_based = true
+[[parachains]]
+id = 1000
+chain = "asset-hub-infra-local"
+cumulus_based = true
 
-# [[parachains.collators]]
-# name = "asset-hub-alice"
-# validator = true
-# args = ["-lparachain=debug", "-l=xcm=trace"]
-# command = "../target/release/infra-parachain"
-# rpc_port = 9500
-# ws_port = 9501
+[[parachains.collators]]
+name = "asset-hub-alice"
+validator = true
+args = ["-lparachain=debug", "-l=xcm=trace"]
+command = "../target/release/infra-parachain"
+rpc_port = 9500
+ws_port = 9501
 
-# [[parachains.collators]]
-# name = "asset-hub-bob"
-# validator = true
-# args = ["-lparachain=debug", "-l=xcm=trace"]
-# command = "../target/release/infra-parachain"
-# rpc_port = 9600
-# ws_port = 9601
+[[parachains.collators]]
+name = "asset-hub-bob"
+validator = true
+args = ["-lparachain=debug", "-l=xcm=trace"]
+command = "../target/release/infra-parachain"
+rpc_port = 9600
+ws_port = 9601
 
-# [[parachains]]
-# id = 1001
-# chain = "contracts-hub-infra-local"
-# cumulus_based = true
+[[parachains]]
+id = 1001
+chain = "contracts-hub-infra-local"
+cumulus_based = true
 
-# [[parachains.collators]]
-# name = "contracts-infra-alice"
-# validator = true
-# args = ["-lparachain=debug", "-l=xcm=trace"]
-# command = "../target/release/infra-parachain"
-# rpc_port = 9700
-# ws_port = 9701
+[[parachains.collators]]
+name = "contracts-infra-alice"
+validator = true
+args = ["-lparachain=debug", "-l=xcm=trace"]
+command = "../target/release/infra-parachain"
+rpc_port = 9700
+ws_port = 9701
 
-# [[parachains.collators]]
-# name = "contracts-infra-bob"
-# validator = true
-# args = ["-lparachain=debug", "-l=xcm=trace"]
-# command = "../target/release/infra-parachain"
-# rpc_port = 9800
-# ws_port = 9801
+[[parachains.collators]]
+name = "contracts-infra-bob"
+validator = true
+args = ["-lparachain=debug", "-l=xcm=trace"]
+command = "../target/release/infra-parachain"
+rpc_port = 9800
+ws_port = 9801
 
-# [[parachains]]
-# id = 1002
-# chain = "did-hub-infra-local"
-# cumulus_based = true
+[[parachains]]
+id = 1002
+chain = "did-hub-infra-local"
+cumulus_based = true
 
-# [[parachains.collators]]
-# name = "did-infra-alice"
-# validator = true
-# args = ["-lparachain=debug", "-l=xcm=trace"]
-# command = "../target/release/infra-parachain"
-# rpc_port = 9900
-# ws_port = 9901
+[[parachains.collators]]
+name = "did-infra-alice"
+validator = true
+args = ["-lparachain=debug", "-l=xcm=trace"]
+command = "../target/release/infra-parachain"
+rpc_port = 9900
+ws_port = 9901
 
-# [[parachains.collators]]
-# name = "did-infra-bob"
-# validator = true
-# args = ["-lparachain=debug", "-l=xcm=trace"]
-# command = "../target/release/infra-parachain"
-# rpc_port = 10000
-# ws_port = 10001
+[[parachains.collators]]
+name = "did-infra-bob"
+validator = true
+args = ["-lparachain=debug", "-l=xcm=trace"]
+command = "../target/release/infra-parachain"
+rpc_port = 10000
+ws_port = 10001
 
 [[parachains]]
 id = 2000
