@@ -28,7 +28,7 @@ impl<T: Config> RuntimeConfigProvider for Pallet<T> {
 	fn para_fee_rate() -> Result<SystemTokenWeight, Self::Error> {
 		// Relay chain's fee rate is same as base weight
 		let base_detail = BaseConfiguration::<T>::get().ok_or(Error::<T>::BaseNotConfigured)?;
-		Ok(base_detail.weight)
+		Ok(base_detail.base_weight)
 	}
 
 	fn fee_for(ext: ExtrinsicMetadata) -> Option<SystemTokenBalance> {
@@ -46,7 +46,7 @@ impl<T: Config> InfraConfigInterface for Pallet<T> {
 		base_system_token_detail: BaseSystemTokenDetail,
 	) {
 		if para_id != RELAY_CHAIN_PARA_ID {
-			let set_base_config_call = ParachainRuntimePallets::ParachainConfig(
+			let set_base_config_call = ParachainRuntimePallets::InfraParaCore(
 				ParachainConfigCalls::SetBaseConfig(base_system_token_detail),
 			);
 			Self::send_xcm_for(set_base_config_call.encode(), para_id);
@@ -60,7 +60,7 @@ impl<T: Config> InfraConfigInterface for Pallet<T> {
 		fee: SystemTokenBalance,
 	) {
 		if para_id != RELAY_CHAIN_PARA_ID {
-			let set_fee_table_call = ParachainRuntimePallets::ParachainConfig(
+			let set_fee_table_call = ParachainRuntimePallets::InfraParaCore(
 				ParachainConfigCalls::SetFeeTable(pallet_name, call_name, fee),
 			);
 			Self::send_xcm_for(set_fee_table_call.encode(), para_id);
@@ -69,7 +69,7 @@ impl<T: Config> InfraConfigInterface for Pallet<T> {
 
 	fn set_para_fee_rate(para_id: SystemTokenParaId, fee_rate: SystemTokenWeight) {
 		if para_id != RELAY_CHAIN_PARA_ID {
-			let set_fee_rate_call = ParachainRuntimePallets::ParachainConfig(
+			let set_fee_rate_call = ParachainRuntimePallets::InfraParaCore(
 				ParachainConfigCalls::SetParaFeeRate(fee_rate),
 			);
 			Self::send_xcm_for(set_fee_rate_call.encode(), para_id);
@@ -81,7 +81,7 @@ impl<T: Config> InfraConfigInterface for Pallet<T> {
 			// Do something locally
 		} else {
 			let set_runtime_state_call =
-				ParachainRuntimePallets::ParachainConfig(ParachainConfigCalls::SetRuntimeState);
+				ParachainRuntimePallets::InfraParaCore(ParachainConfigCalls::SetRuntimeState);
 			Self::send_xcm_for(set_runtime_state_call.encode(), para_id)
 		}
 	}
@@ -95,7 +95,7 @@ impl<T: Config> InfraConfigInterface for Pallet<T> {
 			// TODO: Error handling
 			let _ = T::LocalAssetManager::update_system_token_weight(asset_id, system_token_weight);
 		} else {
-			let update_system_token_weight_call = ParachainRuntimePallets::ParachainConfig(
+			let update_system_token_weight_call = ParachainRuntimePallets::InfraParaCore(
 				ParachainConfigCalls::UpdateSystemTokenWeight(asset_id, system_token_weight),
 			);
 			Self::send_xcm_for(update_system_token_weight_call.encode(), para_id);
@@ -111,7 +111,7 @@ impl<T: Config> InfraConfigInterface for Pallet<T> {
 			// TODO: Error handling
 			let _ = T::LocalAssetManager::promote(asset_id, system_token_weight);
 		} else {
-			let register_call = ParachainRuntimePallets::ParachainConfig(
+			let register_call = ParachainRuntimePallets::InfraParaCore(
 				ParachainConfigCalls::RegisterSystemToken(asset_id, system_token_weight),
 			);
 			Self::send_xcm_for(register_call.encode(), para_id);
@@ -144,7 +144,7 @@ impl<T: Config> InfraConfigInterface for Pallet<T> {
 			let _ = T::AssetLink::link(&asset_id, asset_link_parent, original);
 		} else {
 			let create_call =
-				ParachainRuntimePallets::ParachainConfig(ParachainConfigCalls::CreateWrappedLocal(
+				ParachainRuntimePallets::InfraParaCore(ParachainConfigCalls::CreateWrappedLocal(
 					asset_id,
 					currency_type,
 					min_balance,
@@ -168,7 +168,7 @@ impl<T: Config> InfraConfigInterface for Pallet<T> {
 			// TODO: Error handling
 			let _ = T::LocalAssetManager::demote(asset_id);
 		} else {
-			let deregister_call = ParachainRuntimePallets::ParachainConfig(
+			let deregister_call = ParachainRuntimePallets::InfraParaCore(
 				ParachainConfigCalls::DeregisterSystemToken(asset_id, is_unlink),
 			);
 			Self::send_xcm_for(deregister_call.encode(), para_id);
@@ -186,11 +186,11 @@ impl<T: Config> Pallet<T> {
 			Instruction::Transact {
 				origin_kind: OriginKind::Native,
 				require_weight_at_most: Weight::from_parts(1_000_000_000, 200000),
-				call: call.encode().into(),
+				call: call.into(),
 			},
 		]);
 
-		match send_xcm::<T::XcmRouter>(MultiLocation::new(1, X1(Parachain(dest))), message.clone())
+		match send_xcm::<T::XcmRouter>(MultiLocation::new(0, X1(Parachain(dest))), message.clone())
 		{
 			Ok(_) => log::info!(
 				target: "runtime::parachain-config",

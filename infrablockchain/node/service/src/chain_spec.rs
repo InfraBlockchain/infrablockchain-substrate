@@ -818,6 +818,10 @@ pub fn infra_relay_testnet_genesis(
 			seed_trust_slots: 2,
 			..Default::default()
 		},
+		infra_relay_core: infra_relay::InfraRelayCoreConfig {
+			base_detail: None,
+			_phantom: Default::default(),
+		},
 		..Default::default()
 	}
 }

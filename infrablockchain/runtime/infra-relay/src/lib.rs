@@ -362,7 +362,8 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 			RuntimeCall::Democracy(pallet_democracy::Call::external_propose_majority {
 				..
 			}) |
-			RuntimeCall::Preimage(pallet_preimage::Call::note_preimage { .. }) => true,
+			RuntimeCall::Preimage(pallet_preimage::Call::note_preimage { .. }) |
+			RuntimeCall::InfraRelayCore(..) => true,
 			_ => false,
 		}
 	}
@@ -376,7 +377,7 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 
 impl pallet_system_token_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type InfraTxInterface = InfraCore;
+	type InfraTxInterface = InfraRelayCore;
 	type Assets = Assets;
 	type OnChargeSystemToken = TransactionFeeCharger<
 		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
@@ -1132,7 +1133,7 @@ parameter_types! {
 impl system_token_manager::Config for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeEvent = RuntimeEvent;
-	type InfraCoreInterface = InfraCore;
+	type InfraCoreInterface = InfraRelayCore;
 	type UnixTime = Timestamp;
 	type StringLimit = ConstU32<128>;
 	type MaxSystemTokens = ConstU32<10>;
@@ -1403,7 +1404,7 @@ construct_runtime! {
 		AssetRate: pallet_asset_rate::{Pallet, Call, Storage, Event<T>} = 39,
 
 		// InfraBlockchain Support
-		InfraCore: infra_relay_core::{Pallet, Call, Storage, Event<T>} = 20,
+		InfraRelayCore: infra_relay_core::{Pallet, Call, Config<T>, Storage, Event<T>} = 20,
 		SystemTokenManager: system_token_manager::{Pallet, Call, Storage, Event<T>} = 21,
 		ValidatorRewardManager: validator_reward_manager::{Pallet, Call, Storage, Event<T>} = 22,
 		AssetLink: pallet_asset_link::{Pallet, Storage, Event<T>} = 24,

@@ -28,9 +28,7 @@ use pallet_contracts::{
 };
 use sp_runtime::Perbill;
 
-pub use parachains_common::{
-	constants::AVERAGE_ON_INITIALIZE_RATIO, infra_relay::currency::deposit,
-};
+pub use parachains_common::infra_relay::currency::deposit;
 
 // Prints debug output of the `contracts` pallet to stdout if the node is
 // started with `-lruntime::contracts=debug`.

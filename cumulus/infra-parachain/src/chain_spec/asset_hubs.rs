@@ -62,6 +62,7 @@ pub fn asset_hub_development_config() -> AssetHubChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
 				],
+				Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
 				1000.into(),
 			)
 		},
@@ -113,6 +114,7 @@ pub fn asset_hub_local_config() -> AssetHubChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
+				Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
 				1000.into(),
 			)
 		},
@@ -168,6 +170,7 @@ pub fn asset_hub_config() -> AssetHubChainSpec {
 					),
 				],
 				vec![],
+				None,
 				1000u32.into(),
 			)
 		},
@@ -183,6 +186,7 @@ pub fn asset_hub_config() -> AssetHubChainSpec {
 fn asset_hub_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
+	root_key: Option<AccountId>,
 	id: ParaId,
 ) -> asset_hub_runtime::RuntimeGenesisConfig {
 	asset_hub_runtime::RuntimeGenesisConfig {
@@ -230,5 +234,6 @@ fn asset_hub_genesis(
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
 			..Default::default()
 		},
+		sudo: asset_hub_runtime::SudoConfig { key: root_key },
 	}
 }

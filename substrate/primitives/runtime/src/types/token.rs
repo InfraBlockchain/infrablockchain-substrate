@@ -40,16 +40,16 @@ pub type BoundedSystemTokenSymbol = BoundedVec<u8, ConstU32<5>>;
 /// Detail of base system token
 pub struct BaseSystemTokenDetail {
 	/// Currency type of base system token
-	pub currency: Fiat,
+	pub base_currency: Fiat,
 	/// Weight of base system token
-	pub weight: SystemTokenWeight,
+	pub base_weight: SystemTokenWeight,
 	/// Decimal of base system token
-	pub decimal: u8,
+	pub base_decimals: u8,
 }
 
 impl Default for BaseSystemTokenDetail {
 	fn default() -> Self {
-		Self { currency: Fiat::USD, weight: 1_000_000, decimal: 4 }
+		Self { base_currency: Fiat::USD, base_weight: 1_000_000, base_decimals: 4 }
 	}
 }
 
@@ -421,6 +421,15 @@ pub enum Fiat {
 	ZAR,
 	ZMW,
 	ZWL,
+}
+
+impl Fiat {
+	pub fn is_base_currency(&self) -> bool {
+		match self {
+			Self::USD => true,
+			_ => false,
+		}
+	}
 }
 
 impl TryFrom<Vec<u8>> for Fiat {

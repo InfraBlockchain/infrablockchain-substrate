@@ -38,7 +38,7 @@ pub mod pallet {
 	pub struct Pallet<T>(_);
 
 	#[pallet::storage]
-	pub type ParaCoreOrigin<T: Config> = StorageValue<_, T::AccountId>;
+	pub type ParaCoreAdmin<T: Config> = StorageValue<_, T::AccountId>;
 
 	/// Base system token configuration set on Relay-chain Runtime
 	#[pallet::storage]
@@ -73,7 +73,7 @@ pub mod pallet {
 		/// Bootstrap has been ended by Relay-chain governance.
 		BootstrapEnded,
 		/// Origin of this pallet has been set by Relay-chain governance.
-		SetParaCoreOrigin { who: T::AccountId },
+		ParaCoreAdminUpdated { who: T::AccountId },
 	}
 
 	#[pallet::error]
@@ -115,6 +115,9 @@ pub mod pallet {
 		fn on_initialize(n: BlockNumberFor<T>) -> frame_support::weights::Weight {
 			if n >= NextRequest::<T>::get() {
 				let remote_asset_metadata = RequestQueue::<T>::get();
+				if remote_asset_metadata.len() == 0 {
+					return T::DbWeight::get().reads(1)
+				}
 				T::ParachainSystemInterface::requested(remote_asset_metadata.to_vec());
 				T::DbWeight::get().reads(1)
 			} else {
@@ -194,7 +197,7 @@ pub mod pallet {
 		///
 		/// Origin
 		/// Relay-chain governance
-		#[pallet::call_index(5)]
+		#[pallet::call_index(4)]
 		pub fn update_system_token_weight(
 			origin: OriginFor<T>,
 			asset_id: SystemTokenAssetId,
@@ -210,7 +213,7 @@ pub mod pallet {
 		///
 		/// Origin
 		/// Relay-chain governance
-		#[pallet::call_index(6)]
+		#[pallet::call_index(5)]
 		pub fn register_system_token(
 			origin: OriginFor<T>,
 			asset_id: SystemTokenAssetId,
@@ -236,7 +239,7 @@ pub mod pallet {
 		///
 		/// Origin
 		/// Relay-chain governance
-		#[pallet::call_index(7)]
+		#[pallet::call_index(6)]
 		pub fn create_wrapped_local(
 			origin: OriginFor<T>,
 			asset_id: SystemTokenAssetId,
@@ -265,7 +268,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::call_index(8)]
+		#[pallet::call_index(7)]
 		pub fn deregister_system_token(
 			origin: OriginFor<T>,
 			asset_id: SystemTokenAssetId,
@@ -284,24 +287,24 @@ pub mod pallet {
 		///
 		/// It can call extrinsic which is not allowed to call by other origin(e.g
 		/// `request_register_system_token`)
-		#[pallet::call_index(9)]
-		pub fn set_para_core_origin(origin: OriginFor<T>, who: T::AccountId) -> DispatchResult {
+		#[pallet::call_index(8)]
+		pub fn set_para_core_admin(origin: OriginFor<T>, who: T::AccountId) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
-			ParaCoreOrigin::<T>::put(&who);
-			Self::deposit_event(Event::<T>::SetParaCoreOrigin { who });
+			ParaCoreAdmin::<T>::put(&who);
+			Self::deposit_event(Event::<T>::ParaCoreAdminUpdated { who });
 			Ok(())
 		}
 
 		/// Request to register System Token
 		///
 		/// If succeed, request will be queued in `RequestQueue`
-		#[pallet::call_index(10)]
+		#[pallet::call_index(9)]
 		pub fn request_register_system_token(
 			origin: OriginFor<T>,
 			asset_id: SystemTokenAssetId,
 		) -> DispatchResult {
 			if let Some(acc) = ensure_signed_or_root(origin)? {
-				ensure!(ParaCoreOrigin::<T>::get() == Some(acc), Error::<T>::NoPermission);
+				ensure!(ParaCoreAdmin::<T>::get() == Some(acc), Error::<T>::NoPermission);
 			}
 			let remote_asset_metadata = T::LocalAssetManager::get_metadata(asset_id)
 				.map_err(|_| Error::<T>::ErrorOnGetMetadata)?;
@@ -344,7 +347,7 @@ impl<T: Config> RuntimeConfigProvider for Pallet<T> {
 		Ok(ParaFeeRate::<T>::try_mutate_exists(
 			|maybe_para_fee_rate| -> Result<SystemTokenWeight, DispatchError> {
 				let pfr =
-					maybe_para_fee_rate.take().map_or(base_system_token_detail.weight, |pfr| pfr);
+					maybe_para_fee_rate.take().map_or(base_system_token_detail.base_weight, |pfr| pfr);
 				*maybe_para_fee_rate = Some(pfr);
 				Ok(pfr)
 			},

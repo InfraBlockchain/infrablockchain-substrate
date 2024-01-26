@@ -1,9 +1,10 @@
+
 use super::*;
 
 #[derive(Encode, Decode)]
 pub enum ParachainRuntimePallets {
 	#[codec(index = 2)]
-	ParachainConfig(ParachainConfigCalls),
+	InfraParaCore(ParachainConfigCalls),
 }
 
 #[derive(Encode, Decode)]

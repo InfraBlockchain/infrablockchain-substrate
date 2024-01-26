@@ -1,4 +1,5 @@
 use frame_support::pallet_prelude::*;
+use frame_support::DefaultNoBound;
 use frame_system::{ensure_root, pallet_prelude::*};
 use pallet_validator_election::VotingInterface;
 use parity_scale_codec::Encode;
@@ -66,6 +67,7 @@ pub mod pallet {
 		StorageMap<_, Twox128, ExtrinsicMetadata, SystemTokenBalance, OptionQuery>;
 
 	#[pallet::genesis_config]
+	#[derive(DefaultNoBound)]
 	pub struct GenesisConfig<T: Config> {
 		pub base_detail: Option<(Fiat, SystemTokenWeight, SystemTokenDecimal)>,
 		pub _phantom: sp_std::marker::PhantomData<T>,
@@ -76,10 +78,13 @@ pub mod pallet {
 		fn build(&self) {
 			if let Some(base_detail) = self.base_detail.clone() {
 				BaseConfiguration::<T>::put(BaseSystemTokenDetail {
-					currency: base_detail.0,
-					weight: base_detail.1,
-					decimal: base_detail.2,
+					base_currency: base_detail.0,
+					base_weight: base_detail.1,
+					base_decimals: base_detail.2,
 				});
+			} else {
+				let base_detail: BaseSystemTokenDetail = Default::default();
+				BaseConfiguration::<T>::put(base_detail);
 			}
 		}
 	}
@@ -138,11 +143,23 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+
+		#[pallet::call_index(0)]
+		pub fn set_base_configuration(
+			origin: OriginFor<T>,
+			base_config: BaseSystemTokenDetail,
+		) -> DispatchResult {
+			// TODO: Configuration for Base System Token needs to be updated not instantly. Needs Scheduler
+			ensure_root(origin)?;
+			BaseConfiguration::<T>::put(base_config);
+			Ok(())
+		}
+
 		/// Fee table for Runtime will be set by Relay-chain governance
 		///
 		/// Origin
 		/// Relay-chain governance
-		#[pallet::call_index(0)]
+		#[pallet::call_index(1)]
 		pub fn set_fee_table(
 			origin: OriginFor<T>,
 			pallet_name: Vec<u8>,
@@ -160,7 +177,7 @@ pub mod pallet {
 		///
 		/// Origin
 		/// Relay-chain governance
-		#[pallet::call_index(1)]
+		#[pallet::call_index(2)]
 		pub fn set_fee_rate(origin: OriginFor<T>, fee_rate: SystemTokenWeight) -> DispatchResult {
 			ensure_root(origin)?;
 			FeeRate::<T>::put(fee_rate);
@@ -171,7 +188,7 @@ pub mod pallet {
 		///
 		/// Origin
 		/// Relay-chain governance
-		#[pallet::call_index(2)]
+		#[pallet::call_index(3)]
 		pub fn set_runtime_state(origin: OriginFor<T>) -> DispatchResult {
 			ensure_root(origin)?;
 			if RuntimeState::<T>::get() == Mode::Normal {
@@ -189,7 +206,7 @@ pub mod pallet {
 		///
 		/// Origin
 		/// Relay-chain governance
-		#[pallet::call_index(3)]
+		#[pallet::call_index(4)]
 		pub fn set_system_token_weight(
 			origin: OriginFor<T>,
 			asset_id: SystemTokenAssetId,
@@ -206,7 +223,7 @@ pub mod pallet {
 		/// This method is for emergency case. Naturally it would be set automatically
 		/// Origin
 		/// Relay-chain governance
-		#[pallet::call_index(4)]
+		#[pallet::call_index(5)]
 		pub fn register_system_token(
 			origin: OriginFor<T>,
 			asset_id: SystemTokenAssetId,
@@ -223,7 +240,7 @@ pub mod pallet {
 		///
 		/// Origin
 		/// Relay-chain governance
-		#[pallet::call_index(5)]
+		#[pallet::call_index(6)]
 		pub fn create_wrapped_local(
 			origin: OriginFor<T>,
 			asset_id: SystemTokenAssetId,
@@ -252,7 +269,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::call_index(6)]
+		#[pallet::call_index(7)]
 		pub fn deregister_system_token(
 			origin: OriginFor<T>,
 			asset_id: SystemTokenAssetId,

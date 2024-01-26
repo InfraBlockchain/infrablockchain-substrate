@@ -524,16 +524,20 @@ impl<T: Config> Pallet<T> {
 		currency: Fiat,
 		original: &SystemTokenId,
 	) -> Result<SystemTokenWeight, DispatchError> {
-		let BaseSystemTokenDetail { weight, decimal, .. } =
+		let BaseSystemTokenDetail { base_weight, base_decimals, .. } =
 			T::InfraCoreInterface::base_system_token_configuration()
 				.map_err(|_| Error::<T>::BadConfig)?;
+		if currency.is_base_currency() {
+			return Ok(base_weight)
+		}
 		let SystemTokenMetadata { decimals, .. } =
 			OriginalSystemTokenMetadata::<T>::get(original).ok_or(Error::<T>::MetadataNotFound)?;
-		let decimal_relative_to_base = decimal.saturating_sub(decimals);
+		let exponents = base_decimals.saturating_sub(decimals) as u32;
+		let decimal_relative_to_base = u128::pow(10, exponents);
 		let exchange_rate_relative_to_base =
 			ExchangeRates::<T>::get(&currency).ok_or(Error::<T>::NotFound)?;
 		let system_token_weight =
-			weight * (decimal_relative_to_base as u128) / (exchange_rate_relative_to_base as u128);
+			base_weight * decimal_relative_to_base / (exchange_rate_relative_to_base as u128);
 		Ok(system_token_weight)
 	}
 
@@ -1060,11 +1064,11 @@ impl<T: Config> SystemTokenInterface for Pallet<T> {
 		if let Some(p) = <SystemTokenProperties<T>>::get(original) {
 			if let Ok(base_config) = T::InfraCoreInterface::base_system_token_configuration() {
 				let system_token_weight = {
-					let w: u128 = p.system_token_weight.map_or(base_config.weight, |w| w);
+					let w: u128 = p.system_token_weight.map_or(base_config.base_weight, |w| w);
 					let system_token_weight = F64::from_i128(w as i128);
 					system_token_weight
 				};
-				let converted_base_weight = F64::from_i128(base_config.weight as i128);
+				let converted_base_weight = F64::from_i128(base_config.base_weight as i128);
 
 				// Since the base_weight cannot be zero, this division is guaranteed to be safe.
 				return vote_weight.mul(system_token_weight).div(converted_base_weight)

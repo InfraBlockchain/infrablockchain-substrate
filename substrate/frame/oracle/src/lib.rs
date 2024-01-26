@@ -59,6 +59,10 @@ pub mod pallet {
 	pub type ExchangeRates<T: Config> =
 		StorageMap<_, Twox64Concat, Fiat, ExchangeRate, OptionQuery>;
 
+	/// System Tokens registered in the system for fetching exchange rates
+	#[pallet::storage]
+	pub type SystemTokens<T: Config> = StorageValue<_, Fiat>;
+
 	#[pallet::validate_unsigned]
 	impl<T: Config> ValidateUnsigned for Pallet<T> {
 		type Call = Call<T>;
@@ -125,6 +129,7 @@ impl<T: Config> Pallet<T> {
 	fn fetch_exchange_rate() -> Result<(), http::Error> {
 		let deadline =
 			sp_io::offchain::timestamp().add(sp_core::offchain::Duration::from_millis(2000));
+		// Initiate an external HTTP GET request.
 		let request = sp_runtime::offchain::http::Request::get(API_END_POINT);
 		let pending = request.deadline(deadline).send().map_err(|_| http::Error::IoError)?;
 		let response = pending.try_wait(deadline).map_err(|_| http::Error::DeadlineReached)??;
