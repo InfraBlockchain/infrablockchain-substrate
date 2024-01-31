@@ -31,8 +31,8 @@ use codec::{Decode, Encode, MaxEncodedLen};
 use cumulus_primitives_core::{
 	relay_chain, AbridgedHostConfiguration, ChannelStatus, CollationInfo, DmpMessageHandler,
 	GetChannelInfo, InboundDownwardMessage, InboundHrmpMessage, MessageSendError,
-	OutboundHrmpMessage, ParaId, PersistedValidationData, UpwardMessage, UpwardMessageSender,
-	XcmpMessageHandler, XcmpMessageSource, UpdateRCConfig
+	OutboundHrmpMessage, ParaId, PersistedValidationData, UpdateRCConfig, UpwardMessage,
+	UpwardMessageSender, XcmpMessageHandler, XcmpMessageSource,
 };
 use cumulus_primitives_parachain_inherent::{MessageQueueChain, ParachainInherentData};
 use frame_support::{
@@ -595,8 +595,9 @@ pub mod pallet {
 			<UpgradeGoAhead<T>>::put(upgrade_go_ahead_signal);
 			if let Some(infra_system_config) = relay_state_proof
 				.read_updated_infra_system_config()
-				.expect("Invalid infra system config") {
-					T::UpdateRCConfig::update_system_config(infra_system_config);
+				.expect("Invalid infra system config")
+			{
+				T::UpdateRCConfig::update_system_config(infra_system_config);
 			}
 
 			let host_config = relay_state_proof
@@ -789,7 +790,7 @@ pub mod pallet {
 		StorageValue<_, Option<relay_chain::UpgradeRestriction>, ValueQuery>;
 
 	#[pallet::storage]
-	pub(super) type UpdatedInfraSystemConfig<T: Config> = 
+	pub(super) type UpdatedInfraSystemConfig<T: Config> =
 		StorageValue<_, Option<InfraSystemConfig>, ValueQuery>;
 
 	/// Optional upgrade go-ahead signal from the relay-chain.

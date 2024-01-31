@@ -338,9 +338,7 @@ impl RelayChainStateProof {
 		.map_err(Error::UpgradeRestriction)
 	}
 
-	pub fn read_updated_infra_system_config(
-		&self
-	) -> Result<Option<InfraSystemConfig>, Error> {
+	pub fn read_updated_infra_system_config(&self) -> Result<Option<InfraSystemConfig>, Error> {
 		read_optional_entry(
 			&self.trie_backend,
 			&relay_chain::well_known_keys::updated_infra_system_config(self.para_id),

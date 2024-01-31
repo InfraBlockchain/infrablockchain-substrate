@@ -7,9 +7,11 @@ use sp_std::vec::Vec;
 
 /// API that updates Infra-* Runtime configuration
 pub trait UpdateInfraConfig {
-
 	/// Update system configuration for `dest_id` Runtime
-	fn update_infra_system_config(dest_id: SystemTokenParaId, infra_system_config: InfraSystemConfig);
+	fn update_infra_system_config(
+		dest_id: SystemTokenParaId,
+		infra_system_config: InfraSystemConfig,
+	);
 	/// Update fee table for `dest_id` Runtime
 	fn update_fee_table(
 		dest_id: SystemTokenParaId,
@@ -54,11 +56,11 @@ pub trait UpdateInfraConfig {
 	);
 }
 
-/// API for providing Infra-* Runtime configuration 
+/// API for providing Infra-* Runtime configuration
 pub trait RuntimeConfigProvider {
 	/// General error type
 	type Error;
-	
+
 	/// System configuration Infra-* Runtime
 	fn infra_system_config() -> Result<InfraSystemConfig, Self::Error>;
 	/// Para fee rate of Infra-* Runtime

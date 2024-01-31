@@ -259,7 +259,7 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 			) |
 			RuntimeCall::InfraXcm(pallet_xcm::Call::limited_teleport_assets { .. }) |
 			RuntimeCall::InfraParaCore(
-				cumulus_pallet_infra_parachain_core::Call::request_register_system_token { .. }
+				cumulus_pallet_infra_parachain_core::Call::request_register_system_token { .. },
 			) => true,
 			_ => false,
 		}

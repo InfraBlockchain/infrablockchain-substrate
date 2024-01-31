@@ -968,7 +968,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			symbol.clone().try_into().map_err(|_| Error::<T, I>::BadMetadata)?;
 
 		let d = Asset::<T, I>::get(&id).ok_or(Error::<T, I>::Unknown)?;
-		ensure!(d.status == AssetStatus::Live || d.status == AssetStatus::InActive, Error::<T, I>::AssetNotLive);
+		ensure!(
+			d.status == AssetStatus::Live || d.status == AssetStatus::InActive,
+			Error::<T, I>::AssetNotLive
+		);
 		ensure!(from == &d.owner, Error::<T, I>::NoPermission);
 
 		Metadata::<T, I>::try_mutate_exists(id.clone(), |metadata| {

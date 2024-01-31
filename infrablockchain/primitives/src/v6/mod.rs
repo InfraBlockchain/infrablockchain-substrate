@@ -368,13 +368,13 @@ pub mod well_known_keys {
 		let prefix = hex!["c1b1962c8d78658bd8ffce50b52608924e066756fc1502933335b4684d5e3128"];
 
 		para_id.using_encoded(|para_id: &[u8]| {
-			prefix 
+			prefix
 				.as_ref()
 				.iter()
 				.chain(twox_64(para_id).iter())
 				.chain(para_id.iter())
 				.cloned()
-				.collect()	
+				.collect()
 		})
 	}
 }

@@ -526,7 +526,9 @@ impl<T: Config> Pallet<T> {
 	) -> Result<SystemTokenWeight, DispatchError> {
 		let BaseSystemTokenDetail { base_weight, base_decimals, .. } =
 			T::InfraCore::infra_system_config()
-				.map_err(|_| Error::<T>::NotInitiated)?.base_system_token_detail.clone();
+				.map_err(|_| Error::<T>::NotInitiated)?
+				.base_system_token_detail
+				.clone();
 		if currency.is_base_currency() {
 			return Ok(base_weight)
 		}
@@ -1064,11 +1066,13 @@ impl<T: Config> SystemTokenInterface for Pallet<T> {
 		if let Some(p) = <SystemTokenProperties<T>>::get(original) {
 			if let Ok(infra_system_config) = T::InfraCore::infra_system_config() {
 				let system_token_weight = {
-					let w: u128 = p.system_token_weight.map_or(infra_system_config.base_weight(), |w| w);
+					let w: u128 =
+						p.system_token_weight.map_or(infra_system_config.base_weight(), |w| w);
 					let system_token_weight = F64::from_i128(w as i128);
 					system_token_weight
 				};
-				let converted_base_weight = F64::from_i128(infra_system_config.base_weight() as i128);
+				let converted_base_weight =
+					F64::from_i128(infra_system_config.base_weight() as i128);
 
 				// Since the base_weight cannot be zero, this division is guaranteed to be safe.
 				return vote_weight.mul(system_token_weight).div(converted_base_weight)

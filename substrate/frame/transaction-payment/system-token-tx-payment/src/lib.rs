@@ -46,7 +46,10 @@ use sp_runtime::{
 	traits::{
 		AccountIdConversion, DispatchInfoOf, Dispatchable, PostDispatchInfoOf, SignedExtension,
 		Zero,
-	}, transaction_validity::{TransactionValidity, TransactionValidityError, ValidTransaction}, types::{fee::*, infra_core::*, token::*, vote::*}, FixedPointOperand, FixedU128, FixedPointNumber
+	},
+	transaction_validity::{TransactionValidity, TransactionValidityError, ValidTransaction},
+	types::{fee::*, infra_core::*, token::*, vote::*},
+	FixedPointNumber, FixedPointOperand, FixedU128,
 };
 
 use sp_std::prelude::*;

@@ -91,22 +91,26 @@ impl<A, B: Balanced<A>> HandleCredit<A, B> for () {
 /// [`BalanceConversion`]) and a credit handler (implementing [`HandleCredit`]).
 ///
 /// The credit handler is given the complete fee in terms of the asset used for the transaction.
-pub struct TransactionFeeCharger<T, CON, HC, ConvertBalance>(PhantomData<(T, CON, HC, ConvertBalance)>);
+pub struct TransactionFeeCharger<T, CON, HC, ConvertBalance>(
+	PhantomData<(T, CON, HC, ConvertBalance)>,
+);
 
-impl<T, CON, HC, ConvertBalance>  TransactionFeeCharger<T, CON, HC, ConvertBalance> 
+impl<T, CON, HC, ConvertBalance> TransactionFeeCharger<T, CON, HC, ConvertBalance>
 where
-	T: Config, 
+	T: Config,
 	ConvertBalance: MaybeEquivalence<u128, AssetBalanceOf<T>>,
 {
-	/// Rational of transaction fee 
+	/// Rational of transaction fee
 	/// para_fee_rate * weight_scale / base_weight
 	fn tx_fee_rational() -> Result<AssetBalanceOf<T>, TransactionValidityError> {
-		let InfraSystemConfig { base_system_token_detail, weight_scale } = T::InfraTxInterface::infra_system_config()
-			.map_err(|_| TransactionValidityError::from(InvalidTransaction::Payment))?;
+		let InfraSystemConfig { base_system_token_detail, weight_scale } =
+			T::InfraTxInterface::infra_system_config()
+				.map_err(|_| TransactionValidityError::from(InvalidTransaction::Payment))?;
 		let para_fee_rate = T::InfraTxInterface::para_fee_rate()
 			.map_err(|_| TransactionValidityError::from(InvalidTransaction::Payment))?;
-		let rational = FixedU128::saturating_from_rational(weight_scale, base_system_token_detail.base_weight)
-			.saturating_mul_int(para_fee_rate);
+		let rational =
+			FixedU128::saturating_from_rational(weight_scale, base_system_token_detail.base_weight)
+				.saturating_mul_int(para_fee_rate);
 		let converted = ConvertBalance::convert(&rational)
 			.ok_or(TransactionValidityError::from(InvalidTransaction::Payment))?;
 		Ok(converted)

@@ -352,7 +352,6 @@ where
 
 		// balance * para_fee_rate / (system_token_weight * correction_para_fee_rate)
 		// ToDo: Divisor should be changed based on the decimals
-		Ok(FixedU128::saturating_from_rational(1, system_token_weight)
-		.saturating_mul_int(balance))
+		Ok(FixedU128::saturating_from_rational(1, system_token_weight).saturating_mul_int(balance))
 	}
 }

@@ -1151,10 +1151,7 @@ parameter_types! {
 	pub const ParasUnsignedPriority: TransactionPriority = TransactionPriority::max_value();
 }
 
-type OnNewHead = (
-	Registrar,
-	InfraRelayCore
-);
+type OnNewHead = (Registrar, InfraRelayCore);
 
 impl parachains_paras::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;

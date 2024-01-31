@@ -1,14 +1,13 @@
-use frame_support::pallet_prelude::*;
-use frame_support::DefaultNoBound;
+use frame_support::{pallet_prelude::*, DefaultNoBound};
 use frame_system::{ensure_root, pallet_prelude::*};
 use log;
 use pallet_validator_election::VotingInterface;
 use parity_scale_codec::Encode;
+use primitives::Id as ParaId;
+use runtime_parachains::paras::OnNewHead;
 use sp_runtime::types::{fee::*, infra_core::*, token::*, vote::*};
 use sp_std::vec::Vec;
 use xcm::latest::prelude::*;
-use primitives::Id as ParaId;
-use runtime_parachains::paras::OnNewHead;
 
 mod impls;
 mod types;
@@ -63,7 +62,8 @@ pub mod pallet {
 
 	/// Updated system to be sent to `ParaId`
 	#[pallet::storage]
-	pub type UpdatedInfraSystemConfig<T: Config> = StorageMap<_, Twox64Concat, ParaId, InfraSystemConfig>;
+	pub type UpdatedInfraSystemConfig<T: Config> =
+		StorageMap<_, Twox64Concat, ParaId, InfraSystemConfig>;
 
 	/// Relay Chain's tx fee rate
 	#[pallet::storage]
@@ -98,10 +98,8 @@ pub mod pallet {
 			} else {
 				Default::default()
 			};
-			let infra_system_config = InfraSystemConfig {
-				base_system_token_detail,
-				weight_scale: 25,
-			};
+			let infra_system_config =
+				InfraSystemConfig { base_system_token_detail, weight_scale: 25 };
 			CurrentInfraSystemConfig::<T>::put(infra_system_config.clone());
 		}
 	}
@@ -140,8 +138,8 @@ pub mod pallet {
 		},
 		/// Infra configuration has been udpated
 		InfraConfigUpdated {
-			new: InfraSystemConfig
-		}
+			new: InfraSystemConfig,
+		},
 	}
 
 	#[pallet::error]
@@ -164,14 +162,14 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-
 		#[pallet::call_index(0)]
 		pub fn update_infra_system_config(
 			origin: OriginFor<T>,
 			infra_system_config: InfraSystemConfig,
 		) -> DispatchResult {
 			// TODO: Need Scheduler for upadating InfraSystemConfig
-			// TODO: Base configuration for InfraRelaychain has changed. Needs to update all parachains' config.
+			// TODO: Base configuration for InfraRelaychain has changed. Needs to update all
+			// parachains' config.
 			ensure_root(origin)?;
 			CurrentInfraSystemConfig::<T>::put(infra_system_config.clone());
 			Ok(())
@@ -306,8 +304,9 @@ pub mod pallet {
 
 impl<T: Config> OnNewHead for Pallet<T> {
 	fn on_new_head(id: ParaId, _head: &primitives::HeadData) -> Weight {
-		// If there is `InfraSystemConfig` for `para_id, it would mean config has already been updated.
-		// Otherwise, we put `InfraSystemConfig` for `para_id` into `UpdatedInfraSystemConfig` storage
+		// If there is `InfraSystemConfig` for `para_id, it would mean config has already been
+		// updated. Otherwise, we put `InfraSystemConfig` for `para_id` into
+		// `UpdatedInfraSystemConfig` storage
 		if let Some(_) = UpdatedInfraSystemConfig::<T>::get(&id) {
 			UpdatedInfraSystemConfig::<T>::remove(&id);
 			T::DbWeight::get().writes(1)

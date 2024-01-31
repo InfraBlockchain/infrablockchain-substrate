@@ -44,20 +44,17 @@ pub struct InfraSystemConfig {
 	/// Detail of base system token
 	pub base_system_token_detail: BaseSystemTokenDetail,
 	/// Scale of weight for calculating tx fee
-	pub weight_scale: SystemTokenWeight
+	pub weight_scale: SystemTokenWeight,
 }
 
 impl Default for InfraSystemConfig {
 	fn default() -> Self {
-		Self {
-			base_system_token_detail: Default::default(),
-			weight_scale: 25,
-		}
+		Self { base_system_token_detail: Default::default(), weight_scale: 25 }
 	}
 }
 
 impl InfraSystemConfig {
-	/// Clone of base_currency type of `BaseSystemTokenDetail` 
+	/// Clone of base_currency type of `BaseSystemTokenDetail`
 	pub fn base_currency(&self) -> Fiat {
 		self.base_system_token_detail.clone().base_currency
 	}

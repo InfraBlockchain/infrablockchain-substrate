@@ -27,7 +27,9 @@ impl<T: Config> RuntimeConfigProvider for Pallet<T> {
 
 	fn para_fee_rate() -> Result<SystemTokenWeight, Self::Error> {
 		// Relay chain's fee rate is same as base weight
-		Ok(CurrentInfraSystemConfig::<T>::get().ok_or(Error::<T>::NotInitialized)?.base_weight())
+		Ok(CurrentInfraSystemConfig::<T>::get()
+			.ok_or(Error::<T>::NotInitialized)?
+			.base_weight())
 	}
 
 	fn fee_for(ext: ExtrinsicMetadata) -> Option<SystemTokenBalance> {
@@ -189,8 +191,10 @@ impl<T: Config> Pallet<T> {
 			},
 		]);
 
-		match send_xcm::<T::XcmRouter>(MultiLocation::new(0, X1(Parachain(dest_id))), message.clone())
-		{
+		match send_xcm::<T::XcmRouter>(
+			MultiLocation::new(0, X1(Parachain(dest_id))),
+			message.clone(),
+		) {
 			Ok(_) => log::info!(
 				target: "runtime::parachain-config",
 				"Instruction sent successfully."

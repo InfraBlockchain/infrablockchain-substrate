@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use cumulus_primitives_core::UpdateRCConfig;
 use cumulus_pallet_xcm::{ensure_relay, Origin};
+use cumulus_primitives_core::UpdateRCConfig;
 use frame_support::pallet_prelude::*;
 use frame_system::pallet_prelude::*;
 use sp_runtime::{
@@ -110,14 +110,13 @@ pub mod pallet {
 			if let Some(remote_asset_metadata) = CurrentRequest::<T>::get() {
 				T::ParachainSystem::requested(remote_asset_metadata);
 				return T::DbWeight::get().reads(1)
-			} 
+			}
 			T::DbWeight::get().reads(1)
 		}
 	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-
 		/// Fee table for Runtime will be set by Relay-chain governance
 		///
 		/// Origin
@@ -297,12 +296,10 @@ impl<T: Config> RuntimeConfigProvider for Pallet<T> {
 	}
 
 	fn para_fee_rate() -> Result<SystemTokenWeight, Self::Error> {
-		let base_weight =
-			RCSystemConfig::<T>::get().ok_or(Error::<T>::NotInitiated)?.base_weight();
+		let base_weight = RCSystemConfig::<T>::get().ok_or(Error::<T>::NotInitiated)?.base_weight();
 		Ok(ParaFeeRate::<T>::try_mutate_exists(
 			|maybe_para_fee_rate| -> Result<SystemTokenWeight, DispatchError> {
-				let pfr =
-					maybe_para_fee_rate.take().map_or(base_weight, |pfr| pfr);
+				let pfr = maybe_para_fee_rate.take().map_or(base_weight, |pfr| pfr);
 				*maybe_para_fee_rate = Some(pfr);
 				Ok(pfr)
 			},
