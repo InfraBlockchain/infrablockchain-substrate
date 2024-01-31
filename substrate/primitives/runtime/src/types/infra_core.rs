@@ -5,39 +5,37 @@ use super::{
 
 use sp_std::vec::Vec;
 
-#[allow(missing_docs)]
-/// API that handles Runtime configuration including System Token
-pub trait InfraConfigInterface {
-	/// Set base weight for the `para_id` parachain by Relay-chain governance
-	fn set_base_config(para_id: SystemTokenParaId, base_system_token_detail: BaseSystemTokenDetail);
-	/// Set fee table for the `para_id` parachain by Relay-chain governance
-	fn set_fee_table(
-		para_id: SystemTokenParaId,
+/// API that updates Infra-* Runtime configuration
+pub trait UpdateInfraConfig {
+
+	/// Update system configuration for `dest_id` Runtime
+	fn update_infra_system_config(dest_id: SystemTokenParaId, infra_system_config: InfraSystemConfig);
+	/// Update fee table for `dest_id` Runtime
+	fn update_fee_table(
+		dest_id: SystemTokenParaId,
 		pallet_name: Vec<u8>,
 		call_name: Vec<u8>,
 		fee: SystemTokenBalance,
 	);
-	/// Set fee rate for the `para_id` parachain by Relay-chain governance
-	fn set_para_fee_rate(para_id: SystemTokenParaId, fee_rate: SystemTokenWeight);
-	/// Set runtime state configuration for the `para_id` parachain by Relay-chain governance
-	fn set_runtime_state(para_id: SystemTokenParaId);
-	/// Update weight of System Token for the `para_id` parachain by Relay-chain governance
+	/// Update fee rate for `dest_id` Runtime
+	fn update_para_fee_rate(dest_id: SystemTokenParaId, fee_rate: SystemTokenWeight);
+	/// Set runtime state for `dest_id` Runtime
+	fn update_runtime_state(dest_id: SystemTokenParaId);
+	/// Update `SystemTokenWeight` for `dest_id` Runtime
 	fn update_system_token_weight(
-		para_id: SystemTokenParaId,
+		dest_id: SystemTokenParaId,
 		asset_id: SystemTokenAssetId,
 		system_token_weight: SystemTokenWeight,
 	);
-	/// Register `original` System Token's local asset for the `para_id` parachain by Relay-chain
-	/// governance
+	/// Register `Original` System Token for `dest_id` Runtime(e.g `set_sufficient=true`)
 	fn register_system_token(
-		para_id: SystemTokenParaId,
+		dest_id: SystemTokenParaId,
 		asset_id: SystemTokenAssetId,
 		system_token_weight: SystemTokenWeight,
 	);
-	/// Create local asset for `Wrapped` System Token for the `para_id` parachain by Relay-chain
-	/// governance
+	/// Create local asset of `Wrapped` System Token for `dest_id` Runtime
 	fn create_wrapped_local(
-		para_id: SystemTokenParaId,
+		dest_id: SystemTokenParaId,
 		asset_id: SystemTokenAssetId,
 		currency_type: Fiat,
 		min_balance: SystemTokenBalance,
@@ -48,25 +46,25 @@ pub trait InfraConfigInterface {
 		asset_link_parent: u8,
 		original: SystemTokenId,
 	);
+	/// Deregister `Original/Wrapped` System Token for `dest_id` Runtime
 	fn deregister_system_token(
-		para_id: SystemTokenParaId,
+		dest_id: SystemTokenParaId,
 		asset_id: SystemTokenAssetId,
 		is_unlink: bool,
 	);
 }
 
-/// API for providing Runtime(e.g parachain) configuration which would be set by Relay-chain
-/// governance
+/// API for providing Infra-* Runtime configuration 
 pub trait RuntimeConfigProvider {
 	/// General error type
 	type Error;
-
-	/// Base system token weight of Runtime
-	fn base_system_token_configuration() -> Result<BaseSystemTokenDetail, Self::Error>;
-	/// Para fee rate of Runtime
+	
+	/// System configuration Infra-* Runtime
+	fn infra_system_config() -> Result<InfraSystemConfig, Self::Error>;
+	/// Para fee rate of Infra-* Runtime
 	fn para_fee_rate() -> Result<SystemTokenWeight, Self::Error>;
-	/// Fee for each extrinsic set in fee table
+	/// Query for tx fee of `ext` extrinsic
 	fn fee_for(ext: ExtrinsicMetadata) -> Option<SystemTokenBalance>;
-	/// State of Runtime
+	/// State of Infar-* Runtime
 	fn runtime_state() -> Mode;
 }

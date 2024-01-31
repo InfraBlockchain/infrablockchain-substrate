@@ -289,6 +289,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type XcmpMessageHandler = XcmpQueue;
 	type ReservedXcmpWeight = ReservedXcmpWeight;
 	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
+	type UpdateRCConfig = InfraParaCore;
 	type ConsensusHook = cumulus_pallet_aura_ext::FixedVelocityConsensusHook<
 		Runtime,
 		RELAY_CHAIN_SLOT_DURATION_MILLIS,
@@ -305,9 +306,8 @@ impl cumulus_pallet_infra_parachain_core::Config for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeEvent = RuntimeEvent;
 	type LocalAssetManager = Assets;
-	type ParachainSystemInterface = ParachainSystem;
+	type ParachainSystem = ParachainSystem;
 	type AssetLink = AssetLink;
-	type RequestInterval = RequestInterval;
 }
 
 impl pallet_insecure_randomness_collective_flip::Config for Runtime {}
@@ -477,6 +477,7 @@ impl pallet_system_token_tx_payment::Config for Runtime {
 	type InfraTxInterface = InfraParaCore;
 	type Assets = Assets;
 	type OnChargeSystemToken = TransactionFeeCharger<
+		Runtime,
 		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
 		CreditToBucket<Runtime>,
 		JustTry,

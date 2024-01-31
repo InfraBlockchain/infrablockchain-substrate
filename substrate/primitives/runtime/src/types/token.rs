@@ -15,6 +15,8 @@ use serde::{Deserialize, Serialize};
 /// ParaId of Relay Chain
 pub const RELAY_CHAIN_PARA_ID: SystemTokenParaId = 0;
 
+// TODO: SystemTokenInterface
+
 /// General type of unix time
 pub type StandardUnixTime = u64;
 /// General type of exchange rate
@@ -35,6 +37,39 @@ pub type SystemTokenDecimal = u8;
 pub type BoundedSystemTokenName = BoundedVec<u8, ConstU32<20>>;
 /// Bounded symbol for System Token
 pub type BoundedSystemTokenSymbol = BoundedVec<u8, ConstU32<5>>;
+
+/// System configuration for InfraBlockchain
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+pub struct InfraSystemConfig {
+	/// Detail of base system token
+	pub base_system_token_detail: BaseSystemTokenDetail,
+	/// Scale of weight for calculating tx fee
+	pub weight_scale: SystemTokenWeight
+}
+
+impl Default for InfraSystemConfig {
+	fn default() -> Self {
+		Self {
+			base_system_token_detail: Default::default(),
+			weight_scale: 25,
+		}
+	}
+}
+
+impl InfraSystemConfig {
+	/// Clone of base_currency type of `BaseSystemTokenDetail` 
+	pub fn base_currency(&self) -> Fiat {
+		self.base_system_token_detail.clone().base_currency
+	}
+	/// Clone of base_weight type of `BaseSystemTokenDetail`
+	pub fn base_weight(&self) -> SystemTokenWeight {
+		self.base_system_token_detail.clone().base_weight
+	}
+	/// Clone of base_decimals type of `BaseSystemTokenDetail`
+	pub fn base_decimals(&self) -> u8 {
+		self.base_system_token_detail.clone().base_decimals
+	}
+}
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 /// Detail of base system token
@@ -186,7 +221,7 @@ pub trait LocalAssetManager {
 }
 
 pub trait AssetMetadataProvider {
-	fn requested(assets: Vec<RemoteAssetMetadata>);
+	fn requested(asset: RemoteAssetMetadata);
 }
 
 /// API for interacting with registered System Token
@@ -200,7 +235,7 @@ pub trait SystemTokenInterface {
 	/// Update the metadata for requested asset received from enshirned chain
 	fn requested_asset_metadata(
 		para_id: SystemTokenParaId,
-		maybe_requested_assets: Option<BoundedRequestedAssets>,
+		maybe_requested_asset: Option<RemoteAssetMetadata>,
 	);
 }
 
@@ -216,7 +251,7 @@ impl SystemTokenInterface for () {
 	}
 	fn requested_asset_metadata(
 		_para_id: SystemTokenParaId,
-		_maybe_requested_assets: Option<BoundedRequestedAssets>,
+		_maybe_requested_asset: Option<RemoteAssetMetadata>,
 	) {
 	}
 }

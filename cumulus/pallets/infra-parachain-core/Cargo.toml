@@ -23,6 +23,7 @@ pallet-assets = { path = "../../../substrate/frame/assets", default-features = f
 primitives = { path = "../../../infrablockchain/primitives", default-features = false}
 
 # Cumulus
+cumulus-primitives-core = { path = "../../primitives/core", default-features = false }
 cumulus-pallet-parachain-system = { path = "../parachain-system", default-features = false}
 cumulus-pallet-xcm = { path = "../xcm", default-features = false }
 

@@ -1,5 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use cumulus_primitives_core::UpdateRCConfig;
 use cumulus_pallet_xcm::{ensure_relay, Origin};
 use frame_support::pallet_prelude::*;
 use frame_system::pallet_prelude::*;
@@ -28,10 +29,7 @@ pub mod pallet {
 		/// Type that links local asset with System Token
 		type AssetLink: AssetLinkInterface<SystemTokenAssetId>;
 		/// Type that interacts with Parachain System
-		type ParachainSystemInterface: CollectVote + AssetMetadataProvider;
-		/// Interval for requesting register when `RequestQueue` is full
-		#[pallet::constant]
-		type RequestInterval: Get<BlockNumberFor<Self>>;
+		type ParachainSystem: CollectVote + AssetMetadataProvider;
 	}
 
 	#[pallet::pallet]
@@ -40,9 +38,8 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type ParaCoreAdmin<T: Config> = StorageValue<_, T::AccountId>;
 
-	/// Base system token configuration set on Relay-chain Runtime
 	#[pallet::storage]
-	pub type BaseConfiguration<T: Config> = StorageValue<_, BaseSystemTokenDetail>;
+	pub type RCSystemConfig<T: Config> = StorageValue<_, InfraSystemConfig>;
 
 	#[pallet::storage]
 	pub type ParaFeeRate<T: Config> = StorageValue<_, SystemTokenWeight>;
@@ -54,10 +51,7 @@ pub mod pallet {
 	pub type FeeTable<T: Config> = StorageMap<_, Twox128, ExtrinsicMetadata, SystemTokenBalance>;
 
 	#[pallet::storage]
-	pub type RequestQueue<T: Config> = StorageValue<_, BoundedRequestedAssets, ValueQuery>;
-
-	#[pallet::storage]
-	pub type NextRequest<T: Config> = StorageValue<_, BlockNumberFor<T>, ValueQuery>;
+	pub type CurrentRequest<T: Config> = StorageValue<_, RemoteAssetMetadata>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -84,8 +78,8 @@ pub mod pallet {
 		SystemTokenMissing,
 		/// System Token has not been requested
 		SystemTokenNotRequested,
-		/// Base configuration set on Relay-chain has not been set
-		BaseConfigMissing,
+		/// Runtime has not been initiated(e.g BaseConfigMissing)
+		NotInitiated,
 		/// Error occured while updating weight of System Token
 		ErrorUpdateWeight,
 		/// Error occured while registering System Token
@@ -113,41 +107,23 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_initialize(n: BlockNumberFor<T>) -> frame_support::weights::Weight {
-			if n >= NextRequest::<T>::get() {
-				let remote_asset_metadata = RequestQueue::<T>::get();
-				if remote_asset_metadata.len() == 0 {
-					return T::DbWeight::get().reads(1)
-				}
-				T::ParachainSystemInterface::requested(remote_asset_metadata.to_vec());
-				T::DbWeight::get().reads(1)
-			} else {
-				T::DbWeight::get().reads(1)
-			}
+			if let Some(remote_asset_metadata) = CurrentRequest::<T>::get() {
+				T::ParachainSystem::requested(remote_asset_metadata);
+				return T::DbWeight::get().reads(1)
+			} 
+			T::DbWeight::get().reads(1)
 		}
 	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Base system token weight configuration will be set by Relay-chain governance
-		///
-		/// Origin
-		/// Relay-chain governance
-		#[pallet::call_index(0)]
-		pub fn set_base_config(
-			origin: OriginFor<T>,
-			base_system_token_detail: BaseSystemTokenDetail,
-		) -> DispatchResult {
-			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
-			BaseConfiguration::<T>::put(base_system_token_detail);
-			Ok(())
-		}
 
 		/// Fee table for Runtime will be set by Relay-chain governance
 		///
 		/// Origin
 		/// Relay-chain governance
 		#[pallet::call_index(1)]
-		pub fn set_fee_table(
+		pub fn update_fee_table(
 			origin: OriginFor<T>,
 			pallet_name: Vec<u8>,
 			call_name: Vec<u8>,
@@ -165,7 +141,7 @@ pub mod pallet {
 		/// Origin
 		/// Relay-chain governance
 		#[pallet::call_index(2)]
-		pub fn set_para_fee_rate(
+		pub fn update_para_fee_rate(
 			origin: OriginFor<T>,
 			fee_rate: SystemTokenWeight,
 		) -> DispatchResult {
@@ -179,12 +155,12 @@ pub mod pallet {
 		/// Origin
 		/// Relay-chain governance
 		#[pallet::call_index(3)]
-		pub fn set_runtime_state(origin: OriginFor<T>) -> DispatchResult {
+		pub fn update_runtime_state(origin: OriginFor<T>) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
 			if RuntimeState::<T>::get() == Mode::Normal {
 				return Ok(())
 			}
-			ensure!(BaseConfiguration::<T>::get().is_some(), Error::<T>::NotAllowedToChangeState);
+			ensure!(RCSystemConfig::<T>::get().is_some(), Error::<T>::NotAllowedToChangeState);
 			// TODO-1: Check whether it is allowed to change `Normal` state
 			// TODO-2: Check whether a parachain has enough system token to pay
 			RuntimeState::<T>::put(Mode::Normal);
@@ -220,10 +196,7 @@ pub mod pallet {
 			system_token_weight: SystemTokenWeight,
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
-			RequestQueue::<T>::try_mutate(|requests| -> DispatchResult {
-				requests.retain(|request| request.asset_id != asset_id);
-				Ok(())
-			})?;
+			CurrentRequest::<T>::kill();
 			T::LocalAssetManager::promote(asset_id, system_token_weight)
 				.map_err(|_| Error::<T>::ErrorRegisterSystemToken)?;
 			Ok(())
@@ -310,44 +283,26 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::ErrorOnGetMetadata)?;
 			T::LocalAssetManager::request_register(asset_id)
 				.map_err(|_| Error::<T>::ErrorOnRequestRegister)?;
-			RequestQueue::<T>::try_mutate(|requests| -> DispatchResult {
-				ensure!(
-					requests.iter().find(|request| request.asset_id == asset_id).is_none(),
-					Error::<T>::AlreadyRequested
-				);
-				if let Err(_) = requests.try_push(remote_asset_metadata) {
-					Self::next_request();
-				}
-				Ok(())
-			})?;
+			CurrentRequest::<T>::put(remote_asset_metadata);
 			Ok(())
 		}
-	}
-}
-
-impl<T: Config> Pallet<T> {
-	pub fn next_request() {
-		let curr_bn: BlockNumberFor<T> = <frame_system::Pallet<T>>::block_number();
-		let interval = T::RequestInterval::get();
-		let next = curr_bn.saturating_add(interval);
-		NextRequest::<T>::put(next);
 	}
 }
 
 impl<T: Config> RuntimeConfigProvider for Pallet<T> {
 	type Error = DispatchError;
 
-	fn base_system_token_configuration() -> Result<BaseSystemTokenDetail, Self::Error> {
-		Ok(BaseConfiguration::<T>::get().ok_or(Error::<T>::BaseConfigMissing)?)
+	fn infra_system_config() -> Result<InfraSystemConfig, Self::Error> {
+		Ok(RCSystemConfig::<T>::get().ok_or(Error::<T>::NotInitiated)?)
 	}
 
 	fn para_fee_rate() -> Result<SystemTokenWeight, Self::Error> {
-		let base_system_token_detail =
-			BaseConfiguration::<T>::get().ok_or(Error::<T>::BaseConfigMissing)?;
+		let base_weight =
+			RCSystemConfig::<T>::get().ok_or(Error::<T>::NotInitiated)?.base_weight();
 		Ok(ParaFeeRate::<T>::try_mutate_exists(
 			|maybe_para_fee_rate| -> Result<SystemTokenWeight, DispatchError> {
 				let pfr =
-					maybe_para_fee_rate.take().map_or(base_system_token_detail.base_weight, |pfr| pfr);
+					maybe_para_fee_rate.take().map_or(base_weight, |pfr| pfr);
 				*maybe_para_fee_rate = Some(pfr);
 				Ok(pfr)
 			},
@@ -369,6 +324,14 @@ impl<T: Config> VotingHandler for Pallet<T> {
 		system_token_id: SystemTokenId,
 		vote_weight: VoteWeight,
 	) {
-		T::ParachainSystemInterface::collect_vote(who, system_token_id, vote_weight);
+		T::ParachainSystem::collect_vote(who, system_token_id, vote_weight);
 	}
+}
+
+impl<T: Config> UpdateRCConfig for Pallet<T> {
+	fn update_system_config(infra_system_config: InfraSystemConfig) {
+		RCSystemConfig::<T>::put(infra_system_config);
+	}
+
+	fn update_system_token_weight(_fiat: Fiat, _weight: SystemTokenWeight) {}
 }

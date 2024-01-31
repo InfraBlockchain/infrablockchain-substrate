@@ -21,7 +21,7 @@ use cumulus_primitives_core::{
 	relay_chain, AbridgedHostConfiguration, AbridgedHrmpChannel, ParaId,
 };
 use scale_info::TypeInfo;
-use sp_runtime::traits::HashingFor;
+use sp_runtime::{traits::HashingFor, types::token::InfraSystemConfig};
 use sp_state_machine::{Backend, TrieBackend, TrieBackendBuilder};
 use sp_std::vec::Vec;
 use sp_trie::{HashDBT, MemoryDB, StorageProof, EMPTY_PREFIX};
@@ -84,6 +84,8 @@ pub enum Error {
 	UpgradeGoAhead(ReadEntryErr),
 	/// The upgrade restriction signal cannot be read.
 	UpgradeRestriction(ReadEntryErr),
+	/// The updated infra system config cannot be read
+	UpdatedInfraSystemConfig(ReadEntryErr),
 	/// The host configuration cannot be extracted.
 	Config(ReadEntryErr),
 	/// The DMQ MQC head cannot be extracted.
@@ -334,6 +336,16 @@ impl RelayChainStateProof {
 			&relay_chain::well_known_keys::upgrade_restriction_signal(self.para_id),
 		)
 		.map_err(Error::UpgradeRestriction)
+	}
+
+	pub fn read_updated_infra_system_config(
+		&self
+	) -> Result<Option<InfraSystemConfig>, Error> {
+		read_optional_entry(
+			&self.trie_backend,
+			&relay_chain::well_known_keys::updated_infra_system_config(self.para_id),
+		)
+		.map_err(Error::UpdatedInfraSystemConfig)
 	}
 
 	/// Read an entry given by the key and try to decode it. If the value specified by the key

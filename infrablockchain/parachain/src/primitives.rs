@@ -27,7 +27,7 @@ use serde::{Deserialize, Serialize};
 use sp_core::{bytes, RuntimeDebug, TypeId};
 use sp_runtime::{
 	traits::Hash as _,
-	types::{token::BoundedRequestedAssets, vote::PotVotesResult},
+	types::{vote::PotVotesResult, RemoteAssetMetadata},
 };
 
 use infrablockchain_core_primitives::{Hash, OutboundHrmpMessage};
@@ -422,5 +422,5 @@ pub struct ValidationResult {
 	/// Vote Result for the parachain block. Should be bounded
 	pub vote_result: Option<PotVotesResult>,
 	/// Requested assets for the parachain block. Should be bounded
-	pub requested_assets: Option<BoundedRequestedAssets>,
+	pub requested_asset: Option<RemoteAssetMetadata>,
 }

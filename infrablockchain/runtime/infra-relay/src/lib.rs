@@ -380,6 +380,7 @@ impl pallet_system_token_tx_payment::Config for Runtime {
 	type InfraTxInterface = InfraRelayCore;
 	type Assets = Assets;
 	type OnChargeSystemToken = TransactionFeeCharger<
+		Runtime,
 		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
 		CreditToBucket,
 		JustTry,
@@ -1133,7 +1134,7 @@ parameter_types! {
 impl system_token_manager::Config for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeEvent = RuntimeEvent;
-	type InfraCoreInterface = InfraRelayCore;
+	type InfraCore = InfraRelayCore;
 	type UnixTime = Timestamp;
 	type StringLimit = ConstU32<128>;
 	type MaxSystemTokens = ConstU32<10>;
@@ -1150,13 +1151,18 @@ parameter_types! {
 	pub const ParasUnsignedPriority: TransactionPriority = TransactionPriority::max_value();
 }
 
+type OnNewHead = (
+	Registrar,
+	InfraRelayCore
+);
+
 impl parachains_paras::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = weights::runtime_parachains_paras::WeightInfo<Runtime>;
 	type UnsignedPriority = ParasUnsignedPriority;
 	type QueueFootprinter = ParaInclusion;
 	type NextSessionRotation = Babe;
-	type OnNewHead = Registrar;
+	type OnNewHead = OnNewHead;
 }
 
 parameter_types! {

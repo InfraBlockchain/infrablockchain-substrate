@@ -46,10 +46,7 @@ use sp_runtime::{
 	traits::{
 		AccountIdConversion, DispatchInfoOf, Dispatchable, PostDispatchInfoOf, SignedExtension,
 		Zero,
-	},
-	transaction_validity::{TransactionValidity, TransactionValidityError, ValidTransaction},
-	types::{fee::*, infra_core::*, token::*, vote::*},
-	FixedPointOperand,
+	}, transaction_validity::{TransactionValidity, TransactionValidityError, ValidTransaction}, types::{fee::*, infra_core::*, token::*, vote::*}, FixedPointOperand, FixedU128, FixedPointNumber
 };
 
 use sp_std::prelude::*;
@@ -263,7 +260,7 @@ where
 		let payer = who.clone();
 		let is_bootstrap = Pallet::<T>::check_bootstrap_and_filter(call)?;
 		let (fee, _) = if is_bootstrap {
-			(Zero::zero(), InitialPayment::Nothing)
+			(Zero::zero(), InitialPayment::Bootstrap)
 		} else {
 			let (fee, _paid) = self.withdraw_fee(&payer, call, info, len)?;
 			(fee, _paid)

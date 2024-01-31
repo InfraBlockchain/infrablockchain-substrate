@@ -928,10 +928,10 @@ impl<T: Config> Pallet<T> {
 		};
 
 		let mut collected_votes: Vec<(VoteAccountId, VoteWeight)> = Vec::new();
-		let requested_assets = commitments.requested_assets;
+		let requested_asset = commitments.requested_asset;
 		T::SystemTokenInterface::requested_asset_metadata(
 			receipt.descriptor.para_id.into(),
-			requested_assets,
+			requested_asset,
 		);
 		if let Some(vote_result) = commitments.vote_result {
 			let session_index = shared::Pallet::<T>::session_index();

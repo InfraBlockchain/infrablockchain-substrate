@@ -22,7 +22,7 @@ use codec::{Decode, Encode};
 use parachain_primitives::primitives::HeadData;
 use scale_info::TypeInfo;
 use sp_runtime::{
-	types::{PotVotesResult, RemoteAssetMetadata},
+	types::{Fiat, InfraSystemConfig, PotVotesResult, RemoteAssetMetadata, SystemTokenWeight},
 	RuntimeDebug,
 };
 use sp_std::prelude::*;
@@ -46,6 +46,13 @@ pub use xcm::latest::prelude::*;
 pub mod relay_chain {
 	pub use infrablockchain_core_primitives::*;
 	pub use primitives::*;
+}
+
+pub trait UpdateRCConfig {
+	/// System config set by Relay Chain
+	fn update_system_config(infra_system_config: InfraSystemConfig);
+	/// System Token weight set by Relay Chain
+	fn update_system_token_weight(currency: Fiat, weight: SystemTokenWeight);
 }
 
 /// An inbound HRMP message.
@@ -306,7 +313,7 @@ pub struct CollationInfoV1 {
 	/// The vote result sent by the parachain.
 	pub vote_result: Option<PotVotesResult>,
 	/// Requested assets sent by the parachain.
-	pub requested_assets: Option<Vec<RemoteAssetMetadata>>,
+	pub requested_asset: Option<RemoteAssetMetadata>,
 }
 
 impl CollationInfoV1 {
@@ -320,7 +327,7 @@ impl CollationInfoV1 {
 			hrmp_watermark: self.hrmp_watermark,
 			head_data,
 			vote_result: self.vote_result,
-			requested_assets: self.requested_assets,
+			requested_asset: self.requested_asset,
 		}
 	}
 }
@@ -344,7 +351,7 @@ pub struct CollationInfo {
 	/// The vote result sent by the parachain.
 	pub vote_result: Option<PotVotesResult>,
 	/// Requested assets sent by the parachain.
-	pub requested_assets: Option<Vec<RemoteAssetMetadata>>,
+	pub requested_asset: Option<RemoteAssetMetadata>,
 }
 
 sp_api::decl_runtime_apis! {

@@ -273,21 +273,7 @@ where
 				)
 			})
 			.ok()?;
-		let requested_assets = if let Some(r) = collation_info.requested_assets {
-			let requested_assets: BoundedRequestedAssets = r
-				.try_into()
-				.map_err(|e| {
-					tracing::error!(
-						target: LOG_TARGET,
-						error = ?e,
-						"Number of requested assets should not be greater than `MAX_REQUESTED_ASSET_NUM",
-					)
-				})
-				.ok()?;
-			Some(requested_assets)
-		} else {
-			None
-		};
+		let requested_asset = collation_info.requested_asset;
 
 		let collation = Collation {
 			upward_messages,
@@ -298,7 +284,7 @@ where
 			head_data: collation_info.head_data,
 			proof_of_validity: MaybeCompressedPoV::Compressed(pov),
 			vote_result: collation_info.vote_result,
-			requested_assets,
+			requested_asset,
 		};
 
 		Some((collation, block_data))

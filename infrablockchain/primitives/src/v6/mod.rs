@@ -32,7 +32,7 @@ use inherents::InherentIdentifier;
 use primitives::RuntimeDebug;
 use runtime_primitives::{
 	traits::{AppVerify, Header as HeaderT},
-	types::{BoundedRequestedAssets, PotVotesResult},
+	types::{BoundedRequestedAssets, PotVotesResult, RemoteAssetMetadata},
 };
 use sp_arithmetic::traits::{BaseArithmetic, Saturating};
 
@@ -362,6 +362,21 @@ pub mod well_known_keys {
 				.collect()
 		})
 	}
+
+	/// The storage entry stores a value of `UpdatedInfraSystemConfig` type
+	pub fn updated_infra_system_config(para_id: Id) -> Vec<u8> {
+		let prefix = hex!["c1b1962c8d78658bd8ffce50b52608924e066756fc1502933335b4684d5e3128"];
+
+		para_id.using_encoded(|para_id: &[u8]| {
+			prefix 
+				.as_ref()
+				.iter()
+				.chain(twox_64(para_id).iter())
+				.chain(para_id.iter())
+				.cloned()
+				.collect()	
+		})
+	}
 }
 
 /// Unique identifier for the Parachains Inherent
@@ -673,7 +688,7 @@ pub struct CandidateCommitments<N = BlockNumber> {
 	/// Result of pot votes sent by the parachain
 	pub vote_result: Option<PotVotesResult>,
 	/// Requested assets for System Token,
-	pub requested_assets: Option<BoundedRequestedAssets>,
+	pub requested_asset: Option<RemoteAssetMetadata>,
 }
 
 impl CandidateCommitments {

@@ -197,6 +197,7 @@ impl pallet_system_token_tx_payment::Config for Runtime {
 	type InfraTxInterface = InfraParaCore;
 	/// The actual transaction charging logic that charges the fees.
 	type OnChargeSystemToken = TransactionFeeCharger<
+		Runtime,
 		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
 		CreditToBucket<Runtime>,
 		JustTry,
@@ -339,6 +340,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type OutboundXcmpMessageSource = XcmpQueue;
 	type XcmpMessageHandler = XcmpQueue;
 	type ReservedXcmpWeight = ReservedXcmpWeight;
+	type UpdateRCConfig = InfraParaCore;
 	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
 	type ConsensusHook = ConsensusHook;
 }
@@ -350,10 +352,9 @@ parameter_types! {
 impl cumulus_pallet_infra_parachain_core::Config for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeEvent = RuntimeEvent;
-	type ParachainSystemInterface = ParachainSystem;
+	type ParachainSystem = ParachainSystem;
 	type LocalAssetManager = Assets;
 	type AssetLink = AssetLink;
-	type RequestInterval = RequestInterval;
 }
 
 impl parachain_info::Config for Runtime {}

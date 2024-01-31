@@ -514,7 +514,7 @@ async fn construct_and_distribute_receipt(
 		processed_downward_messages: collation.processed_downward_messages,
 		hrmp_watermark: collation.hrmp_watermark,
 		vote_result: collation.vote_result,
-		requested_assets: collation.requested_assets,
+		requested_asset: collation.requested_asset,
 	};
 
 	let ccr = CandidateReceipt {

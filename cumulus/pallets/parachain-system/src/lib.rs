@@ -32,7 +32,7 @@ use cumulus_primitives_core::{
 	relay_chain, AbridgedHostConfiguration, ChannelStatus, CollationInfo, DmpMessageHandler,
 	GetChannelInfo, InboundDownwardMessage, InboundHrmpMessage, MessageSendError,
 	OutboundHrmpMessage, ParaId, PersistedValidationData, UpwardMessage, UpwardMessageSender,
-	XcmpMessageHandler, XcmpMessageSource,
+	XcmpMessageHandler, XcmpMessageSource, UpdateRCConfig
 };
 use cumulus_primitives_parachain_inherent::{MessageQueueChain, ParachainInherentData};
 use frame_support::{
@@ -222,6 +222,9 @@ pub mod pallet {
 
 		/// Something that can check the associated relay parent block number.
 		type CheckAssociatedRelayNumber: CheckAssociatedRelayNumber;
+
+		/// Type that updates configuration set by relay chain
+		type UpdateRCConfig: UpdateRCConfig;
 
 		/// An entry-point for higher-level logic to manage the backlog of unincluded parachain
 		/// blocks and authorship rights for those blocks.
@@ -429,7 +432,7 @@ pub mod pallet {
 			HrmpOutboundMessages::<T>::kill();
 			CustomValidationHeadData::<T>::kill();
 			CollectedPotVotes::<T>::kill();
-			RequestedAssets::<T>::kill();
+			RequestedAsset::<T>::kill();
 
 			weight += T::DbWeight::get().writes(8);
 
@@ -590,6 +593,11 @@ pub mod pallet {
 					.expect("Invalid upgrade restriction signal"),
 			);
 			<UpgradeGoAhead<T>>::put(upgrade_go_ahead_signal);
+			if let Some(infra_system_config) = relay_state_proof
+				.read_updated_infra_system_config()
+				.expect("Invalid infra system config") {
+					T::UpdateRCConfig::update_system_config(infra_system_config);
+			}
 
 			let host_config = relay_state_proof
 				.read_abridged_host_configuration()
@@ -692,7 +700,7 @@ pub mod pallet {
 		/// An upward message was sent to the relay chain.
 		UpwardMessageSent { message_hash: Option<XcmHash> },
 		/// Requested assets' metadata
-		AssetForSystemTokenRequestsed { requested_assets: Vec<RemoteAssetMetadata> },
+		AssetForSystemTokenRequestsed { requested_asset: RemoteAssetMetadata },
 	}
 
 	#[pallet::error]
@@ -779,6 +787,10 @@ pub mod pallet {
 	#[pallet::storage]
 	pub(super) type UpgradeRestrictionSignal<T: Config> =
 		StorageValue<_, Option<relay_chain::UpgradeRestriction>, ValueQuery>;
+
+	#[pallet::storage]
+	pub(super) type UpdatedInfraSystemConfig<T: Config> = 
+		StorageValue<_, Option<InfraSystemConfig>, ValueQuery>;
 
 	/// Optional upgrade go-ahead signal from the relay-chain.
 	///
@@ -896,8 +908,7 @@ pub mod pallet {
 	pub(super) type CollectedPotVotes<T: Config> = StorageValue<_, PotVotes, OptionQuery>;
 
 	#[pallet::storage]
-	pub(super) type RequestedAssets<T: Config> =
-		StorageValue<_, Vec<RemoteAssetMetadata>, OptionQuery>;
+	pub(super) type RequestedAsset<T: Config> = StorageValue<_, RemoteAssetMetadata>;
 
 	#[pallet::inherent]
 	impl<T: Config> ProvideInherent for Pallet<T> {
@@ -974,9 +985,9 @@ impl<T: Config> CollectVote for Pallet<T> {
 }
 
 impl<T: Config> AssetMetadataProvider for Pallet<T> {
-	fn requested(assets: Vec<RemoteAssetMetadata>) {
-		RequestedAssets::<T>::put(&assets);
-		Self::deposit_event(Event::AssetForSystemTokenRequestsed { requested_assets: assets });
+	fn requested(asset: RemoteAssetMetadata) {
+		RequestedAsset::<T>::put(&asset);
+		Self::deposit_event(Event::AssetForSystemTokenRequestsed { requested_asset: asset });
 	}
 }
 
@@ -1424,7 +1435,7 @@ impl<T: Config> Pallet<T> {
 				.map_or_else(|| header.encode(), |v| v)
 				.into(),
 			vote_result,
-			requested_assets: RequestedAssets::<T>::get(),
+			requested_asset: RequestedAsset::<T>::get(),
 		}
 	}
 
