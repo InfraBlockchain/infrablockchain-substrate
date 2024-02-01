@@ -282,9 +282,19 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::ErrorOnGetMetadata)?;
 			T::LocalAssetManager::request_register(asset_id)
 				.map_err(|_| Error::<T>::ErrorOnRequestRegister)?;
-			CurrentRequest::<T>::put(remote_asset_metadata);
+			Self::do_request(remote_asset_metadata)?;
 			Ok(())
 		}
+	}
+}
+
+impl<T: Config> Pallet<T> {
+	fn do_request(ram: RemoteAssetMetadata) -> Result<(), DispatchError> {
+		if let Some(_) = CurrentRequest::<T>::get() {
+			return Err(Error::<T>::AlreadyRequested.into())
+		}
+		CurrentRequest::<T>::put(ram);
+		Ok(())
 	}
 }
 

@@ -524,12 +524,12 @@ impl<T: Config> Pallet<T> {
 		currency: Fiat,
 		original: &SystemTokenId,
 	) -> Result<SystemTokenWeight, DispatchError> {
-		let BaseSystemTokenDetail { base_weight, base_decimals, .. } =
+		let BaseSystemTokenDetail { base_weight, base_decimals, base_currency } =
 			T::InfraCore::infra_system_config()
 				.map_err(|_| Error::<T>::NotInitiated)?
 				.base_system_token_detail
 				.clone();
-		if currency.is_base_currency() {
+		if base_currency == currency {
 			return Ok(base_weight)
 		}
 		let SystemTokenMetadata { decimals, .. } =

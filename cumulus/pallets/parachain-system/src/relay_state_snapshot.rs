@@ -21,7 +21,7 @@ use cumulus_primitives_core::{
 	relay_chain, AbridgedHostConfiguration, AbridgedHrmpChannel, ParaId,
 };
 use scale_info::TypeInfo;
-use sp_runtime::{traits::HashingFor, types::token::InfraSystemConfig};
+use sp_runtime::traits::HashingFor;
 use sp_state_machine::{Backend, TrieBackend, TrieBackendBuilder};
 use sp_std::vec::Vec;
 use sp_trie::{HashDBT, MemoryDB, StorageProof, EMPTY_PREFIX};
@@ -144,8 +144,14 @@ where
 {
 	match read_entry(backend, key, None) {
 		Ok(v) => Ok(Some(v)),
-		Err(ReadEntryErr::Absent) => Ok(None),
-		Err(err) => Err(err),
+		Err(ReadEntryErr::Absent) => {
+			log::info!("EMPTY!🥲🥲🥲🥲🥲");
+			Ok(None)
+		},
+		Err(err) => {
+			log::info!("Error!{:?}", err);
+			Err(err)
+		},
 	}
 }
 
@@ -278,6 +284,11 @@ impl RelayChainStateProof {
 		})
 	}
 
+	pub fn read_infra_system_config(&self) -> Result<relay_chain::InfraSystemConfig, Error> {
+		read_entry(&self.trie_backend, relay_chain::well_known_keys::SYSTEM_CONFIG, None)
+			.map_err(Error::UpdatedInfraSystemConfig)
+	}
+
 	/// Read the [`AbridgedHostConfiguration`] from the relay chain state proof.
 	///
 	/// Returns an error if anything failed at reading or decoding.
@@ -336,14 +347,6 @@ impl RelayChainStateProof {
 			&relay_chain::well_known_keys::upgrade_restriction_signal(self.para_id),
 		)
 		.map_err(Error::UpgradeRestriction)
-	}
-
-	pub fn read_updated_infra_system_config(&self) -> Result<Option<InfraSystemConfig>, Error> {
-		read_optional_entry(
-			&self.trie_backend,
-			&relay_chain::well_known_keys::updated_infra_system_config(self.para_id),
-		)
-		.map_err(Error::UpdatedInfraSystemConfig)
 	}
 
 	/// Read an entry given by the key and try to decode it. If the value specified by the key

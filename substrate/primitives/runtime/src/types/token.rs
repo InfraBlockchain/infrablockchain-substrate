@@ -39,12 +39,20 @@ pub type BoundedSystemTokenName = BoundedVec<u8, ConstU32<20>>;
 pub type BoundedSystemTokenSymbol = BoundedVec<u8, ConstU32<5>>;
 
 /// System configuration for InfraBlockchain
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen, serde::Serialize, serde::Deserialize)]
 pub struct InfraSystemConfig {
 	/// Detail of base system token
 	pub base_system_token_detail: BaseSystemTokenDetail,
 	/// Scale of weight for calculating tx fee
 	pub weight_scale: SystemTokenWeight,
+}
+
+#[derive(RuntimeDebug)]
+pub enum InitError {
+	/// Base system token is not initialized
+	InvalidBaseSystemTokenDetail,
+	/// Weight scale is not initialized
+	InvalidWeightScale,
 }
 
 impl Default for InfraSystemConfig {
@@ -66,9 +74,25 @@ impl InfraSystemConfig {
 	pub fn base_decimals(&self) -> u8 {
 		self.base_system_token_detail.clone().base_decimals
 	}
+
+	pub fn check_validity(&self) -> Result<(), InitError> {
+		if self.base_system_token_detail.base_weight == 0 {
+			return Err(InitError::InvalidBaseSystemTokenDetail);
+		}
+		if self.weight_scale == 0 {
+			return Err(InitError::InvalidWeightScale);
+		}
+		Ok(())
+	}
+
+	pub fn panic_if_not_validated(&self) {
+		if let Err(err) = self.check_validity() {
+			panic!("System configuration is not initalized: {:?}\nSCfg:\n{:#?}", err, self);
+		}
+	}
 }
 
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen, serde::Serialize, serde::Deserialize)]
 /// Detail of base system token
 pub struct BaseSystemTokenDetail {
 	/// Currency type of base system token
@@ -453,15 +477,6 @@ pub enum Fiat {
 	ZAR,
 	ZMW,
 	ZWL,
-}
-
-impl Fiat {
-	pub fn is_base_currency(&self) -> bool {
-		match self {
-			Self::USD => true,
-			_ => false,
-		}
-	}
 }
 
 impl TryFrom<Vec<u8>> for Fiat {

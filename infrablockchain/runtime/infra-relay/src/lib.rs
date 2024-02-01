@@ -389,10 +389,6 @@ impl pallet_system_token_tx_payment::Config for Runtime {
 	type PalletId = FeeTreasuryId;
 }
 
-parameter_types! {
-	pub const InfrablockchainBaseWeight: SystemTokenWeight = 1_000_000;
-}
-
 impl infra_relay_core::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type VotingInterface = ValidatorElection;
@@ -1151,15 +1147,13 @@ parameter_types! {
 	pub const ParasUnsignedPriority: TransactionPriority = TransactionPriority::max_value();
 }
 
-type OnNewHead = (Registrar, InfraRelayCore);
-
 impl parachains_paras::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = weights::runtime_parachains_paras::WeightInfo<Runtime>;
 	type UnsignedPriority = ParasUnsignedPriority;
 	type QueueFootprinter = ParaInclusion;
 	type NextSessionRotation = Babe;
-	type OnNewHead = OnNewHead;
+	type OnNewHead = Registrar;
 }
 
 parameter_types! {

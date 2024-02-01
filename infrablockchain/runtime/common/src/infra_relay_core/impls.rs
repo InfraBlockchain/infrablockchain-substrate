@@ -22,14 +22,12 @@ impl<T: Config> RuntimeConfigProvider for Pallet<T> {
 	type Error = DispatchError;
 
 	fn infra_system_config() -> Result<InfraSystemConfig, Self::Error> {
-		Ok(CurrentInfraSystemConfig::<T>::get().ok_or(Error::<T>::NotInitialized)?)
+		Ok(SystemConfig::<T>::get())
 	}
 
 	fn para_fee_rate() -> Result<SystemTokenWeight, Self::Error> {
 		// Relay chain's fee rate is same as base weight
-		Ok(CurrentInfraSystemConfig::<T>::get()
-			.ok_or(Error::<T>::NotInitialized)?
-			.base_weight())
+		Ok(SystemConfig::<T>::get().base_weight())
 	}
 
 	fn fee_for(ext: ExtrinsicMetadata) -> Option<SystemTokenBalance> {

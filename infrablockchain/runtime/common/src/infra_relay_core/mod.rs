@@ -1,10 +1,9 @@
-use frame_support::{pallet_prelude::*, DefaultNoBound};
+use frame_support::pallet_prelude::*;
+use frame_support::DefaultNoBound;
 use frame_system::{ensure_root, pallet_prelude::*};
 use log;
 use pallet_validator_election::VotingInterface;
 use parity_scale_codec::Encode;
-use primitives::Id as ParaId;
-use runtime_parachains::paras::OnNewHead;
 use sp_runtime::types::{fee::*, infra_core::*, token::*, vote::*};
 use sp_std::vec::Vec;
 use xcm::latest::prelude::*;
@@ -13,8 +12,6 @@ mod impls;
 mod types;
 
 pub use pallet::*;
-
-const LOG_TARGET: &str = "runtime::infra_relay_core";
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct SystemTokenDetail {
@@ -56,18 +53,13 @@ pub mod pallet {
 		type XcmRouter: SendXcm;
 	}
 
-	/// Base system configuration for `InfraRelay` Runtime
+	/// System configuration for `InfraRelay` Runtime
 	#[pallet::storage]
-	pub type CurrentInfraSystemConfig<T: Config> = StorageValue<_, InfraSystemConfig, OptionQuery>;
-
-	/// Updated system to be sent to `ParaId`
-	#[pallet::storage]
-	pub type UpdatedInfraSystemConfig<T: Config> =
-		StorageMap<_, Twox64Concat, ParaId, InfraSystemConfig>;
+	pub type SystemConfig<T: Config> = StorageValue<_, InfraSystemConfig, ValueQuery>;
 
 	/// Relay Chain's tx fee rate
 	#[pallet::storage]
-	pub type FeeRate<T: Config> = StorageValue<_, SystemTokenWeight, OptionQuery>;
+	pub type FeeRate<T: Config> = StorageValue<_, SystemTokenWeight>;
 
 	/// Relay Chain's Runtime state
 	#[pallet::storage]
@@ -76,33 +68,7 @@ pub mod pallet {
 	/// Relay Chain's fee for each extrinsic
 	#[pallet::storage]
 	pub type FeeTable<T: Config> =
-		StorageMap<_, Twox128, ExtrinsicMetadata, SystemTokenBalance, OptionQuery>;
-
-	#[pallet::genesis_config]
-	#[derive(DefaultNoBound)]
-	pub struct GenesisConfig<T: Config> {
-		pub base_detail: Option<(Fiat, SystemTokenWeight, SystemTokenDecimal)>,
-		pub _phantom: sp_std::marker::PhantomData<T>,
-	}
-
-	#[pallet::genesis_build]
-	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
-		fn build(&self) {
-			let base_system_token_detail = if let Some(base_detail) = self.base_detail.clone() {
-				let detail = BaseSystemTokenDetail {
-					base_currency: base_detail.0,
-					base_weight: base_detail.1,
-					base_decimals: base_detail.2,
-				};
-				detail
-			} else {
-				Default::default()
-			};
-			let infra_system_config =
-				InfraSystemConfig { base_system_token_detail, weight_scale: 25 };
-			CurrentInfraSystemConfig::<T>::put(infra_system_config.clone());
-		}
-	}
+		StorageMap<_, Twox128, ExtrinsicMetadata, SystemTokenBalance>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -160,6 +126,21 @@ pub mod pallet {
 		NotInitialized,
 	}
 
+	#[pallet::genesis_config]
+	#[derive(DefaultNoBound)]
+	pub struct GenesisConfig<T: Config> {
+		pub system_config: InfraSystemConfig,
+		pub _phantom: PhantomData<T>,
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
+		fn build(&self) {
+			self.system_config.panic_if_not_validated();
+			SystemConfig::<T>::put(self.system_config.clone());
+		}
+	}
+
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::call_index(0)]
@@ -171,7 +152,7 @@ pub mod pallet {
 			// TODO: Base configuration for InfraRelaychain has changed. Needs to update all
 			// parachains' config.
 			ensure_root(origin)?;
-			CurrentInfraSystemConfig::<T>::put(infra_system_config.clone());
+			SystemConfig::<T>::put(infra_system_config.clone());
 			Ok(())
 		}
 
@@ -298,26 +279,6 @@ pub mod pallet {
 			T::LocalAssetManager::demote(asset_id)
 				.map_err(|_| Error::<T>::ErrorRegisterSystemToken)?;
 			Ok(())
-		}
-	}
-}
-
-impl<T: Config> OnNewHead for Pallet<T> {
-	fn on_new_head(id: ParaId, _head: &primitives::HeadData) -> Weight {
-		// If there is `InfraSystemConfig` for `para_id, it would mean config has already been
-		// updated. Otherwise, we put `InfraSystemConfig` for `para_id` into
-		// `UpdatedInfraSystemConfig` storage
-		if let Some(_) = UpdatedInfraSystemConfig::<T>::get(&id) {
-			UpdatedInfraSystemConfig::<T>::remove(&id);
-			T::DbWeight::get().writes(1)
-		} else {
-			if let Some(i_c) = CurrentInfraSystemConfig::<T>::get() {
-				UpdatedInfraSystemConfig::<T>::insert(&id, i_c);
-				T::DbWeight::get().reads_writes(1, 1)
-			} else {
-				log::debug!(target: LOG_TARGET, "Shouldn't reach here!");
-				T::DbWeight::get().reads(1)
-			}
 		}
 	}
 }

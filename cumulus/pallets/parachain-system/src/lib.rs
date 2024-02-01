@@ -593,12 +593,10 @@ pub mod pallet {
 					.expect("Invalid upgrade restriction signal"),
 			);
 			<UpgradeGoAhead<T>>::put(upgrade_go_ahead_signal);
-			if let Some(infra_system_config) = relay_state_proof
-				.read_updated_infra_system_config()
-				.expect("Invalid infra system config")
-			{
-				T::UpdateRCConfig::update_system_config(infra_system_config);
-			}
+			let infra_system_config = relay_state_proof
+				.read_infra_system_config()
+				.expect("Invalid infra system config");
+			T::UpdateRCConfig::update_system_config(infra_system_config);
 
 			let host_config = relay_state_proof
 				.read_abridged_host_configuration()

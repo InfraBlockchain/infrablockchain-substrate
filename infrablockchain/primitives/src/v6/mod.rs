@@ -32,8 +32,8 @@ use inherents::InherentIdentifier;
 use primitives::RuntimeDebug;
 use runtime_primitives::{
 	traits::{AppVerify, Header as HeaderT},
-	types::{BoundedRequestedAssets, PotVotesResult, RemoteAssetMetadata},
 };
+pub use runtime_primitives::types::{vote::PotVotesResult, token::{InfraSystemConfig, RemoteAssetMetadata}};
 use sp_arithmetic::traits::{BaseArithmetic, Saturating};
 
 pub use runtime_primitives::traits::{BlakeTwo256, Hash as HashT};
@@ -202,6 +202,10 @@ pub mod well_known_keys {
 	pub const ACTIVE_CONFIG: &[u8] =
 		&hex!["06de3d8a54d27e44a9d5ce189618f22db4b49d95320d9021994c850f25b8e385"];
 
+	/// The currently active system configuration for InfraBlockchain
+	pub const SYSTEM_CONFIG: &[u8] = 
+		&hex!["c1b1962c8d78658bd8ffce50b5260892bb47531c84d954db76aa694bc4d82f59"];
+
 	/// Hash of the committed head data for a given registered para.
 	///
 	/// The storage entry stores wrapped `HeadData(Vec<u8>)`.
@@ -365,7 +369,7 @@ pub mod well_known_keys {
 
 	/// The storage entry stores a value of `UpdatedInfraSystemConfig` type
 	pub fn updated_infra_system_config(para_id: Id) -> Vec<u8> {
-		let prefix = hex!["c1b1962c8d78658bd8ffce50b52608924e066756fc1502933335b4684d5e3128"];
+		let prefix = hex!["cd710b30bd2eab0352ddcc26417aa194f27bbb460270642b5bcaf032ea04d56a"];
 
 		para_id.using_encoded(|para_id: &[u8]| {
 			prefix
