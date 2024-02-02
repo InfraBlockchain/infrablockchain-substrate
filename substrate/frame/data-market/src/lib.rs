@@ -34,6 +34,14 @@ pub mod pallet {
 		// To be deleted
 		#[pallet::constant]
 		type MaxPurchaseQuantity: Get<Quantity>;
+
+		/// The total fee ratio, defined as 100% and represented by the value 10,000.
+		#[pallet::constant]
+		type TotalFeeRatio: Get<u32>;
+
+		/// The minimum platform fee ratio, set at a fixed 10%.
+		#[pallet::constant]
+		type MinPlatformFeeRatio: Get<u32>;
 	}
 
 	#[pallet::storage]
@@ -128,7 +136,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			data_buyer_info: DataBuyerInfo<AnyText>,
 			data_purchase_info: DataPurchaseInfo<AnyText>,
-			data_verifiers: Vec<T::AccountId>,
+			data_verifier: T::AccountId,
 			purchase_deadline: BlockNumberFor<T>,
 			system_token_asset_id: u32,
 			quantity: Quantity,
@@ -139,8 +147,8 @@ pub mod pallet {
 			let data_buyer = ensure_signed(origin.clone())?;
 
 			let sum_fee_ratio =
-				data_issuer_fee_ratio + data_owner_fee_ratio + MIN_PLATFORM_FEE_RATIO;
-			ensure!(sum_fee_ratio <= TOTAL_FEE_RATIO, Error::<T>::InvalidFeeRatio);
+				data_issuer_fee_ratio + data_owner_fee_ratio + T::MinPlatformFeeRatio::get();
+			ensure!(sum_fee_ratio <= T::TotalFeeRatio::get(), Error::<T>::InvalidFeeRatio);
 
 			let data_purchase_id = NextPurchaseId::<T>::get();
 			NextPurchaseId::<T>::try_mutate(|c| -> DispatchResult {
@@ -152,7 +160,7 @@ pub mod pallet {
 				data_buyer: data_buyer.clone(),
 				data_buyer_info,
 				data_purchase_info,
-				data_verifiers,
+				data_verifier,
 				purchase_deadline,
 				system_token_asset_id,
 				quantity,
@@ -205,7 +213,7 @@ pub mod pallet {
 
 			let DataPurchaseRegisterDetails {
 				data_buyer,
-				data_verifiers,
+				data_verifier,
 				data_owner_fee_ratio,
 				data_issuer_fee_ratio,
 				price_per_data,
@@ -219,7 +227,7 @@ pub mod pallet {
 
 			ensure!(trade_count < quantity, Error::<T>::TradeLimitReached);
 			ensure!(purchase_status == PurchaseStatus::Active, Error::<T>::PurchaseNotActive);
-			ensure!(data_verifiers.contains(&maybe_verifier), Error::<T>::InvalidVerifier);
+			ensure!(data_verifier == maybe_verifier, Error::<T>::InvalidVerifier);
 
 			if DataTradeRecords::<T>::contains_key(data_purchase_id, &data_owner) {
 				return Err(Error::<T>::AlreadyTraded.into())
@@ -353,7 +361,7 @@ where
 		ensure!(purchase_status == PurchaseStatus::Active, Error::<T>::PurchaseNotActive);
 
 		// Change purchase status
-		purchase_status = PurchaseStatus::Finished;
+		purchase_status = PurchaseStatus::Completed;
 		data_purchase_register_details.purchase_status = purchase_status;
 		DataPurchaseRegisters::<T>::insert(&data_purchase_id, data_purchase_register_details);
 

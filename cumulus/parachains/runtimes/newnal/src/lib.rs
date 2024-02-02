@@ -493,6 +493,8 @@ parameter_types! {
 	pub const MaxRequest: u32 = 100;
 
 	pub const MaxPurchaseQuantity: u32 = 1_000_000_000;
+	pub const TotalFeeRatio: u32 = 10_000;
+	pub const MinPlatformFeeRatio: u32 = 1_000;
 }
 
 impl pallet_urauth::Config for Runtime {
@@ -510,6 +512,8 @@ impl pallet_urauth::Config for Runtime {
 impl pallet_data_market::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type MaxPurchaseQuantity = MaxPurchaseQuantity;
+	type TotalFeeRatio = TotalFeeRatio;
+	type MinPlatformFeeRatio = MinPlatformFeeRatio;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.

@@ -9,10 +9,6 @@ pub type IssuerWeight = u32;
 
 /// Common size is up to 100 bytes
 pub const MAX_TEXT_SIZE: u32 = 1_000_000;
-// TOTAL_FEE_RATIO is 100%(indicates 10_000)
-pub const TOTAL_FEE_RATIO: u32 = 10_000;
-// MIN_PLATFORM_FEE_RATIO is fixed at a minimum of 10%
-pub const MIN_PLATFORM_FEE_RATIO: u32 = 1_000;
 
 pub type AnyText = BoundedVec<u8, ConstU32<MAX_TEXT_SIZE>>;
 
@@ -60,12 +56,15 @@ pub struct DataPurchaseRegisterDetails<AccountId, BlockNumber, Balance, AnyText>
 	pub data_buyer: AccountId,
 	pub data_buyer_info: DataBuyerInfo<AnyText>,
 	pub data_purchase_info: DataPurchaseInfo<AnyText>,
-	pub data_verifiers: Vec<AccountId>,
+	pub data_verifier: AccountId,
 	pub purchase_deadline: BlockNumber,
+	#[codec(compact)]
 	pub system_token_asset_id: u32,
 	pub quantity: Quantity,
 	pub price_per_data: Balance,
+	#[codec(compact)]
 	pub data_issuer_fee_ratio: u32,
+	#[codec(compact)]
 	pub data_owner_fee_ratio: u32,
 	pub purchase_status: PurchaseStatus,
 }
@@ -73,8 +72,11 @@ pub struct DataPurchaseRegisterDetails<AccountId, BlockNumber, Balance, AnyText>
 #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Hash))]
 pub enum PurchaseStatus {
+	/// Represents a purchase that is currently active and can be interacted with.
 	Active,
-	Finished,
+	/// Indicates a purchase that has been completed and is no longer active.
+	Completed,
+	/// Denotes a purchase that is nearing completion and may no longer be active soon.
 	Stale,
 }
 
