@@ -8,9 +8,9 @@ use sp_staking::{
 	EraIndex, SessionIndex,
 };
 
-use pallet_staking::{BalanceOf, Exposure, ExposureOf};
-
 use crate::*;
+
+use sp_runtime::DispatchResult;
 
 pub trait CollectiveInterface<AccountId> {
 	fn set_new_members(new: Vec<AccountId>);
@@ -95,19 +95,12 @@ impl<AccountId> SessionInterface<AccountId> for () {
 	}
 }
 
-// pub trait OnOffenceHandler<AccountId> {
-// 	fn on_offence(offenders: Vec<AccountId>);
-// }
-
-impl<T: Config + pallet_staking::Config>
+impl<T: Config + pallet_session::historical::Config>
 	OnOffenceHandler<T::AccountId, pallet_session::historical::IdentificationTuple<T>, Weight>
 	for Pallet<T>
 where
+	T: pallet::Config<InfraVoteAccountId = <T as frame_system::Config>::AccountId>,
 	T: pallet_session::Config<ValidatorId = <T as frame_system::Config>::AccountId>,
-	T: pallet_session::historical::Config<
-		FullIdentification = Exposure<<T as frame_system::Config>::AccountId, BalanceOf<T>>,
-		FullIdentificationOf = ExposureOf<T>,
-	>,
 	T::SessionHandler: pallet_session::SessionHandler<<T as frame_system::Config>::AccountId>,
 	T::SessionManager: pallet_session::SessionManager<<T as frame_system::Config>::AccountId>,
 	T::ValidatorIdOf: Convert<
@@ -124,26 +117,47 @@ where
 		_slash_session: SessionIndex,
 		_disable_strategy: DisableStrategy,
 	) -> Weight {
+		let mut consumed_weight = Weight::from_parts(0, 0);
+		let mut add_db_reads_writes = |reads, writes| {
+			consumed_weight += T::DbWeight::get().reads_writes(reads, writes);
+		};
+
 		let mut old_kicked_out_validators = KickedOutValidators::<T>::get();
 		let mut seed_trust_validators = SeedTrustValidators::<T>::get();
+		let mut seed_trust_validator_pool = SeedTrustValidatorPool::<T>::get();
 		let mut pot_validators = PotValidators::<T>::get();
+		let mut pot_validator_pool = PotValidatorPool::<T>::get().status;
+		add_db_reads_writes(5, 0);
 
 		for offence_detail in offenders {
-			let offender = &offence_detail.offender.0;
-			// Add to kicked out validators if not already present
-			if !old_kicked_out_validators.contains(&offender) {
-				old_kicked_out_validators.push(offender.clone());
+			let offender: &T::InfraVoteAccountId = &offence_detail.offender.0.clone().into();
+
+			if !old_kicked_out_validators.iter().any(|v| match v {
+				ValidatorType::SeedTrust(account) | ValidatorType::Pot(account, _) =>
+					account == offender,
+			}) {
+				if let Some((_, points)) =
+					pot_validator_pool.iter().find(|(account, _)| account == offender)
+				{
+					old_kicked_out_validators.push(ValidatorType::Pot(offender.clone(), *points));
+				} else {
+					old_kicked_out_validators.push(ValidatorType::SeedTrust(offender.clone()));
+				}
 			}
 
-			// Remove from SeedTrustValidators and PotValidators if present
 			seed_trust_validators.retain(|validator| validator != offender);
+			seed_trust_validator_pool.retain(|validator| validator != offender);
 			pot_validators.retain(|validator| validator != offender);
+			pot_validator_pool.retain(|(validator, _)| validator != offender);
 		}
 
 		KickedOutValidators::<T>::put(old_kicked_out_validators);
 		SeedTrustValidators::<T>::put(seed_trust_validators);
+		SeedTrustValidatorPool::<T>::put(seed_trust_validator_pool);
 		PotValidators::<T>::put(pot_validators);
-		let consumed_weight = Weight::from_parts(0, 0);
+		PotValidatorPool::<T>::put(VotingStatus { status: pot_validator_pool });
+		add_db_reads_writes(5, 5);
+
 		consumed_weight
 	}
 }
@@ -374,7 +388,7 @@ impl<T: Config> Pallet<T> {
 	pub fn try_set_number_of_validator(
 		new_total_slots: u32,
 		maybe_new_seed_trust_slots: Option<u32>,
-	) -> sp_runtime::DispatchResult {
+	) -> DispatchResult {
 		let current_seed_trust_slots = SeedTrustSlots::<T>::get();
 		// 1. Check if 'new_total_slots' is smaller than 'current_seed_trust_slots',
 		//    'new_seed_trust_slots' should be provided
@@ -404,5 +418,40 @@ impl<T: Config> Pallet<T> {
 			return true
 		}
 		false
+	}
+}
+
+impl<T: Config> Pallet<T>
+where
+	T: pallet::Config<InfraVoteAccountId = <T as frame_system::Config>::AccountId>,
+{
+	pub fn do_restore_kicked_out_validator(who: T::AccountId) -> DispatchResult {
+		let mut kicked_out_validators = KickedOutValidators::<T>::get();
+		let mut seed_trust_validator_pool = SeedTrustValidatorPool::<T>::get();
+		let mut pot_validator_pool = PotValidatorPool::<T>::get().status;
+
+		let validator_position = kicked_out_validators.iter().position(|v| match v {
+			ValidatorType::SeedTrust(account) | ValidatorType::Pot(account, _) => account == &who,
+		});
+
+		if let Some(pos) = validator_position {
+			match kicked_out_validators[pos].clone() {
+				ValidatorType::SeedTrust(_) => {
+					seed_trust_validator_pool.push(who.clone());
+					SeedTrustValidatorPool::<T>::put(seed_trust_validator_pool);
+				},
+				ValidatorType::Pot(_, points) => {
+					pot_validator_pool.push((who.clone(), points));
+					PotValidatorPool::<T>::put(VotingStatus { status: pot_validator_pool });
+				},
+			}
+
+			kicked_out_validators.remove(pos);
+			KickedOutValidators::<T>::put(kicked_out_validators);
+
+			Ok(())
+		} else {
+			Err(Error::<T>::NotFoundKickedOutValidators.into())
+		}
 	}
 }

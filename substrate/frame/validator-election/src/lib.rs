@@ -306,8 +306,8 @@ pub mod pallet {
 		NewEraTriggered { era_index: EraIndex },
 		/// New pool status has been set
 		PoolStatusSet { status: Pool },
-		/// Validator has been reinstated
-		ValidatorReinstated { validator_reinstated: T::AccountId },
+		/// Validator has been restored
+		ValidatorRestored { validator_restored: T::AccountId },
 	}
 
 	#[pallet::error]
@@ -320,6 +320,8 @@ pub mod pallet {
 		BadTransactionParams,
 		/// New number of Seed Trust slots should be provided
 		SeedTrustSlotsShouldBeProvided,
+		/// New number of Seed Trust slots should be provided
+		NotFoundKickedOutValidators,
 	}
 
 	/// The current era index.
@@ -353,7 +355,8 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::unbounded]
 	#[pallet::getter(fn kicked_out_validators)]
-	pub type KickedOutValidators<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
+	pub type KickedOutValidators<T: Config> =
+		StorageValue<_, Vec<ValidatorType<T::AccountId, T::InfraVotePoints>>, ValueQuery>;
 
 	/// Number of seed trust validators that can be elected
 	#[pallet::storage]
@@ -391,8 +394,17 @@ pub mod pallet {
 	#[pallet::getter(fn pool_status)]
 	pub type PoolStatus<T> = StorageValue<_, Pool, ValueQuery>;
 
+	#[derive(Encode, Decode, Clone, PartialEq, RuntimeDebug, TypeInfo)]
+	pub enum ValidatorType<AccountId, VotePoints> {
+		SeedTrust(AccountId),
+		Pot(AccountId, VotePoints),
+	}
+
 	#[pallet::call]
-	impl<T: Config> Pallet<T> {
+	impl<T: Config> Pallet<T>
+	where
+		T: pallet::Config<InfraVoteAccountId = <T as frame_system::Config>::AccountId>,
+	{
 		#[pallet::call_index(0)]
 		#[pallet::weight(0)]
 		pub fn set_number_of_validators(
@@ -443,15 +455,13 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(4)]
-		pub fn reinstate_kicked_out(origin: OriginFor<T>, who: T::AccountId) -> DispatchResult {
+		pub fn restore_kicked_out_validator(
+			origin: OriginFor<T>,
+			who: T::AccountId,
+		) -> DispatchResult {
 			ensure_root(origin)?;
-
-			let mut kicked_out_validators = KickedOutValidators::<T>::get();
-			kicked_out_validators.retain(|validator| validator != &who);
-
-			KickedOutValidators::<T>::put(kicked_out_validators);
-
-			Self::deposit_event(Event::<T>::ValidatorReinstated { validator_reinstated: who });
+			Self::do_restore_kicked_out_validator(who.clone())?;
+			Self::deposit_event(Event::<T>::ValidatorRestored { validator_restored: who });
 
 			Ok(())
 		}

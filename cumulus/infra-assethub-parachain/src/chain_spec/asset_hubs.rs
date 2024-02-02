@@ -189,6 +189,9 @@ fn asset_hub_genesis(
 	root_key: Option<AccountId>,
 	id: ParaId,
 ) -> asset_hub_runtime::RuntimeGenesisConfig {
+	#[cfg(feature = "fast-runtime")]
+	let root_key = get_account_id_from_seed::<sr25519::Public>("Alice");
+
 	asset_hub_runtime::RuntimeGenesisConfig {
 		system: asset_hub_runtime::SystemConfig {
 			code: asset_hub_runtime::WASM_BINARY
@@ -234,6 +237,7 @@ fn asset_hub_genesis(
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
 			..Default::default()
 		},
+		#[cfg(feature = "fast-runtime")]
 		sudo: asset_hub_runtime::SudoConfig { key: root_key },
 	}
 }
