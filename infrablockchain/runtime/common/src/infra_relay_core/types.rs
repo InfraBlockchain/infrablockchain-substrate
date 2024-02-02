@@ -8,8 +8,6 @@ pub enum ParachainRuntimePallets {
 
 #[derive(Encode, Decode)]
 pub enum ParachainConfigCalls {
-	#[codec(index = 0)]
-	UpdateInfraSystemConfig(InfraSystemConfig),
 	#[codec(index = 1)]
 	SetFeeTable(Vec<u8>, Vec<u8>, SystemTokenBalance),
 	#[codec(index = 2)]

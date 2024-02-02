@@ -1197,7 +1197,7 @@ mod tests {
 				processed_downward_messages: 0,
 				hrmp_watermark: relay_parent.number,
 				vote_result: None,
-				requested_assets: None,
+				requested_asset: None,
 			}),
 			collator,
 			collator_signature: sig,

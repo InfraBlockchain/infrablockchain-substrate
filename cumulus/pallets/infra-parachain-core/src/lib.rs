@@ -4,13 +4,55 @@ use cumulus_pallet_xcm::{ensure_relay, Origin};
 use cumulus_primitives_core::UpdateRCConfig;
 use frame_support::pallet_prelude::*;
 use frame_system::pallet_prelude::*;
-use sp_runtime::{
-	types::{fee::*, infra_core::*, token::*, vote::*},
-	Saturating,
-};
+use sp_runtime::{types::{fee::*, infra_core::*, token::*, vote::*}, Saturating};
 use sp_std::vec::Vec;
+use scale_info::TypeInfo;
 
 pub use pallet::*;
+
+#[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
+pub enum RequestStatus<BlockNumber> {
+	Available,
+	Requested { at: BlockNumber, is_relay: bool }
+}
+
+impl<BlockNumber> RequestStatus<BlockNumber> 
+where
+	BlockNumber: Saturating + Ord + PartialOrd
+{
+
+	pub fn default_status(at: BlockNumber) -> Self {
+		Self::Requested { at, is_relay: false}
+	}
+
+	fn is_relayed(&mut self) -> bool {
+		match self {
+			Self::Requested { is_relay, .. } => {
+				let temp = *is_relay;
+				*is_relay = true;
+				temp
+			}
+			_ => false,
+		}
+	}
+
+	fn _is_available(&self) -> bool {
+		match self {
+			Self::Available => true,
+			_ => false,
+		}
+	}
+
+	fn is_expired(self, current: BlockNumber, active_period: BlockNumber) -> bool {
+		match self {
+			Self::Requested { at, .. } => {
+				let exp = at.saturating_add(active_period);
+				current >= exp
+			}
+			_ => false,
+		}
+	}
+}
 
 #[frame_support::pallet(dev_mode)]
 pub mod pallet {
@@ -30,6 +72,9 @@ pub mod pallet {
 		type AssetLink: AssetLinkInterface<SystemTokenAssetId>;
 		/// Type that interacts with Parachain System
 		type ParachainSystem: CollectVote + AssetMetadataProvider;
+		/// Active request period for registering System Token
+		#[pallet::constant]
+		type ActiveRequestPeriod: Get<BlockNumberFor<Self>>;
 	}
 
 	#[pallet::pallet]
@@ -51,7 +96,7 @@ pub mod pallet {
 	pub type FeeTable<T: Config> = StorageMap<_, Twox128, ExtrinsicMetadata, SystemTokenBalance>;
 
 	#[pallet::storage]
-	pub type CurrentRequest<T: Config> = StorageValue<_, RemoteAssetMetadata>;
+	pub type CurrentRequest<T: Config> = StorageValue<_, (RemoteAssetMetadata, RequestStatus<BlockNumberFor<T>>)>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -102,16 +147,22 @@ pub mod pallet {
 		TooManyRequests,
 		/// System Token has already been requested
 		AlreadyRequested,
+		/// Register is not valid
+		InvalidRegister
 	}
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		fn on_initialize(n: BlockNumberFor<T>) -> frame_support::weights::Weight {
-			if let Some(remote_asset_metadata) = CurrentRequest::<T>::get() {
-				T::ParachainSystem::requested(remote_asset_metadata);
-				return T::DbWeight::get().reads(1)
+		fn on_initialize(_n: BlockNumberFor<T>) -> frame_support::weights::Weight {
+			if let Some((remote_asset_metadata, mut status)) = CurrentRequest::<T>::get() {
+				if !status.is_relayed() {
+					T::ParachainSystem::requested(remote_asset_metadata.clone());
+					CurrentRequest::<T>::put((remote_asset_metadata, status));
+				}
+				T::DbWeight::get().reads_writes(1, 1)
+			} else {
+				T::DbWeight::get().reads(1)
 			}
-			T::DbWeight::get().reads(1)
 		}
 	}
 
@@ -195,7 +246,7 @@ pub mod pallet {
 			system_token_weight: SystemTokenWeight,
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
-			CurrentRequest::<T>::kill();
+			Self::check_valid_register()?;
 			T::LocalAssetManager::promote(asset_id, system_token_weight)
 				.map_err(|_| Error::<T>::ErrorRegisterSystemToken)?;
 			Ok(())
@@ -289,11 +340,34 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
-	fn do_request(ram: RemoteAssetMetadata) -> Result<(), DispatchError> {
-		if let Some(_) = CurrentRequest::<T>::get() {
-			return Err(Error::<T>::AlreadyRequested.into())
-		}
-		CurrentRequest::<T>::put(ram);
+	fn do_request(asset_metadata: RemoteAssetMetadata) -> Result<(), DispatchError> {
+		let current = <frame_system::Pallet<T>>::block_number();
+		if let Some((_, request_status)) = CurrentRequest::<T>::get() {
+			let active_period = T::ActiveRequestPeriod::get();
+			if request_status.is_expired(current, active_period) {
+				return Err(Error::<T>::AlreadyRequested.into())
+			}
+		} 
+		CurrentRequest::<T>::put((asset_metadata, RequestStatus::default_status(current)));
+		Ok(())
+	}
+
+	fn check_valid_register() -> Result<(), DispatchError> {
+		let is_valid = if let Some((_, status)) = CurrentRequest::<T>::get() {
+			if !status.is_expired(
+				<frame_system::Pallet<T>>::block_number(),
+				T::ActiveRequestPeriod::get(),
+			) {
+				CurrentRequest::<T>::kill();
+				true
+			} else {
+				false
+			}
+		} else {
+			false
+		};
+
+		ensure!(is_valid, Error::<T>::InvalidRegister);
 		Ok(())
 	}
 }
