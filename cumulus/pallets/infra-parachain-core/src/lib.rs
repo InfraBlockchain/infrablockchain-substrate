@@ -11,9 +11,9 @@ use scale_info::TypeInfo;
 pub use pallet::*;
 
 #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
-pub enum RequestStatus<BlockNumber> {
-	Available,
-	Requested { at: BlockNumber, is_relay: bool }
+pub struct RequestStatus<BlockNumber> {
+	pub exp: BlockNumber,
+	pub is_relay: bool
 }
 
 impl<BlockNumber> RequestStatus<BlockNumber> 
@@ -21,36 +21,20 @@ where
 	BlockNumber: Saturating + Ord + PartialOrd
 {
 
-	pub fn default_status(at: BlockNumber) -> Self {
-		Self::Requested { at, is_relay: false}
+	pub fn default_status(exp: BlockNumber) -> Self {
+		Self { exp, is_relay: false}
 	}
 
 	fn is_relayed(&mut self) -> bool {
-		match self {
-			Self::Requested { is_relay, .. } => {
-				let temp = *is_relay;
-				*is_relay = true;
-				temp
-			}
-			_ => false,
+		let temp = self.is_relay;
+		if !self.is_relay {
+			self.is_relay = true;
 		}
+		temp
 	}
 
-	fn _is_available(&self) -> bool {
-		match self {
-			Self::Available => true,
-			_ => false,
-		}
-	}
-
-	fn is_expired(self, current: BlockNumber, active_period: BlockNumber) -> bool {
-		match self {
-			Self::Requested { at, .. } => {
-				let exp = at.saturating_add(active_period);
-				current >= exp
-			}
-			_ => false,
-		}
+	fn is_expired(self, current: BlockNumber) -> bool {
+		current >= self.exp
 	}
 }
 
@@ -102,9 +86,9 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// System Token has been regierested by Relay-chain governance
-		Registered,
+		Registered { asset_id: SystemTokenAssetId },
 		/// System Token has been deregistered by Relay-chain governance
-		Deregistered,
+		Deregistered { asset_id: SystemTokenAssetId },
 		/// Fee table for has been updated by Relay-chain governance
 		FeeTableUpdated { extrinsic_metadata: ExtrinsicMetadata, fee: SystemTokenBalance },
 		/// Weight of System Token has been updated by Relay-chain governance
@@ -113,6 +97,10 @@ pub mod pallet {
 		BootstrapEnded,
 		/// Origin of this pallet has been set by Relay-chain governance.
 		ParaCoreAdminUpdated { who: T::AccountId },
+		/// System Token registration has been requested
+		RegisterRequested { asset_id: SystemTokenAssetId, exp: BlockNumberFor<T> },
+		/// Wrapped local asset has been created
+		WrappedCreated { asset_id: SystemTokenAssetId, original: SystemTokenId }
 	}
 
 	#[pallet::error]
@@ -147,7 +135,7 @@ pub mod pallet {
 		TooManyRequests,
 		/// System Token has already been requested
 		AlreadyRequested,
-		/// Register is not valid
+		/// Register is not valid(e.g Outdated registration)
 		InvalidRegister
 	}
 
@@ -249,6 +237,7 @@ pub mod pallet {
 			Self::check_valid_register()?;
 			T::LocalAssetManager::promote(asset_id, system_token_weight)
 				.map_err(|_| Error::<T>::ErrorRegisterSystemToken)?;
+			Self::deposit_event(Event::<T>::Registered { asset_id });
 			Ok(())
 		}
 
@@ -288,6 +277,7 @@ pub mod pallet {
 			.map_err(|_| Error::<T>::ErrorCreateWrappedLocalAsset)?;
 			T::AssetLink::link(&asset_id, asset_link_parent, original)
 				.map_err(|_| Error::<T>::ErrorLinkAsset)?;
+			Self::deposit_event(Event::<T>::WrappedCreated { asset_id, original });
 			Ok(())
 		}
 
@@ -303,6 +293,7 @@ pub mod pallet {
 			if is_unlink {
 				T::AssetLink::unlink(&asset_id).map_err(|_| Error::<T>::ErrorUnlinkAsset)?;
 			}
+			Self::deposit_event(Event::<T>::Deregistered { asset_id });
 			Ok(())
 		}
 
@@ -333,30 +324,30 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::ErrorOnGetMetadata)?;
 			T::LocalAssetManager::request_register(asset_id)
 				.map_err(|_| Error::<T>::ErrorOnRequestRegister)?;
-			Self::do_request(remote_asset_metadata)?;
+			let exp = Self::do_request(remote_asset_metadata)?;
+			Self::deposit_event(Event::<T>::RegisterRequested { asset_id, exp });
 			Ok(())
 		}
 	}
 }
 
 impl<T: Config> Pallet<T> {
-	fn do_request(asset_metadata: RemoteAssetMetadata) -> Result<(), DispatchError> {
+	fn do_request(asset_metadata: RemoteAssetMetadata) -> Result<BlockNumberFor<T>, DispatchError> {
 		let current = <frame_system::Pallet<T>>::block_number();
 		if let Some((_, request_status)) = CurrentRequest::<T>::get() {
-			let active_period = T::ActiveRequestPeriod::get();
-			if request_status.is_expired(current, active_period) {
+			if !request_status.is_expired(current) {
 				return Err(Error::<T>::AlreadyRequested.into())
 			}
 		} 
-		CurrentRequest::<T>::put((asset_metadata, RequestStatus::default_status(current)));
-		Ok(())
+		let exp = current.saturating_add(T::ActiveRequestPeriod::get());
+		CurrentRequest::<T>::put((asset_metadata, RequestStatus::default_status(exp)));
+		Ok(exp)
 	}
 
 	fn check_valid_register() -> Result<(), DispatchError> {
 		let is_valid = if let Some((_, status)) = CurrentRequest::<T>::get() {
 			if !status.is_expired(
-				<frame_system::Pallet<T>>::block_number(),
-				T::ActiveRequestPeriod::get(),
+				<frame_system::Pallet<T>>::block_number()
 			) {
 				CurrentRequest::<T>::kill();
 				true
@@ -366,7 +357,6 @@ impl<T: Config> Pallet<T> {
 		} else {
 			false
 		};
-
 		ensure!(is_valid, Error::<T>::InvalidRegister);
 		Ok(())
 	}
