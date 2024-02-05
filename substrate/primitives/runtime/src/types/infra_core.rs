@@ -7,11 +7,6 @@ use sp_std::vec::Vec;
 
 /// API that updates Infra-* Runtime configuration
 pub trait UpdateInfraConfig {
-	/// Update system configuration for `dest_id` Runtime
-	fn update_infra_system_config(
-		dest_id: SystemTokenParaId,
-		infra_system_config: InfraSystemConfig,
-	);
 	/// Update fee table for `dest_id` Runtime
 	fn update_fee_table(
 		dest_id: SystemTokenParaId,

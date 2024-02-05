@@ -346,7 +346,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 }
 
 parameter_types! {
-	pub const RequestInterval: BlockNumber = 10;
+	pub const ActiveRequestPeriod: BlockNumber = 100;
 }
 
 impl cumulus_pallet_infra_parachain_core::Config for Runtime {
@@ -355,6 +355,7 @@ impl cumulus_pallet_infra_parachain_core::Config for Runtime {
 	type ParachainSystem = ParachainSystem;
 	type LocalAssetManager = Assets;
 	type AssetLink = AssetLink;
+	type ActiveRequestPeriod = ActiveRequestPeriod;
 }
 
 impl parachain_info::Config for Runtime {}

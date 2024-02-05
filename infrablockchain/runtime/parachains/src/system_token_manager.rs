@@ -529,17 +529,17 @@ impl<T: Config> Pallet<T> {
 				.map_err(|_| Error::<T>::NotInitiated)?
 				.base_system_token_detail
 				.clone();
-		if base_currency == currency {
-			return Ok(base_weight)
-		}
 		let SystemTokenMetadata { decimals, .. } =
 			OriginalSystemTokenMetadata::<T>::get(original).ok_or(Error::<T>::MetadataNotFound)?;
-		let exponents = base_decimals.saturating_sub(decimals) as u32;
-		let decimal_relative_to_base = u128::pow(10, exponents);
-		let exchange_rate_relative_to_base =
-			ExchangeRates::<T>::get(&currency).ok_or(Error::<T>::NotFound)?;
-		let system_token_weight =
-			base_weight * decimal_relative_to_base / (exchange_rate_relative_to_base as u128);
+		let exponents: i32 = (base_decimals as i32) - (decimals as i32);
+		let decimal_to_base: F64 = F64::from_i32(10).powi(exponents);
+		let exchange_rate_to_base: F64 = if currency != base_currency {
+			ExchangeRates::<T>::get(&currency).ok_or(Error::<T>::NotFound)?.into()
+		} else {
+			F64::from_i32(1)
+		};
+		let f64_base_weight: F64 = base_weight.into();
+		let system_token_weight: u128 = f64_base_weight.mul(decimal_to_base).div(exchange_rate_to_base).into();
 		Ok(system_token_weight)
 	}
 
