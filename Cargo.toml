@@ -66,9 +66,10 @@ members = [
 	"cumulus/parachains/runtimes/assets/asset-hub-infra",
 	"cumulus/parachains/runtimes/assets/common",
 	"cumulus/parachains/runtimes/assets/test-utils",
-	"cumulus/parachains/runtimes/ur-auth",
+	"cumulus/parachains/runtimes/newnal",
 	"cumulus/parachains/runtimes/contracts/contracts-infra",
 	"cumulus/parachains/runtimes/did",
+	"cumulus/infra-parachain",
 	"cumulus/infra-assethub-parachain",
 	"cumulus/primitives/aura",
 	"cumulus/primitives/core",
@@ -262,6 +263,7 @@ members = [
 	"substrate/frame/contracts/proc-macro",
 	"substrate/frame/conviction-voting",
 	"substrate/frame/core-fellowship",
+	"substrate/frame/data-market",
 	"substrate/frame/democracy",
 	"substrate/frame/election-provider-multi-phase",
 	"substrate/frame/election-provider-multi-phase/test-staking-e2e",
@@ -441,7 +443,7 @@ members = [
 	"substrate/utils/prometheus",
 	"substrate/utils/wasm-builder",
 ]
-default-members = ["infrablockchain", "cumulus/infra-assethub-parachain"]
+default-members = ["infrablockchain", "cumulus/infra-assethub-parachain", "cumulus/infra-parachain"]
 
 [profile.release]
 # Polkadot runtime requires unwinding.

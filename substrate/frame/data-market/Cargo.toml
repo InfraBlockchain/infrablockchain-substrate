@@ -1,5 +1,5 @@
 [package]
-name = "pallet-urauth"
+name = "pallet-data-market"
 description = "Universal Resource Identifer to register its ownership of data"
 version = "0.1.1"
 license = "Apache-2.0"
@@ -26,6 +26,7 @@ hex = { version = "0.4.3", default-features = false }
 log = { version = "0.4.17", default-features = false }
 
 # System
+pallet-assets = { path = "../assets", default-features = false }
 frame-benchmarking = { path = "../benchmarking", default-features = false, optional = true }
 frame-support = { path = "../support", default-features = false }
 frame-system = { path = "../system", default-features = false }
@@ -46,6 +47,7 @@ pallet-timestamp = { path = "../timestamp", default-features = false }
 default = ["std"]
 runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
 std = [
+    "pallet-assets/std",
     "log/std",
     "codec/std",
     "scale-info/std",

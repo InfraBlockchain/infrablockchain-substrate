@@ -81,7 +81,7 @@ fn runtime(id: &str) -> Runtime {
 		Runtime::ContractsInfra
 	} else if id.starts_with("did-hub-infra") {
 		Runtime::DidInfra
-	} else if id.starts_with("urauth-infra") {
+	} else if id.starts_with("newnal-infra") {
 		Runtime::URAuth
 	} else {
 		log::warn!("No specific runtime was recognized for ChainSpec's id: '{}', so Runtime::default() will be used", id);
@@ -110,9 +110,9 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		"did-hub-infra-local" => Box::new(chain_spec::did::did_local_config()),
 		"did-hub-infra" => Box::new(chain_spec::did::did_config()),
 		// ToDo: chain-spec file for `DidInfra`
-		"urauth-infra-dev" => Box::new(chain_spec::urauth::urauth_development_config()),
-		"urauth-infra-local" => Box::new(chain_spec::urauth::urauth_local_config()),
-		"urauth-infra" => Box::new(chain_spec::urauth::urauth_config()),
+		"newnal-infra-dev" => Box::new(chain_spec::newnal::newnal_development_config()),
+		"newnal-infra-local" => Box::new(chain_spec::newnal::newnal_local_config()),
+		"newnal-infra" => Box::new(chain_spec::newnal::newnal_config()),
 		// ToDo: chain-spec file for `URAuth`
 		// -- Fallback (generic chainspec)
 		"" => {
@@ -129,7 +129,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 				Runtime::ContractsInfra =>
 					Box::new(chain_spec::contracts::ContractsInfraChainSpec::from_json_file(path)?),
 				Runtime::URAuth =>
-					Box::new(chain_spec::urauth::URAuthChainSpec::from_json_file(path)?),
+					Box::new(chain_spec::newnal::NewnalChainSpec::from_json_file(path)?),
 				Runtime::DidInfra => Box::new(chain_spec::did::DidChainSpec::from_json_file(path)?),
 				Runtime::Default =>
 					Box::new(chain_spec::asset_hubs::AssetHubChainSpec::from_json_file(path)?),
@@ -262,7 +262,7 @@ macro_rules! construct_partials {
 				$code
 			},
 			Runtime::URAuth => {
-				let $partials = new_partial::<urauth_runtime::RuntimeApi, _>(
+				let $partials = new_partial::<newnal_runtime::RuntimeApi, _>(
 					&$config,
 					crate::service::aura_build_import_queue::<_, AuraId>,
 				)?;
@@ -312,7 +312,7 @@ macro_rules! construct_async_run {
 			},
 			Runtime::URAuth => {
 				runner.async_run(|$config| {
-					let $components = new_partial::<urauth_runtime::RuntimeApi, _>(
+					let $components = new_partial::<newnal_runtime::RuntimeApi, _>(
 						&$config,
 						crate::service::aura_build_import_queue::<_, AuraId>,
 					)?;
@@ -533,7 +533,7 @@ pub fn run() -> Result<()> {
 					.map(|r| r.0)
 					.map_err(Into::into),
 					Runtime::URAuth => crate::service::start_generic_aura_node::<
-						urauth_runtime::RuntimeApi,
+						newnal_runtime::RuntimeApi,
 						AuraId,
 					>(config, infra_relay_config, collator_options, id, hwbench)
 					.await
