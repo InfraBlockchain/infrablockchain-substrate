@@ -3,6 +3,7 @@ use super::*;
 use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 
+pub type ContractId = u128;
 pub type PurchaseId = u128;
 pub type Quantity = u128;
 pub type IssuerWeight = u32;
@@ -50,37 +51,50 @@ impl<BoundedString> VerificationProof<BoundedString> {
 	}
 }
 
+pub(crate) enum TransferFrom<T: Config> {
+	Origin(T::AccountId),
+	Escrow,
+}
+
 #[derive(Encode, Decode, Clone, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Hash, Debug))]
-pub struct DataPurchaseRegisterDetails<AccountId, BlockNumber, Balance, AnyText> {
+pub struct DataDelegateContractDetail<AccountId, BlockNumber, AnyText> {
+	pub data_owner: AccountId,
+	pub data_owner_info: AnyText,
+	pub agency: AccountId,
+	pub agency_info: AnyText,
+	pub data_owner_minimum_fee_ratio: u32,
+	pub deligated_data: AnyText,
+	pub effective_at: BlockNumber,
+	pub expired_at: BlockNumber,
+}
+
+#[derive(Encode, Decode, Clone, PartialEq, Eq, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Hash, Debug))]
+pub struct DataPurchaseContractDetail<AccountId, BlockNumber, Balance, AnyText> {
 	pub data_buyer: AccountId,
-	pub data_buyer_info: DataBuyerInfo<AnyText>,
+	pub data_buyer_info: AnyText,
+	pub agency: Option<AccountId>,
+	pub agency_info: Option<AnyText>,
+	pub data_verifier: Option<AccountId>,
+	pub effective_at: BlockNumber,
+	pub expired_at: BlockNumber,
 	pub data_purchase_info: DataPurchaseInfo<AnyText>,
-	pub data_verifier: AccountId,
-	pub purchase_deadline: BlockNumber,
-	#[codec(compact)]
-	pub system_token_asset_id: u32,
-	pub quantity: Quantity,
-	pub price_per_data: Balance,
-	#[codec(compact)]
-	pub data_issuer_fee_ratio: u32,
-	#[codec(compact)]
-	pub data_owner_fee_ratio: u32,
-	pub purchase_status: PurchaseStatus,
+	pub system_token_id: u32,
+	pub deposit: Balance,
 }
 
 #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Hash))]
-pub enum PurchaseStatus {
-	/// Represents a purchase that is currently active and can be interacted with.
-	Active,
-	/// Indicates a purchase that has been completed and is no longer active.
-	Completed,
-	/// Denotes a purchase that is nearing completion and may no longer be active soon.
-	Stale,
+pub enum ContractType {
+	Delegate,
+	Purchase,
 }
 
-pub(crate) enum TransferFrom<T: Config> {
-	Origin(T::AccountId),
-	Escrow,
+#[derive(Encode, Decode, Clone, Copy, Eq, PartialEq, RuntimeDebug, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Hash))]
+pub enum SignStatus {
+	Unsigned,
+	Signed,
+	WantToTerminate,
 }
