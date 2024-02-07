@@ -1,5 +1,14 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+#[cfg(test)]
+mod mock;
+
+#[cfg(test)]
+mod tests;
+
+mod types;
+pub use types::*;
+
 use frame_support::{
 	pallet_prelude::*,
 	traits::{ConstU32, Get},
@@ -11,8 +20,6 @@ pub use pallet::*;
 use pallet_assets::TransferFlags;
 use sp_runtime::traits::AccountIdConversion;
 use sp_std::{vec, vec::Vec};
-pub mod types;
-pub use types::*;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -126,7 +133,7 @@ pub mod pallet {
 		SignDataPurchaseContract {
 			contract_id: ContractId,
 			agency: T::AccountId,
-			verifier: T::AccountId,
+			data_verifier: T::AccountId,
 		},
 		// Pending Contract Terminate
 		PendingContractTerminate {
@@ -156,6 +163,8 @@ pub mod pallet {
 		Overflow,
 		/// Error that the total trade limit has been reached.
 		TradeLimitReached,
+		/// Contract period is invalid.
+		InvalidPeriod,
 		/// Error failed to the existing contract.
 		ContractNotExist,
 		/// Error failed to the existing contract status.
@@ -242,15 +251,15 @@ pub mod pallet {
 		/// The dispatch origin for this call must be _Signed_.
 		///
 		/// - `contract_id`: The id of the contract.
-		/// - `verifier`: The verifier of the contract.
+		/// - `data_verifier`: The verifier of the contract.
 		#[pallet::call_index(3)]
 		pub fn sign_purchase_contract(
 			origin: OriginFor<T>,
 			contract_id: ContractId,
-			verifier: T::AccountId,
+			data_verifier: T::AccountId,
 		) -> DispatchResult {
 			let maybe_agency = ensure_signed(origin)?;
-			Self::do_sign_purchase_contract(maybe_agency, contract_id, verifier)?;
+			Self::do_sign_purchase_contract(maybe_agency, contract_id, data_verifier)?;
 			Ok(())
 		}
 
@@ -310,7 +319,7 @@ pub mod pallet {
 			data_verification_proof: VerificationProof<AnyText>,
 		) -> DispatchResult {
 			let maybe_verifier = ensure_signed(origin)?;
-			Self::do_execute_data_trade_by_contract(
+			Self::do_execute_data_trade(
 				maybe_verifier,
 				contract_id,
 				data_owner,
@@ -403,7 +412,8 @@ where
 		data_issuer_fee_ratio: u32,
 		agency_fee_ratio: u32,
 	) -> (u128, u128, u128, u128) {
-		let platform_fee_ratio = 10_000 - data_owner_fee_ratio - data_issuer_fee_ratio;
+		let platform_fee_ratio =
+			10_000 - data_owner_fee_ratio - data_issuer_fee_ratio - agency_fee_ratio;
 		let quantity = 1;
 		let total_amount = price_per_data * quantity;
 
@@ -464,6 +474,8 @@ where
 	) -> DispatchResult {
 		let agency = detail.clone().agency;
 		ensure!(maybe_agency == agency, Error::<T>::InvalidAgency);
+		ensure!(detail.clone().effective_at < detail.clone().expired_at, Error::<T>::InvalidPeriod);
+
 		let contract_id = NextContractId::<T>::get();
 		NextContractId::<T>::try_mutate(|c| -> DispatchResult {
 			*c = c.checked_add(1).ok_or(Error::<T>::Overflow)?;
@@ -533,6 +545,7 @@ where
 		is_agency_exist: bool,
 	) -> DispatchResult {
 		ensure!(maybe_buyer == detail.data_buyer, Error::<T>::InvalidBuyer);
+		ensure!(detail.clone().effective_at < detail.clone().expired_at, Error::<T>::InvalidPeriod);
 
 		let contract_id = NextContractId::<T>::get();
 		NextContractId::<T>::try_mutate(|c| -> DispatchResult {
@@ -548,12 +561,16 @@ where
 
 		if is_agency_exist {
 			ensure!(detail.agency.is_some(), Error::<T>::InvalidAgency);
-			let agency = detail.agency.unwrap();
+			ensure!(detail.data_verifier.is_none(), Error::<T>::InvalidVerifier);
+			let agency = detail.agency.clone().unwrap();
 			let mut agency_list = DataPurchaseContractList::<T>::get(&agency);
 			agency_list.push(contract_id);
 			DataPurchaseContractList::<T>::insert(&agency, agency_list);
 
 			contract_status.push((agency.clone(), SignStatus::Unsigned));
+		} else {
+			ensure!(detail.agency.is_none(), Error::<T>::InvalidAgency);
+			ensure!(detail.data_verifier.is_some(), Error::<T>::InvalidVerifier);
 		}
 
 		let mut data_buyer_list = DataPurchaseContractList::<T>::get(&data_buyer);
@@ -580,7 +597,7 @@ where
 	fn do_sign_purchase_contract(
 		maybe_agency: T::AccountId,
 		contract_id: ContractId,
-		verifier: T::AccountId,
+		data_verifier: T::AccountId,
 	) -> DispatchResult {
 		let mut detail =
 			DataPurchaseContracts::<T>::get(contract_id).ok_or(Error::<T>::ContractNotExist)?;
@@ -600,15 +617,14 @@ where
 		}
 
 		ensure!(is_signed, Error::<T>::NotSigned);
-
 		ContractStatus::<T>::insert(contract_id, status);
-		detail.data_verifier = Some(verifier.clone());
+		detail.data_verifier = Some(data_verifier.clone());
 		DataPurchaseContracts::<T>::insert(contract_id, detail);
 
 		Self::deposit_event(Event::<T>::SignDataPurchaseContract {
 			contract_id,
 			agency: maybe_agency,
-			verifier,
+			data_verifier,
 		});
 
 		Ok(())
@@ -647,6 +663,9 @@ where
 				contract_id,
 			});
 		} else {
+			// Storage update when pending terminate only
+			ContractStatus::<T>::insert(contract_id, status);
+
 			Self::deposit_event(Event::<T>::PendingContractTerminate {
 				contract_type: ContractType::Delegate,
 				contract_id,
@@ -701,6 +720,9 @@ where
 				contract_id,
 			});
 		} else {
+			// Storage update when pending terminate only
+			ContractStatus::<T>::insert(contract_id, status);
+
 			Self::deposit_event(Event::<T>::PendingContractTerminate {
 				contract_type: ContractType::Purchase,
 				contract_id,
@@ -710,7 +732,7 @@ where
 		Ok(())
 	}
 
-	fn do_execute_data_trade_by_contract(
+	fn do_execute_data_trade(
 		maybe_verifier: T::AccountId,
 		contract_id: ContractId,
 		data_owner: T::AccountId,
@@ -735,7 +757,7 @@ where
 			Error::<T>::ContractNotActive
 		);
 		ensure!(detail.clone().expired_at > current_block_number, Error::<T>::ContractNotActive);
-		ensure!(detail.clone().effective_at < current_block_number, Error::<T>::ContractNotActive);
+		ensure!(detail.clone().effective_at <= current_block_number, Error::<T>::ContractNotActive);
 		if let Some(agency) = maybe_agency.clone() {
 			let agency_from_detail = detail.clone().agency.ok_or(Error::<T>::InvalidAgency)?;
 			ensure!(agency == agency_from_detail, Error::<T>::InvalidAgency);

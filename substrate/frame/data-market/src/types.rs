@@ -74,13 +74,13 @@ pub struct DataDelegateContractDetail<AccountId, BlockNumber, AnyText> {
 pub struct DataPurchaseContractDetail<AccountId, BlockNumber, Balance, AnyText> {
 	pub data_buyer: AccountId,
 	pub data_buyer_info: AnyText,
-	pub agency: Option<AccountId>,
-	pub agency_info: Option<AnyText>,
 	pub data_verifier: Option<AccountId>,
 	pub effective_at: BlockNumber,
 	pub expired_at: BlockNumber,
 	pub data_purchase_info: DataPurchaseInfo<AnyText>,
 	pub system_token_id: u32,
+	pub agency: Option<AccountId>,
+	pub agency_info: Option<AnyText>,
 	pub deposit: Balance,
 }
 
