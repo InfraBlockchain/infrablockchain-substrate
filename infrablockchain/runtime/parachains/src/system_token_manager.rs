@@ -885,7 +885,7 @@ impl<T: Config> Pallet<T> {
 			Ok(())
 		})?;
 
-		Self::try_promote(&wrapped, property.system_token_weight)?;
+		Self::try_promote(&wrapped, None)?;
 
 		Ok(())
 	}
@@ -1288,5 +1288,12 @@ pub mod types {
 			self.description = description;
 			self.url = url;
 		}
+	}
+
+	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, TypeInfo)]
+	pub struct SystemTokenProperty {
+		pub(crate) system_token_weight: Option<SystemTokenWeight>,
+		pub(crate) status: SystemTokenStatus,
+		pub(crate) created_at: u128,
 	}
 }

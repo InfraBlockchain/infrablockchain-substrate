@@ -28,6 +28,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 mod contracts;
 mod weights;
 mod xcm_config;
+use xcm_config::XcmRouter;
 
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use pallet_system_token_tx_payment::{CreditToBucket, TransactionFeeCharger};
@@ -443,7 +444,9 @@ parameter_types! {
 impl system_token_aggregator::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Period = AggregatedPeriod;
+	type LocalAssetManager = Assets;
 	type AssetMultiLocationGetter = AssetLink;
+	type SendXcm = XcmRouter;
 	type IsRelay = IsRelay;
 }
 

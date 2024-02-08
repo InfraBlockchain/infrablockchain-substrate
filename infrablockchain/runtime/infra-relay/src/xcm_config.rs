@@ -296,7 +296,7 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				paras_registrar::Call::reserve { .. } |
 				paras_registrar::Call::add_lock { .. },
 			) |
-			RuntimeCall::SystemTokenManager(system_token_manager::Call::set_exchange_rate {
+			RuntimeCall::SystemTokenManager(system_token_manager::Call::update_exchange_rate {
 				..
 			}) |
 			RuntimeCall::XcmPallet(pallet_xcm::Call::limited_reserve_transfer_assets {

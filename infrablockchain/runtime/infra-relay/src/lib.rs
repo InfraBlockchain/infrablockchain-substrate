@@ -102,12 +102,12 @@ pub use sp_runtime::BuildStorage;
 
 /// Constant values used within the runtime.
 use infra_relay_runtime_constants::{currency::*, fee::*, system_parachain::ASSET_HUB_ID, time::*};
-use xcm_config::XcmRouter;
 
 // Weights used in the runtime.
 mod weights;
 
 pub mod xcm_config;
+use xcm_config::XcmRouter;
 
 impl_runtime_weights!(infra_relay_runtime_constants);
 
@@ -1386,7 +1386,9 @@ parameter_types! {
 impl system_token_aggregator::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Period = Period;
+	type LocalAssetManager = Assets;
 	type AssetMultiLocationGetter = AssetLink;
+	type SendXcm = XcmRouter;
 	type IsRelay = IsRelay;
 }
 

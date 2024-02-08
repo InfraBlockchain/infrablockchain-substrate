@@ -175,7 +175,8 @@ pub mod pallet {
 					amount: <T as pallet_assets::Config>::Balance::from(amount),
 				}
 				.encode();
-				system_token_helper::try_queue_dmp::<T>(para_id, pallet_id, encoded_call)?;
+				// TODO: impl me! InfraCore::reward_validator(para_id, pallet_id)
+				// system_token_helper::try_queue_dmp::<T>(para_id, pallet_id, encoded_call)?;
 				Self::deposit_event(Event::ValidatorRewarded {
 					stash: who.clone().into(),
 					system_token_id,

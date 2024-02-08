@@ -10,6 +10,7 @@ use constants::{currency::*, fee::WeightToFee};
 
 mod weights;
 pub mod xcm_config;
+use xcm_config::XcmRouter;
 
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 pub use parachains_common::{
@@ -449,7 +450,9 @@ parameter_types! {
 impl system_token_aggregator::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Period = AggregatedPeriod;
+	type LocalAssetManager = Assets;
 	type AssetMultiLocationGetter = AssetLink;
+	type SendXcm = XcmRouter;
 	type IsRelay = IsRelay;
 }
 

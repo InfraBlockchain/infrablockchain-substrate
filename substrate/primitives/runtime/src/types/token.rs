@@ -230,6 +230,8 @@ pub trait LocalAssetManager {
 	fn system_token_list() -> Vec<SystemTokenAssetId> {
 		Vec::new()
 	}
+	/// Return system token asset balances of `who``
+	fn account_system_token_balances(who: Self::AccountId) -> Vec<(SystemTokenAssetId, SystemTokenBalance)>;
 	/// Return most system token balance of given 'asset_id' and 'account'
 	fn get_most_system_token_balance_of(
 		asset_ids: impl IntoIterator<Item = SystemTokenAssetId>,
