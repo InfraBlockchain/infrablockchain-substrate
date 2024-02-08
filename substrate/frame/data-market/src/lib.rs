@@ -6,6 +6,9 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+
 mod types;
 pub use types::*;
 
@@ -20,9 +23,6 @@ pub use pallet::*;
 use pallet_assets::TransferFlags;
 use sp_runtime::traits::AccountIdConversion;
 use sp_std::{vec, vec::Vec};
-
-#[cfg(feature = "runtime-benchmarks")]
-mod benchmarking;
 
 #[frame_support::pallet(dev_mode)]
 pub mod pallet {

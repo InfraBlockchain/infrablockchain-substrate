@@ -1,5 +1,6 @@
 use crate as pallet_data_market;
 use codec::Encode;
+use frame_benchmarking::v1::account;
 use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64},
@@ -118,7 +119,11 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	pallet_assets::GenesisConfig::<Test> {
 		assets: vec![(1, admin_account.clone(), true, MINIMUM_BALANCE)],
 		metadata: vec![(1, "Test System Token".encode(), "TST".encode(), 12)],
-		accounts: vec![(1, admin_account, INITIAL_BALANCE), (1, escrow_account, MINIMUM_BALANCE)],
+		accounts: vec![
+			(1, admin_account, INITIAL_BALANCE),
+			(1, escrow_account, MINIMUM_BALANCE),
+			(1, account("data_buyer", 0, 0), INITIAL_BALANCE),
+		],
 	}
 	.assimilate_storage(&mut storage)
 	.unwrap();
