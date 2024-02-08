@@ -412,20 +412,25 @@ where
 		data_issuer_fee_ratio: u32,
 		agency_fee_ratio: u32,
 	) -> (u128, u128, u128, u128) {
-		let platform_fee_ratio =
-			10_000 - data_owner_fee_ratio - data_issuer_fee_ratio - agency_fee_ratio;
+		let platform_fee_ratio = T::TotalFeeRatio::get() -
+			data_owner_fee_ratio -
+			data_issuer_fee_ratio -
+			agency_fee_ratio;
 		let quantity = 1;
 		let total_amount = price_per_data * quantity;
 
-		let data_owner_fee =
-			total_amount.saturating_mul(data_owner_fee_ratio as u128).saturating_div(10_000);
+		let data_owner_fee = total_amount
+			.saturating_mul(data_owner_fee_ratio as u128)
+			.saturating_div(T::TotalFeeRatio::get().into());
 		let data_issuer_fee = total_amount
 			.saturating_mul(data_issuer_fee_ratio as u128)
-			.saturating_div(10_000);
-		let platform_fee =
-			total_amount.saturating_mul(platform_fee_ratio as u128).saturating_div(10_000);
-		let agency_fee =
-			total_amount.saturating_mul(agency_fee_ratio as u128).saturating_div(10_000);
+			.saturating_div(T::TotalFeeRatio::get().into());
+		let platform_fee = total_amount
+			.saturating_mul(platform_fee_ratio as u128)
+			.saturating_div(T::TotalFeeRatio::get().into());
+		let agency_fee = total_amount
+			.saturating_mul(agency_fee_ratio as u128)
+			.saturating_div(T::TotalFeeRatio::get().into());
 
 		(data_owner_fee, data_issuer_fee, platform_fee, agency_fee)
 	}
