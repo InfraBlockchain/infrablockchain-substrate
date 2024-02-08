@@ -4,12 +4,15 @@ use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 
 pub type ContractId = u128;
-pub type PurchaseId = u128;
 pub type Quantity = u128;
 pub type IssuerWeight = u32;
 
 /// Common size is up to 100 bytes
 pub const MAX_TEXT_SIZE: u32 = 1_000_000;
+
+pub type AssetBalanceOf<T> =
+	<<T as Config>::Assets as Inspect<<T as SystemConfig>::AccountId>>::Balance;
+pub type AssetIdOf<T> = <<T as Config>::Assets as Inspect<<T as SystemConfig>::AccountId>>::AssetId;
 
 pub type AnyText = BoundedVec<u8, ConstU32<MAX_TEXT_SIZE>>;
 

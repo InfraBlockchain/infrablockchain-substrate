@@ -11,8 +11,8 @@ use sp_std::prelude::*;
 fn make_default_delegate_contract<T: Config>(
 	detail: DataDelegateContractDetail<T::AccountId, BlockNumberFor<T>, AnyText>,
 ) where
-	<T as pallet_assets::Config>::Balance: From<u128> + Into<u128>,
-	<T as pallet_assets::Config>::AssetIdParameter: From<u32>,
+	AssetBalanceOf<T>: From<u128> + Into<u128>,
+	AssetIdOf<T>: From<u32>,
 {
 	assert_ok!(DataMarket::<T>::make_delegate_contract(
 		RawOrigin::Signed(detail.clone().agency).into(),
@@ -21,16 +21,11 @@ fn make_default_delegate_contract<T: Config>(
 }
 
 fn make_default_purchase_contract<T: Config>(
-	detail: DataPurchaseContractDetail<
-		T::AccountId,
-		BlockNumberFor<T>,
-		<T as pallet_assets::Config>::Balance,
-		AnyText,
-	>,
+	detail: DataPurchaseContractDetail<T::AccountId, BlockNumberFor<T>, AssetBalanceOf<T>, AnyText>,
 	is_agency_exist: bool,
 ) where
-	<T as pallet_assets::Config>::Balance: From<u128> + Into<u128>,
-	<T as pallet_assets::Config>::AssetIdParameter: From<u32>,
+	AssetBalanceOf<T>: From<u128> + Into<u128>,
+	AssetIdOf<T>: From<u32>,
 {
 	assert_ok!(DataMarket::<T>::make_purchase_contract(
 		RawOrigin::Signed(detail.clone().data_buyer).into(),
@@ -44,8 +39,8 @@ fn sign_default_purchase_contract<T: Config>(
 	contract_id: ContractId,
 	data_verifier: T::AccountId,
 ) where
-	<T as pallet_assets::Config>::Balance: From<u128> + Into<u128>,
-	<T as pallet_assets::Config>::AssetIdParameter: From<u32>,
+	AssetBalanceOf<T>: From<u128> + Into<u128>,
+	AssetIdOf<T>: From<u32>,
 {
 	assert_ok!(DataMarket::<T>::sign_purchase_contract(
 		RawOrigin::Signed(agency).into(),
@@ -56,8 +51,8 @@ fn sign_default_purchase_contract<T: Config>(
 
 benchmarks! {
 	where_clause { where
-		<T as pallet_assets::Config>::Balance: From<u128> + Into<u128>,
-		<T as pallet_assets::Config>::AssetIdParameter: From<u32>,
+		AssetBalanceOf<T>: From<u128> + Into<u128>,
+		AssetIdOf<T>: From<u32>,
 	}
 
 	make_delegate_contract {
@@ -122,7 +117,7 @@ benchmarks! {
 		let detail = DataPurchaseContractDetail::<
 			T::AccountId,
 			BlockNumberFor<T>,
-			<T as pallet_assets::Config>::Balance,
+			AssetBalanceOf<T>,
 			AnyText,
 		> {
 			data_buyer: data_buyer.clone(),
@@ -157,7 +152,7 @@ benchmarks! {
 		let detail = DataPurchaseContractDetail::<
 			T::AccountId,
 			BlockNumberFor<T>,
-			<T as pallet_assets::Config>::Balance,
+			AssetBalanceOf<T>,
 			AnyText,
 		> {
 			data_buyer: data_buyer.clone(),
@@ -215,7 +210,7 @@ benchmarks! {
 		let detail = DataPurchaseContractDetail::<
 			T::AccountId,
 			BlockNumberFor<T>,
-			<T as pallet_assets::Config>::Balance,
+			AssetBalanceOf<T>,
 			AnyText,
 		> {
 			data_buyer: data_buyer.clone(),
@@ -248,7 +243,7 @@ benchmarks! {
 		let detail = DataPurchaseContractDetail::<
 			T::AccountId,
 			BlockNumberFor<T>,
-			<T as pallet_assets::Config>::Balance,
+			AssetBalanceOf<T>,
 			AnyText,
 		> {
 			data_buyer: data_buyer.clone(),

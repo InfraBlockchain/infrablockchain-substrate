@@ -511,6 +511,7 @@ impl pallet_urauth::Config for Runtime {
 
 impl pallet_data_market::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
+	type Assets = Assets;
 	type MaxPurchaseQuantity = MaxPurchaseQuantity;
 	type TotalFeeRatio = TotalFeeRatio;
 	type MinPlatformFeeRatio = MinPlatformFeeRatio;

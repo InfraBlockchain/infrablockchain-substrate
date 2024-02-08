@@ -103,6 +103,7 @@ impl pallet_assets::Config for Test {
 
 impl pallet_data_market::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
+	type Assets = Assets;
 	type MaxPurchaseQuantity = ConstU128<100>;
 	type TotalFeeRatio = ConstU32<10000>;
 	type MinPlatformFeeRatio = ConstU32<5000>;

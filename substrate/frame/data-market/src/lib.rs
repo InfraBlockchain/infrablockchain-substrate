@@ -14,13 +14,15 @@ pub use types::*;
 
 use frame_support::{
 	pallet_prelude::*,
-	traits::{ConstU32, Get},
+	traits::{
+		fungibles::{Inspect, Mutate},
+		tokens::Preservation,
+		ConstU32, Get,
+	},
 	BoundedVec, PalletId,
 };
-
-use frame_system::pallet_prelude::*;
+use frame_system::{pallet_prelude::*, Config as SystemConfig};
 pub use pallet::*;
-use pallet_assets::TransferFlags;
 use sp_runtime::traits::AccountIdConversion;
 use sp_std::{vec, vec::Vec};
 
@@ -33,8 +35,11 @@ pub mod pallet {
 	pub struct Pallet<T>(_);
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config + pallet_assets::Config {
+	pub trait Config: frame_system::Config {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+
+		/// The type used to tokenize the asset balance.
+		type Assets: Inspect<Self::AccountId> + Mutate<Self::AccountId>;
 
 		// The maximum quantity of data that can be purchased
 		#[pallet::constant]
@@ -84,12 +89,7 @@ pub mod pallet {
 		_,
 		Twox64Concat,
 		ContractId,
-		DataPurchaseContractDetail<
-			T::AccountId,
-			BlockNumberFor<T>,
-			<T as pallet_assets::Config>::Balance,
-			AnyText,
-		>,
+		DataPurchaseContractDetail<T::AccountId, BlockNumberFor<T>, AssetBalanceOf<T>, AnyText>,
 		OptionQuery,
 	>;
 
@@ -192,8 +192,8 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T>
 	where
-		<T as pallet_assets::Config>::Balance: From<u128> + Into<u128>,
-		<T as pallet_assets::Config>::AssetIdParameter: From<u32>,
+		AssetBalanceOf<T>: From<u128> + Into<u128>,
+		AssetIdOf<T>: From<u32>,
 	{
 		/// Make a delegate contract
 		///
@@ -236,7 +236,7 @@ pub mod pallet {
 			detail: DataPurchaseContractDetail<
 				T::AccountId,
 				BlockNumberFor<T>,
-				<T as pallet_assets::Config>::Balance,
+				AssetBalanceOf<T>,
 				AnyText,
 			>,
 			is_agency_exist: bool,
@@ -315,7 +315,7 @@ pub mod pallet {
 			data_issuer_fee_ratio: u32,
 			agency: Option<T::AccountId>,
 			agency_fee_ratio: Option<u32>,
-			price_per_data: T::Balance,
+			price_per_data: AssetBalanceOf<T>,
 			data_verification_proof: VerificationProof<AnyText>,
 		) -> DispatchResult {
 			let maybe_verifier = ensure_signed(origin)?;
@@ -338,8 +338,8 @@ pub mod pallet {
 
 impl<T: Config> Pallet<T>
 where
-	<T as pallet_assets::Config>::Balance: From<u128> + Into<u128>,
-	<T as pallet_assets::Config>::AssetIdParameter: From<u32>,
+	AssetBalanceOf<T>: From<u128> + Into<u128>,
+	AssetIdOf<T>: From<u32>,
 {
 	pub fn get_escrow_account() -> T::AccountId {
 		const ID: PalletId = PalletId(*b"marketid");
@@ -436,32 +436,27 @@ where
 		system_token_asset_id: u32,
 		amount: u128,
 	) -> DispatchResult {
-		let balance = <T as pallet_assets::Config>::Balance::from(amount);
-		let f = TransferFlags { keep_alive: true, best_effort: false, burn_dust: false };
+		let balance = AssetBalanceOf::<T>::from(amount);
 
 		match from {
 			TransferFrom::Origin(origin) => {
-				pallet_assets::Pallet::<T>::do_transfer(
+				let _ = T::Assets::transfer(
 					system_token_asset_id.into(),
 					&origin,
 					&to,
 					balance,
-					None,
-					f,
-				)
-				.map(|_| ())?;
+					Preservation::Protect,
+				);
 			},
 			TransferFrom::Escrow => {
 				let escrow = Self::get_escrow_account();
-				pallet_assets::Pallet::<T>::do_transfer(
+				let _ = T::Assets::transfer(
 					system_token_asset_id.into(),
 					&escrow,
 					&to,
 					balance,
-					None,
-					f,
-				)
-				.map(|_| ())?;
+					Preservation::Protect,
+				);
 			},
 		}
 
@@ -539,7 +534,7 @@ where
 		detail: DataPurchaseContractDetail<
 			T::AccountId,
 			BlockNumberFor<T>,
-			<T as pallet_assets::Config>::Balance,
+			AssetBalanceOf<T>,
 			AnyText,
 		>,
 		is_agency_exist: bool,
@@ -741,7 +736,7 @@ where
 		data_issuer_fee_ratio: u32,
 		maybe_agency: Option<T::AccountId>,
 		maybe_agency_fee_ratio: Option<u32>,
-		price_per_data: T::Balance,
+		price_per_data: AssetBalanceOf<T>,
 		data_verification_proof: VerificationProof<AnyText>,
 	) -> DispatchResult {
 		let detail =
