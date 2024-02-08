@@ -351,6 +351,12 @@ where
 		AccountIdConversion::<T::AccountId>::into_account_truncating(&ID)
 	}
 
+	pub fn update_deposit_in_detail(contract_id: ContractId, left_deposit: AssetBalanceOf<T>) {
+		let mut detail = DataPurchaseContracts::<T>::get(contract_id).unwrap();
+		detail.deposit = left_deposit;
+		DataPurchaseContracts::<T>::insert(contract_id, detail);
+	}
+
 	pub fn settle_data_trade(
 		data_owner: T::AccountId,
 		data_owner_fee: u128,
@@ -795,6 +801,8 @@ where
 			agency_fee,
 			detail.system_token_id,
 		)?;
+
+		Self::update_deposit_in_detail(contract_id, detail.deposit - price_per_data);
 
 		Self::deposit_event(Event::<T>::DataTradeExecuted {
 			contract_id,
