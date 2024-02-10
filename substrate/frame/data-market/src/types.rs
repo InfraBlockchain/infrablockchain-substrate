@@ -9,12 +9,15 @@ pub type IssuerWeight = u32;
 
 /// Common size is up to 100 bytes
 pub const MAX_TEXT_SIZE: u32 = 1_000_000;
+pub const MAX_ENTITIES: u32 = 2;
 
 pub type AssetBalanceOf<T> =
 	<<T as Config>::Assets as Inspect<<T as SystemConfig>::AccountId>>::Balance;
 pub type AssetIdOf<T> = <<T as Config>::Assets as Inspect<<T as SystemConfig>::AccountId>>::AssetId;
 
 pub type AnyText = BoundedVec<u8, ConstU32<MAX_TEXT_SIZE>>;
+
+pub type ContractSigner<T> = BTreeMap<<T as SystemConfig>::AccountId, SignStatus>;
 
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "std", derive(Hash))]
@@ -61,7 +64,7 @@ pub(crate) enum TransferFrom<T: Config> {
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Hash, Debug))]
-pub struct DataDelegateContractDetail<AccountId, BlockNumber, AnyText> {
+pub struct DataDelegateContractDetail<AccountId, BlockNumber> {
 	pub data_owner: AccountId,
 	pub data_owner_info: AnyText,
 	pub agency: AccountId,
@@ -74,7 +77,18 @@ pub struct DataDelegateContractDetail<AccountId, BlockNumber, AnyText> {
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Hash, Debug))]
-pub struct DataPurchaseContractDetail<AccountId, BlockNumber, Balance, AnyText> {
+pub struct DataDelegateContractParams<AccountId, BlockNumber> {
+	pub data_owner: AccountId,
+	pub data_owner_info: AnyText,
+	pub agency_info: AnyText,
+	pub data_owner_minimum_fee_ratio: u32,
+	pub deligated_data: AnyText,
+	pub duration: BlockNumber,
+}
+
+#[derive(Encode, Decode, Clone, PartialEq, Eq, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Hash, Debug))]
+pub struct DataPurchaseContractDetail<AccountId, BlockNumber, Balance> {
 	pub data_buyer: AccountId,
 	pub data_buyer_info: AnyText,
 	pub data_verifier: Option<AccountId>,
@@ -85,6 +99,19 @@ pub struct DataPurchaseContractDetail<AccountId, BlockNumber, Balance, AnyText> 
 	pub agency: Option<AccountId>,
 	pub agency_info: Option<AnyText>,
 	pub deposit: Balance,
+}
+
+#[derive(Encode, Decode, Clone, PartialEq, Eq, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Hash, Debug))]
+pub struct DataPurchaseContractParams<AccountId, BlockNumber, Balance> {
+	pub data_buyer_info: AnyText,
+	pub data_verifier: Option<AccountId>,
+	pub data_purchase_info: DataPurchaseInfo<AnyText>,
+	pub system_token_id: u32,
+	pub agency: Option<AccountId>,
+	pub agency_info: Option<AnyText>,
+	pub deposit: Balance,
+	pub duration: BlockNumber,
 }
 
 #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
