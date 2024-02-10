@@ -80,7 +80,6 @@ pub struct DataDelegateContractDetail<AccountId, BlockNumber> {
 pub struct DataDelegateContractParams<AccountId, BlockNumber> {
 	pub data_owner: AccountId,
 	pub data_owner_info: AnyText,
-	pub agency_info: AnyText,
 	pub data_owner_minimum_fee_ratio: u32,
 	pub deligated_data: AnyText,
 	pub duration: BlockNumber,
@@ -109,7 +108,6 @@ pub struct DataPurchaseContractParams<AccountId, BlockNumber, Balance> {
 	pub data_purchase_info: DataPurchaseInfo<AnyText>,
 	pub system_token_id: u32,
 	pub agency: Option<AccountId>,
-	pub agency_info: Option<AnyText>,
 	pub deposit: Balance,
 	pub duration: BlockNumber,
 }

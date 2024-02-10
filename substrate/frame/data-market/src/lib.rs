@@ -111,9 +111,20 @@ pub mod pallet {
 	pub(super) type ContractStatus<T: Config> =
 		StorageMap<_, Twox64Concat, ContractId, ContractSigner<T>, OptionQuery>;
 
+	// Agency list
+	#[pallet::storage]
+	#[pallet::getter(fn get_agencies)]
+	pub(super) type Agencies<T: Config> =
+		StorageMap<_, Twox64Concat, T::AccountId, AnyText, ValueQuery>;
+
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
+		// Register Agency
+		RegisterAgency {
+			agency: T::AccountId,
+			agency_info: AnyText,
+		},
 		// Make Data Delegate Contract
 		MakeDataDelegateContract {
 			contract_id: ContractId,
@@ -332,6 +343,19 @@ pub mod pallet {
 			)?;
 			Ok(())
 		}
+
+		/// Register an agency
+		///
+		/// The dispatch origin for this call must be _Signed_.
+		///
+		/// - `agency_info`: The information of the agency.
+		#[pallet::call_index(7)]
+		pub fn register_agency(origin: OriginFor<T>, agency_info: AnyText) -> DispatchResult {
+			let agency = ensure_signed(origin)?;
+			Agencies::<T>::insert(agency.clone(), agency_info.clone());
+			Self::deposit_event(Event::<T>::RegisterAgency { agency, agency_info });
+			Ok(())
+		}
 	}
 }
 
@@ -480,13 +504,14 @@ where
 		let DataDelegateContractParams {
 			data_owner,
 			data_owner_info,
-			agency_info,
 			data_owner_minimum_fee_ratio,
 			deligated_data,
 			duration,
 		} = params;
 
 		let current_block_number = frame_system::Pallet::<T>::block_number();
+		let agency_info =
+			Agencies::<T>::try_get(&agency.clone()).map_err(|_| Error::<T>::InvalidAgency)?;
 		let detail: DataDelegateContractDetail<T::AccountId, BlockNumberFor<T>> =
 			DataDelegateContractDetail {
 				data_owner: data_owner.clone(),
@@ -563,33 +588,33 @@ where
 			data_purchase_info,
 			system_token_id,
 			agency,
-			agency_info,
 			deposit,
 			duration,
 		} = params.clone();
 
 		let current_block_number = frame_system::Pallet::<T>::block_number();
-		let detail: DataPurchaseContractDetail<T::AccountId, BlockNumberFor<T>, AssetBalanceOf<T>> =
-			DataPurchaseContractDetail {
-				data_buyer: data_buyer.clone(),
-				data_buyer_info,
-				data_verifier: data_verifier.clone(),
-				effective_at: current_block_number,
-				expired_at: current_block_number + duration,
-				data_purchase_info,
-				system_token_id,
-				agency: agency.clone(),
-				agency_info,
-				deposit,
-			};
+		let mut detail: DataPurchaseContractDetail<
+			T::AccountId,
+			BlockNumberFor<T>,
+			AssetBalanceOf<T>,
+		> = DataPurchaseContractDetail {
+			data_buyer: data_buyer.clone(),
+			data_buyer_info,
+			data_verifier: data_verifier.clone(),
+			effective_at: current_block_number,
+			expired_at: current_block_number + duration,
+			data_purchase_info,
+			system_token_id,
+			agency: None,
+			agency_info: None,
+			deposit,
+		};
 
 		let contract_id = NextContractId::<T>::get();
 		NextContractId::<T>::try_mutate(|c| -> DispatchResult {
 			*c = c.checked_add(1).ok_or(Error::<T>::Overflow)?;
 			Ok(())
 		})?;
-
-		DataPurchaseContracts::<T>::insert(contract_id, detail);
 
 		let mut contract_status: ContractSigner<T> =
 			BTreeMap::from_iter(vec![(data_buyer.clone(), SignStatus::Signed)]);
@@ -605,10 +630,16 @@ where
 			});
 
 			contract_status.insert(agency.clone(), SignStatus::Unsigned);
+			let agency_info =
+				Agencies::<T>::try_get(&agency.clone()).map_err(|_| Error::<T>::InvalidAgency)?;
+			detail.agency = Some(agency.clone());
+			detail.agency_info = Some(agency_info);
 		} else {
 			ensure!(agency.is_none(), Error::<T>::InvalidAgency);
 			ensure!(data_verifier.is_some(), Error::<T>::InvalidVerifier);
 		}
+
+		DataPurchaseContracts::<T>::insert(contract_id, detail);
 
 		DataPurchaseContractList::<T>::mutate(&data_buyer, |list| {
 			list.push(contract_id);
