@@ -23,8 +23,8 @@ use frame_support::{
 };
 use frame_system::{pallet_prelude::*, Config as SystemConfig};
 pub use pallet::*;
-use sp_runtime::traits::AccountIdConversion;
-use sp_std::{collections::btree_map::BTreeMap, prelude::*, vec, vec::Vec};
+use sp_runtime::{traits::AccountIdConversion, BoundedBTreeMap};
+use sp_std::{prelude::*, vec, vec::Vec};
 
 #[frame_support::pallet(dev_mode)]
 pub mod pallet {
@@ -540,10 +540,12 @@ where
 			list.push(contract_id);
 		});
 
-		let contract_status: ContractSigner<T> = BTreeMap::from_iter(vec![
-			(agency.clone(), SignStatus::Signed),
-			(data_owner, SignStatus::Unsigned),
-		]);
+		let mut contract_status: ContractSigner<T> = BoundedBTreeMap::new();
+		contract_status
+			.try_insert(agency.clone(), SignStatus::Signed)
+			.and_then(|_| contract_status.try_insert(data_owner.clone(), SignStatus::Unsigned))
+			.map_err(|_| Error::<T>::ExceedContractSigner)?;
+
 		ContractStatus::<T>::insert(contract_id, contract_status);
 
 		Self::deposit_event(Event::<T>::MakeDataDelegateContract { contract_id, agency });
@@ -616,8 +618,10 @@ where
 			Ok(())
 		})?;
 
-		let mut contract_status: ContractSigner<T> =
-			BTreeMap::from_iter(vec![(data_buyer.clone(), SignStatus::Signed)]);
+		let mut contract_status: ContractSigner<T> = BoundedBTreeMap::new();
+		contract_status
+			.try_insert(data_buyer.clone(), SignStatus::Signed)
+			.map_err(|_| Error::<T>::ExceedContractSigner)?;
 
 		if is_agency_exist {
 			ensure!(agency.is_some(), Error::<T>::InvalidAgency);
@@ -629,7 +633,9 @@ where
 				list.push(contract_id);
 			});
 
-			contract_status.insert(agency.clone(), SignStatus::Unsigned);
+			contract_status
+				.try_insert(agency.clone(), SignStatus::Unsigned)
+				.map_err(|_| Error::<T>::ExceedContractSigner)?;
 			let agency_info =
 				Agencies::<T>::try_get(&agency.clone()).map_err(|_| Error::<T>::InvalidAgency)?;
 			detail.agency = Some(agency.clone());

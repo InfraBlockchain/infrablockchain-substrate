@@ -17,7 +17,8 @@ pub type AssetIdOf<T> = <<T as Config>::Assets as Inspect<<T as SystemConfig>::A
 
 pub type AnyText = BoundedVec<u8, ConstU32<MAX_TEXT_SIZE>>;
 
-pub type ContractSigner<T> = BTreeMap<<T as SystemConfig>::AccountId, SignStatus>;
+pub type ContractSigner<T> =
+	BoundedBTreeMap<<T as SystemConfig>::AccountId, SignStatus, ConstU32<MAX_ENTITIES>>;
 
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "std", derive(Hash))]
