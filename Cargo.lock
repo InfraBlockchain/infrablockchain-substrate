@@ -8241,6 +8241,7 @@ dependencies = [
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
  "hex-literal 0.3.4",
+ "hex-literal 0.4.1",
  "infra-asset-link",
  "infra-relay-runtime-constants",
  "infrablockchain-core-primitives",

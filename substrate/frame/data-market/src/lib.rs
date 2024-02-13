@@ -38,6 +38,9 @@ pub mod pallet {
 	pub trait Config: frame_system::Config {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
+		/// Origin for admin-level operations.
+		type AdminOrigin: EnsureOrigin<Self::RuntimeOrigin>;
+
 		/// The type used to tokenize the asset balance.
 		type Assets: Inspect<Self::AccountId> + Mutate<Self::AccountId>;
 
@@ -124,6 +127,10 @@ pub mod pallet {
 		RegisterAgency {
 			agency: T::AccountId,
 			agency_info: AnyText,
+		},
+		// Deregister Agency
+		DeregisterAgency {
+			agency: T::AccountId,
 		},
 		// Make Data Delegate Contract
 		MakeDataDelegateContract {
@@ -354,6 +361,161 @@ pub mod pallet {
 			let agency = ensure_signed(origin)?;
 			Agencies::<T>::insert(agency.clone(), agency_info.clone());
 			Self::deposit_event(Event::<T>::RegisterAgency { agency, agency_info });
+			Ok(())
+		}
+
+		/// Deregister an agency
+		///
+		/// The dispatch origin for this call must be _Signed_.
+		#[pallet::call_index(8)]
+		pub fn deregister_agency(origin: OriginFor<T>) -> DispatchResult {
+			let agency = ensure_signed(origin)?;
+			if Agencies::<T>::contains_key(&agency) {
+				Agencies::<T>::remove(&agency);
+			}
+			Self::deposit_event(Event::<T>::DeregisterAgency { agency });
+			Ok(())
+		}
+
+		/// Make a delegate contract by root
+		///
+		/// The dispatch origin for this call must be _Admin_.
+		///
+		/// - `agency`: The agency of the contract.
+		/// - `params`: The detail of the contract.
+		#[pallet::call_index(9)]
+		pub fn make_delegate_contract_by_admin(
+			origin: OriginFor<T>,
+			agency: T::AccountId,
+			params: DataDelegateContractParams<T::AccountId, BlockNumberFor<T>>,
+		) -> DispatchResult {
+			T::AdminOrigin::ensure_origin(origin)?;
+			Self::do_make_delegate_contract(agency, params)?;
+			Ok(())
+		}
+
+		/// Sign a delegate contract by root
+		///
+		/// The dispatch origin for this call must be _Admin_.
+		///
+		/// - `contract_id`: The id of the contract.
+		/// - `data_owner`: The owner of the data.
+		#[pallet::call_index(10)]
+		pub fn sign_delegate_contract_by_admin(
+			origin: OriginFor<T>,
+			data_owner: T::AccountId,
+			contract_id: ContractId,
+		) -> DispatchResult {
+			T::AdminOrigin::ensure_origin(origin)?;
+			Self::do_sign_delegate_contract(data_owner, contract_id)?;
+			Ok(())
+		}
+
+		/// Make a purchase contract by root
+		///
+		/// The dispatch origin for this call must be _Admin_.
+		///
+		/// - `data_buyer`: The buyer of the data.
+		/// - `params`: The detail of the contract.
+		/// - `is_agency_exist`: The flag of the agency.
+		#[pallet::call_index(11)]
+		pub fn make_purchase_contract_by_admin(
+			origin: OriginFor<T>,
+			data_buyer: T::AccountId,
+			params: DataPurchaseContractParams<T::AccountId, BlockNumberFor<T>, AssetBalanceOf<T>>,
+			is_agency_exist: bool,
+		) -> DispatchResult {
+			T::AdminOrigin::ensure_origin(origin)?;
+			Self::do_make_purchase_contract(data_buyer, params, is_agency_exist)?;
+			Ok(())
+		}
+
+		/// Sign a purchase contract by root
+		///
+		/// The dispatch origin for this call must be _Admin_.
+		///
+		/// - `data_agency`: The agency of the contract.
+		/// - `contract_id`: The id of the contract.
+		/// - `data_verifier`: The verifier of the contract.
+		#[pallet::call_index(12)]
+		pub fn sign_purchase_contract_by_admin(
+			origin: OriginFor<T>,
+			agency: T::AccountId,
+			contract_id: ContractId,
+			data_verifier: T::AccountId,
+		) -> DispatchResult {
+			T::AdminOrigin::ensure_origin(origin)?;
+			Self::do_sign_purchase_contract(agency, contract_id, data_verifier)?;
+			Ok(())
+		}
+
+		/// Terminate a delegate contract by root
+		///
+		/// The dispatch origin for this call must be _Admin_.
+		///
+		/// - `signer`: The signer of the contract.
+		/// - `contract_id`: The id of the contract.
+		#[pallet::call_index(13)]
+		pub fn terminate_delegate_contract_by_admin(
+			origin: OriginFor<T>,
+			signer: T::AccountId,
+			contract_id: ContractId,
+		) -> DispatchResult {
+			T::AdminOrigin::ensure_origin(origin)?;
+			Self::do_terminate_delegate_contract(signer, contract_id)?;
+			Ok(())
+		}
+
+		/// Terminate a purchase contract by root
+		///
+		/// The dispatch origin for this call must be _Admin_.
+		///
+		/// - `signer`: The signer of the contract.
+		/// - `contract_id`: The id of the contract.
+		#[pallet::call_index(14)]
+		pub fn terminate_purchase_contract_by_admin(
+			origin: OriginFor<T>,
+			signer: T::AccountId,
+			contract_id: ContractId,
+		) -> DispatchResult {
+			T::AdminOrigin::ensure_origin(origin)?;
+			Self::do_terminate_purchase_contract(signer, contract_id)?;
+			Ok(())
+		}
+
+		/// Register an agency by root
+		///
+		/// The dispatch origin for this call must be _Admin_.
+		///
+		/// - `agency`: The agency of the contract.
+		/// - `agency_info`: The information of the agency.
+		#[pallet::call_index(15)]
+		pub fn register_agency_by_admin(
+			origin: OriginFor<T>,
+			agency: T::AccountId,
+			agency_info: AnyText,
+		) -> DispatchResult {
+			T::AdminOrigin::ensure_origin(origin)?;
+			Agencies::<T>::insert(agency.clone(), agency_info.clone());
+			Self::deposit_event(Event::<T>::RegisterAgency { agency, agency_info });
+			Ok(())
+		}
+
+		/// Deregister an agency by root
+		///
+		/// The dispatch origin for this call must be _Admin_.
+		///
+		/// - `agency`: The agency of the contract.
+		#[pallet::call_index(16)]
+		pub fn deregister_agency_by_admin(
+			origin: OriginFor<T>,
+			agency: T::AccountId,
+		) -> DispatchResult {
+			T::AdminOrigin::ensure_origin(origin)?;
+			if Agencies::<T>::contains_key(&agency) {
+				Agencies::<T>::remove(&agency);
+			}
+			Self::deposit_event(Event::<T>::DeregisterAgency { agency });
 			Ok(())
 		}
 	}

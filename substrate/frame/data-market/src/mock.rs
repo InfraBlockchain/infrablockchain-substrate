@@ -6,7 +6,7 @@ use frame_support::{
 	traits::{AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64},
 	weights::Weight,
 };
-use frame_system::EnsureSigned;
+use frame_system::{EnsureRoot, EnsureSigned};
 use sp_core::H256;
 use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
@@ -104,6 +104,7 @@ impl pallet_assets::Config for Test {
 impl pallet_data_market::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type Assets = Assets;
+	type AdminOrigin = EnsureRoot<AccountId>;
 	type MaxPurchaseQuantity = ConstU128<100>;
 	type TotalFeeRatio = ConstU32<10000>;
 	type MinPlatformFeeRatio = ConstU32<5000>;

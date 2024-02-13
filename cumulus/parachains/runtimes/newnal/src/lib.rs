@@ -43,8 +43,9 @@ use frame_support::{
 };
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
-	EnsureRoot, EnsureSigned,
+	EnsureRoot, EnsureSigned, EnsureSignedBy,
 };
+
 use pallet_system_token_tx_payment::{CreditToBucket, TransactionFeeCharger};
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{
@@ -509,9 +510,15 @@ impl pallet_urauth::Config for Runtime {
 	type AuthorizedOrigin = EnsureRoot<AccountId>;
 }
 
+// Alice Address
+frame_support::ord_parameter_types! {
+	pub const AdminController: AccountId = AccountId::from(hex_literal::hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"));
+}
+
 impl pallet_data_market::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Assets = Assets;
+	type AdminOrigin = EnsureSignedBy<AdminController, AccountId>;
 	type MaxPurchaseQuantity = MaxPurchaseQuantity;
 	type TotalFeeRatio = TotalFeeRatio;
 	type MinPlatformFeeRatio = MinPlatformFeeRatio;
