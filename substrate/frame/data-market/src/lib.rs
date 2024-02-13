@@ -536,9 +536,11 @@ where
 			list.push(contract_id);
 		});
 
-		DataDelegateContractList::<T>::mutate(&agency, |list| {
-			list.push(contract_id);
-		});
+		if data_owner != agency {
+			DataDelegateContractList::<T>::mutate(&agency, |list| {
+				list.push(contract_id);
+			});
+		}
 
 		let mut contract_status: ContractSigner<T> = BoundedBTreeMap::new();
 		contract_status
@@ -629,9 +631,11 @@ where
 
 			let agency = agency.ok_or(Error::<T>::InvalidAgency)?;
 
-			DataPurchaseContractList::<T>::mutate(&agency, |list| {
-				list.push(contract_id);
-			});
+			if data_buyer != agency {
+				DataPurchaseContractList::<T>::mutate(&agency, |list| {
+					list.push(contract_id);
+				});
+			}
 
 			contract_status
 				.try_insert(agency.clone(), SignStatus::Unsigned)
