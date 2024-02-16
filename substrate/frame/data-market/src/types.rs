@@ -127,3 +127,9 @@ pub enum SignStatus {
 	Signed,
 	WantToTerminate,
 }
+
+#[derive(Encode, Decode, Clone, Copy, Eq, PartialEq, RuntimeDebug, TypeInfo, Default)]
+pub struct MarketConfiguration {
+	pub total_fee_ratio: u32,
+	pub min_platform_fee_ratio: u32,
+}

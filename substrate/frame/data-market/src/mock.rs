@@ -106,8 +106,6 @@ impl pallet_data_market::Config for Test {
 	type Assets = Assets;
 	type AdminOrigin = EnsureRoot<AccountId>;
 	type MaxPurchaseQuantity = ConstU128<100>;
-	type TotalFeeRatio = ConstU32<10000>;
-	type MinPlatformFeeRatio = ConstU32<5000>;
 }
 
 // Build genesis storage according to the mock runtime.

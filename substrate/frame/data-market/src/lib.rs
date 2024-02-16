@@ -47,14 +47,6 @@ pub mod pallet {
 		// The maximum quantity of data that can be purchased
 		#[pallet::constant]
 		type MaxPurchaseQuantity: Get<Quantity>;
-
-		/// The total fee ratio, defined as 100% and represented by the value 10,000.
-		#[pallet::constant]
-		type TotalFeeRatio: Get<u32>;
-
-		/// The minimum platform fee ratio, set at a fixed 10%.
-		#[pallet::constant]
-		type MinPlatformFeeRatio: Get<u32>;
 	}
 
 	// The Next value of contract id
@@ -120,6 +112,11 @@ pub mod pallet {
 	pub(super) type Agencies<T: Config> =
 		StorageMap<_, Twox64Concat, T::AccountId, AnyText, ValueQuery>;
 
+	// The Config of the platform
+	#[pallet::storage]
+	#[pallet::getter(fn get_platform_config)]
+	pub(super) type PlatformConfig<T: Config> = StorageValue<_, MarketConfiguration, ValueQuery>;
+
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
@@ -173,6 +170,10 @@ pub mod pallet {
 			platform_fee: u128,
 			data_verification_proof: VerificationProof<AnyText>,
 		},
+		// Set Platform Config
+		SetPlatformConfig {
+			config: MarketConfiguration,
+		},
 	}
 
 	#[pallet::error]
@@ -209,6 +210,25 @@ pub mod pallet {
 		InvalidFeeRatio,
 		/// Exceed Contract Signer
 		ExceedContractSigner,
+		/// Config is invalid
+		InvalidConfig,
+	}
+
+	#[pallet::genesis_config]
+	#[derive(frame_support::DefaultNoBound)]
+	pub struct GenesisConfig<T: Config> {
+		pub _config: sp_std::marker::PhantomData<T>,
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
+		fn build(&self) {
+			// Set as default configuration
+			let default =
+				MarketConfiguration { total_fee_ratio: 10000, min_platform_fee_ratio: 1000 };
+
+			PlatformConfig::<T>::put(default);
+		}
 	}
 
 	#[pallet::call]
@@ -518,6 +538,21 @@ pub mod pallet {
 			Self::deposit_event(Event::<T>::DeregisterAgency { agency });
 			Ok(())
 		}
+
+		/// Set the platform configuration
+		///
+		/// The dispatch origin for this call must be _Admin_.
+		///
+		/// - `config`: The configuration of the platform.
+		#[pallet::call_index(17)]
+		pub fn set_platform_config(
+			origin: OriginFor<T>,
+			config: MarketConfiguration,
+		) -> DispatchResult {
+			T::AdminOrigin::ensure_origin(origin)?;
+			Self::do_set_platform_config(config)?;
+			Ok(())
+		}
 	}
 }
 
@@ -597,31 +632,46 @@ where
 		Ok(())
 	}
 
+	/**
+	 * Calculate the fee for the data trade
+	 * @param price_per_data The price per data
+	 * @param data_owner_fee_ratio The fee ratio of the data owner
+	 * @param data_issuer_fee_ratio The fee ratio of the data issuer
+	 * @param agency_fee_ratio The fee ratio of the agency
+	 * @return The fee for the data trade
+	 *
+	 * The fee is calculated as follows:
+	 * 1. The total fee ratio is 100%, from total_fee_ratio
+	 * 2. The remainder after subtracting data_owner_fee_ratio, data_issuer_fee_ratio, and
+	 *    agency_fee_ratio from TotalFeeRatio becomes platform_fee_ratio.
+	 * 3. The total amount is calculated as price_per_data * quantity * ratio.
+	 */
 	fn calculate_data_fee(
 		price_per_data: u128,
 		data_owner_fee_ratio: u32,
 		data_issuer_fee_ratio: u32,
 		agency_fee_ratio: u32,
 	) -> (u128, u128, u128, u128) {
-		let platform_fee_ratio = T::TotalFeeRatio::get() -
-			data_owner_fee_ratio -
-			data_issuer_fee_ratio -
-			agency_fee_ratio;
+		let market_config = PlatformConfig::<T>::get();
+		let MarketConfiguration { total_fee_ratio, min_platform_fee_ratio: _ } = market_config;
+
+		let platform_fee_ratio =
+			total_fee_ratio - data_owner_fee_ratio - data_issuer_fee_ratio - agency_fee_ratio;
 		let quantity = 1;
 		let total_amount = price_per_data * quantity;
 
 		let data_owner_fee = total_amount
 			.saturating_mul(data_owner_fee_ratio as u128)
-			.saturating_div(T::TotalFeeRatio::get().into());
+			.saturating_div(total_fee_ratio.into());
 		let data_issuer_fee = total_amount
 			.saturating_mul(data_issuer_fee_ratio as u128)
-			.saturating_div(T::TotalFeeRatio::get().into());
+			.saturating_div(total_fee_ratio.into());
 		let platform_fee = total_amount
 			.saturating_mul(platform_fee_ratio as u128)
-			.saturating_div(T::TotalFeeRatio::get().into());
+			.saturating_div(total_fee_ratio.into());
 		let agency_fee = total_amount
 			.saturating_mul(agency_fee_ratio as u128)
-			.saturating_div(T::TotalFeeRatio::get().into());
+			.saturating_div(total_fee_ratio.into());
 
 		(data_owner_fee, data_issuer_fee, platform_fee, agency_fee)
 	}
@@ -686,11 +736,11 @@ where
 				expired_at: current_block_number + duration,
 			};
 
-		let contract_id = NextContractId::<T>::get();
-		NextContractId::<T>::try_mutate(|c| -> DispatchResult {
-			*c = c.checked_add(1).ok_or(Error::<T>::Overflow)?;
-			Ok(())
-		})?;
+		let contract_id =
+			NextContractId::<T>::try_mutate(|c| -> Result<ContractId, DispatchError> {
+				*c = c.checked_add(1).ok_or(Error::<T>::Overflow)?;
+				Ok(*c - 1)
+			})?;
 
 		DataDelegateContracts::<T>::insert(contract_id, detail);
 
@@ -776,11 +826,11 @@ where
 			deposit,
 		};
 
-		let contract_id = NextContractId::<T>::get();
-		NextContractId::<T>::try_mutate(|c| -> DispatchResult {
-			*c = c.checked_add(1).ok_or(Error::<T>::Overflow)?;
-			Ok(())
-		})?;
+		let contract_id =
+			NextContractId::<T>::try_mutate(|c| -> Result<ContractId, DispatchError> {
+				*c = c.checked_add(1).ok_or(Error::<T>::Overflow)?;
+				Ok(*c - 1)
+			})?;
 
 		let mut contract_status: ContractSigner<T> = BoundedBTreeMap::new();
 		contract_status
@@ -1005,12 +1055,15 @@ where
 			DataTradeRecords::<T>::insert(contract_id, &data_owner, ());
 		}
 
+		let market_config = PlatformConfig::<T>::get();
+		let MarketConfiguration { total_fee_ratio, min_platform_fee_ratio } = market_config;
 		let agency_fee_ratio = maybe_agency_fee_ratio.unwrap_or(0);
 		let sum_fee_ratio = agency_fee_ratio +
 			data_issuer_fee_ratio +
 			data_owner_fee_ratio +
-			T::MinPlatformFeeRatio::get();
-		ensure!(sum_fee_ratio <= T::TotalFeeRatio::get(), Error::<T>::InvalidFeeRatio);
+			min_platform_fee_ratio;
+
+		ensure!(sum_fee_ratio <= total_fee_ratio, Error::<T>::InvalidFeeRatio);
 
 		let (data_owner_fee, data_issuer_fee, platform_fee, agency_fee) = Self::calculate_data_fee(
 			price_per_data.into(),
@@ -1042,6 +1095,16 @@ where
 			data_verification_proof,
 		});
 
+		Ok(())
+	}
+
+	fn do_set_platform_config(config: MarketConfiguration) -> DispatchResult {
+		ensure!(config.total_fee_ratio > 0, Error::<T>::InvalidConfig);
+		ensure!(config.min_platform_fee_ratio > 0, Error::<T>::InvalidConfig);
+		ensure!(config.min_platform_fee_ratio < config.total_fee_ratio, Error::<T>::InvalidConfig);
+
+		Self::deposit_event(Event::<T>::SetPlatformConfig { config: config.clone() });
+		PlatformConfig::<T>::put(config);
 		Ok(())
 	}
 }
