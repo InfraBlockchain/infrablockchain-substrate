@@ -1124,10 +1124,12 @@ where
 		trade_count += 1;
 		TradeCountForContract::<T>::insert(contract_id, trade_count);
 
-		ensure!(
-			DataTradeRecords::<T>::contains_key(contract_id, &data_owner),
-			Error::<T>::AlreadyPurchased
-		);
+		if detail.agency.is_none() {
+			ensure!(
+				DataTradeRecords::<T>::contains_key(contract_id, &data_owner),
+				Error::<T>::AlreadyPurchased
+			);
+		}
 		DataTradeRecords::<T>::insert(contract_id, &data_owner, ());
 
 		let market_config = PlatformConfig::<T>::get();
