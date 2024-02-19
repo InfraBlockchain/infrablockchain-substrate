@@ -212,6 +212,8 @@ pub mod pallet {
 		ExceedContractSigner,
 		/// Config is invalid
 		InvalidConfig,
+		/// The Data Owner has already sold data
+		AlreadyPurchased,
 	}
 
 	#[pallet::genesis_config]
@@ -352,7 +354,6 @@ pub mod pallet {
 			data_issuer_fee_ratio: u32,
 			agency: Option<T::AccountId>,
 			agency_fee_ratio: Option<u32>,
-			price_per_data: AssetBalanceOf<T>,
 			data_verification_proof: VerificationProof<AnyText>,
 		) -> DispatchResult {
 			let maybe_verifier = ensure_signed(origin)?;
@@ -365,7 +366,6 @@ pub mod pallet {
 				data_issuer_fee_ratio,
 				agency,
 				agency_fee_ratio,
-				price_per_data,
 				data_verification_proof,
 			)?;
 			Ok(())
@@ -806,6 +806,7 @@ where
 			agency,
 			deposit,
 			duration,
+			price_per_data,
 		} = params.clone();
 
 		let current_block_number = frame_system::Pallet::<T>::block_number();
@@ -823,6 +824,7 @@ where
 			system_token_id,
 			agency: None,
 			agency_info: None,
+			price_per_data,
 			deposit,
 		};
 
@@ -832,16 +834,14 @@ where
 				Ok(*c - 1)
 			})?;
 
-		let mut contract_status: ContractSigner<T> = BoundedBTreeMap::new();
-		contract_status
-			.try_insert(data_buyer.clone(), SignStatus::Signed)
-			.map_err(|_| Error::<T>::ExceedContractSigner)?;
-
 		if is_agency_exist {
-			ensure!(agency.is_some(), Error::<T>::InvalidAgency);
-			ensure!(data_verifier.is_none(), Error::<T>::InvalidVerifier);
+			let mut contract_status: ContractSigner<T> = BoundedBTreeMap::new();
+			contract_status
+				.try_insert(data_buyer.clone(), SignStatus::Signed)
+				.map_err(|_| Error::<T>::ExceedContractSigner)?;
 
 			let agency = agency.ok_or(Error::<T>::InvalidAgency)?;
+			ensure!(data_verifier.is_none(), Error::<T>::InvalidVerifier);
 
 			if data_buyer != agency {
 				DataPurchaseContractList::<T>::mutate(&agency, |list| {
@@ -852,6 +852,8 @@ where
 			contract_status
 				.try_insert(agency.clone(), SignStatus::Unsigned)
 				.map_err(|_| Error::<T>::ExceedContractSigner)?;
+			ContractStatus::<T>::insert(contract_id, contract_status.clone());
+
 			let agency_info =
 				Agencies::<T>::try_get(&agency.clone()).map_err(|_| Error::<T>::InvalidAgency)?;
 			detail.agency = Some(agency.clone());
@@ -866,8 +868,6 @@ where
 		DataPurchaseContractList::<T>::mutate(&data_buyer, |list| {
 			list.push(contract_id);
 		});
-
-		ContractStatus::<T>::insert(contract_id, contract_status);
 
 		let escrow_account = Self::get_escrow_account();
 		Self::transfer_escrow(
@@ -892,24 +892,26 @@ where
 		let agency = detail.clone().agency.ok_or(Error::<T>::InvalidAgency)?;
 		ensure!(maybe_agency == agency, Error::<T>::InvalidAgency);
 
-		let mut is_signed = false;
-		ContractStatus::<T>::try_mutate(contract_id, |status| -> DispatchResult {
-			let status = status.as_mut().ok_or(Error::<T>::ContractStatusNotExist)?;
-			let signed = status.get_mut(&agency).ok_or(Error::<T>::ContractSignerNotExist)?;
-			*signed = SignStatus::Signed;
-			is_signed = true;
-			Ok(())
-		})?;
-		ensure!(is_signed, Error::<T>::NotSigned);
+		if detail.agency.is_some() {
+			let mut is_signed = false;
+			ContractStatus::<T>::try_mutate(contract_id, |status| -> DispatchResult {
+				let status = status.as_mut().ok_or(Error::<T>::ContractStatusNotExist)?;
+				let signed = status.get_mut(&agency).ok_or(Error::<T>::ContractSignerNotExist)?;
+				*signed = SignStatus::Signed;
+				is_signed = true;
+				Ok(())
+			})?;
+			ensure!(is_signed, Error::<T>::NotSigned);
 
-		detail.data_verifier = Some(data_verifier.clone());
-		DataPurchaseContracts::<T>::insert(contract_id, detail);
+			detail.data_verifier = Some(data_verifier.clone());
+			DataPurchaseContracts::<T>::insert(contract_id, detail);
 
-		Self::deposit_event(Event::<T>::SignDataPurchaseContract {
-			contract_id,
-			agency: maybe_agency,
-			data_verifier,
-		});
+			Self::deposit_event(Event::<T>::SignDataPurchaseContract {
+				contract_id,
+				agency: maybe_agency,
+				data_verifier,
+			});
+		}
 
 		Ok(())
 	}
@@ -968,16 +970,19 @@ where
 		let status =
 			ContractStatus::<T>::get(contract_id).ok_or(Error::<T>::ContractStatusNotExist)?;
 
-		let mut is_signed = false;
-		ContractStatus::<T>::try_mutate(contract_id, |status| -> DispatchResult {
-			let status = status.as_mut().ok_or(Error::<T>::ContractStatusNotExist)?;
-			let signed = status.get_mut(&maybe_signer).ok_or(Error::<T>::ContractSignerNotExist)?;
-			*signed = SignStatus::WantToTerminate;
-			is_signed = true;
-			Ok(())
-		})?;
+		if detail.agency.is_some() {
+			let mut is_signed = false;
+			ContractStatus::<T>::try_mutate(contract_id, |status| -> DispatchResult {
+				let status = status.as_mut().ok_or(Error::<T>::ContractStatusNotExist)?;
+				let signed =
+					status.get_mut(&maybe_signer).ok_or(Error::<T>::ContractSignerNotExist)?;
+				*signed = SignStatus::WantToTerminate;
+				is_signed = true;
+				Ok(())
+			})?;
 
-		ensure!(is_signed, Error::<T>::NotSigned);
+			ensure!(is_signed, Error::<T>::NotSigned);
+		}
 
 		let current_block_number = <frame_system::Pallet<T>>::block_number();
 
@@ -1025,11 +1030,11 @@ where
 		data_issuer_fee_ratio: u32,
 		maybe_agency: Option<T::AccountId>,
 		maybe_agency_fee_ratio: Option<u32>,
-		price_per_data: AssetBalanceOf<T>,
 		data_verification_proof: VerificationProof<AnyText>,
 	) -> DispatchResult {
 		let detail =
 			DataPurchaseContracts::<T>::get(contract_id).ok_or(Error::<T>::ContractNotExist)?;
+		let price_per_data = detail.price_per_data;
 		let status =
 			ContractStatus::<T>::get(contract_id).ok_or(Error::<T>::ContractStatusNotExist)?;
 		let current_block_number = <frame_system::Pallet<T>>::block_number();
@@ -1051,9 +1056,12 @@ where
 		ensure!(trade_count < T::MaxPurchaseQuantity::get(), Error::<T>::TradeLimitReached);
 		trade_count += 1;
 		TradeCountForContract::<T>::insert(contract_id, trade_count);
-		if !DataTradeRecords::<T>::contains_key(contract_id, &data_owner) {
-			DataTradeRecords::<T>::insert(contract_id, &data_owner, ());
-		}
+
+		ensure!(
+			DataTradeRecords::<T>::contains_key(contract_id, &data_owner),
+			Error::<T>::AlreadyPurchased
+		);
+		DataTradeRecords::<T>::insert(contract_id, &data_owner, ());
 
 		let market_config = PlatformConfig::<T>::get();
 		let MarketConfiguration { total_fee_ratio, min_platform_fee_ratio } = market_config;

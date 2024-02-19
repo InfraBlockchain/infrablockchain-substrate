@@ -98,6 +98,7 @@ pub struct DataPurchaseContractDetail<AccountId, BlockNumber, Balance> {
 	pub system_token_id: u32,
 	pub agency: Option<AccountId>,
 	pub agency_info: Option<AnyText>,
+	pub price_per_data: Balance,
 	pub deposit: Balance,
 }
 
@@ -109,6 +110,7 @@ pub struct DataPurchaseContractParams<AccountId, BlockNumber, Balance> {
 	pub data_purchase_info: DataPurchaseInfo<AnyText>,
 	pub system_token_id: u32,
 	pub agency: Option<AccountId>,
+	pub price_per_data: Balance,
 	pub deposit: Balance,
 	pub duration: BlockNumber,
 }
