@@ -174,6 +174,11 @@ pub mod pallet {
 		SetPlatformConfig {
 			config: MarketConfiguration,
 		},
+		// Add More Balance in Deposit
+		DepositBalance {
+			contract_id: ContractId,
+			amount: AssetBalanceOf<T>,
+		},
 	}
 
 	#[pallet::error]
@@ -553,6 +558,42 @@ pub mod pallet {
 			Self::do_set_platform_config(config)?;
 			Ok(())
 		}
+
+		/// Deposit balance
+		///
+		/// The dispatch origin for this call must be _Signed_.
+		///
+		/// - `contract_id`: The id of the contract.
+		/// - `amount`: The amount of the deposit.
+		#[pallet::weight(18)]
+		pub fn deposit_balance(
+			origin: OriginFor<T>,
+			contract_id: ContractId,
+			amount: AssetBalanceOf<T>,
+		) -> DispatchResult {
+			let maybe_buyer = ensure_signed(origin)?;
+			Self::do_deposit_balance(maybe_buyer, contract_id, amount)?;
+			Ok(())
+		}
+
+		/// Deposit balance by admin
+		///
+		/// The dispatch origin for this call must be _Admin_.
+		///
+		/// - `data_buyer`: The buyer of the data.
+		/// - `contract_id`: The id of the contract.
+		/// - `amount`: The amount of the deposit.
+		#[pallet::weight(19)]
+		pub fn deposit_balance_by_admin(
+			origin: OriginFor<T>,
+			data_buyer: T::AccountId,
+			contract_id: ContractId,
+			amount: AssetBalanceOf<T>,
+		) -> DispatchResult {
+			T::AdminOrigin::ensure_origin(origin)?;
+			Self::do_deposit_balance(data_buyer, contract_id, amount)?;
+			Ok(())
+		}
 	}
 }
 
@@ -569,6 +610,32 @@ where
 	pub fn get_platform_account() -> T::AccountId {
 		const ID: PalletId = PalletId(*b"platform");
 		AccountIdConversion::<T::AccountId>::into_account_truncating(&ID)
+	}
+
+	pub fn do_deposit_balance(
+		data_buyer: T::AccountId,
+		contract_id: ContractId,
+		amount: AssetBalanceOf<T>,
+	) -> DispatchResult {
+		let detail =
+			DataPurchaseContracts::<T>::get(contract_id).ok_or(Error::<T>::ContractNotExist)?;
+
+		ensure!(detail.data_buyer == data_buyer, Error::<T>::InvalidBuyer);
+
+		let escrow_account = Self::get_escrow_account();
+
+		Self::transfer_escrow(
+			TransferFrom::Origin(data_buyer),
+			escrow_account,
+			detail.system_token_id,
+			amount.into(),
+		)?;
+
+		Self::update_deposit_in_detail(contract_id, detail.deposit + amount);
+
+		Self::deposit_event(Event::<T>::DepositBalance { contract_id, amount });
+
+		Ok(())
 	}
 
 	pub fn update_deposit_in_detail(contract_id: ContractId, left_deposit: AssetBalanceOf<T>) {
