@@ -14,7 +14,7 @@
 // limitations under the License.
 
 use super::{
-	AccountId, AllPalletsWithSystem, AssetLink, Assets, ForeignAssets, Authorship, Balance, Balances, InfraXcm,
+	AccountId, AllPalletsWithSystem, AssetLink, Assets, Authorship, Balance, Balances, InfraXcm,
 	ParachainInfo, ParachainSystem, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, WeightToFee,
 	XcmpQueue, 
 };
