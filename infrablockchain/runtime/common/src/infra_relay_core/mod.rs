@@ -13,23 +13,6 @@ mod types;
 
 pub use pallet::*;
 
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
-pub struct SystemTokenDetail {
-	status: SystemTokenStatus,
-}
-
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
-pub enum SystemTokenStatus {
-	/// Potential System Token is requsted
-	Requested,
-	/// System Token is registered by RC governance
-	Registered,
-	/// System Token is suspended by some reasons(e.g malicious behavior detected)
-	Suspend,
-	/// System Token is deregistered by some reasons
-	Deregistered,
-}
-
 #[frame_support::pallet(dev_mode)]
 pub mod pallet {
 

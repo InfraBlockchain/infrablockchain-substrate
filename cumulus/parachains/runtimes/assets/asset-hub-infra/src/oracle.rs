@@ -15,8 +15,8 @@ enum RelayRuntimePallets {
 /// Call encoding for the calls needed from the relay system token manager pallet.
 #[derive(Encode, Decode)]
 enum SystemTokenManagerCalls {
-	#[codec(index = 7)]
-	SetExchangeRates(StandardUnixTime, Vec<(Fiat, ExchangeRate)>),
+	#[codec(index = 6)]
+	UpdateExchangeRates(StandardUnixTime, Vec<(Fiat, ExchangeRate)>),
 }
 
 /// Type that implements `SystemTokenOracleInterface`.
@@ -26,8 +26,8 @@ impl SystemTokenOracleInterface for SystemTokenOracle {
 		standard_time: StandardUnixTime,
 		exchange_rates: Vec<(Fiat, ExchangeRate)>,
 	) {
-		use crate::oracle::SystemTokenManagerCalls::SetExchangeRates;
-		let set_exchange_rate_call = RelayRuntimePallets::SystemTokenManager(SetExchangeRates(
+		use crate::oracle::SystemTokenManagerCalls::UpdateExchangeRates;
+		let update_exchange_rate_call = RelayRuntimePallets::SystemTokenManager(UpdateExchangeRates(
 			standard_time,
 			exchange_rates,
 		));
@@ -39,7 +39,7 @@ impl SystemTokenOracleInterface for SystemTokenOracle {
 			Instruction::Transact {
 				origin_kind: OriginKind::Native,
 				require_weight_at_most: Weight::from_parts(1_000_000_000, 200000),
-				call: set_exchange_rate_call.encode().into(),
+				call: update_exchange_rate_call.encode().into(),
 			},
 		]);
 

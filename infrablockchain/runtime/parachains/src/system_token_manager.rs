@@ -209,7 +209,7 @@ pub mod pallet {
 
 	/// **Description:**
 	/// 
-	/// Values of 'Original' SystemTokenId which are mapped to 'Fiat'
+	/// Map between `Fiat` and `Original` with `Wrapped` system token
 	/// 
 	/// **Key:**
 	/// 
@@ -434,32 +434,6 @@ pub mod pallet {
 
 		#[pallet::call_index(4)]
 		// Description:
-		// Update the weight of system token, which can affect on PoT vote
-		//
-		// Origin:
-		// ** Root(Authorized) privileged call **
-		//
-		// Params:
-		// - original: System token id expected to be updated
-		// - system_token_weight: System token weight expected to be updated
-		pub fn update_system_token_weight(
-			origin: OriginFor<T>,
-			original: SystemTokenId,
-			system_token_weight: SystemTokenWeight,
-		) -> DispatchResult {
-			ensure_root(origin)?;
-
-			let wrapped_system_tokens = Self::try_get_wrapped_system_token_list(&original)?;
-			for wrapped_system_token_id in wrapped_system_tokens.iter() {
-				Self::try_update_weight_of_wrapped(wrapped_system_token_id, system_token_weight)?;
-			}
-			Self::try_update_weight_property(&original, system_token_weight)?;
-
-			Ok(())
-		}
-
-		#[pallet::call_index(5)]
-		// Description:
 		// Try send DMP for encoded `update_para_fee_rate` to given `para_id`
 		//
 		// Origin:
@@ -481,7 +455,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::call_index(6)]
+		#[pallet::call_index(5)]
 		// Description:
 		// Setting fee for parachain-specific calls(extrinsics).
 		//
@@ -514,7 +488,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::call_index(7)]
+		#[pallet::call_index(6)]
 		pub fn update_exchange_rate(
 			origin: OriginFor<T>,
 			standard_unix_time: StandardUnixTime,
@@ -567,15 +541,14 @@ impl<T: Config> Pallet<T> {
 	}
 
 	fn try_update_system_token_weight(currency: &Fiat) -> DispatchResult {
-		let originals = Self::fiat_for_originals(currency);
+		let os = Self::fiat_for_originals(currency);
 		let mut k_v: Vec<(SystemTokenParaId, SystemTokenAssetId)> = Default::default();
-		let mut updated_sys_weight: SystemTokenWeight = Default::default();
-		for original in originals {
-			updated_sys_weight = Self::calc_system_token_weight(currency, &original)?;
-			Self::try_update_weight_property(&original, updated_sys_weight)?;
-			let SystemTokenId { para_id, asset_id, .. } = original.clone();
+		for o in os {
+			let updated_sys_weight = Self::calc_system_token_weight(currency, &o)?;
+			Self::try_update_weight_property(&o, updated_sys_weight)?;
+			let SystemTokenId { para_id, asset_id, .. } = o.clone();
 			k_v.push((para_id, asset_id));
-			if let Some(ws) = FiatForOriginal::<T>::get(currency, &original) {
+			if let Some(ws) = FiatForOriginal::<T>::get(currency, &o) {
 				for w in ws {
 					Self::try_update_weight_property(&w, updated_sys_weight)?;
 					let SystemTokenId { para_id, asset_id, .. } = w;
@@ -1076,30 +1049,6 @@ impl<T: Config> Pallet<T> {
 
 	/// **Description:**
 	///
-	/// Try update weight of `wrapped` system token.
-	///
-	/// **Params:**
-	///
-	/// - wrapped: `wrapped` system token expected to be updated
-	///
-	/// - system_token_weight: Weight expected to be updated
-	///
-	/// **Logic:**
-	///
-	/// If `para_id == 0`, call internal `Assets` pallet method.
-	/// Otherwise, send DMP of `update_system_token_weight` to expected `para_id` destination
-	fn try_update_weight_of_wrapped(
-		wrapped: &SystemTokenId,
-		system_token_weight: SystemTokenWeight,
-	) -> DispatchResult {
-		let SystemTokenId { para_id, asset_id, .. } = wrapped.clone();
-		T::InfraCore::update_system_token_weight(para_id, asset_id, system_token_weight);
-
-		Ok(())
-	}
-
-	/// **Description:**
-	///
 	/// Try create `wrapped` system token to local
 	///
 	/// **Params:**
@@ -1167,9 +1116,8 @@ impl<T: Config> SystemTokenInterface for Pallet<T> {
 
 				// Since the base_weight cannot be zero, this division is guaranteed to be safe.
 				return vote_weight.mul(system_token_weight).div(converted_base_weight)
-			} else {
-				return vote_weight
-			}
+			} 
+			return vote_weight
 		}
 		vote_weight
 	}
