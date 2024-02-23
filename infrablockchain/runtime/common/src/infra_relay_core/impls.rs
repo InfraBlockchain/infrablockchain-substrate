@@ -22,12 +22,12 @@ impl<T: Config> RuntimeConfigProvider for Pallet<T> {
 	type Error = DispatchError;
 
 	fn infra_system_config() -> Result<InfraSystemConfig, Self::Error> {
-		Ok(SystemConfig::<T>::get())
+		Ok(ActiveSystemConfig::<T>::get())
 	}
 
 	fn para_fee_rate() -> Result<SystemTokenWeight, Self::Error> {
 		// Relay chain's fee rate is same as base weight
-		Ok(SystemConfig::<T>::get().base_weight())
+		Ok(ActiveSystemConfig::<T>::get().base_weight())
 	}
 
 	fn fee_for(ext: ExtrinsicMetadata) -> Option<SystemTokenBalance> {
@@ -49,7 +49,7 @@ impl<T: Config> UpdateInfraConfig for Pallet<T> {
 	) {
 		if dest_id != RELAY_CHAIN_PARA_ID {
 			let set_fee_table_call = ParachainRuntimePallets::InfraParaCore(
-				ParachainConfigCalls::SetFeeTable(pallet_name, call_name, fee),
+				ParachainConfigCalls::UpdateFeeTable(pallet_name, call_name, fee),
 			);
 			Self::send_xcm_for(set_fee_table_call.encode(), dest_id);
 		}
@@ -58,7 +58,7 @@ impl<T: Config> UpdateInfraConfig for Pallet<T> {
 	fn update_para_fee_rate(dest_id: SystemTokenParaId, fee_rate: SystemTokenWeight) {
 		if dest_id != RELAY_CHAIN_PARA_ID {
 			let set_fee_rate_call = ParachainRuntimePallets::InfraParaCore(
-				ParachainConfigCalls::SetParaFeeRate(fee_rate),
+				ParachainConfigCalls::UpdateParaFeeRate(fee_rate),
 			);
 			Self::send_xcm_for(set_fee_rate_call.encode(), dest_id);
 		}
@@ -66,28 +66,20 @@ impl<T: Config> UpdateInfraConfig for Pallet<T> {
 
 	fn update_runtime_state(dest_id: SystemTokenParaId) {
 		if dest_id == RELAY_CHAIN_PARA_ID {
-			// Do something locally
+			Self::do_update_runtime_state();
 		} else {
 			let set_runtime_state_call =
-				ParachainRuntimePallets::InfraParaCore(ParachainConfigCalls::SetRuntimeState);
+				ParachainRuntimePallets::InfraParaCore(ParachainConfigCalls::UpdateRuntimeState);
 			Self::send_xcm_for(set_runtime_state_call.encode(), dest_id)
 		}
 	}
 
 	fn update_system_token_weight(
-		dest_id: SystemTokenParaId,
 		asset_id: SystemTokenAssetId,
 		system_token_weight: SystemTokenWeight,
 	) {
-		if dest_id == RELAY_CHAIN_PARA_ID {
-			// TODO: Error handling
-			let _ = T::LocalAssetManager::update_system_token_weight(asset_id, system_token_weight);
-		} else {
-			let update_system_token_weight_call = ParachainRuntimePallets::InfraParaCore(
-				ParachainConfigCalls::UpdateSystemTokenWeight(asset_id, system_token_weight),
-			);
-			Self::send_xcm_for(update_system_token_weight_call.encode(), dest_id);
-		}
+		// TODO: Error handling
+		let _ = T::LocalAssetManager::update_system_token_weight(asset_id, system_token_weight);
 	}
 
 	fn register_system_token(

@@ -198,6 +198,7 @@ pub trait LocalAssetProvider<Asset, Account> {
 }
 
 /// API to handle local assets which refers to System Token
+// TODO: Generic
 pub trait LocalAssetManager {
 	type AccountId: MaxEncodedLen;
 	type Error;

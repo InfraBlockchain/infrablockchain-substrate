@@ -22,7 +22,7 @@ use codec::{Decode, Encode};
 use parachain_primitives::primitives::HeadData;
 use scale_info::TypeInfo;
 use sp_runtime::{
-	types::{Fiat, InfraSystemConfig, PotVotesResult, RemoteAssetMetadata, SystemTokenWeight},
+	types::{Fiat, InfraSystemConfig, PotVotesResult, RemoteAssetMetadata, SystemTokenAssetId, SystemTokenWeight},
 	RuntimeDebug,
 };
 use sp_std::prelude::*;
@@ -48,11 +48,12 @@ pub mod relay_chain {
 	pub use primitives::*;
 }
 
+// TODO: Generic 
 pub trait UpdateRCConfig {
 	/// System config set by Relay Chain
 	fn update_system_config(infra_system_config: InfraSystemConfig);
 	/// System Token weight set by Relay Chain
-	fn update_system_token_weight(currency: Fiat, weight: SystemTokenWeight);
+	fn update_system_token_weight_for(assets: Vec<(SystemTokenAssetId, SystemTokenWeight)>);
 }
 
 /// An inbound HRMP message.

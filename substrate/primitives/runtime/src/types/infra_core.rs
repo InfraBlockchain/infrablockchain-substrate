@@ -20,7 +20,6 @@ pub trait UpdateInfraConfig {
 	fn update_runtime_state(dest_id: SystemTokenParaId);
 	/// Update `SystemTokenWeight` for `dest_id` Runtime
 	fn update_system_token_weight(
-		dest_id: SystemTokenParaId,
 		asset_id: SystemTokenAssetId,
 		system_token_weight: SystemTokenWeight,
 	);

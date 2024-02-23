@@ -619,7 +619,7 @@ impl pallet_collator_selection::Config for Runtime {
 }
 
 parameter_types! {
-	pub const APIRequestPeriod: BlockNumber = prod_or_fast!(DAYS, 5u32);
+	pub const APIRequestPeriod: BlockNumber = prod_or_fast!(DAYS, 10u32);
 	pub const UnsignedPriority: TransactionPriority = TransactionPriority::max_value();
 }
 

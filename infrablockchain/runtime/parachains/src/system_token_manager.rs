@@ -83,7 +83,7 @@ pub mod pallet {
 		/// Unsuspend the `wrapped` system token.
 		WrappedSystemTokenUnsuspended { wrapped: SystemTokenId },
 		/// Update exchange rates for given fiat currencies
-		ExchangeRateUpdated { at: StandardUnixTime, exchange_rates: Vec<(Fiat, ExchangeRate)> },
+		ExchangeRateUpdated { at: StandardUnixTime, updated: Vec<(Fiat, ExchangeRate)> },
 	}
 
 	#[pallet::error]
@@ -142,6 +142,20 @@ pub mod pallet {
 	#[pallet::pallet]
 	pub struct Pallet<T>(_);
 
+	#[pallet::hooks]
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn on_initialize(_n: BlockNumberFor<T>) -> Weight {
+			let l = UpdateExchangeRates::<T>::iter().count();
+			// TODO: Find better way
+			if l != 0 {
+				let _ = UpdateExchangeRates::<T>::clear(u32::MAX, None);
+				T::DbWeight::get().writes(l as u64)
+			} else {
+				T::DbWeight::get().reads(1)
+			}
+		}
+	}
+
 	/// Kind of fiat currencies needs to be requested. It is bounded for number of real-world currencies' types.
 	/// 
 	/// Flow 
@@ -161,13 +175,13 @@ pub mod pallet {
 	/// Exchange rates for currencies relative to the base currency.
 	#[pallet::storage]
 	pub type ExchangeRates<T: Config> =
-		StorageMap<_, Twox64Concat, Fiat, ExchangeRate, OptionQuery>;
+		StorageMap<_, Twox64Concat, Fiat, ExchangeRate>;
 	
 	/// Updated exchange rates for `para_id` based on updated exchange rate data from Oracle
 	#[pallet::storage]
 	#[pallet::unbounded]
 	pub type UpdateExchangeRates<T: Config> =
-		StorageMap<_, Twox64Concat, SystemTokenParaId, Vec<(SystemTokenAssetId, SystemTokenWeight)>, OptionQuery>; 
+		StorageMap<_, Twox64Concat, SystemTokenParaId, Vec<(SystemTokenAssetId, SystemTokenWeight)>>; 
 
 	#[pallet::storage]
 	#[pallet::getter(fn original_system_token_metadata)]
@@ -188,7 +202,6 @@ pub mod pallet {
 		Blake2_128Concat,
 		SystemTokenId,
 		SystemTokenMetadata<BoundedStringOf<T>>,
-		OptionQuery,
 	>;
 
 	#[pallet::storage]
@@ -205,7 +218,7 @@ pub mod pallet {
 	///
 	/// `SystemTokenProperty`
 	pub type SystemTokenProperties<T: Config> =
-		StorageMap<_, Blake2_128Concat, SystemTokenId, SystemTokenProperty, OptionQuery>;
+		StorageMap<_, Blake2_128Concat, SystemTokenId, SystemTokenProperty>;
 
 	/// **Description:**
 	/// 
@@ -237,7 +250,7 @@ pub mod pallet {
 	///
 	/// `original` system token id
 	pub type OriginalSystemTokenConverter<T: Config> =
-		StorageMap<_, Blake2_128Concat, SystemTokenId, SystemTokenId, OptionQuery>;
+		StorageMap<_, Blake2_128Concat, SystemTokenId, SystemTokenId>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn para_id_system_tokens)]
@@ -257,8 +270,7 @@ pub mod pallet {
 		_,
 		Blake2_128Concat,
 		SystemTokenParaId,
-		BoundedVec<SystemTokenId, T::MaxSystemTokens>,
-		OptionQuery,
+		BoundedVec<SystemTokenId, T::MaxSystemTokens>
 	>;
 
 	#[pallet::storage]
@@ -279,7 +291,6 @@ pub mod pallet {
 		Blake2_128Concat,
 		SystemTokenId,
 		BoundedVec<SystemTokenParaId, T::MaxOriginalUsedParaIds>,
-		OptionQuery,
 	>;
 
 	#[pallet::call]
@@ -556,12 +567,16 @@ impl<T: Config> Pallet<T> {
 				}
 			}
 			for (para_id, asset_id) in k_v {
-				UpdateExchangeRates::<T>::try_mutate(para_id, |maybe_updated| -> DispatchResult {
-					let mut updated = maybe_updated.take().unwrap_or_default();
-					updated.push((asset_id, updated_sys_weight));
-					*maybe_updated = Some(updated);
-					Ok(())
-				})?;
+				if para_id == RELAY_CHAIN_PARA_ID {
+					T::InfraCore::update_system_token_weight(asset_id, updated_sys_weight)
+				} else {
+					UpdateExchangeRates::<T>::try_mutate(para_id, |maybe_updated| -> DispatchResult {
+						let mut updated = maybe_updated.take().unwrap_or_default();
+						updated = vec![(asset_id, updated_sys_weight)];
+						*maybe_updated = Some(updated);
+						Ok(())
+					})?;
+				}
 			}
 			k_v = Default::default();
 		}
@@ -628,16 +643,17 @@ impl<T: Config> Pallet<T> {
 			return Ok(())
 		}
 		RequestStandardTime::<T>::put(at);
-		
-		for (currency, rate) in exchange_rates.iter() {
+		let mut updated_currency: Vec<(Fiat, ExchangeRate)> = Default::default();
+		for (currency, rate) in exchange_rates.into_iter() {
 			// Just in-case, check if the currency is requested
-			if !request_fiat_list.contains(currency) {
+			if !request_fiat_list.contains(&currency) {
 				continue
 			}
-			ExchangeRates::<T>::insert(currency, rate);
-			Self::try_update_system_token_weight(currency)?;
+			ExchangeRates::<T>::insert(&currency, &rate);
+			Self::try_update_system_token_weight(&currency)?;
+			updated_currency.push((currency, rate));
 		}
-		Self::deposit_event(Event::<T>::ExchangeRateUpdated { at, exchange_rates});
+		Self::deposit_event(Event::<T>::ExchangeRateUpdated { at, updated: updated_currency });
 		Ok(())
 	}
 
@@ -691,6 +707,15 @@ impl<T: Config> Pallet<T> {
 		Self::try_push_para_id(para_id, &original)?;
 		// TODO: What if register System Token on Relay Chain?
 		Self::try_promote(&original, Some(system_token_weight))?;
+		// TODO: Deprecate `SystemTokenProperties`
+		SystemTokenProperties::<T>::insert(
+			&original,
+			SystemTokenProperty {
+				system_token_weight: Some(system_token_weight),
+				status: SystemTokenStatus::Active,
+				created_at: Self::unix_time(),
+			},
+		);
 		// Self registered as wrapped token, which would be used for knowing it is 'original system token'
 		OriginalSystemTokenConverter::<T>::insert(&original, &original);
 		OriginalSystemTokenMetadata::<T>::insert(&original, system_token_metadata);
@@ -1195,6 +1220,8 @@ pub mod types {
 		Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, Default, TypeInfo, MaxEncodedLen,
 	)]
 	/// Metadata of the `original` asset from enshrined runtime
+	// TODO: `SystemTokenMetadata` -> `SystemTokenDetail`
+	// TODO: Additional fields -> `SystemTokenWeight`, `List of Wrapped`, `Status`
 	pub struct SystemTokenMetadata<BoundedString> {
 		pub(crate) currency_type: Fiat,
 		/// The user friendly name of this system token.

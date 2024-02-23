@@ -595,8 +595,15 @@ pub mod pallet {
 			<UpgradeGoAhead<T>>::put(upgrade_go_ahead_signal);
 			let infra_system_config = relay_state_proof
 				.read_infra_system_config()
-				.expect("Invalid infra system config");
+				.expect("Error on reading infra system config in relay chain state proof");
 			T::UpdateRCConfig::update_system_config(infra_system_config);
+
+			let update_weights = relay_state_proof
+				.read_updated_system_token_weight()
+				.expect("Error on reading updated system token weight");
+			if let Some(assets) = update_weights {
+				T::UpdateRCConfig::update_system_token_weight_for(assets);
+			}
 
 			let host_config = relay_state_proof
 				.read_abridged_host_configuration()

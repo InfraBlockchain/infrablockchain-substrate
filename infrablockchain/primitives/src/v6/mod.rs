@@ -151,7 +151,8 @@ pub mod well_known_keys {
 	use super::{HrmpChannelId, Id, WellKnownKey};
 	use hex_literal::hex;
 	use parity_scale_codec::Encode as _;
-	use sp_io::hashing::twox_64;
+	use runtime_primitives::types::SystemTokenParaId;
+use sp_io::hashing::twox_64;
 	use sp_std::prelude::*;
 
 	// A note on generating these magic values below:
@@ -204,7 +205,22 @@ pub mod well_known_keys {
 
 	/// The currently active system configuration for InfraBlockchain
 	pub const SYSTEM_CONFIG: &[u8] = 
-		&hex!["c1b1962c8d78658bd8ffce50b5260892bb47531c84d954db76aa694bc4d82f59"];
+		&hex!["c1b1962c8d78658bd8ffce50b52608924749b1555450acbdc9c90fdcafcce80c"];
+
+	/// Weight needs to be updated for `para_id`
+	pub fn update_system_token_weight(para_id: Id) -> Vec<u8> {
+		let prefix = hex!["8b48ccceef96f69546d630a6a9445f25262f55aa25e8eaac78e113273688c349"];
+		let system_token_para_id: SystemTokenParaId = para_id.into();
+		system_token_para_id.using_encoded(|system_token_para_id: &[u8]| {
+			prefix
+				.as_ref()
+				.iter()
+				.chain(twox_64(system_token_para_id).iter())
+				.chain(system_token_para_id.iter())
+				.cloned()
+				.collect()
+		})
+	}
 
 	/// Hash of the committed head data for a given registered para.
 	///

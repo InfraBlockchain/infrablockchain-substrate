@@ -7,6 +7,7 @@ use parity_scale_codec::Encode;
 use sp_runtime::types::{fee::*, infra_core::*, token::*, vote::*};
 use sp_std::vec::Vec;
 use xcm::latest::prelude::*;
+use primitives::well_known_keys;
 
 mod impls;
 mod types;
@@ -38,7 +39,8 @@ pub mod pallet {
 
 	/// System configuration for `InfraRelay` Runtime
 	#[pallet::storage]
-	pub type SystemConfig<T: Config> = StorageValue<_, InfraSystemConfig, ValueQuery>;
+	#[pallet::getter(fn active_system_config)]
+	pub type ActiveSystemConfig<T: Config> = StorageValue<_, InfraSystemConfig, ValueQuery>;
 
 	/// Relay Chain's tx fee rate
 	#[pallet::storage]
@@ -120,7 +122,19 @@ pub mod pallet {
 	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
 			self.system_config.panic_if_not_validated();
-			SystemConfig::<T>::put(self.system_config.clone());
+			ActiveSystemConfig::<T>::put(self.system_config.clone());
+		}
+	}
+
+	#[pallet::hooks]
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn integrity_test() {
+			assert_eq!(
+				&ActiveSystemConfig::<T>::hashed_key(),
+				well_known_keys::SYSTEM_CONFIG,
+				"`well_known_keys::SYSTEM_CONFIG` doesn't match key of `ActiveConfig`! Make sure that the name of the\
+				 configuration pallet is `Configuration` in the runtime!",
+			);
 		}
 	}
 
@@ -135,7 +149,7 @@ pub mod pallet {
 			// TODO: Base configuration for InfraRelaychain has changed. Needs to update all
 			// parachains' config.
 			ensure_root(origin)?;
-			SystemConfig::<T>::put(infra_system_config.clone());
+			ActiveSystemConfig::<T>::put(infra_system_config.clone());
 			Ok(())
 		}
 
@@ -173,14 +187,9 @@ pub mod pallet {
 		/// Origin
 		/// Relay-chain governance
 		#[pallet::call_index(3)]
-		pub fn set_runtime_state(origin: OriginFor<T>) -> DispatchResult {
+		pub fn update_runtime_state(origin: OriginFor<T>) -> DispatchResult {
 			ensure_root(origin)?;
-			if RuntimeState::<T>::get() == Mode::Normal {
-				return Ok(())
-			}
-			// TODO-1: Check whether it is allowed to change `Normal` state
-			// ToDo-2: Check whether a parachain has enough system token to pay
-			RuntimeState::<T>::put(Mode::Normal);
+			Self::do_update_runtime_state();
 			Self::deposit_event(Event::<T>::BootstrapEnded);
 			Ok(())
 		}
@@ -263,5 +272,16 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::ErrorRegisterSystemToken)?;
 			Ok(())
 		}
+	}
+}
+
+impl<T: Config> Pallet<T> {
+	pub fn do_update_runtime_state() {
+		if RuntimeState::<T>::get() == Mode::Normal {
+			return 
+		}
+		// TODO-1: Check whether it is allowed to change `Normal` state
+		// ToDo-2: Check whether a parachain has enough system token to pay
+		RuntimeState::<T>::put(Mode::Normal);
 	}
 }

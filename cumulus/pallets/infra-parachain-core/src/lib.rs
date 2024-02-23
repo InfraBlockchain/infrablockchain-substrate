@@ -207,27 +207,11 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// System Token weight configuration is set by Relay-chain governance
-		///
-		/// Origin
-		/// Relay-chain governance
-		#[pallet::call_index(4)]
-		pub fn update_system_token_weight(
-			origin: OriginFor<T>,
-			asset_id: SystemTokenAssetId,
-			system_token_weight: SystemTokenWeight,
-		) -> DispatchResult {
-			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
-			T::LocalAssetManager::update_system_token_weight(asset_id, system_token_weight)
-				.map_err(|_| Error::<T>::ErrorUpdateWeight)?;
-			Ok(())
-		}
-
 		/// Register System Token for Cumulus-based parachain Runtime.
 		///
 		/// Origin
 		/// Relay-chain governance
-		#[pallet::call_index(5)]
+		#[pallet::call_index(4)]
 		pub fn register_system_token(
 			origin: OriginFor<T>,
 			asset_id: SystemTokenAssetId,
@@ -251,7 +235,7 @@ pub mod pallet {
 		///
 		/// Origin
 		/// Relay-chain governance
-		#[pallet::call_index(6)]
+		#[pallet::call_index(5)]
 		pub fn create_wrapped_local(
 			origin: OriginFor<T>,
 			asset_id: SystemTokenAssetId,
@@ -281,7 +265,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::call_index(7)]
+		#[pallet::call_index(6)]
 		pub fn deregister_system_token(
 			origin: OriginFor<T>,
 			asset_id: SystemTokenAssetId,
@@ -301,7 +285,7 @@ pub mod pallet {
 		///
 		/// It can call extrinsic which is not allowed to call by other origin(e.g
 		/// `request_register_system_token`)
-		#[pallet::call_index(8)]
+		#[pallet::call_index(7)]
 		pub fn set_para_core_admin(origin: OriginFor<T>, who: T::AccountId) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
 			ParaCoreAdmin::<T>::put(&who);
@@ -312,7 +296,7 @@ pub mod pallet {
 		/// Request to register System Token
 		///
 		/// If succeed, request will be queued in `RequestQueue`
-		#[pallet::call_index(9)]
+		#[pallet::call_index(8)]
 		pub fn request_register_system_token(
 			origin: OriginFor<T>,
 			asset_id: SystemTokenAssetId,
@@ -400,9 +384,16 @@ impl<T: Config> VotingHandler for Pallet<T> {
 }
 
 impl<T: Config> UpdateRCConfig for Pallet<T> {
+
 	fn update_system_config(infra_system_config: InfraSystemConfig) {
 		RCSystemConfig::<T>::put(infra_system_config);
 	}
 
-	fn update_system_token_weight(_fiat: Fiat, _weight: SystemTokenWeight) {}
+	fn update_system_token_weight_for(assets: Vec<(SystemTokenAssetId, SystemTokenWeight)>) {
+		for (asset_id, weight) in assets {
+			if let Err(_) = T::LocalAssetManager::update_system_token_weight(asset_id, weight) {
+				// TODO: Handle Error
+			}
+		}
+	}
 }

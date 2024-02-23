@@ -24,10 +24,7 @@ use sc_client_api::BlockBackend;
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_consensus::BlockStatus;
 use sp_core::traits::SpawnNamed;
-use sp_runtime::{
-	traits::{Block as BlockT, HashingFor, Header as HeaderT, Zero},
-	types::token::BoundedRequestedAssets,
-};
+use sp_runtime::traits::{Block as BlockT, HashingFor, Header as HeaderT, Zero};
 
 use cumulus_client_consensus_common::ParachainCandidate;
 use node_primitives::{BlockData, Collation, CollationSecondedSignal, MaybeCompressedPoV, PoV};
