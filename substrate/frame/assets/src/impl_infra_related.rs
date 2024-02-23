@@ -101,7 +101,7 @@ where
 		let asset_detail = Asset::<T, I>::get(&id).ok_or(Error::<T, I>::Unknown)?;
 		let AssetDetails { is_sufficient, min_balance, .. } = asset_detail;
 		if is_sufficient {
-			return Err(Error::<T, I>::IncorrectStatus.into());
+			return Err(Error::<T, I>::IncorrectStatus.into())
 		}
 		let AssetMetadata { name, symbol, currency_type, decimals, .. } =
 			Metadata::<T, I>::get(&id).ok_or(Error::<T, I>::IncorrectStatus)?;
