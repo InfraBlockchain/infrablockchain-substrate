@@ -4,7 +4,7 @@ use fixedstr::zstr;
 
 use frame_support::{
 	pallet_prelude::*,
-	traits::{ConstU32, UnixTime},
+	traits::{ConstU32, Get, UnixTime},
 	BoundedVec,
 };
 
@@ -1172,7 +1172,11 @@ where
 	}
 }
 
-impl<T: Config> Pallet<T> {
+impl<T: Config> Pallet<T>
+where
+	URIFor<T>: Into<URI>,
+	URIPartFor<T>: IsType<URIPart>,
+{
 	/// Check whether `updated_at` is greater than `prev_updated_at`
 	///
 	/// ## Error

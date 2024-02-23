@@ -1,4 +1,4 @@
-pub use crate::{self as pallet_urauth, *};
+pub use crate::{self as pallet_newnal, *};
 use frame_support::{parameter_types, traits::Everything};
 use frame_system::EnsureRoot;
 use sp_core::{sr25519::Signature, H256};
@@ -26,7 +26,7 @@ frame_support::construct_runtime!(
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>} = 1,
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage} = 2,
-		URAuth: pallet_urauth::{Pallet, Call, Storage, Event<T>} = 99,
+		URAuth: pallet_newnal::{Pallet, Call, Storage, Event<T>} = 99,
 	}
 );
 
@@ -73,7 +73,7 @@ parameter_types! {
 	pub const MaxOracleMembers: u32 = 5;
 }
 
-impl pallet_urauth::Config for Test {
+impl pallet_newnal::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type UnixTime = Timestamp;
 	type URAuthParser = URAuthParser<Self>;

@@ -498,9 +498,14 @@ impl pallet_preimage::Config for Runtime {
 
 parameter_types! {
 	pub const MaxOracleMembers: u32 = 10;
+	pub const MaxVerifierMembers: u32 = 10;
 	pub const MaxURIByOracle: u32 = 100;
 	pub const VerificationPeriod: BlockNumber = 100;
 	pub const MaxRequest: u32 = 100;
+
+	pub const MaxPurchaseQuantity: u32 = 1_000_000_000;
+	pub const TotalFeeRatio: u32 = 10_000;
+	pub const MinPlatformFeeRatio: u32 = 1_000;
 }
 
 impl pallet_urauth::Config for Runtime {
@@ -523,6 +528,13 @@ where
 	type OverarchingCall = RuntimeCall;
 }
 
+impl pallet_data_market::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type MaxPurchaseQuantity = MaxPurchaseQuantity;
+	type TotalFeeRatio = TotalFeeRatio;
+	type MinPlatformFeeRatio = MinPlatformFeeRatio;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime {
@@ -536,6 +548,7 @@ construct_runtime!(
 
 		// The main stage
 		URAuth: pallet_urauth::{Pallet, Call, Storage, Config<T>, Event<T>} = 5,
+		DataMarket: pallet_data_market::{Pallet, Call, Storage, Event<T>} = 6,
 
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,

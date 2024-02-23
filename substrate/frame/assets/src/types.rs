@@ -257,17 +257,17 @@ impl<AssetId, AccountId, Balance> FrozenBalance<AssetId, AccountId, Balance> for
 }
 
 #[derive(Copy, Clone, PartialEq, Eq)]
-pub(super) struct TransferFlags {
+pub struct TransferFlags {
 	/// The debited account must stay alive at the end of the operation; an error is returned if
 	/// this cannot be achieved legally.
-	pub(super) keep_alive: bool,
+	pub keep_alive: bool,
 	/// Less than the amount specified needs be debited by the operation for it to be considered
 	/// successful. If `false`, then the amount debited will always be at least the amount
 	/// specified.
-	pub(super) best_effort: bool,
+	pub best_effort: bool,
 	/// Any additional funds debited (due to minimum balance requirements) should be burned rather
 	/// than credited to the destination account.
-	pub(super) burn_dust: bool,
+	pub burn_dust: bool,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq)]

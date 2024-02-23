@@ -10,9 +10,9 @@ RUN cargo build --release --locked
 # This is the 2nd stage: a very small image where we copy the infrablockchain binary."
 FROM docker.io/library/ubuntu:20.04
 
-COPY --from=builder /infrablockchain/target/release/infrablockchain /usr/local/bin
-COPY --from=builder /infrablockchain/target/release/infrablockchain-execute-worker /usr/local/bin
-COPY --from=builder /infrablockchain/target/release/infrablockchain-prepare-worker /usr/local/bin
+COPY --from=builder /infrablockchain/target/release/infra-relaychain /usr/local/bin
+COPY --from=builder /infrablockchain/target/release/infra-relaychain-execute-worker /usr/local/bin
+COPY --from=builder /infrablockchain/target/release/infra-relaychain-prepare-worker /usr/local/bin
 
 RUN useradd -m -u 1000 -U -s /bin/sh -d /infrablockchain infrablockchain && \
 	mkdir -p /data /infrablockchain/.local/share && \
