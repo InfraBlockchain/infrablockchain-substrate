@@ -30,10 +30,11 @@ use sp_std::{
 use application_crypto::KeyTypeId;
 use inherents::InherentIdentifier;
 use primitives::RuntimeDebug;
-use runtime_primitives::{
-	traits::{AppVerify, Header as HeaderT},
+use runtime_primitives::traits::{AppVerify, Header as HeaderT};
+pub use runtime_primitives::types::{
+	token::{InfraSystemConfig, RemoteAssetMetadata},
+	vote::PotVotesResult,
 };
-pub use runtime_primitives::types::{vote::PotVotesResult, token::{InfraSystemConfig, RemoteAssetMetadata}};
 use sp_arithmetic::traits::{BaseArithmetic, Saturating};
 
 pub use runtime_primitives::traits::{BlakeTwo256, Hash as HashT};
@@ -152,7 +153,7 @@ pub mod well_known_keys {
 	use hex_literal::hex;
 	use parity_scale_codec::Encode as _;
 	use runtime_primitives::types::SystemTokenParaId;
-use sp_io::hashing::twox_64;
+	use sp_io::hashing::twox_64;
 	use sp_std::prelude::*;
 
 	// A note on generating these magic values below:
@@ -204,7 +205,7 @@ use sp_io::hashing::twox_64;
 		&hex!["06de3d8a54d27e44a9d5ce189618f22db4b49d95320d9021994c850f25b8e385"];
 
 	/// The currently active system configuration for InfraBlockchain
-	pub const SYSTEM_CONFIG: &[u8] = 
+	pub const SYSTEM_CONFIG: &[u8] =
 		&hex!["c1b1962c8d78658bd8ffce50b52608924749b1555450acbdc9c90fdcafcce80c"];
 
 	/// Weight needs to be updated for `para_id`

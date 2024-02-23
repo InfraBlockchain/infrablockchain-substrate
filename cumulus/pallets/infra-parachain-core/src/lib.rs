@@ -4,25 +4,27 @@ use cumulus_pallet_xcm::{ensure_relay, Origin};
 use cumulus_primitives_core::UpdateRCConfig;
 use frame_support::pallet_prelude::*;
 use frame_system::pallet_prelude::*;
-use sp_runtime::{types::{fee::*, infra_core::*, token::*, vote::*}, Saturating};
-use sp_std::vec::Vec;
 use scale_info::TypeInfo;
+use sp_runtime::{
+	types::{fee::*, infra_core::*, token::*, vote::*},
+	Saturating,
+};
+use sp_std::vec::Vec;
 
 pub use pallet::*;
 
 #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 pub struct RequestStatus<BlockNumber> {
 	pub exp: BlockNumber,
-	pub is_relay: bool
+	pub is_relay: bool,
 }
 
-impl<BlockNumber> RequestStatus<BlockNumber> 
+impl<BlockNumber> RequestStatus<BlockNumber>
 where
-	BlockNumber: Saturating + Ord + PartialOrd
+	BlockNumber: Saturating + Ord + PartialOrd,
 {
-
 	pub fn default_status(exp: BlockNumber) -> Self {
-		Self { exp, is_relay: false}
+		Self { exp, is_relay: false }
 	}
 
 	fn is_relayed(&mut self) -> bool {
@@ -80,7 +82,8 @@ pub mod pallet {
 	pub type FeeTable<T: Config> = StorageMap<_, Twox128, ExtrinsicMetadata, SystemTokenBalance>;
 
 	#[pallet::storage]
-	pub type CurrentRequest<T: Config> = StorageValue<_, (RemoteAssetMetadata, RequestStatus<BlockNumberFor<T>>)>;
+	pub type CurrentRequest<T: Config> =
+		StorageValue<_, (RemoteAssetMetadata, RequestStatus<BlockNumberFor<T>>)>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -100,7 +103,7 @@ pub mod pallet {
 		/// System Token registration has been requested
 		RegisterRequested { asset_id: SystemTokenAssetId, exp: BlockNumberFor<T> },
 		/// Wrapped local asset has been created
-		WrappedCreated { asset_id: SystemTokenAssetId, original: SystemTokenId }
+		WrappedCreated { asset_id: SystemTokenAssetId, original: SystemTokenId },
 	}
 
 	#[pallet::error]
@@ -136,7 +139,7 @@ pub mod pallet {
 		/// System Token has already been requested
 		AlreadyRequested,
 		/// Register is not valid(e.g Outdated registration)
-		InvalidRegister
+		InvalidRegister,
 	}
 
 	#[pallet::hooks]
@@ -322,7 +325,7 @@ impl<T: Config> Pallet<T> {
 			if !request_status.is_expired(current) {
 				return Err(Error::<T>::AlreadyRequested.into())
 			}
-		} 
+		}
 		let exp = current.saturating_add(T::ActiveRequestPeriod::get());
 		CurrentRequest::<T>::put((asset_metadata, RequestStatus::default_status(exp)));
 		Ok(exp)
@@ -330,9 +333,7 @@ impl<T: Config> Pallet<T> {
 
 	fn check_valid_register() -> Result<(), DispatchError> {
 		let is_valid = if let Some((_, status)) = CurrentRequest::<T>::get() {
-			if !status.is_expired(
-				<frame_system::Pallet<T>>::block_number()
-			) {
+			if !status.is_expired(<frame_system::Pallet<T>>::block_number()) {
 				CurrentRequest::<T>::kill();
 				true
 			} else {
@@ -384,7 +385,6 @@ impl<T: Config> VotingHandler for Pallet<T> {
 }
 
 impl<T: Config> UpdateRCConfig for Pallet<T> {
-
 	fn update_system_config(infra_system_config: InfraSystemConfig) {
 		RCSystemConfig::<T>::put(infra_system_config);
 	}

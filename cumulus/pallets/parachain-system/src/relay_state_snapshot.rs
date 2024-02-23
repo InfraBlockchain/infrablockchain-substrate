@@ -21,7 +21,10 @@ use cumulus_primitives_core::{
 	relay_chain, AbridgedHostConfiguration, AbridgedHrmpChannel, ParaId,
 };
 use scale_info::TypeInfo;
-use sp_runtime::{traits::HashingFor, types::{SystemTokenAssetId, SystemTokenWeight}};
+use sp_runtime::{
+	traits::HashingFor,
+	types::{SystemTokenAssetId, SystemTokenWeight},
+};
 use sp_state_machine::{Backend, TrieBackend, TrieBackendBuilder};
 use sp_std::vec::Vec;
 use sp_trie::{HashDBT, MemoryDB, StorageProof, EMPTY_PREFIX};
@@ -283,10 +286,12 @@ impl RelayChainStateProof {
 		})
 	}
 
-	pub fn read_updated_system_token_weight(&self) -> Result<Option<Vec<(SystemTokenAssetId, SystemTokenWeight)>>, Error> {
+	pub fn read_updated_system_token_weight(
+		&self,
+	) -> Result<Option<Vec<(SystemTokenAssetId, SystemTokenWeight)>>, Error> {
 		read_optional_entry(
-			&self.trie_backend, 
-			&relay_chain::well_known_keys::update_system_token_weight(self.para_id)
+			&self.trie_backend,
+			&relay_chain::well_known_keys::update_system_token_weight(self.para_id),
 		)
 		.map_err(Error::UpdateSystemTokenWeight)
 	}
@@ -309,11 +314,8 @@ impl RelayChainStateProof {
 	///
 	/// Returns an error if anything failed at reading or decoding.
 	pub fn read_included_para_head(&self) -> Result<relay_chain::HeadData, Error> {
-		read_entry(
-			&self.trie_backend, 
-			&relay_chain::well_known_keys::para_head(self.para_id), None
-		)
-		.map_err(Error::ParaHead)
+		read_entry(&self.trie_backend, &relay_chain::well_known_keys::para_head(self.para_id), None)
+			.map_err(Error::ParaHead)
 	}
 
 	/// Read the [`Slot`](relay_chain::Slot) from the relay chain state proof.

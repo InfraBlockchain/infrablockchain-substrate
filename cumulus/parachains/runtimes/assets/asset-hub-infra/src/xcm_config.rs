@@ -16,7 +16,7 @@
 use super::{
 	AccountId, AllPalletsWithSystem, AssetLink, Assets, Authorship, Balance, Balances, InfraXcm,
 	ParachainInfo, ParachainSystem, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, WeightToFee,
-	XcmpQueue, 
+	XcmpQueue,
 };
 use assets_common::matching::{StartsWith, StartsWithExplicitGlobalConsensus};
 use frame_support::{

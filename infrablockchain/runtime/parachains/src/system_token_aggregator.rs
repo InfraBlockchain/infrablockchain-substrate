@@ -21,7 +21,7 @@ use frame_system::pallet_prelude::BlockNumberFor;
 pub use pallet::*;
 use sp_runtime::{self, traits::Zero, types::token::*};
 use sp_std::prelude::*;
-use xcm::{opaque::lts::MultiLocation, latest::prelude::*};
+use xcm::{latest::prelude::*, opaque::lts::MultiLocation};
 use xcm_primitives::AssetMultiLocationGetter;
 
 type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
@@ -33,8 +33,7 @@ pub mod pallet {
 	use super::*;
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config
-	{
+	pub trait Config: frame_system::Config {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		#[pallet::constant]
@@ -87,10 +86,10 @@ impl<T: Config> Pallet<T> {
 	{
 		let fee_account = system_token_helper::sovereign_account::<T>();
 		let system_token_asset_list = T::LocalAssetManager::system_token_list();
-		let balances = T::LocalAssetManager::account_system_token_balances(fee_account.clone().into());
+		let balances =
+			T::LocalAssetManager::account_system_token_balances(fee_account.clone().into());
 		for (asset_id, amount) in balances.into_iter() {
-			if !system_token_asset_list.contains(&asset_id)
-			{
+			if !system_token_asset_list.contains(&asset_id) {
 				continue
 			}
 			if let Some(asset_multi_loc) =
@@ -103,10 +102,7 @@ impl<T: Config> Pallet<T> {
 					is_relay,
 				)?;
 
-				Self::deposit_event(Event::<T>::SystemTokenAggregated {
-					asset_multi_loc,
-					amount: amount,
-				});
+				Self::deposit_event(Event::<T>::SystemTokenAggregated { asset_multi_loc, amount });
 			}
 		}
 		Ok(())

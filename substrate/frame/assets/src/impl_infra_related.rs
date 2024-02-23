@@ -71,8 +71,13 @@ where
 		token_list
 	}
 
-	fn account_system_token_balances(who: Self::AccountId) -> Vec<(SystemTokenAssetId, SystemTokenBalance)> {
-		Self::account_balances(who).iter().map(|(i, b)| (i.clone().into(), b.clone().into())).collect()
+	fn account_system_token_balances(
+		who: Self::AccountId,
+	) -> Vec<(SystemTokenAssetId, SystemTokenBalance)> {
+		Self::account_balances(who)
+			.iter()
+			.map(|(i, b)| (i.clone().into(), b.clone().into()))
+			.collect()
 	}
 
 	fn get_most_system_token_balance_of(

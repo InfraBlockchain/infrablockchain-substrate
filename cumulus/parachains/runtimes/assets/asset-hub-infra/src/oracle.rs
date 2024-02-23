@@ -27,10 +27,9 @@ impl SystemTokenOracleInterface for SystemTokenOracle {
 		exchange_rates: Vec<(Fiat, ExchangeRate)>,
 	) {
 		use crate::oracle::SystemTokenManagerCalls::UpdateExchangeRates;
-		let update_exchange_rate_call = RelayRuntimePallets::SystemTokenManager(UpdateExchangeRates(
-			standard_time,
-			exchange_rates,
-		));
+		let update_exchange_rate_call = RelayRuntimePallets::SystemTokenManager(
+			UpdateExchangeRates(standard_time, exchange_rates),
+		);
 		let message = Xcm(vec![
 			Instruction::UnpaidExecution {
 				weight_limit: WeightLimit::Unlimited,

@@ -1,13 +1,12 @@
-use frame_support::pallet_prelude::*;
-use frame_support::DefaultNoBound;
+use frame_support::{pallet_prelude::*, DefaultNoBound};
 use frame_system::{ensure_root, pallet_prelude::*};
 use log;
 use pallet_validator_election::VotingInterface;
 use parity_scale_codec::Encode;
+use primitives::well_known_keys;
 use sp_runtime::types::{fee::*, infra_core::*, token::*, vote::*};
 use sp_std::vec::Vec;
 use xcm::latest::prelude::*;
-use primitives::well_known_keys;
 
 mod impls;
 mod types;
@@ -52,8 +51,7 @@ pub mod pallet {
 
 	/// Relay Chain's fee for each extrinsic
 	#[pallet::storage]
-	pub type FeeTable<T: Config> =
-		StorageMap<_, Twox128, ExtrinsicMetadata, SystemTokenBalance>;
+	pub type FeeTable<T: Config> = StorageMap<_, Twox128, ExtrinsicMetadata, SystemTokenBalance>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -278,7 +276,7 @@ pub mod pallet {
 impl<T: Config> Pallet<T> {
 	pub fn do_update_runtime_state() {
 		if RuntimeState::<T>::get() == Mode::Normal {
-			return 
+			return
 		}
 		// TODO-1: Check whether it is allowed to change `Normal` state
 		// ToDo-2: Check whether a parachain has enough system token to pay

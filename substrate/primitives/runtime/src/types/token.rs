@@ -39,7 +39,18 @@ pub type BoundedSystemTokenName = BoundedVec<u8, ConstU32<20>>;
 pub type BoundedSystemTokenSymbol = BoundedVec<u8, ConstU32<5>>;
 
 /// System configuration for InfraBlockchain
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen, serde::Serialize, serde::Deserialize)]
+#[derive(
+	Encode,
+	Decode,
+	Clone,
+	PartialEq,
+	Eq,
+	RuntimeDebug,
+	TypeInfo,
+	MaxEncodedLen,
+	serde::Serialize,
+	serde::Deserialize,
+)]
 pub struct InfraSystemConfig {
 	/// Detail of base system token
 	pub base_system_token_detail: BaseSystemTokenDetail,
@@ -92,7 +103,18 @@ impl InfraSystemConfig {
 	}
 }
 
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen, serde::Serialize, serde::Deserialize)]
+#[derive(
+	Encode,
+	Decode,
+	Clone,
+	PartialEq,
+	Eq,
+	RuntimeDebug,
+	TypeInfo,
+	MaxEncodedLen,
+	serde::Serialize,
+	serde::Deserialize,
+)]
 /// Detail of base system token
 pub struct BaseSystemTokenDetail {
 	/// Currency type of base system token
@@ -232,7 +254,9 @@ pub trait LocalAssetManager {
 		Vec::new()
 	}
 	/// Return system token asset balances of `who``
-	fn account_system_token_balances(who: Self::AccountId) -> Vec<(SystemTokenAssetId, SystemTokenBalance)>;
+	fn account_system_token_balances(
+		who: Self::AccountId,
+	) -> Vec<(SystemTokenAssetId, SystemTokenBalance)>;
 	/// Return most system token balance of given 'asset_id' and 'account'
 	fn get_most_system_token_balance_of(
 		asset_ids: impl IntoIterator<Item = SystemTokenAssetId>,

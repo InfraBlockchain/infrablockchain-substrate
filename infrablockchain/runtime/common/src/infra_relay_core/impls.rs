@@ -40,7 +40,6 @@ impl<T: Config> RuntimeConfigProvider for Pallet<T> {
 
 // TODO: Find a way to dispatch XCM locally. Then it would be clearer
 impl<T: Config> UpdateInfraConfig for Pallet<T> {
-
 	fn update_fee_table(
 		dest_id: SystemTokenParaId,
 		pallet_name: Vec<u8>,

@@ -1,13 +1,10 @@
-
 use parity_scale_codec::{Decode, Encode};
-use sp_runtime::{DispatchError, traits::AccountIdConversion, types::token::*};
+use sp_runtime::{traits::AccountIdConversion, types::token::*, DispatchError};
 use sp_std::vec;
 
-use xcm::{
-	opaque::{
-		latest::prelude::*,
-		lts::{AssetId::Concrete, Fungibility::Fungible, Junction, MultiAsset, MultiLocation}
-	}
+use xcm::opaque::{
+	latest::prelude::*,
+	lts::{AssetId::Concrete, Fungibility::Fungible, Junction, MultiAsset, MultiLocation},
 };
 
 pub fn root_account<T: frame_system::Config>() -> T::AccountId {
@@ -29,15 +26,14 @@ pub fn do_teleport_asset<AccountId: Clone + Encode, Sender: SendXcm>(
 		X3(Junction::Parachain(para_id), _, _) => *para_id,
 		_ => 1000,
 	};
-	let raw_acc: [u8; 32] = beneficiary.clone()
+	let raw_acc: [u8; 32] = beneficiary
+		.clone()
 		.using_encoded(|mut acc| <[u8; 32]>::decode(&mut acc))
 		.map_err(|_| "Failed to encode account")?;
-	let assets: MultiAssets = MultiAsset { id: Concrete(asset_multi_loc.clone()), fun: Fungible(amount.clone()) }.into();
+	let assets: MultiAssets =
+		MultiAsset { id: Concrete(asset_multi_loc.clone()), fun: Fungible(amount.clone()) }.into();
 	let max_assets = assets.len() as u32;
-	let dest = MultiLocation {
-		parents,
-		interior: Junction::Parachain(dest_para_id).into(),
-	};
+	let dest = MultiLocation { parents, interior: Junction::Parachain(dest_para_id).into() };
 	let message = Xcm(vec![
 		WithdrawAsset(assets),
 		InitiateTeleport {
@@ -48,7 +44,7 @@ pub fn do_teleport_asset<AccountId: Clone + Encode, Sender: SendXcm>(
 				DepositAsset {
 					assets: Wild(AllCounted(max_assets)),
 					beneficiary: AccountId32 { id: raw_acc, network: None }.into(),
-				}
+				},
 			]),
 		},
 	]);
