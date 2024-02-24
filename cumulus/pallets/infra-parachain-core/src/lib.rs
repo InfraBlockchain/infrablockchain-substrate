@@ -2,8 +2,7 @@
 
 use cumulus_pallet_xcm::{ensure_relay, Origin};
 use cumulus_primitives_core::UpdateRCConfig;
-use frame_support::pallet_prelude::*;
-use frame_support::traits::fungibles::Inspect;
+use frame_support::{pallet_prelude::*, traits::fungibles::Inspect};
 use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
 use sp_runtime::{
@@ -201,7 +200,7 @@ pub mod pallet {
 		pub fn update_runtime_state(origin: OriginFor<T>) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
 			if RuntimeState::<T>::get() == Mode::Normal {
-				return Ok(());
+				return Ok(())
 			}
 			ensure!(RCSystemConfig::<T>::get().is_some(), Error::<T>::NotAllowedToChangeState);
 			// TODO-1: Check whether it is allowed to change `Normal` state
@@ -328,7 +327,7 @@ impl<T: Config> Pallet<T> {
 		let current = <frame_system::Pallet<T>>::block_number();
 		if let Some((_, request_status)) = CurrentRequest::<T>::get() {
 			if !request_status.is_expired(current) {
-				return Err(Error::<T>::AlreadyRequested.into());
+				return Err(Error::<T>::AlreadyRequested.into())
 			}
 		}
 		let exp = current.saturating_add(T::ActiveRequestPeriod::get());
