@@ -54,6 +54,12 @@ pub(super) enum AssetStatus {
 	Suspend,
 }
 
+impl AssetStatus {
+	pub fn is_mintable(&self) -> bool {
+		matches!(self, AssetStatus::Live | AssetStatus::Requested | AssetStatus::InActive)
+	}
+}
+
 #[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 pub struct AssetDetails<Balance, AccountId, DepositBalance> {
 	/// Can change `owner`, `issuer`, `freezer` and `admin` accounts.
@@ -87,6 +93,7 @@ pub struct AssetDetails<Balance, AccountId, DepositBalance> {
 }
 
 impl<Balance, AccountId, DepositBalance> AssetDetails<Balance, AccountId, DepositBalance> {
+
 	pub fn set_system_token_weight(&mut self, weight: SystemTokenWeight) {
 		self.system_token_weight = Some(weight);
 	}

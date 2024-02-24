@@ -1094,6 +1094,7 @@ impl<T: Config> Pallet<T> {
 		let SystemTokenId { para_id, asset_id, .. } = system_token_id.clone();
 		let weight = system_token_weight.ok_or(Error::<T>::WeightMissing)?;
 		T::InfraCore::register_system_token(para_id, asset_id, weight);
+		T::InfraCore::update_runtime_state(para_id);
 		Ok(())
 	}
 
@@ -1133,7 +1134,6 @@ impl<T: Config> Pallet<T> {
 			parent_for_asset_link,
 			original,
 		);
-
 		Ok(())
 	}
 }

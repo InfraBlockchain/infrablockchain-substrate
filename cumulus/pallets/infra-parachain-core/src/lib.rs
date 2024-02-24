@@ -3,6 +3,7 @@
 use cumulus_pallet_xcm::{ensure_relay, Origin};
 use cumulus_primitives_core::UpdateRCConfig;
 use frame_support::pallet_prelude::*;
+use frame_support::traits::fungibles::Inspect;
 use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
 use sp_runtime::{
@@ -53,6 +54,7 @@ pub mod pallet {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Type that interacts with local asset
+		// TODO: Move `LocalAssetManager: Inspect` to fungibles
 		type LocalAssetManager: LocalAssetManager<AccountId = Self::AccountId>;
 		/// Type that links local asset with System Token
 		type AssetLink: AssetLinkInterface<SystemTokenAssetId>;
@@ -199,7 +201,7 @@ pub mod pallet {
 		pub fn update_runtime_state(origin: OriginFor<T>) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
 			if RuntimeState::<T>::get() == Mode::Normal {
-				return Ok(())
+				return Ok(());
 			}
 			ensure!(RCSystemConfig::<T>::get().is_some(), Error::<T>::NotAllowedToChangeState);
 			// TODO-1: Check whether it is allowed to change `Normal` state
@@ -311,7 +313,7 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::ErrorOnGetMetadata)?;
 			T::LocalAssetManager::request_register(asset_id)
 				.map_err(|_| Error::<T>::ErrorOnRequestRegister)?;
-			let exp = Self::do_request(remote_asset_metadata)?;
+			let exp = Self::do_request(asset_id, remote_asset_metadata)?;
 			Self::deposit_event(Event::<T>::RegisterRequested { asset_id, exp });
 			Ok(())
 		}
@@ -319,11 +321,14 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
-	fn do_request(asset_metadata: RemoteAssetMetadata) -> Result<BlockNumberFor<T>, DispatchError> {
+	fn do_request(
+		id: SystemTokenAssetId,
+		asset_metadata: RemoteAssetMetadata,
+	) -> Result<BlockNumberFor<T>, DispatchError> {
 		let current = <frame_system::Pallet<T>>::block_number();
 		if let Some((_, request_status)) = CurrentRequest::<T>::get() {
 			if !request_status.is_expired(current) {
-				return Err(Error::<T>::AlreadyRequested.into())
+				return Err(Error::<T>::AlreadyRequested.into());
 			}
 		}
 		let exp = current.saturating_add(T::ActiveRequestPeriod::get());

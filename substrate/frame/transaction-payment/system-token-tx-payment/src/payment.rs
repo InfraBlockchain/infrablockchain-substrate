@@ -170,6 +170,7 @@ where
 			T::Assets::get_most_system_token_balance_of(l, who.clone()).into()
 		};
 		let min_converted_fee = if fee.is_zero() { Zero::zero() } else { One::one() };
+		// CON::to_asset_balance => fee / system_token_weight
 		let mut converted_fee = CON::to_asset_balance(fee, system_token_asset_id.clone())
 			.map_err(|_| TransactionValidityError::from(InvalidTransaction::Payment))?
 			.max(min_converted_fee);

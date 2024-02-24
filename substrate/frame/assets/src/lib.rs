@@ -588,6 +588,8 @@ pub mod pallet {
 		CallbackFailed,
 		/// Weight of System Token is missing
 		WeightMissing,
+		/// Request of system token is invalid
+		InvalidRequest,
 	}
 
 	#[pallet::call(weight(<T as Config<I>>::WeightInfo))]
@@ -1086,7 +1088,7 @@ pub mod pallet {
 				ensure!(details.status == AssetStatus::Live, Error::<T, I>::LiveAsset);
 				ensure!(origin == details.owner, Error::<T, I>::NoPermission);
 				if details.owner == owner {
-					return Ok(())
+					return Ok(());
 				}
 
 				let metadata_deposit =
