@@ -30,9 +30,10 @@ use sp_std::{
 use application_crypto::KeyTypeId;
 use inherents::InherentIdentifier;
 use primitives::RuntimeDebug;
-use runtime_primitives::{
-	traits::{AppVerify, Header as HeaderT},
-	types::PotVotesResult,
+use runtime_primitives::traits::{AppVerify, Header as HeaderT};
+pub use runtime_primitives::types::{
+	token::{InfraSystemConfig, RemoteAssetMetadata},
+	vote::PotVotesResult,
 };
 use sp_arithmetic::traits::{BaseArithmetic, Saturating};
 
@@ -151,6 +152,7 @@ pub mod well_known_keys {
 	use super::{HrmpChannelId, Id, WellKnownKey};
 	use hex_literal::hex;
 	use parity_scale_codec::Encode as _;
+	use runtime_primitives::types::SystemTokenParaId;
 	use sp_io::hashing::twox_64;
 	use sp_std::prelude::*;
 
@@ -201,6 +203,25 @@ pub mod well_known_keys {
 	/// The storage entry should be accessed as an `AbridgedHostConfiguration` encoded value.
 	pub const ACTIVE_CONFIG: &[u8] =
 		&hex!["06de3d8a54d27e44a9d5ce189618f22db4b49d95320d9021994c850f25b8e385"];
+
+	/// The currently active system configuration for InfraBlockchain
+	pub const SYSTEM_CONFIG: &[u8] =
+		&hex!["c1b1962c8d78658bd8ffce50b52608924749b1555450acbdc9c90fdcafcce80c"];
+
+	/// Weight needs to be updated for `para_id`
+	pub fn update_system_token_weight(para_id: Id) -> Vec<u8> {
+		let prefix = hex!["8b48ccceef96f69546d630a6a9445f25262f55aa25e8eaac78e113273688c349"];
+		let system_token_para_id: SystemTokenParaId = para_id.into();
+		system_token_para_id.using_encoded(|system_token_para_id: &[u8]| {
+			prefix
+				.as_ref()
+				.iter()
+				.chain(twox_64(system_token_para_id).iter())
+				.chain(system_token_para_id.iter())
+				.cloned()
+				.collect()
+		})
+	}
 
 	/// Hash of the committed head data for a given registered para.
 	///
@@ -350,6 +371,21 @@ pub mod well_known_keys {
 	///
 	/// The storage entry stores a value of `UpgradeRestriction` type.
 	pub fn upgrade_restriction_signal(para_id: Id) -> Vec<u8> {
+		let prefix = hex!["cd710b30bd2eab0352ddcc26417aa194f27bbb460270642b5bcaf032ea04d56a"];
+
+		para_id.using_encoded(|para_id: &[u8]| {
+			prefix
+				.as_ref()
+				.iter()
+				.chain(twox_64(para_id).iter())
+				.chain(para_id.iter())
+				.cloned()
+				.collect()
+		})
+	}
+
+	/// The storage entry stores a value of `UpdatedInfraSystemConfig` type
+	pub fn updated_infra_system_config(para_id: Id) -> Vec<u8> {
 		let prefix = hex!["cd710b30bd2eab0352ddcc26417aa194f27bbb460270642b5bcaf032ea04d56a"];
 
 		para_id.using_encoded(|para_id: &[u8]| {
@@ -672,6 +708,8 @@ pub struct CandidateCommitments<N = BlockNumber> {
 	pub hrmp_watermark: N,
 	/// Result of pot votes sent by the parachain
 	pub vote_result: Option<PotVotesResult>,
+	/// Requested assets for System Token,
+	pub requested_asset: Option<RemoteAssetMetadata>,
 }
 
 impl CandidateCommitments {

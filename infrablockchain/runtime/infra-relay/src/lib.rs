@@ -22,8 +22,8 @@
 
 use pallet_transaction_payment::CurrencyAdapter;
 use runtime_common::{
-	auctions, crowdloan, impl_runtime_weights, impls::DealWithFees, paras_registrar,
-	paras_sudo_wrapper, pot as relay_pot, prod_or_fast, slots, BlockHashCount, BlockLength,
+	auctions, crowdloan, impl_runtime_weights, impls::DealWithFees, infra_relay_core,
+	paras_registrar, paras_sudo_wrapper, prod_or_fast, slots, BlockHashCount, BlockLength,
 	SlowAdjustingFeeUpdate,
 };
 
@@ -78,10 +78,11 @@ use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{
 		AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto,
-		Extrinsic as ExtrinsicT, OpaqueKeys, SaturatedConversion, Verify,
+		Extrinsic as ExtrinsicT, OpaqueKeys, SaturatedConversion, TryConvertInto as JustTry,
+		Verify,
 	},
 	transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
-	types::{VoteAccountId, VoteWeight},
+	types::{token::*, vote::*},
 	ApplyExtrinsicResult, FixedU128, KeyTypeId, Perbill, Percent, Permill,
 };
 
@@ -100,12 +101,13 @@ pub use pallet_timestamp::Call as TimestampCall;
 pub use sp_runtime::BuildStorage;
 
 /// Constant values used within the runtime.
-use infra_relay_runtime_constants::{currency::*, fee::*, time::*};
+use infra_relay_runtime_constants::{currency::*, fee::*, system_parachain::ASSET_HUB_ID, time::*};
 
 // Weights used in the runtime.
 mod weights;
 
 pub mod xcm_config;
+use xcm_config::XcmRouter;
 
 impl_runtime_weights!(infra_relay_runtime_constants);
 
@@ -352,10 +354,6 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 	#[cfg(not(feature = "fast-runtime"))]
 	fn contains(call: &RuntimeCall) -> bool {
 		match call {
-			RuntimeCall::SystemTokenManager(
-				system_token_manager::Call::register_system_token { .. } |
-				system_token_manager::Call::deregister_system_token { .. },
-			) |
 			RuntimeCall::Council(
 				pallet_collective::Call::propose { .. } |
 				pallet_collective::Call::vote { .. } |
@@ -364,7 +362,8 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 			RuntimeCall::Democracy(pallet_democracy::Call::external_propose_majority {
 				..
 			}) |
-			RuntimeCall::Preimage(pallet_preimage::Call::note_preimage { .. }) => true,
+			RuntimeCall::Preimage(pallet_preimage::Call::note_preimage { .. }) |
+			RuntimeCall::InfraRelayCore(..) => true,
 			_ => false,
 		}
 	}
@@ -378,21 +377,25 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 
 impl pallet_system_token_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
+	type InfraTxInterface = InfraRelayCore;
 	type Assets = Assets;
 	type OnChargeSystemToken = TransactionFeeCharger<
+		Runtime,
 		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
 		CreditToBucket,
+		JustTry,
 	>;
-	type FeeTableProvider = ();
-	type VotingHandler = Pot;
 	type BootstrapCallFilter = BootstrapCallFilter;
 	type PalletId = FeeTreasuryId;
 }
 
-impl relay_pot::Config for Runtime {
+impl infra_relay_core::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type VotingHandler = ValidatorElection;
+	type VotingInterface = ValidatorElection;
 	type SystemTokenInterface = SystemTokenManager;
+	type LocalAssetManager = Assets;
+	type AssetLink = AssetLink;
+	type XcmRouter = XcmRouter;
 }
 
 parameter_types! {
@@ -779,6 +782,7 @@ parameter_types! {
 	pub NposSolutionPriority: TransactionPriority =
 		Perbill::from_percent(90) * TransactionPriority::max_value();
 	pub const ImOnlineUnsignedPriority: TransactionPriority = TransactionPriority::max_value();
+	pub const SystemTokenHelperUnsignedPriority: TransactionPriority = 0;
 }
 
 impl pallet_im_online::Config for Runtime {
@@ -1115,22 +1119,23 @@ impl pallet_validator_election::Config for Runtime {
 
 impl pallet_asset_link::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type ReserveAssetModifierOrigin = AuthorityOrigin;
 	type Assets = Assets;
 	type WeightInfo = ();
 }
 
+parameter_types! {
+	pub const AssetHubId: u32 = ASSET_HUB_ID;
+}
+
 impl system_token_manager::Config for Runtime {
+	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeEvent = RuntimeEvent;
+	type InfraCore = InfraRelayCore;
 	type UnixTime = Timestamp;
 	type StringLimit = ConstU32<128>;
 	type MaxSystemTokens = ConstU32<10>;
 	type MaxOriginalUsedParaIds = ConstU32<10>;
-}
-
-impl pallet_system_token::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type AuthorizedOrigin = AuthorityOrigin;
+	type AssetHubId = AssetHubId;
 }
 
 impl validator_reward_manager::Config for Runtime {
@@ -1357,7 +1362,6 @@ impl pallet_assets::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
 	type AssetId = AssetId;
-	type AssetLink = AssetLink;
 	type AssetIdParameter = parity_scale_codec::Compact<AssetId>;
 	type Currency = Balances;
 	type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
@@ -1367,7 +1371,6 @@ impl pallet_assets::Config for Runtime {
 	type MetadataDepositBase = ConstU128<0>;
 	type MetadataDepositPerByte = ConstU128<0>;
 	type ApprovalDeposit = ConstU128<0>;
-	type StringLimit = ConstU32<20>;
 	type Freezer = ();
 	type Extra = ();
 	type CallbackHandle = ();
@@ -1383,7 +1386,9 @@ parameter_types! {
 impl system_token_aggregator::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Period = Period;
+	type LocalAssetManager = Assets;
 	type AssetMultiLocationGetter = AssetLink;
+	type SendXcm = XcmRouter;
 	type IsRelay = IsRelay;
 }
 
@@ -1397,13 +1402,12 @@ construct_runtime! {
 		// Asset rate.
 		AssetRate: pallet_asset_rate::{Pallet, Call, Storage, Event<T>} = 39,
 
-		// IBS Support
-		SystemTokenManager: system_token_manager::{Pallet, Call, Storage, Event<T>} = 20,
-		ValidatorRewardManager: validator_reward_manager::{Pallet, Call, Storage, Event<T>} = 21,
-		SystemToken: pallet_system_token = 23,
-		AssetLink: pallet_asset_link = 24,
-		Pot: relay_pot::{Pallet, Storage, Event<T>} = 25,
-		SystemTokenAggregator: system_token_aggregator = 26,
+		// InfraBlockchain Support
+		InfraRelayCore: infra_relay_core::{Pallet, Call, Config<T>, Storage, Event<T>} = 20,
+		SystemTokenManager: system_token_manager::{Pallet, Call, Storage, Event<T>} = 21,
+		ValidatorRewardManager: validator_reward_manager::{Pallet, Call, Storage, Event<T>} = 22,
+		AssetLink: pallet_asset_link::{Pallet, Storage, Event<T>} = 24,
+		SystemTokenAggregator: system_token_aggregator = 25,
 
 		// Babe must be before session.
 		Babe: pallet_babe::{Pallet, Call, Storage, Config<T>, ValidateUnsigned} = 2,
@@ -1413,7 +1417,7 @@ construct_runtime! {
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 5,
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>, Config<T>} = 6,
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 31,
-		SystemTokenTxPayment: pallet_system_token_tx_payment::{Pallet, Event<T>} = 32,
+		SystemTokenTxPayment: pallet_system_token_tx_payment::{Pallet, Storage, Event<T>} = 32,
 
 		// Consensus support.
 		// Authorship must be before session in order to note author in the correct session and era
@@ -1422,7 +1426,7 @@ construct_runtime! {
 		Offences: pallet_offences::{Pallet, Storage, Event} = 8,
 		Historical: session_historical::{Pallet} = 33,
 		// This should be above Session Pallet
-		ValidatorElection: pallet_validator_election::{Pallet, Call, Storage, Config<T>, Event<T>} = 22,
+		ValidatorElection: pallet_validator_election::{Pallet, Call, Storage, Config<T>, Event<T>} = 23,
 		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 9,
 		Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config<T>, Event, ValidateUnsigned} = 11,
 		ImOnline: pallet_im_online::{Pallet, Call, Storage, Event<T>, ValidateUnsigned, Config<T>} = 12,

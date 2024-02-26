@@ -39,7 +39,7 @@ impl ShouldExecute for TakeWeightCredit {
 		max_weight: Weight,
 		properties: &mut Properties,
 	) -> Result<(), ProcessMessageError> {
-		log::trace!(
+		log::debug!(
 			target: "xcm::barriers",
 			"TakeWeightCredit origin: {:?}, instructions: {:?}, max_weight: {:?}, properties: {:?}",
 			_origin, _instructions, max_weight, properties,
@@ -67,7 +67,7 @@ impl<T: Contains<MultiLocation>> ShouldExecute for AllowTopLevelPaidExecutionFro
 		max_weight: Weight,
 		_properties: &mut Properties,
 	) -> Result<(), ProcessMessageError> {
-		log::trace!(
+		log::debug!(
 			target: "xcm::barriers",
 			"AllowTopLevelPaidExecutionFrom origin: {:?}, instructions: {:?}, max_weight: {:?}, properties: {:?}",
 			origin, instructions, max_weight, _properties,
@@ -292,7 +292,7 @@ impl<T: Contains<MultiLocation>> ShouldExecute for AllowExplicitUnpaidExecutionF
 		max_weight: Weight,
 		_properties: &mut Properties,
 	) -> Result<(), ProcessMessageError> {
-		log::trace!(
+		log::debug!(
 			target: "xcm::barriers",
 			"AllowExplicitUnpaidExecutionFrom origin: {:?}, instructions: {:?}, max_weight: {:?}, properties: {:?}",
 			origin, instructions, max_weight, _properties,

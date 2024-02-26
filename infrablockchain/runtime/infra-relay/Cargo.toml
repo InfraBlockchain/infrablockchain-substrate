@@ -23,7 +23,6 @@ hex-literal = { version = "0.4.1", optional = true }
 
 # Infra
 pallet-validator-election = { path = "../../../substrate/frame/validator-election", default-features = false }
-pallet-system-token = { path = "../../../substrate/frame/system-token", default-features = false }
 
 # Primitives
 authority-discovery-primitives = { package = "sp-authority-discovery", path = "../../../substrate/primitives/authority-discovery", default-features = false }
@@ -174,7 +173,6 @@ std = [
 	"pallet-vesting/std",
 	"pallet-utility/std",
 	"pallet-validator-election/std",
-	"pallet-system-token/std",
 	"sp-runtime/std",
 	"frame-system/std",
 	"frame-system-rpc-runtime-api/std",

@@ -30,7 +30,10 @@ use frame_support::traits::{ExecuteBlock, ExtrinsicCall, Get, IsSubType};
 use sp_core::storage::{ChildInfo, StateVersion};
 use sp_externalities::{set_and_run_with_externalities, Externalities};
 use sp_io::KillStorageResult;
-use sp_runtime::traits::{Block as BlockT, Extrinsic, HashingFor, Header as HeaderT};
+use sp_runtime::{
+	traits::{Block as BlockT, Extrinsic, HashingFor, Header as HeaderT},
+	types::token::BoundedRequestedAssets,
+};
 use sp_std::prelude::*;
 use sp_trie::MemoryDB;
 
@@ -217,6 +220,8 @@ where
 			None
 		};
 
+		let requested_asset = crate::RequestedAsset::<PSC>::get();
+
 		ValidationResult {
 			head_data,
 			new_validation_code: new_validation_code.map(Into::into),
@@ -225,6 +230,7 @@ where
 			horizontal_messages,
 			hrmp_watermark,
 			vote_result,
+			requested_asset,
 		}
 	})
 }

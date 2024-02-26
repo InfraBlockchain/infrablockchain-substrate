@@ -1,5 +1,5 @@
 use super::{
-	AccountId, AllPalletsWithSystem, AssetLink, Assets, Authorship, Balance, Balances, IbsXcm,
+	AccountId, AllPalletsWithSystem, AssetLink, Assets, Authorship, Balance, Balances, InfraXcm,
 	ParachainInfo, ParachainSystem, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, WeightToFee,
 	XcmpQueue,
 };
@@ -32,7 +32,7 @@ parameter_types! {
 	pub const RelayNetwork: Option<NetworkId> = None;
 	pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
 	pub UniversalLocation: InteriorMultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
-	pub CheckingAccount: AccountId = IbsXcm::check_account();
+	pub CheckingAccount: AccountId = InfraXcm::check_account();
 	pub TrustBackedAssetsPalletLocation: MultiLocation =
 		PalletInstance(<Assets as PalletInfoAccess>::index() as u8).into();
 }
@@ -201,16 +201,9 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				pallet_collator_selection::Call::leave_intent { .. },
 			) |
 			RuntimeCall::Session(pallet_session::Call::purge_keys { .. }) |
-			RuntimeCall::SystemToken(pallet_system_token::Call::set_fee_table { .. }) |
 			RuntimeCall::XcmpQueue(..) |
 			RuntimeCall::DmpQueue(..) |
-			RuntimeCall::AssetLink(pallet_asset_link::Call::link_system_token { .. }) |
 			RuntimeCall::Assets(
-				pallet_assets::Call::update_para_fee_rate { .. } |
-				pallet_assets::Call::update_system_token_weight { .. } |
-				pallet_assets::Call::set_sufficient_and_system_token_weight { .. } |
-				pallet_assets::Call::set_sufficient_with_unlink_system_token { .. } |
-				pallet_assets::Call::force_create_with_metadata { .. } |
 				pallet_assets::Call::force_set_metadata { .. } |
 				pallet_assets::Call::create { .. } |
 				pallet_assets::Call::force_create { .. } |
@@ -238,9 +231,9 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				pallet_assets::Call::force_cancel_approval { .. } |
 				pallet_assets::Call::transfer_approved { .. } |
 				pallet_assets::Call::touch { .. } |
-				pallet_assets::Call::refund { .. } |
-				pallet_assets::Call::set_runtime_state { .. },
-			) => true,
+				pallet_assets::Call::refund { .. },
+			) |
+			RuntimeCall::InfraParaCore(..) => true,
 			_ => false,
 		}
 	}
@@ -278,11 +271,11 @@ impl xcm_executor::Config for XcmConfig {
 			>,
 		>,
 	);
-	type ResponseHandler = IbsXcm;
-	// type AssetTrap = IbsXcm;
-	type AssetTrap = TrappistDropAssets<AssetId, AssetLink, Assets, Balances, IbsXcm, AccountId>;
-	type AssetClaims = IbsXcm;
-	type SubscriptionService = IbsXcm;
+	type ResponseHandler = InfraXcm;
+	// type AssetTrap = InfraXcm;
+	type AssetTrap = TrappistDropAssets<AssetId, AssetLink, Assets, Balances, InfraXcm, AccountId>;
+	type AssetClaims = InfraXcm;
+	type SubscriptionService = InfraXcm;
 	type PalletInstancesInfo = AllPalletsWithSystem;
 	type MaxAssetsIntoHolding = MaxAssetsIntoHolding;
 	type AssetLocker = ();

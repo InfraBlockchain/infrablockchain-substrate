@@ -174,7 +174,7 @@ impl<T: Config<I>, I: 'static> fungibles::Create<T::AccountId> for Pallet<T, I> 
 		is_sufficient: bool,
 		min_balance: Self::Balance,
 	) -> DispatchResult {
-		Self::do_force_create(id, admin, is_sufficient, min_balance)
+		Self::do_force_create(id, &admin, is_sufficient, min_balance, None, None)
 	}
 }
 
@@ -200,15 +200,15 @@ impl<T: Config<I>, I: 'static> fungibles::metadata::Inspect<<T as SystemConfig>:
 	for Pallet<T, I>
 {
 	fn name(asset: T::AssetId) -> Vec<u8> {
-		Metadata::<T, I>::get(asset).name.to_vec()
+		Metadata::<T, I>::get(asset).map_or(Default::default(), |m| m).name.to_vec()
 	}
 
 	fn symbol(asset: T::AssetId) -> Vec<u8> {
-		Metadata::<T, I>::get(asset).symbol.to_vec()
+		Metadata::<T, I>::get(asset).map_or(Default::default(), |m| m).symbol.to_vec()
 	}
 
 	fn decimals(asset: T::AssetId) -> u8 {
-		Metadata::<T, I>::get(asset).decimals
+		Metadata::<T, I>::get(asset).map_or(Default::default(), |m| m).decimals
 	}
 }
 
@@ -222,7 +222,7 @@ impl<T: Config<I>, I: 'static> fungibles::metadata::Mutate<<T as SystemConfig>::
 		symbol: Vec<u8>,
 		decimals: u8,
 	) -> DispatchResult {
-		Self::do_set_metadata(asset, from, name, symbol, decimals)
+		Self::do_set_metadata(asset, None, from, name, symbol, decimals)
 	}
 }
 

@@ -96,15 +96,15 @@ pub(crate) const fn sqrt(x: F) -> F {
 
 	/* take care of Inf and NaN */
 	if (ix0 & 0x7ff00000) == 0x7ff00000 {
-		return x.mul(x).add(x); /* sqrt(NaN)=NaN, sqrt(+inf)=+inf, sqrt(-inf)=sNaN */
+		return x.mul(x).add(x) /* sqrt(NaN)=NaN, sqrt(+inf)=+inf, sqrt(-inf)=sNaN */
 	}
 	/* take care of zero */
 	if ix0 <= 0 {
 		if ((ix0 & !(sign as i32)) | ix1 as i32) == 0 {
-			return x; /* sqrt(+-0) = +-0 */
+			return x /* sqrt(+-0) = +-0 */
 		}
 		if ix0 < 0 {
-			return (x.sub(x)).div(x.sub(x)); /* sqrt(-ve) = sNaN */
+			return (x.sub(x)).div(x.sub(x)) /* sqrt(-ve) = sNaN */
 		}
 	}
 	/* normalize x */

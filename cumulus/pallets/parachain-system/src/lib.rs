@@ -31,8 +31,8 @@ use codec::{Decode, Encode, MaxEncodedLen};
 use cumulus_primitives_core::{
 	relay_chain, AbridgedHostConfiguration, ChannelStatus, CollationInfo, DmpMessageHandler,
 	GetChannelInfo, InboundDownwardMessage, InboundHrmpMessage, MessageSendError,
-	OutboundHrmpMessage, ParaId, PersistedValidationData, UpwardMessage, UpwardMessageSender,
-	XcmpMessageHandler, XcmpMessageSource,
+	OutboundHrmpMessage, ParaId, PersistedValidationData, UpdateRCConfig, UpwardMessage,
+	UpwardMessageSender, XcmpMessageHandler, XcmpMessageSource,
 };
 use cumulus_primitives_parachain_inherent::{MessageQueueChain, ParachainInherentData};
 use frame_support::{
@@ -40,7 +40,7 @@ use frame_support::{
 	ensure,
 	inherent::{InherentData, InherentIdentifier, ProvideInherent},
 	storage,
-	traits::{infra_support::pot::VotingHandler, Get},
+	traits::Get,
 	weights::Weight,
 };
 use frame_system::{ensure_none, ensure_root, pallet_prelude::HeaderFor};
@@ -52,7 +52,7 @@ use sp_runtime::{
 		InvalidTransaction, TransactionLongevity, TransactionSource, TransactionValidity,
 		ValidTransaction,
 	},
-	types::{PotVotes, SystemTokenId, VoteAccountId, VoteWeight},
+	types::{token::*, vote::*},
 	DispatchError, RuntimeDebug,
 };
 use sp_std::{cmp, collections::btree_map::BTreeMap, prelude::*};
@@ -66,6 +66,7 @@ mod unincluded_segment;
 
 pub mod consensus_hook;
 pub mod relay_state_snapshot;
+
 #[macro_use]
 pub mod validate_block;
 
@@ -221,6 +222,9 @@ pub mod pallet {
 
 		/// Something that can check the associated relay parent block number.
 		type CheckAssociatedRelayNumber: CheckAssociatedRelayNumber;
+
+		/// Type that updates configuration set by relay chain
+		type UpdateRCConfig: UpdateRCConfig;
 
 		/// An entry-point for higher-level logic to manage the backlog of unincluded parachain
 		/// blocks and authorship rights for those blocks.
@@ -428,8 +432,9 @@ pub mod pallet {
 			HrmpOutboundMessages::<T>::kill();
 			CustomValidationHeadData::<T>::kill();
 			CollectedPotVotes::<T>::kill();
+			RequestedAsset::<T>::kill();
 
-			weight += T::DbWeight::get().writes(6);
+			weight += T::DbWeight::get().writes(8);
 
 			// Here, in `on_initialize` we must report the weight for both `on_initialize` and
 			// `on_finalize`.
@@ -588,6 +593,17 @@ pub mod pallet {
 					.expect("Invalid upgrade restriction signal"),
 			);
 			<UpgradeGoAhead<T>>::put(upgrade_go_ahead_signal);
+			let infra_system_config = relay_state_proof
+				.read_infra_system_config()
+				.expect("Error on reading infra system config in relay chain state proof");
+			T::UpdateRCConfig::update_system_config(infra_system_config);
+
+			let update_weights = relay_state_proof
+				.read_updated_system_token_weight()
+				.expect("Error on reading updated system token weight");
+			if let Some(assets) = update_weights {
+				T::UpdateRCConfig::update_system_token_weight_for(assets);
+			}
 
 			let host_config = relay_state_proof
 				.read_abridged_host_configuration()
@@ -689,6 +705,8 @@ pub mod pallet {
 		DownwardMessagesProcessed { weight_used: Weight, dmq_head: relay_chain::Hash },
 		/// An upward message was sent to the relay chain.
 		UpwardMessageSent { message_hash: Option<XcmHash> },
+		/// Requested assets' metadata
+		AssetForSystemTokenRequestsed { requested_asset: RemoteAssetMetadata },
 	}
 
 	#[pallet::error]
@@ -775,6 +793,10 @@ pub mod pallet {
 	#[pallet::storage]
 	pub(super) type UpgradeRestrictionSignal<T: Config> =
 		StorageValue<_, Option<relay_chain::UpgradeRestriction>, ValueQuery>;
+
+	#[pallet::storage]
+	pub(super) type UpdatedInfraSystemConfig<T: Config> =
+		StorageValue<_, Option<InfraSystemConfig>, ValueQuery>;
 
 	/// Optional upgrade go-ahead signal from the relay-chain.
 	///
@@ -891,6 +913,9 @@ pub mod pallet {
 	#[pallet::storage]
 	pub(super) type CollectedPotVotes<T: Config> = StorageValue<_, PotVotes, OptionQuery>;
 
+	#[pallet::storage]
+	pub(super) type RequestedAsset<T: Config> = StorageValue<_, RemoteAssetMetadata>;
+
 	#[pallet::inherent]
 	impl<T: Config> ProvideInherent for Pallet<T> {
 		type Call = Call<T>;
@@ -953,30 +978,22 @@ pub mod pallet {
 	}
 }
 
-impl<T: Config> VotingHandler for Pallet<T> {
-	fn update_pot_vote(
-		who: VoteAccountId,
-		system_token_id: SystemTokenId,
-		vote_weight: VoteWeight,
-	) {
-		Self::do_update_pot_vote(system_token_id, who, vote_weight);
+impl<T: Config> CollectVote for Pallet<T> {
+	fn collect_vote(who: VoteAccountId, system_token_id: SystemTokenId, vote_weight: VoteWeight) {
+		let pot_votes = if let Some(mut old) = CollectedPotVotes::<T>::get() {
+			old.update_vote_weight(system_token_id, who, vote_weight);
+			old
+		} else {
+			PotVotes::new(system_token_id, who, vote_weight)
+		};
+		CollectedPotVotes::<T>::put(pot_votes);
 	}
 }
 
-impl<T: Config> Pallet<T> {
-	/// Update vote weight for given (asset_id, candidate)
-	fn do_update_pot_vote(
-		vote_system_token: SystemTokenId,
-		vote_account_id: VoteAccountId,
-		vote_weight: VoteWeight,
-	) {
-		let pot_votes = if let Some(mut old) = CollectedPotVotes::<T>::get() {
-			old.update_vote_weight(vote_system_token, vote_account_id, vote_weight);
-			old
-		} else {
-			PotVotes::new(vote_system_token, vote_account_id, vote_weight)
-		};
-		CollectedPotVotes::<T>::put(pot_votes);
+impl<T: Config> AssetMetadataProvider for Pallet<T> {
+	fn requested(asset: RemoteAssetMetadata) {
+		RequestedAsset::<T>::put(&asset);
+		Self::deposit_event(Event::AssetForSystemTokenRequestsed { requested_asset: asset });
 	}
 }
 
@@ -1424,6 +1441,7 @@ impl<T: Config> Pallet<T> {
 				.map_or_else(|| header.encode(), |v| v)
 				.into(),
 			vote_result,
+			requested_asset: RequestedAsset::<T>::get(),
 		}
 	}
 

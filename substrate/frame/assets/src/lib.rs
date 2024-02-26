@@ -154,7 +154,9 @@ pub use extra_mutator::*;
 mod functions;
 
 mod impl_fungibles;
+mod impl_infra_related;
 mod impl_stored_map;
+
 pub mod types;
 pub use types::*;
 
@@ -169,31 +171,23 @@ use frame_support::{
 	},
 };
 use frame_system::pallet_prelude::*;
-
-use core::marker::PhantomData;
 use scale_info::TypeInfo;
 use sp_runtime::{
-	traits::{AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Saturating, StaticLookup, Zero},
-	types::{RuntimeState, SystemTokenId, SystemTokenLocalAssetProvider, SystemTokenWeight},
+	traits::{
+		AccountIdConversion, AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Saturating,
+		StaticLookup, Zero,
+	},
+	types::token::*,
 	ArithmeticError, DispatchError, TokenError,
 };
 use sp_std::prelude::*;
 
 use frame_system::Config as SystemConfig;
-
 pub use pallet::*;
 pub use weights::WeightInfo;
 
 type AccountIdLookupOf<T> = <<T as frame_system::Config>::Lookup as StaticLookup>::Source;
 const LOG_TARGET: &str = "runtime::assets";
-
-/// Origin for the parachains module.
-#[derive(PartialEq, Eq, Clone, Encode, Decode, TypeInfo, RuntimeDebug, MaxEncodedLen)]
-#[scale_info(skip_type_params(I))]
-pub enum RawOrigin<T, I> {
-	Relay,
-	_Phantom(PhantomData<(T, I)>),
-}
 
 /// Trait with callbacks that are executed after successfull asset creation or destruction.
 pub trait AssetsCallback<AssetId, AccountId> {
@@ -248,10 +242,8 @@ pub mod pallet {
 			+ Copy
 			+ MaybeSerializeDeserialize
 			+ MaxEncodedLen
-			+ TypeInfo;
-
-		/// The Links connecting system tokens between chains.
-		type AssetLink: AssetLinkInterface<Self::AssetId>;
+			+ TypeInfo
+			+ IsType<SystemTokenBalance>;
 
 		/// Max number of items to destroy per `destroy_accounts` and `destroy_approvals` call.
 		///
@@ -265,7 +257,7 @@ pub mod pallet {
 			+ Clone
 			+ MaybeSerializeDeserialize
 			+ MaxEncodedLen
-			+ IsType<sp_runtime::types::AssetId>;
+			+ IsType<SystemTokenAssetId>;
 
 		/// Wrapper around `Self::AssetId` to use in dispatchable call signatures. Allows the use
 		/// of compact encoding in instances of the pallet, which will prevent breaking changes
@@ -316,10 +308,6 @@ pub mod pallet {
 		/// The amount of funds that must be reserved when creating a new approval.
 		#[pallet::constant]
 		type ApprovalDeposit: Get<DepositBalanceOf<Self, I>>;
-
-		/// The maximum length of a name or symbol stored on-chain.
-		#[pallet::constant]
-		type StringLimit: Get<u32>;
 
 		/// A hook to allow a per-asset, per-account minimum balance to be enforced. This must be
 		/// respected in all permissionless operations.
@@ -379,18 +367,10 @@ pub mod pallet {
 		_,
 		Blake2_128Concat,
 		T::AssetId,
-		AssetMetadata<DepositBalanceOf<T, I>, BoundedVec<u8, T::StringLimit>>,
-		ValueQuery,
+		AssetMetadata<DepositBalanceOf<T, I>>,
+		OptionQuery,
 	>;
 
-	#[pallet::storage]
-	/// The fee rate imposed to parachain. The fee rate 1_000 actually equals 1.
-	/// It is initilzed as 1_000(1.0), then it SHOULD be only set by a dmp call from RELAY CHAIN.
-	pub(super) type ParaFeeRate<T: Config<I>, I: 'static = ()> = StorageValue<_, u128, OptionQuery>;
-
-	#[pallet::storage]
-	pub(super) type State<T: Config<I>, I: 'static = ()> =
-		StorageValue<_, RuntimeState, ValueQuery>;
 	#[pallet::genesis_config]
 	#[derive(frame_support::DefaultNoBound)]
 	pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
@@ -405,7 +385,6 @@ pub mod pallet {
 	#[pallet::genesis_build]
 	impl<T: Config<I>, I: 'static> BuildGenesisConfig for GenesisConfig<T, I> {
 		fn build(&self) {
-			ParaFeeRate::<T, I>::set(Some(CORRECTION_PARA_FEE_RATE));
 			for (id, owner, is_sufficient, min_balance) in &self.assets {
 				assert!(!Asset::<T, I>::contains_key(id), "Asset id already in use");
 				assert!(!min_balance.is_zero(), "Min balance should not be zero");
@@ -424,7 +403,7 @@ pub mod pallet {
 						sufficients: 0,
 						approvals: 0,
 						status: AssetStatus::Live,
-						system_token_weight: BASE_SYSTEM_TOKEN_WEIGHT,
+						system_token_weight: None,
 					},
 				);
 			}
@@ -432,12 +411,13 @@ pub mod pallet {
 			for (id, name, symbol, decimals) in &self.metadata {
 				assert!(Asset::<T, I>::contains_key(id), "Asset does not exist");
 
-				let bounded_name: BoundedVec<u8, T::StringLimit> =
+				let bounded_name: BoundedSystemTokenName =
 					name.clone().try_into().expect("asset name is too long");
-				let bounded_symbol: BoundedVec<u8, T::StringLimit> =
+				let bounded_symbol: BoundedSystemTokenSymbol =
 					symbol.clone().try_into().expect("asset symbol is too long");
 
 				let metadata = AssetMetadata {
+					currency_type: None,
 					deposit: Zero::zero(),
 					name: bounded_name,
 					symbol: bounded_symbol,
@@ -465,9 +445,6 @@ pub mod pallet {
 			}
 		}
 	}
-
-	// #[pallet::origin]
-	// pub type Origin<T, I = ()> = RawOrigin<T, I>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -552,20 +529,16 @@ pub mod pallet {
 		Touched { asset_id: T::AssetId, who: T::AccountId, depositor: T::AccountId },
 		/// Some account `who` was blocked.
 		Blocked { asset_id: T::AssetId, who: T::AccountId },
-		/// The is_sufficient of an asset has been updated by the asset owner.
-		AssetIsSufficientChanged { asset_id: T::AssetId, is_sufficient: bool },
+		/// Local asset has promoted to System Token
+		Promoted { asset_id: T::AssetId, system_token_weight: SystemTokenWeight },
+		/// System Token has demoted
+		Demoted { asset_id: T::AssetId },
 		/// The is_sufficient of an asset has been updated by the asset owner.
 		AssetSystemTokenWeightChanged {
 			asset_id: T::AssetId,
-			original_system_token_weight: SystemTokenWeight,
-			new_system_token_weight: SystemTokenWeight,
+			from: SystemTokenWeight,
+			to: SystemTokenWeight,
 		},
-		/// No sufficient token to pay the transaciton fee
-		NoSufficientTokenToPay,
-		/// The ParaFeeRate has been updated
-		ParaFeeRateUpdated { para_fee_rate: u128 },
-		/// Runtime state has been changed to Normal state
-		RuntimeStateUpdated { from: RuntimeState, to: RuntimeState },
 	}
 
 	#[pallet::error]
@@ -613,10 +586,10 @@ pub mod pallet {
 		NotFrozen,
 		/// Callback action resulted in error
 		CallbackFailed,
-		/// Currently, there is not system token to pay tx fee.
-		NotAllowedToChangeState,
-		/// Current Runtime is not in bootstrap mode
-		NotInBootstrap,
+		/// Weight of System Token is missing
+		WeightMissing,
+		/// Request of system token is invalid
+		InvalidRequest,
 	}
 
 	#[pallet::call(weight(<T as Config<I>>::WeightInfo))]
@@ -671,8 +644,8 @@ pub mod pallet {
 					accounts: 0,
 					sufficients: 0,
 					approvals: 0,
-					status: AssetStatus::Live,
-					system_token_weight: BASE_SYSTEM_TOKEN_WEIGHT,
+					status: AssetStatus::InActive,
+					system_token_weight: None,
 				},
 			);
 			ensure!(T::CallbackHandle::created(&id, &owner).is_ok(), Error::<T, I>::CallbackFailed);
@@ -715,7 +688,7 @@ pub mod pallet {
 			T::ForceOrigin::ensure_origin(origin)?;
 			let owner = T::Lookup::lookup(owner)?;
 			let id: T::AssetId = id.into();
-			Self::do_force_create(id, owner, is_sufficient, min_balance)
+			Self::do_force_create(id, &owner, is_sufficient, min_balance, None, None)
 		}
 
 		/// Start the process of destroying a fungible asset class.
@@ -1118,7 +1091,8 @@ pub mod pallet {
 					return Ok(())
 				}
 
-				let metadata_deposit = Metadata::<T, I>::get(&id).deposit;
+				let metadata_deposit =
+					Metadata::<T, I>::get(&id).map_or(Default::default(), |m| m).deposit;
 				let deposit = details.deposit + metadata_deposit;
 
 				// Move the deposit to the new owner.
@@ -1192,13 +1166,17 @@ pub mod pallet {
 		pub fn set_metadata(
 			origin: OriginFor<T>,
 			id: T::AssetIdParameter,
+			currency_type: Option<Fiat>,
 			name: Vec<u8>,
 			symbol: Vec<u8>,
 			decimals: u8,
 		) -> DispatchResult {
 			let origin = ensure_signed(origin)?;
 			let id: T::AssetId = id.into();
-			Self::do_set_metadata(id, &origin, name, symbol, decimals)
+			// TODO:
+			// If currency type is specified, assume it would be System Token for the future.
+			// We should not let users set the metadata for free maybe?
+			Self::do_set_metadata(id, currency_type, &origin, name, symbol, decimals)
 		}
 
 		/// Clear the metadata for an asset.
@@ -1248,6 +1226,7 @@ pub mod pallet {
 		pub fn force_set_metadata(
 			origin: OriginFor<T>,
 			id: T::AssetIdParameter,
+			currency_type: Fiat,
 			name: Vec<u8>,
 			symbol: Vec<u8>,
 			decimals: u8,
@@ -1256,16 +1235,17 @@ pub mod pallet {
 			T::ForceOrigin::ensure_origin(origin)?;
 			let id: T::AssetId = id.into();
 
-			let bounded_name: BoundedVec<u8, T::StringLimit> =
+			let bounded_name: BoundedSystemTokenName =
 				name.clone().try_into().map_err(|_| Error::<T, I>::BadMetadata)?;
 
-			let bounded_symbol: BoundedVec<u8, T::StringLimit> =
+			let bounded_symbol: BoundedSystemTokenSymbol =
 				symbol.clone().try_into().map_err(|_| Error::<T, I>::BadMetadata)?;
 
 			ensure!(Asset::<T, I>::contains_key(&id), Error::<T, I>::Unknown);
 			Metadata::<T, I>::try_mutate_exists(id.clone(), |metadata| {
 				let deposit = metadata.take().map_or(Zero::zero(), |m| m.deposit);
 				*metadata = Some(AssetMetadata {
+					currency_type: Some(currency_type),
 					deposit,
 					name: bounded_name,
 					symbol: bounded_symbol,
@@ -1719,176 +1699,6 @@ pub mod pallet {
 			let f = TransferFlags { keep_alive: false, best_effort: false, burn_dust: false };
 			Self::do_transfer(id, &source, &dest, amount, None, f).map(|_| ())
 		}
-
-		/// Sets the is_sufficient flag of an asset.
-		///
-		///
-		/// Origin must be Signed and the sender has to be the root
-		///
-		/// - `id`: The identifier of the asset.
-		/// - `is_sufficient`: The new value of `is_sufficient`.
-		///
-		/// Emits `AssetIsSufficientChanged` event when successful.
-		#[pallet::call_index(33)]
-		#[pallet::weight(T::WeightInfo::set_min_balance())]
-		pub fn set_sufficient_and_system_token_weight(
-			origin: OriginFor<T>,
-			id: T::AssetIdParameter,
-			is_sufficient: bool,
-			system_token_weight: Option<SystemTokenWeight>,
-		) -> DispatchResult {
-			T::ForceOrigin::ensure_origin(origin)?;
-			let id: T::AssetId = id.into();
-
-			let mut details = Asset::<T, I>::get(&id).ok_or(Error::<T, I>::Unknown)?;
-
-			details.is_sufficient = is_sufficient;
-
-			if let Some(weight) = system_token_weight {
-				details.system_token_weight = weight;
-			};
-
-			Asset::<T, I>::insert(&id, details);
-			Self::deposit_event(Event::AssetIsSufficientChanged { asset_id: id, is_sufficient });
-			Ok(())
-		}
-
-		/// Sets the is_sufficient flag and unlink system token id of an asset.
-		///
-		///
-		/// Origin must be Signed and the sender has to be the root
-		///
-		/// - `id`: The identifier of the asset.
-		/// - `is_sufficient`: The new value of `is_sufficient`.
-		///
-		/// Emits `AssetIsSufficientChanged` event when successful.
-		#[pallet::call_index(34)]
-		#[pallet::weight(T::WeightInfo::set_min_balance())]
-		pub fn set_sufficient_with_unlink_system_token(
-			origin: OriginFor<T>,
-			id: T::AssetIdParameter,
-			is_sufficient: bool,
-		) -> DispatchResult {
-			T::ForceOrigin::ensure_origin(origin.clone())?;
-			let asset_id: T::AssetId = id.into();
-			Self::do_set_sufficient_and_unlink(&asset_id, is_sufficient)?;
-
-			Self::deposit_event(Event::AssetIsSufficientChanged { asset_id, is_sufficient });
-
-			Ok(())
-		}
-
-		/// Issue a new class of fungible assets with metadata from a privileged origin.
-		///
-		/// This new asset class has no assets initially.
-		///
-		/// The origin must conform to `ForceOrigin`.
-		///
-		/// Unlike `create`, no funds are reserved.
-		///
-		/// - `id`: The identifier of the new asset. This must not be currently in use to identify
-		/// an existing asset.
-		/// - `owner`: The owner of this class of assets. The owner has full superuser permissions
-		/// over this asset, but may later change and configure the permissions using
-		/// `transfer_ownership` and `set_team`.
-		/// - `min_balance`: The minimum balance of this new asset that any single account must
-		/// have. If an account's balance is reduced below this, then it collapses to zero.
-		///
-		/// Emits `ForceCreated` event when successful.
-		///
-		/// Weight: `O(1)`
-		#[pallet::call_index(35)]
-		#[pallet::weight(T::WeightInfo::force_set_metadata(name.len() as u32, symbol.len() as u32))]
-		pub fn force_create_with_metadata(
-			origin: OriginFor<T>,
-			id: T::AssetIdParameter,
-			owner: AccountIdLookupOf<T>,
-			is_sufficient: bool,
-			#[pallet::compact] min_balance: T::Balance,
-			name: Vec<u8>,
-			symbol: Vec<u8>,
-			decimals: u8,
-			is_frozen: bool,
-			system_token_id: SystemTokenId,
-			asset_link_parents: u8,
-			system_token_weight: SystemTokenWeight,
-		) -> DispatchResult {
-			T::ForceOrigin::ensure_origin(origin.clone())?;
-			Self::do_create_asset_with_metadata(
-				id,
-				owner,
-				is_sufficient,
-				min_balance,
-				name,
-				symbol,
-				decimals,
-				is_frozen,
-				system_token_id,
-				asset_link_parents,
-				system_token_weight,
-			)?;
-			Ok(())
-		}
-
-		/// Sets the system_token_weight of an AssetDetails.
-		///
-		///
-		/// Origin must be Signed and the sender has to be the root
-		///
-		/// - `id`: The identifier of the asset.
-		/// - `system_token_weight`: The new value of `system_token_weight`.
-		///
-		/// Emits `AssetSystemTokenWeightChanged` event when successful.
-		#[pallet::call_index(36)]
-		#[pallet::weight(T::WeightInfo::set_min_balance())]
-		pub fn update_system_token_weight(
-			origin: OriginFor<T>,
-			id: T::AssetIdParameter,
-			system_token_weight: SystemTokenWeight,
-		) -> DispatchResult {
-			T::ForceOrigin::ensure_origin(origin)?;
-
-			let asset_id: T::AssetId = id.into();
-
-			let asset = Asset::<T, I>::get(asset_id).ok_or(Error::<T, I>::Unknown)?;
-			let original_system_token_weight = asset.system_token_weight;
-
-			Self::do_update_system_token_weight(id, system_token_weight)?;
-			Self::deposit_event(Event::AssetSystemTokenWeightChanged {
-				asset_id: id.into(),
-				original_system_token_weight,
-				new_system_token_weight: system_token_weight,
-			});
-			Ok(())
-		}
-
-		/// Sets the system_token_weight of an AssetDetails.
-		///
-		///
-		/// Origin must be Signed and the sender has to be the root
-		///
-		/// - `id`: The identifier of the asset.
-		/// - `system_token_weight`: The new value of `system_token_weight`.
-		///
-		/// Emits `AssetSystemTokenWeightChanged` event when successful.
-		#[pallet::call_index(37)]
-		#[pallet::weight(T::WeightInfo::set_min_balance())]
-		pub fn update_para_fee_rate(origin: OriginFor<T>, para_fee_rate: u128) -> DispatchResult {
-			T::ForceOrigin::ensure_origin(origin)?;
-
-			ParaFeeRate::<T, I>::set(Some(para_fee_rate));
-
-			Self::deposit_event(Event::ParaFeeRateUpdated { para_fee_rate });
-			Ok(())
-		}
-
-		#[pallet::call_index(38)]
-		#[pallet::weight(T::WeightInfo::block())]
-		pub fn set_runtime_state(origin: OriginFor<T>) -> DispatchResult {
-			ensure_root(origin)?;
-			Self::do_set_runtime_state()?;
-			Ok(())
-		}
 	}
 
 	/// Implements [`AccountTouch`] trait.
@@ -1912,28 +1722,6 @@ pub mod pallet {
 		fn contains(asset: &T::AssetId, who: &T::AccountId) -> bool {
 			Account::<T, I>::contains_key(asset, who)
 		}
-	}
-}
-
-pub trait AssetLinkInterface<AssetId> {
-	fn link_system_token(
-		parents: u8,
-		asset_id: &AssetId,
-		system_token_id: SystemTokenId,
-	) -> DispatchResult;
-	fn unlink_system_token(asset_id: &AssetId) -> DispatchResult;
-}
-
-impl<AssetId> AssetLinkInterface<AssetId> for () {
-	fn link_system_token(
-		_parents: u8,
-		_asset_id: &AssetId,
-		_system_token_id: SystemTokenId,
-	) -> DispatchResult {
-		Ok(())
-	}
-	fn unlink_system_token(_asset_id: &AssetId) -> DispatchResult {
-		Ok(())
 	}
 }
 

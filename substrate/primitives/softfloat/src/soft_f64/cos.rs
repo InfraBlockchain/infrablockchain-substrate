@@ -54,15 +54,15 @@ pub(crate) const fn cos(x: F64) -> F64 {
 			/* if x < 2**-27 * sqrt(2) */
 			/* raise inexact if x != 0 */
 			if x.to_i32() == 0 {
-				return F64::ONE;
+				return F64::ONE
 			}
 		}
-		return k_cos(x, F64::ZERO);
+		return k_cos(x, F64::ZERO)
 	}
 
 	/* cos(Inf or NaN) is NaN */
 	if ix >= 0x7ff00000 {
-		return x.sub(x);
+		return x.sub(x)
 	}
 
 	/* argument reduction needed */

@@ -39,7 +39,7 @@ use primitives::{
 pub use sp_consensus_babe::{
 	AllowedSlots as BabeAllowedSlots, BabeEpochConfiguration, Epoch as BabeEpoch,
 };
-use sp_runtime::types::PotVotesResult;
+use sp_runtime::types::{PotVotesResult, RemoteAssetMetadata};
 
 pub mod approval;
 
@@ -425,6 +425,8 @@ pub struct Collation<BlockNumber = primitives::BlockNumber> {
 	pub hrmp_watermark: BlockNumber,
 	/// Pot Vote Result
 	pub vote_result: Option<PotVotesResult>,
+	/// Requested assets
+	pub requested_asset: Option<RemoteAssetMetadata>,
 }
 
 /// Signal that is being returned when a collation was seconded by a validator.

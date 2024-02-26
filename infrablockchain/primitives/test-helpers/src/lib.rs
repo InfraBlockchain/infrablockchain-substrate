@@ -79,6 +79,7 @@ pub fn dummy_candidate_commitments(head_data: impl Into<Option<HeadData>>) -> Ca
 		processed_downward_messages: 0,
 		hrmp_watermark: 0_u32,
 		vote_result: None,
+		requested_asset: None,
 	}
 }
 
@@ -183,6 +184,7 @@ pub fn make_candidate(
 		processed_downward_messages: 0,
 		hrmp_watermark: relay_parent_number,
 		vote_result: None,
+		requested_assets: None,
 	};
 
 	let mut candidate =

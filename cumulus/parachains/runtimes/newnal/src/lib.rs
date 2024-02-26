@@ -10,6 +10,7 @@ use constants::{currency::*, fee::WeightToFee};
 
 mod weights;
 pub mod xcm_config;
+use xcm_config::XcmRouter;
 
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 pub use parachains_common::{
@@ -20,7 +21,9 @@ use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto},
+	traits::{
+		AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, TryConvertInto as JustTry,
+	},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,
 };
@@ -146,7 +149,6 @@ impl pallet_assets::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
 	type AssetId = AssetId;
-	type AssetLink = AssetLink;
 	type AssetIdParameter = codec::Compact<AssetId>;
 	type Currency = Balances;
 	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
@@ -156,7 +158,6 @@ impl pallet_assets::Config for Runtime {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ApprovalDeposit = ApprovalDeposit;
 	type AssetAccountDeposit = DepositToMaintainAsset;
-	type StringLimit = StringLimit;
 	type RemoveItemsLimit = frame_support::traits::ConstU32<1000>;
 	type WeightInfo = weights::pallet_assets::WeightInfo<Runtime>;
 	type Freezer = ();
@@ -164,11 +165,6 @@ impl pallet_assets::Config for Runtime {
 	type CallbackHandle = ();
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = ();
-}
-
-impl pallet_system_token::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type AuthorizedOrigin = EnsureRoot<AccountId>;
 }
 
 parameter_types! {
@@ -183,9 +179,9 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 			RuntimeCall::Assets(
 				pallet_assets::Call::create { .. } |
 				pallet_assets::Call::set_metadata { .. } |
-				pallet_assets::Call::mint { .. } |
-				pallet_assets::Call::set_runtime_state { .. },
-			) => true,
+				pallet_assets::Call::mint { .. },
+			) |
+			RuntimeCall::InfraXcm(pallet_xcm::Call::limited_teleport_assets { .. }) => true,
 			_ => false,
 		}
 	}
@@ -200,14 +196,14 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 impl pallet_system_token_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Assets = Assets;
+	type InfraTxInterface = InfraParaCore;
 	/// The actual transaction charging logic that charges the fees.
 	type OnChargeSystemToken = TransactionFeeCharger<
+		Runtime,
 		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
 		CreditToBucket<Runtime>,
+		JustTry,
 	>;
-	type FeeTableProvider = SystemToken;
-	/// The type that handles the voting info.
-	type VotingHandler = ParachainSystem;
 	type BootstrapCallFilter = BootstrapCallFilter;
 	type PalletId = FeeTreasuryId;
 }
@@ -346,8 +342,22 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type OutboundXcmpMessageSource = XcmpQueue;
 	type XcmpMessageHandler = XcmpQueue;
 	type ReservedXcmpWeight = ReservedXcmpWeight;
+	type UpdateRCConfig = InfraParaCore;
 	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
 	type ConsensusHook = ConsensusHook;
+}
+
+parameter_types! {
+	pub const ActiveRequestPeriod: BlockNumber = 100;
+}
+
+impl cumulus_pallet_infra_parachain_core::Config for Runtime {
+	type RuntimeOrigin = RuntimeOrigin;
+	type RuntimeEvent = RuntimeEvent;
+	type ParachainSystem = ParachainSystem;
+	type LocalAssetManager = Assets;
+	type AssetLink = AssetLink;
+	type ActiveRequestPeriod = ActiveRequestPeriod;
 }
 
 impl parachain_info::Config for Runtime {}
@@ -429,7 +439,6 @@ impl pallet_collator_selection::Config for Runtime {
 
 impl pallet_asset_link::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type ReserveAssetModifierOrigin = EnsureRoot<AccountId>;
 	type Assets = Assets;
 	type WeightInfo = ();
 }
@@ -442,7 +451,9 @@ parameter_types! {
 impl system_token_aggregator::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Period = AggregatedPeriod;
+	type LocalAssetManager = Assets;
 	type AssetMultiLocationGetter = AssetLink;
+	type SendXcm = XcmRouter;
 	type IsRelay = IsRelay;
 }
 
@@ -513,6 +524,14 @@ frame_support::ord_parameter_types! {
 	pub const AdminController: AccountId = AccountId::from(hex_literal::hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"));
 }
 
+impl<C> frame_system::offchain::SendTransactionTypes<C> for Runtime
+where
+	RuntimeCall: From<C>,
+{
+	type Extrinsic = UncheckedExtrinsic;
+	type OverarchingCall = RuntimeCall;
+}
+
 impl pallet_data_market::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Assets = Assets;
@@ -527,8 +546,9 @@ construct_runtime!(
 		ParachainSystem: cumulus_pallet_parachain_system::{
 			Pallet, Call, Config<T>, Storage, Inherent, Event<T>, ValidateUnsigned,
 		} = 1,
-		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
-		ParachainInfo: parachain_info::{Pallet, Storage, Config<T>} = 3,
+		InfraParaCore: cumulus_pallet_infra_parachain_core::{Pallet, Call, Storage, Event<T>} = 2,
+		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 3,
+		ParachainInfo: parachain_info::{Pallet, Storage, Config<T>} = 4,
 
 		// The main stage
 		URAuth: pallet_urauth::{Pallet, Call, Storage, Config<T>, Event<T>} = 5,
@@ -549,13 +569,12 @@ construct_runtime!(
 
 		// XCM helpers.
 		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 30,
-		IbsXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin, Config<T>} = 31,
+		InfraXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin, Config<T>} = 31,
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
-		AssetLink: pallet_asset_link::{Pallet, Call, Storage, Event<T>} = 34,
+		AssetLink: pallet_asset_link::{Pallet, Storage, Event<T>} = 34,
 		SystemTokenAggregator: system_token_aggregator::{Pallet, Event<T>} = 35,
-		SystemToken: pallet_system_token::{Pallet, Call, Storage, Event<T>} = 36,
 
 		// Governance
 		Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>, HoldReason} = 40,

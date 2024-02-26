@@ -54,16 +54,21 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 pub mod constants;
 use constants::{currency::*, fee::WeightToFee};
+pub mod oracle;
 mod weights;
 pub mod xcm_config;
+use xcm_config::XcmRouter;
 
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto},
-	transaction_validity::{TransactionSource, TransactionValidity},
+	traits::{
+		AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, TryConvertInto as JustTry,
+	},
+	transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
+	types::token::*,
 	ApplyExtrinsicResult,
 };
 
@@ -103,7 +108,7 @@ pub use sp_runtime::BuildStorage;
 
 // Polkadot imports
 use pallet_xcm::{EnsureXcm, IsMajorityOfBody};
-use runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
+use runtime_common::{prod_or_fast, BlockHashCount, SlowAdjustingFeeUpdate};
 use runtime_parachains::system_token_aggregator;
 use xcm::latest::BodyId;
 use xcm_executor::XcmExecutor;
@@ -248,8 +253,14 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 			RuntimeCall::Assets(
 				pallet_assets::Call::create { .. } |
 				pallet_assets::Call::set_metadata { .. } |
-				pallet_assets::Call::mint { .. } |
-				pallet_assets::Call::set_runtime_state { .. },
+				pallet_assets::Call::mint { .. },
+			) |
+			RuntimeCall::SystemTokenOracle(
+				pallet_system_token_oracle::Call::submit_exchange_rates_unsigned { .. },
+			) |
+			RuntimeCall::InfraXcm(pallet_xcm::Call::limited_teleport_assets { .. }) |
+			RuntimeCall::InfraParaCore(
+				cumulus_pallet_infra_parachain_core::Call::request_register_system_token { .. },
 			) => true,
 			_ => false,
 		}
@@ -264,13 +275,14 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 
 impl pallet_system_token_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
+	type InfraTxInterface = InfraParaCore;
 	type Assets = Assets;
 	type OnChargeSystemToken = TransactionFeeCharger<
+		Runtime,
 		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
 		CreditToBucket<Runtime>,
+		JustTry,
 	>;
-	type FeeTableProvider = SystemToken;
-	type VotingHandler = ParachainSystem;
 	type BootstrapCallFilter = BootstrapCallFilter;
 	type PalletId = FeeTreasuryId;
 }
@@ -279,7 +291,6 @@ parameter_types! {
 	pub const DepositToCreateAsset: Balance = 1 * DOLLARS; // 1 UNITS deposit to create fungible asset class
 	pub const DepositToMaintainAsset: Balance = deposit(1, 16);
 	pub const ApprovalDeposit: Balance = EXISTENTIAL_DEPOSIT;
-	pub const StringLimit: u32 = 50;
 	/// Key = 32 bytes, Value = 36 bytes (32+1+1+1+1)
 	// https://github.com/paritytech/substrate/blob/069917b/frame/assets/src/lib.rs#L257L271
 	pub const MetadataDepositBase: Balance = deposit(1, 68);
@@ -294,7 +305,6 @@ impl pallet_assets::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
 	type AssetId = AssetId;
-	type AssetLink = AssetLink;
 	type AssetIdParameter = codec::Compact<AssetId>;
 	type Currency = Balances;
 	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
@@ -304,7 +314,6 @@ impl pallet_assets::Config for Runtime {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ApprovalDeposit = ApprovalDeposit;
 	type AssetAccountDeposit = DepositToMaintainAsset;
-	type StringLimit = StringLimit;
 	type RemoveItemsLimit = frame_support::traits::ConstU32<1000>;
 	type WeightInfo = weights::pallet_assets::WeightInfo<Runtime>;
 	type Freezer = ();
@@ -511,8 +520,22 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type OutboundXcmpMessageSource = XcmpQueue;
 	type XcmpMessageHandler = XcmpQueue;
 	type ReservedXcmpWeight = ReservedXcmpWeight;
+	type UpdateRCConfig = InfraParaCore;
 	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
 	type ConsensusHook = ConsensusHook;
+}
+
+parameter_types! {
+	pub const ActiveRequestPeriod: u32 = 100;
+}
+
+impl cumulus_pallet_infra_parachain_core::Config for Runtime {
+	type RuntimeOrigin = RuntimeOrigin;
+	type RuntimeEvent = RuntimeEvent;
+	type LocalAssetManager = Assets;
+	type AssetLink = AssetLink;
+	type ParachainSystem = ParachainSystem;
+	type ActiveRequestPeriod = ActiveRequestPeriod;
 }
 
 impl parachain_info::Config for Runtime {}
@@ -524,7 +547,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type ChannelInfo = ParachainSystem;
-	type VersionWrapper = IbsXcm;
+	type VersionWrapper = InfraXcm;
 	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
 	type ControllerOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
@@ -595,9 +618,15 @@ impl pallet_collator_selection::Config for Runtime {
 	type WeightInfo = weights::pallet_collator_selection::WeightInfo<Runtime>;
 }
 
-impl pallet_system_token::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type AuthorizedOrigin = EnsureRoot<AccountId>;
+parameter_types! {
+	pub const APIRequestPeriod: BlockNumber = prod_or_fast!(DAYS, 10u32);
+	pub const UnsignedPriority: TransactionPriority = TransactionPriority::max_value();
+}
+
+impl pallet_system_token_oracle::Config for Runtime {
+	type SystemTokenOracle = oracle::SystemTokenOracle;
+	type RequestPeriod = APIRequestPeriod;
+	type UnsignedPriority = UnsignedPriority;
 }
 
 parameter_types! {
@@ -634,7 +663,6 @@ impl pallet_uniques::Config for Runtime {
 
 impl pallet_asset_link::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type ReserveAssetModifierOrigin = EnsureRoot<AccountId>;
 	type Assets = Assets;
 	type WeightInfo = ();
 }
@@ -652,8 +680,24 @@ parameter_types! {
 impl system_token_aggregator::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Period = AggregatedPeriod;
+	type LocalAssetManager = Assets;
 	type AssetMultiLocationGetter = AssetLink;
+	type SendXcm = XcmRouter;
 	type IsRelay = IsRelay;
+}
+
+impl pallet_sudo::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
+	type WeightInfo = ();
+}
+
+impl<C> frame_system::offchain::SendTransactionTypes<C> for Runtime
+where
+	RuntimeCall: From<C>,
+{
+	type Extrinsic = UncheckedExtrinsic;
+	type OverarchingCall = RuntimeCall;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -664,8 +708,11 @@ construct_runtime!(
 		ParachainSystem: cumulus_pallet_parachain_system::{
 			Pallet, Call, Config<T>, Storage, Inherent, Event<T>, ValidateUnsigned,
 		} = 1,
-		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
-		ParachainInfo: parachain_info::{Pallet, Storage, Config<T>} = 3,
+		InfraParaCore: cumulus_pallet_infra_parachain_core::{
+			Pallet, Call, Storage, Event<T>
+		} = 2,
+		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 3,
+		ParachainInfo: parachain_info::{Pallet, Storage, Config<T>} = 4,
 
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
@@ -681,7 +728,7 @@ construct_runtime!(
 
 		// XCM helpers.
 		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 30,
-		IbsXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin, Config<T>} = 31,
+		InfraXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin, Config<T>} = 31,
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
@@ -693,9 +740,11 @@ construct_runtime!(
 		// The main stage.
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>, Config<T>} = 50,
 		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
-		AssetLink: pallet_asset_link = 52,
-		SystemTokenAggregator: system_token_aggregator = 53,
-		SystemToken: pallet_system_token = 54,
+		AssetLink: pallet_asset_link::{Pallet, Storage, Event<T>} = 52,
+		SystemTokenAggregator: system_token_aggregator = 54,
+		SystemTokenOracle: pallet_system_token_oracle::{Pallet, Call, Storage, ValidateUnsigned} = 55,
+
+		Sudo: pallet_sudo::{Pallet, Call, Storage, Config<T>, Event<T>} = 99,
 	}
 );
 
@@ -755,7 +804,7 @@ mod benches {
 		[pallet_collator_selection, CollatorSelection]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
 		// XCM
-		[pallet_xcm, IbsXcm]
+		[pallet_xcm, InfraXcm]
 		// NOTE: Make sure you point to the individual modules below.
 		[pallet_xcm_benchmarks::fungible, XcmBalances]
 		[pallet_xcm_benchmarks::generic, XcmGeneric]

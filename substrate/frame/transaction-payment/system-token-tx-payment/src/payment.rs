@@ -29,7 +29,7 @@ use frame_support::{
 };
 
 use sp_runtime::{
-	traits::{DispatchInfoOf, One, PostDispatchInfoOf},
+	traits::{DispatchInfoOf, MaybeEquivalence, One, PostDispatchInfoOf},
 	transaction_validity::InvalidTransaction,
 };
 use sp_std::marker::PhantomData;
@@ -39,7 +39,7 @@ pub trait OnChargeSystemToken<T: Config> {
 	/// The underlying integer type in which fees are calculated.
 	type Balance: Balance;
 	/// The type used to identify the assets used for transaction payment.
-	type SystemTokenAssetId: AssetId + From<sp_runtime::types::token::AssetId>;
+	type SystemTokenAssetId: AssetId + From<SystemTokenAssetId>;
 	/// The type used to store the intermediate values between pre- and post-dispatch.
 	type LiquidityInfo;
 
@@ -91,16 +91,43 @@ impl<A, B: Balanced<A>> HandleCredit<A, B> for () {
 /// [`BalanceConversion`]) and a credit handler (implementing [`HandleCredit`]).
 ///
 /// The credit handler is given the complete fee in terms of the asset used for the transaction.
-pub struct TransactionFeeCharger<CON, HC>(PhantomData<(CON, HC)>);
+pub struct TransactionFeeCharger<T, CON, HC, ConvertBalance>(
+	PhantomData<(T, CON, HC, ConvertBalance)>,
+);
+
+impl<T, CON, HC, ConvertBalance> TransactionFeeCharger<T, CON, HC, ConvertBalance>
+where
+	T: Config,
+	ConvertBalance: MaybeEquivalence<u128, AssetBalanceOf<T>>,
+{
+	/// Rational of transaction fee
+	/// para_fee_rate * weight_scale / base_weight
+	fn tx_fee_rational() -> Result<AssetBalanceOf<T>, TransactionValidityError> {
+		let InfraSystemConfig { base_system_token_detail, weight_scale } =
+			T::InfraTxInterface::infra_system_config()
+				.map_err(|_| TransactionValidityError::from(InvalidTransaction::Payment))?;
+		let para_fee_rate = T::InfraTxInterface::para_fee_rate()
+			.map_err(|_| TransactionValidityError::from(InvalidTransaction::Payment))?;
+		let rational =
+			FixedU128::saturating_from_rational(weight_scale, base_system_token_detail.base_weight)
+				.saturating_mul_int(para_fee_rate);
+		let converted = ConvertBalance::convert(&rational)
+			.ok_or(TransactionValidityError::from(InvalidTransaction::Payment))?;
+		Ok(converted)
+	}
+}
 
 /// Default implementation for a runtime instantiating this pallet, a balance to asset converter and
 /// a credit handler.
-impl<T, CON, HC> OnChargeSystemToken<T> for TransactionFeeCharger<CON, HC>
+impl<T, CON, HC, ConvertBalance> OnChargeSystemToken<T>
+	for TransactionFeeCharger<T, CON, HC, ConvertBalance>
 where
 	T: Config,
 	CON: ConversionToAssetBalance<BalanceOf<T>, AssetIdOf<T>, AssetBalanceOf<T>>,
 	HC: HandleCredit<T::AccountId, T::Assets>,
-	AssetIdOf<T>: AssetId + From<sp_runtime::types::token::AssetId>,
+	AssetIdOf<T>: AssetId + From<SystemTokenAssetId>,
+	AssetBalanceOf<T>: From<BalanceOf<T>>,
+	ConvertBalance: MaybeEquivalence<u128, AssetBalanceOf<T>>,
 {
 	type Balance = BalanceOf<T>;
 	type SystemTokenAssetId = AssetIdOf<T>;
@@ -140,12 +167,15 @@ where
 				!l.is_empty(),
 				TransactionValidityError::from(InvalidTransaction::SystemTokenMissing)
 			);
-			T::Assets::get_most_account_system_token_balance(l, who.clone()).into()
+			T::Assets::get_most_system_token_balance_of(l, who.clone()).into()
 		};
 		let min_converted_fee = if fee.is_zero() { Zero::zero() } else { One::one() };
-		let converted_fee = CON::to_asset_balance(fee, system_token_asset_id.clone())
+		// CON::to_asset_balance => fee / system_token_weight
+		let mut converted_fee = CON::to_asset_balance(fee, system_token_asset_id.clone())
 			.map_err(|_| TransactionValidityError::from(InvalidTransaction::Payment))?
 			.max(min_converted_fee);
+		let tx_rational = Self::tx_fee_rational()?;
+		converted_fee = converted_fee * tx_rational;
 		let can_withdraw = <T::Assets as Inspect<T::AccountId>>::can_withdraw(
 			system_token_asset_id.clone(),
 			who,

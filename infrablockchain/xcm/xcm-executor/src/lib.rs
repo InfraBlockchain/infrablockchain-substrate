@@ -528,11 +528,10 @@ impl<Config: config::Config> XcmExecutor<Config> {
 				let origin = *self.origin_ref().ok_or(XcmError::BadOrigin)?;
 				// check whether we trust origin to teleport this asset to us via config trait.
 				for asset in assets.inner() {
-					// temporarilly comment out the below ensure logic for accepting unconstrained
-					// teleporting asset. ensure!(
-					// 	Config::IsTeleporter::contains(asset, &origin),
-					// 	XcmError::UntrustedTeleportLocation
-					// );
+					ensure!(
+						Config::IsTeleporter::contains(asset, &origin),
+						XcmError::UntrustedTeleportLocation
+					);
 					// We should check that the asset can actually be teleported in (for this to be
 					// in error, there would need to be an accounting violation by one of the
 					// trusted chains, so it's unlikely, but we don't want to punish a possibly
