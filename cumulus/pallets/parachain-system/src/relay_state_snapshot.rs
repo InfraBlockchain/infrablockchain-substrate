@@ -21,7 +21,10 @@ use cumulus_primitives_core::{
 	relay_chain, AbridgedHostConfiguration, AbridgedHrmpChannel, ParaId,
 };
 use scale_info::TypeInfo;
-use sp_runtime::traits::HashingFor;
+use sp_runtime::{
+	traits::HashingFor,
+	types::{SystemTokenAssetId, SystemTokenWeight},
+};
 use sp_state_machine::{Backend, TrieBackend, TrieBackendBuilder};
 use sp_std::vec::Vec;
 use sp_trie::{HashDBT, MemoryDB, StorageProof, EMPTY_PREFIX};
@@ -84,6 +87,10 @@ pub enum Error {
 	UpgradeGoAhead(ReadEntryErr),
 	/// The upgrade restriction signal cannot be read.
 	UpgradeRestriction(ReadEntryErr),
+	/// The updated infra system config cannot be read
+	UpdatedInfraSystemConfig(ReadEntryErr),
+	/// Updated system token weight cannot be read
+	UpdateSystemTokenWeight(ReadEntryErr),
 	/// The host configuration cannot be extracted.
 	Config(ReadEntryErr),
 	/// The DMQ MQC head cannot be extracted.
@@ -143,7 +150,10 @@ where
 	match read_entry(backend, key, None) {
 		Ok(v) => Ok(Some(v)),
 		Err(ReadEntryErr::Absent) => Ok(None),
-		Err(err) => Err(err),
+		Err(err) => {
+			log::info!("Error!{:?}", err);
+			Err(err)
+		},
 	}
 }
 
@@ -274,6 +284,21 @@ impl RelayChainStateProof {
 			ingress_channels,
 			egress_channels,
 		})
+	}
+
+	pub fn read_updated_system_token_weight(
+		&self,
+	) -> Result<Option<Vec<(SystemTokenAssetId, SystemTokenWeight)>>, Error> {
+		read_optional_entry(
+			&self.trie_backend,
+			&relay_chain::well_known_keys::update_system_token_weight(self.para_id),
+		)
+		.map_err(Error::UpdateSystemTokenWeight)
+	}
+
+	pub fn read_infra_system_config(&self) -> Result<relay_chain::InfraSystemConfig, Error> {
+		read_entry(&self.trie_backend, relay_chain::well_known_keys::SYSTEM_CONFIG, None)
+			.map_err(Error::UpdatedInfraSystemConfig)
 	}
 
 	/// Read the [`AbridgedHostConfiguration`] from the relay chain state proof.

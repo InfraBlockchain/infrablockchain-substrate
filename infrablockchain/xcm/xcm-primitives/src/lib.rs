@@ -5,7 +5,7 @@ use frame_support::{
 	traits::{fungibles::Inspect, Currency},
 	weights::Weight,
 };
-use sp_runtime::{traits::MaybeEquivalence, types::AssetId as IbsAssetId};
+use sp_runtime::{traits::MaybeEquivalence, types::SystemTokenAssetId};
 use sp_std::{borrow::Borrow, marker::PhantomData, prelude::*, vec::Vec};
 use xcm::{
 	latest::{AssetId::Concrete, Fungibility::Fungible, MultiAsset, MultiLocation},
@@ -158,7 +158,7 @@ impl<AssetId, AssetIdInfoGetter, AssetsPallet, BalancesPallet, XcmPallet, Accoun
 		XcmPallet,
 		AccountId,
 	> where
-	AssetId: Clone + From<IbsAssetId>,
+	AssetId: Clone + From<SystemTokenAssetId>,
 	AssetIdInfoGetter: AssetMultiLocationGetter<AssetId>,
 	AssetsPallet: Inspect<AccountId, AssetId = AssetId>,
 	BalancesPallet: Currency<AccountId>,
@@ -191,7 +191,7 @@ impl<AssetId, AssetIdInfoGetter, AssetsPallet, BalancesPallet, XcmPallet, Accoun
 				) {
 					let asset_id = match location.interior {
 						xcm::v3::Junctions::X2(PalletInstance(_), GeneralIndex(asset_id)) => {
-							let asset_id = asset_id.saturated_into::<IbsAssetId>();
+							let asset_id = asset_id.saturated_into::<SystemTokenAssetId>();
 							Some(asset_id)
 						},
 						_ => None,

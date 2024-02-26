@@ -198,9 +198,11 @@ impl Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Assets = Assets;
 	type OnChargeSystemToken = TransactionFeeCharger<
+		Runtime,
+		Balances,
 		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
 		CreditToBucket<Runtime>,
 	>;
-	type VotingHandler = ();
+	type InfraTxInterface = ();
 	type PalletId = TxPaymentPalletId;
 }

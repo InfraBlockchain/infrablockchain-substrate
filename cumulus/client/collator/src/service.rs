@@ -270,6 +270,7 @@ where
 				)
 			})
 			.ok()?;
+		let requested_asset = collation_info.requested_asset;
 
 		let collation = Collation {
 			upward_messages,
@@ -280,6 +281,7 @@ where
 			head_data: collation_info.head_data,
 			proof_of_validity: MaybeCompressedPoV::Compressed(pov),
 			vote_result: collation_info.vote_result,
+			requested_asset,
 		};
 
 		Some((collation, block_data))

@@ -52,6 +52,7 @@ runtime-parachains = { path = "../parachains", default-features = false }
 slot-range-helper = { path = "slot_range_helper", default-features = false }
 xcm = { package = "staging-xcm", path = "../../xcm", default-features = false }
 xcm-builder = { package = "staging-xcm-builder", path = "../../xcm/xcm-builder", default-features = false }
+xcm-primitives = { path = "../../xcm/xcm-primitives", default-features = false }
 
 [dev-dependencies]
 hex-literal = "0.4.1"
@@ -104,6 +105,7 @@ std = [
 	"sp-session/std",
 	"sp-staking/std",
 	"sp-std/std",
+	"xcm-primitives/std",
 	"xcm-builder/std",
 	"xcm/std",
 ]

@@ -158,6 +158,20 @@ fn default_parachains_host_configuration(
 	}
 }
 
+#[cfg(any(feature = "infra-relay-native"))]
+fn default_infra_relay_system_configuration() -> primitives::InfraSystemConfig {
+	use sp_runtime::types::{BaseSystemTokenDetail, Fiat};
+
+	primitives::InfraSystemConfig {
+		base_system_token_detail: BaseSystemTokenDetail {
+			base_currency: Fiat::USD,
+			base_weight: 1_000_000,
+			base_decimals: 4,
+		},
+		weight_scale: 25,
+	}
+}
+
 #[cfg(any(feature = "rococo-native", feature = "infra-relay-native"))]
 #[test]
 fn default_parachains_host_configuration_is_consistent() {
@@ -295,6 +309,11 @@ fn infra_relay_staging_testnet_config_genesis(
 			seed_trust_slots: 2,
 			..Default::default()
 		},
+		infra_relay_core: infra_relay::InfraRelayCoreConfig {
+			system_config: default_infra_relay_system_configuration(),
+			_phantom: Default::default(),
+		},
+		..Default::default()
 	}
 }
 
@@ -817,6 +836,11 @@ pub fn infra_relay_testnet_genesis(
 			seed_trust_slots: 2,
 			..Default::default()
 		},
+		infra_relay_core: infra_relay::InfraRelayCoreConfig {
+			system_config: default_infra_relay_system_configuration(),
+			_phantom: Default::default(),
+		},
+		..Default::default()
 	}
 }
 

@@ -3,40 +3,32 @@
 /// Edit this file to define custom logic or remove it if it is not needed.
 /// Learn more about FRAME and the core library of Substrate FRAME pallets:
 /// <https://docs.substrate.io/reference/frame-pallets/>
-
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 pub mod weights;
+pub use weights::*;
+
+use frame_support::{pallet_prelude::*, traits::tokens::fungibles::Inspect};
+use sp_runtime::types::token::*;
+use xcm::latest::prelude::*;
+use xcm_primitives::AssetMultiLocationGetter;
+
 pub use pallet::*;
 
-pub use weights::*;
+pub type AssetIdOf<T> =
+	<<T as Config>::Assets as Inspect<<T as frame_system::Config>::AccountId>>::AssetId;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use super::*;
-	use frame_support::{
-		dispatch::DispatchResult, pallet_prelude::*, traits::tokens::fungibles::Inspect,
-	};
-	use frame_system::pallet_prelude::*;
-	use pallet_assets::AssetLinkInterface;
 
-	use sp_runtime::types::SystemTokenId;
-	use xcm::latest::{
-		Junction::{GeneralIndex, PalletInstance, Parachain},
-		Junctions, MultiLocation,
-	};
-	use xcm_primitives::AssetMultiLocationGetter;
+	use super::*;
 
 	#[pallet::pallet]
 	pub struct Pallet<T>(_);
 
-	pub type AssetIdOf<T> =
-		<<T as Config>::Assets as Inspect<<T as frame_system::Config>::AccountId>>::AssetId;
-
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-		type ReserveAssetModifierOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 		type Assets: Inspect<Self::AccountId>;
 		type WeightInfo: WeightInfo;
 	}
@@ -44,18 +36,18 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn asset_id_multilocation)]
 	pub type AssetIdMultiLocation<T: Config> =
-		StorageMap<_, Blake2_128Concat, AssetIdOf<T>, MultiLocation>;
+		StorageMap<_, Twox64Concat, AssetIdOf<T>, MultiLocation, OptionQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn asset_multilocation_id)]
 	pub type AssetMultiLocationId<T: Config> =
-		StorageMap<_, Blake2_128Concat, MultiLocation, AssetIdOf<T>>;
+		StorageMap<_, Twox64Concat, MultiLocation, AssetIdOf<T>, OptionQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		AssetLinked { asset_id: AssetIdOf<T>, asset_multi_location: MultiLocation },
-		AssetUnlinked { asset_id: AssetIdOf<T>, asset_multi_location: MultiLocation },
+		AssetUnlinked { asset_id: AssetIdOf<T> },
 	}
 
 	#[pallet::error]
@@ -66,153 +58,58 @@ pub mod pallet {
 		AssetDoesNotExist,
 		/// The Asset ID is not registered
 		AssetIsNotLinked,
-		/// Invalid MultiLocation
-		WrongMultiLocation,
+	}
+}
+
+impl<T: Config> AssetMultiLocationGetter<AssetIdOf<T>> for Pallet<T> {
+	fn get_asset_multi_location(asset_id: AssetIdOf<T>) -> Option<MultiLocation> {
+		AssetIdMultiLocation::<T>::get(asset_id)
 	}
 
-	#[pallet::call]
-	impl<T: Config> Pallet<T> {
-		#[pallet::call_index(0)]
-		#[pallet::weight(<T as pallet::Config>::WeightInfo::link_system_token())]
-		pub fn link_system_token(
-			origin: OriginFor<T>,
-			parents: u8,
-			asset_id: AssetIdOf<T>,
-			system_token_id: SystemTokenId,
-		) -> DispatchResult {
-			T::ReserveAssetModifierOrigin::ensure_origin(origin)?;
+	fn get_asset_id(asset_type: MultiLocation) -> Option<AssetIdOf<T>> {
+		AssetMultiLocationId::<T>::get(asset_type)
+	}
+}
 
-			// verify asset exists on pallet-assets
-			ensure!(Self::asset_exists(&asset_id), Error::<T>::AssetDoesNotExist);
+impl<T: Config> AssetLinkInterface<AssetIdOf<T>> for Pallet<T>
+where
+	AssetIdOf<T>: From<SystemTokenAssetId>,
+{
+	type Error = DispatchError;
 
-			// verify asset is not yet registered
-			ensure!(
-				!AssetIdMultiLocation::<T>::contains_key(&asset_id),
-				Error::<T>::AssetAlreadyLinked
-			);
+	fn link(asset_id: &AssetIdOf<T>, parents: u8, original: SystemTokenId) -> DispatchResult {
+		ensure!(T::Assets::asset_exists(asset_id.clone()), Error::<T>::AssetDoesNotExist);
+		ensure!(
+			!AssetIdMultiLocation::<T>::contains_key(&asset_id),
+			Error::<T>::AssetAlreadyLinked
+		);
+		let SystemTokenId { para_id, pallet_id, asset_id } = original;
+		let asset_multi_location = MultiLocation {
+			parents,
+			interior: Junctions::X3(
+				Parachain(para_id),
+				PalletInstance(pallet_id),
+				GeneralIndex(asset_id as u128),
+			),
+		};
+		let id: AssetIdOf<T> = asset_id.into();
+		AssetIdMultiLocation::<T>::insert(&id, &asset_multi_location);
+		AssetMultiLocationId::<T>::insert(&asset_multi_location, id.clone());
 
-			let asset_multi_location = MultiLocation {
-				parents,
-				interior: Junctions::X3(
-					Parachain(system_token_id.para_id),
-					PalletInstance(system_token_id.pallet_id as u8),
-					GeneralIndex(system_token_id.asset_id as u128),
-				),
-			};
+		Self::deposit_event(Event::AssetLinked { asset_id: id, asset_multi_location });
 
-			// verify MultiLocation is valid
-			let junctions_multi_location_ok = matches!(
-				asset_multi_location.interior,
-				Junctions::X3(Parachain(_), PalletInstance(_), GeneralIndex(_))
-			);
-
-			ensure!(junctions_multi_location_ok, Error::<T>::WrongMultiLocation);
-
-			// register asset
-			AssetIdMultiLocation::<T>::insert(&asset_id, &asset_multi_location);
-			AssetMultiLocationId::<T>::insert(&asset_multi_location, asset_id.clone());
-
-			Self::deposit_event(Event::AssetLinked { asset_id, asset_multi_location });
-
-			Ok(())
-		}
-
-		#[pallet::call_index(1)]
-		#[pallet::weight(<T as pallet::Config>::WeightInfo::unlink_system_token())]
-		pub fn unlink_system_token(origin: OriginFor<T>, asset_id: AssetIdOf<T>) -> DispatchResult {
-			T::ReserveAssetModifierOrigin::ensure_origin(origin)?;
-
-			// verify asset is registered
-			let asset_multi_location =
-				AssetIdMultiLocation::<T>::get(&asset_id).ok_or(Error::<T>::AssetIsNotLinked)?;
-
-			// unregister asset
-			AssetIdMultiLocation::<T>::remove(&asset_id);
-			AssetMultiLocationId::<T>::remove(&asset_multi_location);
-
-			Self::deposit_event(Event::AssetUnlinked { asset_id, asset_multi_location });
-			Ok(())
-		}
+		Ok(())
 	}
 
-	impl<T: Config> AssetMultiLocationGetter<AssetIdOf<T>> for Pallet<T> {
-		fn get_asset_multi_location(asset_id: AssetIdOf<T>) -> Option<MultiLocation> {
-			AssetIdMultiLocation::<T>::get(asset_id)
-		}
+	fn unlink(asset_id: &AssetIdOf<T>) -> Result<(), Self::Error> {
+		let asset_multi_location =
+			AssetIdMultiLocation::<T>::get(asset_id).ok_or(Error::<T>::AssetIsNotLinked)?;
 
-		fn get_asset_id(asset_type: MultiLocation) -> Option<AssetIdOf<T>> {
-			AssetMultiLocationId::<T>::get(asset_type)
-		}
-	}
+		AssetIdMultiLocation::<T>::remove(asset_id);
+		AssetMultiLocationId::<T>::remove(&asset_multi_location);
 
-	impl<T: Config> Pallet<T> {
-		// check if the asset exists
-		fn asset_exists(asset_id: &AssetIdOf<T>) -> bool {
-			T::Assets::asset_exists(asset_id.clone())
-		}
-	}
+		Self::deposit_event(Event::AssetUnlinked { asset_id: asset_id.clone() });
 
-	impl<T> AssetLinkInterface<AssetIdOf<T>> for Pallet<T>
-	where
-		T: Config,
-	{
-		fn link_system_token(
-			parents: u8,
-			asset_id: &AssetIdOf<T>,
-			system_token_id: SystemTokenId,
-		) -> DispatchResult {
-			// verify asset exists on pallet-assets
-			ensure!(Self::asset_exists(asset_id), Error::<T>::AssetDoesNotExist);
-
-			// verify asset is not yet registered
-			ensure!(
-				!AssetIdMultiLocation::<T>::contains_key(asset_id),
-				Error::<T>::AssetAlreadyLinked
-			);
-
-			let asset_multi_location = MultiLocation {
-				parents,
-				interior: Junctions::X3(
-					Parachain(system_token_id.para_id),
-					PalletInstance(system_token_id.pallet_id),
-					GeneralIndex(system_token_id.asset_id as u128),
-				),
-			};
-
-			// verify MultiLocation is valid
-			let junctions_multi_location_ok = matches!(
-				asset_multi_location.interior,
-				Junctions::X3(Parachain(_), PalletInstance(_), GeneralIndex(_))
-			);
-
-			ensure!(junctions_multi_location_ok, Error::<T>::WrongMultiLocation);
-
-			// register asset
-			AssetIdMultiLocation::<T>::insert(asset_id, &asset_multi_location);
-			AssetMultiLocationId::<T>::insert(&asset_multi_location, asset_id);
-
-			Self::deposit_event(Event::AssetLinked {
-				asset_id: asset_id.clone(),
-				asset_multi_location,
-			});
-
-			Ok(())
-		}
-
-		fn unlink_system_token(asset_id: &AssetIdOf<T>) -> DispatchResult {
-			// verify asset is registered
-			let asset_multi_location =
-				AssetIdMultiLocation::<T>::get(asset_id).ok_or(Error::<T>::AssetIsNotLinked)?;
-
-			// unregister asset
-			AssetIdMultiLocation::<T>::remove(asset_id);
-			AssetMultiLocationId::<T>::remove(&asset_multi_location);
-
-			Self::deposit_event(Event::AssetUnlinked {
-				asset_id: asset_id.clone(),
-				asset_multi_location,
-			});
-			Ok(())
-		}
+		Ok(())
 	}
 }

@@ -13,7 +13,7 @@ pub(crate) const fn pow(a: F, b: i32) -> F {
 		}
 		pow >>= 1;
 		if pow == 0 {
-			break;
+			break
 		}
 		a = a.mul(a);
 	}

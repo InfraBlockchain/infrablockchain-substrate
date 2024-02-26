@@ -48,41 +48,41 @@ pub(crate) const fn mul(a: F, b: F) -> F {
 
 		// NaN + anything = qNaN
 		if a_abs > inf_rep {
-			return F::from_repr(a_rep | quiet_bit);
+			return F::from_repr(a_rep | quiet_bit)
 		}
 		// anything + NaN = qNaN
 		if b_abs > inf_rep {
-			return F::from_repr(b_rep | quiet_bit);
+			return F::from_repr(b_rep | quiet_bit)
 		}
 
 		if a_abs == inf_rep {
 			if b_abs != zero {
 				// infinity * non-zero = +/- infinity
-				return F::from_repr(a_abs | product_sign);
+				return F::from_repr(a_abs | product_sign)
 			} else {
 				// infinity * zero = NaN
-				return F::from_repr(qnan_rep);
+				return F::from_repr(qnan_rep)
 			}
 		}
 
 		if b_abs == inf_rep {
 			if a_abs != zero {
 				// infinity * non-zero = +/- infinity
-				return F::from_repr(b_abs | product_sign);
+				return F::from_repr(b_abs | product_sign)
 			} else {
 				// infinity * zero = NaN
-				return F::from_repr(qnan_rep);
+				return F::from_repr(qnan_rep)
 			}
 		}
 
 		// zero * anything = +/- zero
 		if a_abs == zero {
-			return F::from_repr(product_sign);
+			return F::from_repr(product_sign)
 		}
 
 		// anything * zero = +/- zero
 		if b_abs == zero {
-			return F::from_repr(product_sign);
+			return F::from_repr(product_sign)
 		}
 
 		// one or both of a or b is denormal, the other (if applicable) is a
@@ -132,7 +132,7 @@ pub(crate) const fn mul(a: F, b: F) -> F {
 
 	// If we have overflowed the type, return +/- infinity.
 	if product_exponent >= max_exponent as i32 {
-		return F::from_repr(inf_rep | product_sign);
+		return F::from_repr(inf_rep | product_sign)
 	}
 
 	if product_exponent <= 0 {
@@ -144,7 +144,7 @@ pub(crate) const fn mul(a: F, b: F) -> F {
 		// simplify the shift logic.
 		let shift = one.wrapping_sub(product_exponent as FInt) as u32;
 		if shift >= bits {
-			return F::from_repr(product_sign);
+			return F::from_repr(product_sign)
 		}
 
 		// Otherwise, shift the significand of the result so that the round

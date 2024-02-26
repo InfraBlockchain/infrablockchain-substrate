@@ -1,12 +1,12 @@
 [package]
-name = "pallet-system-token"
+name = "pallet-system-token-oracle"
 version = "0.1.0"
 authors.workspace = true
 edition.workspace = true
 license = "Apache-2.0"
 homepage = "https://infrablockchain.net"
 repository.workspace = true
-description = "FRAME pallet to mange any kind of system token related"
+description = "Oracle pallet which mostly related to System Token"
 readme = "README.md"
 
 [package.metadata.docs.rs]
@@ -17,6 +17,8 @@ targets = ["x86_64-unknown-linux-gnu"]
 serde = { version = "1.0.188", default-features = false, optional = true, features = ["derive", "alloc"] }
 codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false, features = ["derive", "max-encoded-len"] }
 scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
+log = { version = "0.4.17", default-features = false }
+lite-json = { version = "0.2.0", default-features = false }
 
 # primitives
 sp-core = { path = "../../../substrate/primitives/core", default-features= false }
@@ -27,19 +29,23 @@ sp-std = { path = "../../primitives/std", default-features = false }
 # frames
 frame-support = { path = "../support", default-features = false }
 frame-system = { path = "../system", default-features = false }
-pallet-assets = { path = "../assets", default-features = false } 
+pallet-session = { path = "../session", default-features = false }
+pallet-timestamp = { path = "../timestamp", default-features = false}
 
 [features]
 default = ["std"]
 std = [
+	"lite-json/std",
 	"codec/std",
-	"frame-support/std",
-	"frame-system/std",
-	"pallet-assets/std",
+	"log/std",
 	"scale-info/std",
 	"sp-io/std",
 	"sp-runtime/std",
 	"sp-std/std",
 	"sp-core/std",
+	"frame-support/std",
+	"frame-system/std",
+	"pallet-session/std",
+	"pallet-timestamp/std",
 ]
 try-runtime = ["frame-support/try-runtime"]

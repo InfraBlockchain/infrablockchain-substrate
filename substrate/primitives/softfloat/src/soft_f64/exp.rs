@@ -92,17 +92,17 @@ pub(crate) const fn exp(mut x: F64) -> F64 {
 	if hx >= 0x4086232b {
 		/* if |x| >= 708.39... */
 		if x_bits & abs_mask > F64::EXPONENT_MASK {
-			return x;
+			return x
 		}
 		if gt(&x, &f64!(709.782712893383973096)) {
 			/* overflow if x!=inf */
 			x = x.mul(x1p1023);
-			return x;
+			return x
 		}
 		if lt(&x, &f64!(-708.39641853226410622)) {
 			/* underflow if x!=-inf */
 			if lt(&x, &f64!(-745.13321910194110842)) {
-				return f64!(0.);
+				return f64!(0.)
 			}
 		}
 	}
@@ -126,7 +126,7 @@ pub(crate) const fn exp(mut x: F64) -> F64 {
 		lo = f64!(0.);
 	} else {
 		/* inexact if x!=0 */
-		return f64!(1.).add(x);
+		return f64!(1.).add(x)
 	}
 
 	/* x is now in primary range */

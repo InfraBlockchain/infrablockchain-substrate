@@ -399,11 +399,11 @@ pub(crate) const fn rem_pio2_large<const Y: usize>(
 					}
 				}
 				jz += k;
-				continue 'recompute;
+				continue 'recompute
 			}
 		}
 
-		break;
+		break
 	}
 
 	/* chop off zero terms */

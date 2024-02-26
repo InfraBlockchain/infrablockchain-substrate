@@ -3,7 +3,7 @@ use crate::soft_f64::F64;
 // Source: https://github.com/rust-lang/compiler-builtins/blob/3dea633a80d32da75e923a940d16ce98cce74822/src/float/conv.rs#L20C1-L28C6
 pub const fn u32_to_f64_bits(i: u32) -> u64 {
 	if i == 0 {
-		return 0;
+		return 0
 	}
 	let n = i.leading_zeros();
 	let m = (i as u64) << (21 + n); // Significant bits, with bit 53 still in tact.
@@ -48,7 +48,7 @@ pub const fn f64_to_i32(f: F64) -> i32 {
 
 pub const fn u128_to_f64_bits(i: u128) -> u64 {
 	if i == 0 {
-		return 0;
+		return 0
 	}
 
 	let n = i.leading_zeros();

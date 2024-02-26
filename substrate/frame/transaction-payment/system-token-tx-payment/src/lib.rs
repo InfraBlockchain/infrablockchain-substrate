@@ -21,7 +21,7 @@ mod tests;
 
 mod types;
 
-use types::*;
+pub use types::*;
 
 mod payment;
 pub use payment::*;
@@ -31,7 +31,6 @@ use frame_support::{
 	dispatch::{DispatchInfo, DispatchResult, PostDispatchInfo},
 	pallet_prelude::*,
 	traits::{
-		infra_support::{fee::FeeTableProvider, pot::VotingHandler},
 		tokens::{
 			fungibles::{Balanced, Credit, Inspect},
 			WithdrawConsequence,
@@ -49,18 +48,15 @@ use sp_runtime::{
 		Zero,
 	},
 	transaction_validity::{TransactionValidity, TransactionValidityError, ValidTransaction},
-	types::{
-		AssetId as InfraAssetId, ExtrinsicMetadata, RuntimeState, SystemTokenId,
-		SystemTokenLocalAssetProvider, VoteAccountId,
-	},
-	FixedPointOperand,
+	types::{fee::*, infra_core::*, token::*, vote::*},
+	FixedPointNumber, FixedPointOperand, FixedU128,
 };
 
 use sp_std::prelude::*;
 
 pub use pallet::*;
 
-#[frame_support::pallet]
+#[frame_support::pallet(dev_mode)]
 pub mod pallet {
 	use frame_support::traits::Contains;
 
@@ -70,15 +66,12 @@ pub mod pallet {
 	pub trait Config: frame_system::Config + pallet_transaction_payment::Config {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+		/// Interface that is related to transaction for Infrablockchain Runtime
+		type InfraTxInterface: RuntimeConfigProvider + VotingHandler;
 		/// The fungibles instance used to pay for transactions in assets.
-		type Assets: Balanced<Self::AccountId>
-			+ SystemTokenLocalAssetProvider<InfraAssetId, Self::AccountId>;
+		type Assets: Balanced<Self::AccountId> + LocalAssetManager<AccountId = Self::AccountId>;
 		/// The actual transaction charging logic that charges the fees.
 		type OnChargeSystemToken: OnChargeSystemToken<Self>;
-		/// The type that handles the voting.
-		type VotingHandler: VotingHandler;
-		/// The type that handles fee table.
-		type FeeTableProvider: FeeTableProvider<ChargeAssetBalanceOf<Self>>;
 		/// Filters for bootstrappring runtime.
 		type BootstrapCallFilter: Contains<Self::RuntimeCall>;
 		/// Id for handling fee(e.g SoverignAccount for some Runtime).
@@ -103,6 +96,11 @@ pub mod pallet {
 		OnBootstrapping,
 	}
 
+	#[pallet::error]
+	pub enum Error<T> {
+		ErrorConvertToAssetBalance,
+	}
+
 	impl<T: Config> Pallet<T> {
 		pub fn account_id() -> T::AccountId {
 			T::PalletId::get().into_account_truncating()
@@ -112,11 +110,11 @@ pub mod pallet {
 
 impl<T: Config> Pallet<T> {
 	fn check_bootstrap_and_filter(call: &T::RuntimeCall) -> Result<bool, TransactionValidityError> {
-		match (T::Assets::runtime_state(), T::BootstrapCallFilter::contains(call)) {
-			(RuntimeState::Bootstrap, false) =>
+		match (T::InfraTxInterface::runtime_state(), T::BootstrapCallFilter::contains(call)) {
+			(Mode::Bootstrap, false) =>
 				Err(TransactionValidityError::Invalid(InvalidTransaction::InvalidBootstrappingCall)),
-			(RuntimeState::Bootstrap, true) => Ok(true),
-			(RuntimeState::Normal, _) => Ok(false),
+			(Mode::Bootstrap, true) => Ok(true),
+			(Mode::Normal, _) => Ok(false),
 		}
 	}
 }
@@ -219,9 +217,15 @@ impl<T: Config> SignedExtension for ChargeSystemToken<T>
 where
 	T::RuntimeCall:
 		Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo> + GetCallMetadata,
-	AssetBalanceOf<T>: Send + Sync + FixedPointOperand + IsType<u128>,
+	AssetBalanceOf<T>: Send + Sync + FixedPointOperand + IsType<SystemTokenBalance>,
+	BalanceOf<T>: From<SystemTokenBalance>,
 	AssetIdOf<T>: Send + Sync + IsType<ChargeSystemTokenAssetIdOf<T>>,
-	BalanceOf<T>: Send + Sync + From<u64> + FixedPointOperand + IsType<ChargeAssetBalanceOf<T>>,
+	BalanceOf<T>: Send
+		+ Sync
+		+ From<u64>
+		+ FixedPointOperand
+		+ IsType<ChargeAssetBalanceOf<T>>
+		+ From<AssetBalanceOf<T>>,
 	ChargeSystemTokenAssetIdOf<T>: Send + Sync,
 	Credit<T::AccountId, T::Assets>: IsType<ChargeAssetLiquidityOf<T>>,
 {
@@ -259,7 +263,7 @@ where
 		let payer = who.clone();
 		let is_bootstrap = Pallet::<T>::check_bootstrap_and_filter(call)?;
 		let (fee, _) = if is_bootstrap {
-			(Zero::zero(), InitialPayment::Nothing)
+			(Zero::zero(), InitialPayment::Bootstrap)
 		} else {
 			let (fee, _paid) = self.withdraw_fee(&payer, call, info, len)?;
 			(fee, _paid)
@@ -305,7 +309,7 @@ where
 			match initial_payment {
 				// Ibs only pay with some asset
 				InitialPayment::Asset(already_withdrawn) => {
-					let metadata = ExtrinsicMetadata::new(
+					let ext_metadata = ExtrinsicMetadata::new(
 						call_metadata.pallet_name,
 						call_metadata.function_name,
 					);
@@ -314,7 +318,7 @@ where
 					let actual_fee: BalanceOf<T> =
 						// `fee` will be calculated based on the 'fee table'.
 						// The fee will be directly applied to the `final_fee` without any refunds.
-						if let Some(fee) = T::FeeTableProvider::get_fee_from_fee_table(metadata) {
+						if let Some(fee) = T::InfraTxInterface::fee_for(ext_metadata) {
 							refundable = false;
 							fee.into()
 						} else {
@@ -354,7 +358,7 @@ where
 
 							// Update vote
 							let vote_weight = F64::from_i128(converted_fee.into() as i128);
-							T::VotingHandler::update_pot_vote(
+							T::InfraTxInterface::update_pot_vote(
 								vote_candidate.clone().into(),
 								system_token_id.clone(),
 								vote_weight,

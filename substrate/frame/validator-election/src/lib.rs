@@ -28,7 +28,7 @@ pub use pallet::*;
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::MaybeDisplay,
-	types::{ParaId, SystemTokenId, VoteAccountId, VoteWeight},
+	types::{token::*, vote::*},
 	RuntimeDebug,
 };
 
@@ -139,7 +139,7 @@ impl<T: Config> VotingStatus<T> {
 				let current_vote_weight: VoteWeight = s.1.clone().into();
 				let additional_vote_weight: VoteWeight = vote_points.into();
 				s.1 = current_vote_weight.add(additional_vote_weight).into();
-				return;
+				return
 			}
 		}
 		self.status.push((who.clone(), vote_points));

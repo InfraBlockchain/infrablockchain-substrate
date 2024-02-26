@@ -56,6 +56,7 @@ sc-chain-spec = { path = "../../substrate/client/chain-spec" }
 sc-rpc = { path = "../../substrate/client/rpc" }
 sc-tracing = { path = "../../substrate/client/tracing" }
 sp-offchain = { path = "../../substrate/primitives/offchain" }
+sc-offchain = { path = "../../substrate/client/offchain" }
 sp-api = { path = "../../substrate/primitives/api" }
 sp-consensus-aura = { path = "../../substrate/primitives/consensus/aura" }
 sc-sysinfo = { path = "../../substrate/client/sysinfo" }
@@ -116,4 +117,9 @@ try-runtime = [
 	"sp-runtime/try-runtime",
 ]
 
-fast-runtime = ["newnal-runtime/fast-runtime"]
+fast-runtime = [
+	"asset-hub-runtime/fast-runtime",
+	"contracts-infra-runtime/fast-runtime",
+	"did-runtime/fast-runtime",
+	"newnal-runtime/fast-runtime",
+]
