@@ -364,7 +364,7 @@ pub mod pallet {
 			let agency = ensure_signed(origin)?;
 			Agencies::<T>::try_mutate(|list| -> DispatchResult {
 				if list.contains(&agency) {
-					return Err(Error::<T>::InvalidAgency.into());
+					return Err(Error::<T>::InvalidAgency.into())
 				}
 				list.push(agency.clone());
 				Ok(())
@@ -383,7 +383,7 @@ pub mod pallet {
 				if list.contains(&agency) {
 					list.retain(|x| x != &agency);
 				} else {
-					return Err(Error::<T>::InvalidAgency.into());
+					return Err(Error::<T>::InvalidAgency.into())
 				}
 				Ok(())
 			})?;
@@ -510,7 +510,7 @@ pub mod pallet {
 			T::AdminOrigin::ensure_origin(origin)?;
 			Agencies::<T>::try_mutate(|list| -> DispatchResult {
 				if list.contains(&agency) {
-					return Err(Error::<T>::InvalidAgency.into());
+					return Err(Error::<T>::InvalidAgency.into())
 				}
 				list.push(agency.clone());
 				Ok(())
@@ -534,7 +534,7 @@ pub mod pallet {
 				if list.contains(&agency) {
 					list.retain(|x| x != &agency);
 				} else {
-					return Err(Error::<T>::InvalidAgency.into());
+					return Err(Error::<T>::InvalidAgency.into())
 				}
 				Ok(())
 			})?;
