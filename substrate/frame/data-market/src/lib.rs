@@ -148,7 +148,7 @@ pub mod pallet {
 			data_owner_fee: u128,
 			data_issuer_fee: u128,
 			platform_fee: u128,
-			data_verification_proof: VerificationProof<AnyText>,
+			data_verification_proof: AnyText,
 		},
 		// Set Platform Config
 		SetPlatformConfig {
@@ -339,7 +339,7 @@ pub mod pallet {
 			data_issuer_fee_ratio: u32,
 			agency: Option<T::AccountId>,
 			agency_fee_ratio: Option<u32>,
-			data_verification_proof: VerificationProof<AnyText>,
+			data_verification_proof: AnyText,
 		) -> DispatchResult {
 			let maybe_verifier = ensure_signed(origin)?;
 			Self::do_execute_data_trade(
@@ -626,12 +626,7 @@ where
 
 		let escrow_account = Self::get_escrow_account();
 
-		Self::transfer_escrow(
-			TransferFrom::Origin(data_buyer),
-			escrow_account,
-			detail.system_token_id,
-			amount.into(),
-		)?;
+		Self::transfer_escrow(data_buyer, escrow_account, detail.system_token_id, amount)?;
 
 		Self::update_deposit_in_detail(contract_id, detail.deposit + amount);
 
@@ -657,12 +652,13 @@ where
 		system_token_asset_id: u32,
 	) -> DispatchResult {
 		let platform_account = Self::get_platform_account();
+		let escrow_account = Self::get_escrow_account();
 
 		Self::transfer_escrow(
-			TransferFrom::Escrow,
+			escrow_account.clone(),
 			data_owner,
 			system_token_asset_id,
-			data_owner_fee,
+			data_owner_fee.into(),
 		)?;
 
 		let total_weight: u32 = data_issuer.iter().map(|(_, weight)| weight).sum();
@@ -673,27 +669,27 @@ where
 				.saturating_mul(*weight as u128)
 				.saturating_div(total_weight as u128);
 			Self::transfer_escrow(
-				TransferFrom::Escrow,
+				escrow_account.clone(),
 				issuer.clone(),
 				system_token_asset_id,
-				distributed_fee,
+				distributed_fee.into(),
 			)?;
 		}
 
 		Self::transfer_escrow(
-			TransferFrom::Escrow,
+			escrow_account.clone(),
 			platform_account,
 			system_token_asset_id,
-			platform_fee,
+			platform_fee.into(),
 		)?;
 
 		if let Some(agency) = maybe_agency {
 			if agency_fee > 0 {
 				Self::transfer_escrow(
-					TransferFrom::Escrow,
+					escrow_account,
 					agency,
 					system_token_asset_id,
-					agency_fee,
+					agency_fee.into(),
 				)?;
 			}
 		}
@@ -746,34 +742,18 @@ where
 	}
 
 	fn transfer_escrow(
-		from: TransferFrom<T>,
+		from: T::AccountId,
 		to: T::AccountId,
 		system_token_asset_id: u32,
-		amount: u128,
+		amount: AssetBalanceOf<T>,
 	) -> DispatchResult {
-		let balance = AssetBalanceOf::<T>::from(amount);
-
-		match from {
-			TransferFrom::Origin(origin) => {
-				let _ = T::Assets::transfer(
-					system_token_asset_id.into(),
-					&origin,
-					&to,
-					balance,
-					Preservation::Protect,
-				);
-			},
-			TransferFrom::Escrow => {
-				let escrow = Self::get_escrow_account();
-				let _ = T::Assets::transfer(
-					system_token_asset_id.into(),
-					&escrow,
-					&to,
-					balance,
-					Preservation::Protect,
-				);
-			},
-		}
+		let _ = T::Assets::transfer(
+			system_token_asset_id.into(),
+			&from,
+			&to,
+			amount,
+			Preservation::Protect,
+		);
 
 		Ok(())
 	}
@@ -810,11 +790,13 @@ where
 				signed_status,
 			};
 
-		let contract_id =
+		let contract_id_base =
 			NextContractId::<T>::try_mutate(|c| -> Result<ContractId, DispatchError> {
 				*c = c.checked_add(1).ok_or(Error::<T>::Overflow)?;
 				Ok(*c - 1)
 			})?;
+
+		let contract_id: ContractId = contract_id_base << 1 | 0;
 
 		DataDelegateContracts::<T>::insert(contract_id, detail);
 
@@ -879,11 +861,13 @@ where
 
 		let current_block_number = frame_system::Pallet::<T>::block_number();
 
-		let contract_id =
+		let contract_id_base =
 			NextContractId::<T>::try_mutate(|c| -> Result<ContractId, DispatchError> {
 				*c = c.checked_add(1).ok_or(Error::<T>::Overflow)?;
 				Ok(*c - 1)
 			})?;
+
+		let contract_id: ContractId = contract_id_base << 1 | 1;
 
 		let mut detail: DataPurchaseContractDetail<
 			T::AccountId,
@@ -936,12 +920,7 @@ where
 		});
 
 		let escrow_account = Self::get_escrow_account();
-		Self::transfer_escrow(
-			TransferFrom::Origin(data_buyer.clone()),
-			escrow_account,
-			system_token_id,
-			deposit.into(),
-		)?;
+		Self::transfer_escrow(data_buyer.clone(), escrow_account, system_token_id, deposit)?;
 
 		Self::deposit_event(Event::<T>::MakeDataPurchaseContract { contract_id, data_buyer });
 
@@ -1053,11 +1032,12 @@ where
 			DataPurchaseContracts::<T>::remove(contract_id);
 
 			if detail.deposit > 0.into() {
+				let escrow = Self::get_escrow_account();
 				Self::transfer_escrow(
-					TransferFrom::Escrow,
+					escrow,
 					detail.data_buyer,
 					detail.system_token_id,
-					detail.deposit.into(),
+					detail.deposit,
 				)?;
 			}
 
@@ -1088,46 +1068,62 @@ where
 		data_issuer_fee_ratio: u32,
 		maybe_agency: Option<T::AccountId>,
 		maybe_agency_fee_ratio: Option<u32>,
-		data_verification_proof: VerificationProof<AnyText>,
+		data_verification_proof: AnyText,
 	) -> DispatchResult {
 		let mut detail =
 			DataPurchaseContracts::<T>::get(contract_id).ok_or(Error::<T>::ContractNotExist)?;
-		let price_per_data = detail.price_per_data;
-		let status = detail.signed_status.clone();
+
+		let DataPurchaseContractDetail {
+			data_buyer: _,
+			data_verifier: ref data_verifier_in_detail,
+			data_purchase_info: _,
+			system_token_id,
+			agency: ref agency_in_detail,
+			price_per_data,
+			deposit,
+			mut trade_count,
+			ref signed_status,
+			mut data_trade_record,
+			effective_at,
+			expired_at,
+		} = detail;
+
 		let current_block_number = <frame_system::Pallet<T>>::block_number();
 
-		let data_verifier = detail.clone().data_verifier.ok_or(Error::<T>::InvalidVerifier)?;
+		let data_verifier = data_verifier_in_detail.clone().ok_or(Error::<T>::InvalidVerifier)?;
 		ensure!(maybe_verifier == data_verifier, Error::<T>::InvalidVerifier);
 		ensure!(
-			status.iter().all(|(_, signed)| *signed == SignStatus::Signed),
+			signed_status.iter().all(|(_, signed)| *signed == SignStatus::Signed),
 			Error::<T>::ContractNotActive
 		);
-		ensure!(detail.clone().expired_at > current_block_number, Error::<T>::ContractNotActive);
-		ensure!(detail.clone().effective_at <= current_block_number, Error::<T>::ContractNotActive);
+		ensure!(expired_at > current_block_number, Error::<T>::ContractNotActive);
+		ensure!(effective_at <= current_block_number, Error::<T>::ContractNotActive);
 		if let Some(agency) = maybe_agency.clone() {
-			let agency_from_detail = detail.clone().agency.ok_or(Error::<T>::InvalidAgency)?;
+			let agency_from_detail = agency_in_detail.clone().ok_or(Error::<T>::InvalidAgency)?;
 			ensure!(agency == agency_from_detail, Error::<T>::InvalidAgency);
 		}
 
-		ensure!(detail.trade_count < T::MaxPurchaseQuantity::get(), Error::<T>::TradeLimitReached);
-		detail.trade_count += 1;
+		ensure!(trade_count < T::MaxPurchaseQuantity::get(), Error::<T>::TradeLimitReached);
+		trade_count += 1;
+		detail.trade_count = trade_count;
 
 		ensure!(
-			(detail.data_trade_record.len() as u128) < T::MaxPurchaseQuantity::get(),
+			(data_trade_record.clone().len() as u128) < T::MaxPurchaseQuantity::get(),
 			Error::<T>::TradeLimitReached
 		);
 
-		if detail.agency.is_none() {
+		if agency_in_detail.is_none() {
 			// If Agency doesnt exist, then the data owner only sell data one time
-			ensure!(detail.data_trade_record.contains(&data_owner), Error::<T>::AlreadyPurchased);
+			ensure!(data_trade_record.contains(&data_owner), Error::<T>::AlreadyPurchased);
 		} else {
 			// If Agency exist, then the data owner can sell data multiple times. but insert storage
 			// only one time
-			if !detail.data_trade_record.contains(&data_owner) {
-				detail.data_trade_record.push(data_owner.clone());
+			if !data_trade_record.contains(&data_owner) {
+				data_trade_record.push(data_owner.clone());
 			}
 		}
 
+		detail.data_trade_record = data_trade_record;
 		DataPurchaseContracts::<T>::insert(contract_id, detail.clone());
 
 		let market_config = PlatformConfig::<T>::get();
@@ -1155,10 +1151,10 @@ where
 			platform_fee,
 			maybe_agency,
 			agency_fee,
-			detail.system_token_id,
+			system_token_id,
 		)?;
 
-		Self::update_deposit_in_detail(contract_id, detail.deposit - price_per_data);
+		Self::update_deposit_in_detail(contract_id, deposit - price_per_data);
 
 		Self::deposit_event(Event::<T>::DataTradeExecuted {
 			contract_id,

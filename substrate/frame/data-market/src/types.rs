@@ -45,23 +45,6 @@ impl<BoundedString> DataPurchaseInfo<BoundedString> {
 	}
 }
 
-#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, TypeInfo, MaxEncodedLen)]
-#[cfg_attr(feature = "std", derive(Hash))]
-pub struct VerificationProof<BoundedString> {
-	hash: BoundedString,
-}
-
-impl<BoundedString> VerificationProof<BoundedString> {
-	pub fn new(hash: BoundedString) -> Self {
-		Self { hash }
-	}
-}
-
-pub(crate) enum TransferFrom<T: Config> {
-	Origin(T::AccountId),
-	Escrow,
-}
-
 #[derive(Encode, Decode, Clone, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Hash, Debug))]
 pub struct DataDelegateContractDetail<AccountId, BlockNumber> {
