@@ -67,9 +67,7 @@ pub(crate) enum TransferFrom<T: Config> {
 #[cfg_attr(feature = "std", derive(Hash, Debug))]
 pub struct DataDelegateContractDetail<AccountId, BlockNumber> {
 	pub data_owner: AccountId,
-	pub data_owner_info: AnyText,
 	pub agency: AccountId,
-	pub agency_info: AnyText,
 	pub data_owner_minimum_fee_ratio: u32,
 	pub deligated_data: AnyText,
 	pub effective_at: BlockNumber,
@@ -80,7 +78,6 @@ pub struct DataDelegateContractDetail<AccountId, BlockNumber> {
 #[cfg_attr(feature = "std", derive(Hash, Debug))]
 pub struct DataDelegateContractParams<AccountId, BlockNumber> {
 	pub data_owner: AccountId,
-	pub data_owner_info: AnyText,
 	pub data_owner_minimum_fee_ratio: u32,
 	pub deligated_data: AnyText,
 	pub duration: BlockNumber,
@@ -90,14 +87,12 @@ pub struct DataDelegateContractParams<AccountId, BlockNumber> {
 #[cfg_attr(feature = "std", derive(Hash, Debug))]
 pub struct DataPurchaseContractDetail<AccountId, BlockNumber, Balance> {
 	pub data_buyer: AccountId,
-	pub data_buyer_info: AnyText,
 	pub data_verifier: Option<AccountId>,
 	pub effective_at: BlockNumber,
 	pub expired_at: BlockNumber,
 	pub data_purchase_info: DataPurchaseInfo<AnyText>,
 	pub system_token_id: u32,
 	pub agency: Option<AccountId>,
-	pub agency_info: Option<AnyText>,
 	pub price_per_data: Balance,
 	pub deposit: Balance,
 }
@@ -105,7 +100,6 @@ pub struct DataPurchaseContractDetail<AccountId, BlockNumber, Balance> {
 #[derive(Encode, Decode, Clone, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Hash, Debug))]
 pub struct DataPurchaseContractParams<AccountId, BlockNumber, Balance> {
-	pub data_buyer_info: AnyText,
 	pub data_verifier: Option<AccountId>,
 	pub data_purchase_info: DataPurchaseInfo<AnyText>,
 	pub system_token_id: u32,

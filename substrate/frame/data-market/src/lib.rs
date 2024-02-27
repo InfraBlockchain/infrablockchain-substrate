@@ -782,21 +782,18 @@ where
 	) -> DispatchResult {
 		let DataDelegateContractParams {
 			data_owner,
-			data_owner_info,
 			data_owner_minimum_fee_ratio,
 			deligated_data,
 			duration,
 		} = params;
 
+		ensure!(Agencies::<T>::contains_key(&agency), Error::<T>::InvalidAgency);
+
 		let current_block_number = frame_system::Pallet::<T>::block_number();
-		let agency_info =
-			Agencies::<T>::try_get(&agency.clone()).map_err(|_| Error::<T>::InvalidAgency)?;
 		let detail: DataDelegateContractDetail<T::AccountId, BlockNumberFor<T>> =
 			DataDelegateContractDetail {
 				data_owner: data_owner.clone(),
-				data_owner_info,
 				agency: agency.clone(),
-				agency_info,
 				data_owner_minimum_fee_ratio,
 				deligated_data,
 				effective_at: current_block_number,
@@ -866,7 +863,6 @@ where
 		is_agency_exist: bool,
 	) -> DispatchResult {
 		let DataPurchaseContractParams {
-			data_buyer_info,
 			data_verifier,
 			data_purchase_info,
 			system_token_id,
@@ -883,14 +879,12 @@ where
 			AssetBalanceOf<T>,
 		> = DataPurchaseContractDetail {
 			data_buyer: data_buyer.clone(),
-			data_buyer_info,
 			data_verifier: data_verifier.clone(),
 			effective_at: current_block_number,
 			expired_at: current_block_number + duration,
 			data_purchase_info,
 			system_token_id,
 			agency: None,
-			agency_info: None,
 			price_per_data,
 			deposit,
 		};
@@ -921,10 +915,7 @@ where
 				.map_err(|_| Error::<T>::ExceedContractSigner)?;
 			ContractStatus::<T>::insert(contract_id, contract_status.clone());
 
-			let agency_info =
-				Agencies::<T>::try_get(&agency.clone()).map_err(|_| Error::<T>::InvalidAgency)?;
 			detail.agency = Some(agency.clone());
-			detail.agency_info = Some(agency_info);
 		} else {
 			ensure!(agency.is_none(), Error::<T>::InvalidAgency);
 			ensure!(data_verifier.is_some(), Error::<T>::InvalidVerifier);
@@ -1125,12 +1116,18 @@ where
 		TradeCountForContract::<T>::insert(contract_id, trade_count);
 
 		if detail.agency.is_none() {
+			// If Agency doesnt exist, then the data owner only sell data one time
 			ensure!(
 				DataTradeRecords::<T>::contains_key(contract_id, &data_owner),
 				Error::<T>::AlreadyPurchased
 			);
+		} else {
+			// If Agency exist, then the data owner can sell data multiple times. but insert storage
+			// only one time
+			if !DataTradeRecords::<T>::contains_key(contract_id, &data_owner) {
+				DataTradeRecords::<T>::insert(contract_id, &data_owner, ());
+			}
 		}
-		DataTradeRecords::<T>::insert(contract_id, &data_owner, ());
 
 		let market_config = PlatformConfig::<T>::get();
 		let MarketConfiguration { total_fee_ratio, min_platform_fee_ratio } = market_config;
