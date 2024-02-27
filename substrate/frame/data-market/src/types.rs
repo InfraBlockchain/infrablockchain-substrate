@@ -17,8 +17,7 @@ pub type AssetIdOf<T> = <<T as Config>::Assets as Inspect<<T as SystemConfig>::A
 
 pub type AnyText = BoundedVec<u8, ConstU32<MAX_TEXT_SIZE>>;
 
-pub type ContractSigner<T> =
-	BoundedBTreeMap<<T as SystemConfig>::AccountId, SignStatus, ConstU32<MAX_ENTITIES>>;
+pub type ContractSigner<AccountId> = BoundedBTreeMap<AccountId, SignStatus, ConstU32<MAX_ENTITIES>>;
 
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "std", derive(Hash))]
@@ -72,6 +71,7 @@ pub struct DataDelegateContractDetail<AccountId, BlockNumber> {
 	pub deligated_data: AnyText,
 	pub effective_at: BlockNumber,
 	pub expired_at: BlockNumber,
+	pub signed_status: ContractSigner<AccountId>,
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, TypeInfo)]
@@ -95,6 +95,9 @@ pub struct DataPurchaseContractDetail<AccountId, BlockNumber, Balance> {
 	pub agency: Option<AccountId>,
 	pub price_per_data: Balance,
 	pub deposit: Balance,
+	pub trade_count: Quantity,
+	pub data_trade_record: Vec<AccountId>,
+	pub signed_status: ContractSigner<AccountId>,
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, TypeInfo)]

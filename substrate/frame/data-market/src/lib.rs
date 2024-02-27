@@ -54,18 +54,6 @@ pub mod pallet {
 	#[pallet::getter(fn get_next_contract_id)]
 	pub(super) type NextContractId<T: Config> = StorageValue<_, ContractId, ValueQuery>;
 
-	// The Data Trade Records
-	#[pallet::storage]
-	#[pallet::getter(fn get_data_trade_records)]
-	pub type DataTradeRecords<T: Config> =
-		StorageDoubleMap<_, Twox64Concat, ContractId, Twox64Concat, T::AccountId, ()>;
-
-	// The Trade Count for Contract
-	#[pallet::storage]
-	#[pallet::getter(fn get_trade_count_for_purchase)]
-	pub type TradeCountForContract<T: Config> =
-		StorageMap<_, Twox64Concat, ContractId, Quantity, ValueQuery>;
-
 	// The Data Delegate Contracts
 	#[pallet::storage]
 	#[pallet::getter(fn get_data_delegate_contracts)]
@@ -100,17 +88,10 @@ pub mod pallet {
 	pub(super) type DataPurchaseContractList<T: Config> =
 		StorageMap<_, Twox64Concat, T::AccountId, Vec<ContractId>, ValueQuery>;
 
-	// The Contract Status
-	#[pallet::storage]
-	#[pallet::getter(fn get_contract_status)]
-	pub(super) type ContractStatus<T: Config> =
-		StorageMap<_, Twox64Concat, ContractId, ContractSigner<T>, OptionQuery>;
-
 	// Agency list
 	#[pallet::storage]
 	#[pallet::getter(fn get_agencies)]
-	pub(super) type Agencies<T: Config> =
-		StorageMap<_, Twox64Concat, T::AccountId, AnyText, ValueQuery>;
+	pub(super) type Agencies<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
 
 	// The Config of the platform
 	#[pallet::storage]
@@ -123,7 +104,6 @@ pub mod pallet {
 		// Register Agency
 		RegisterAgency {
 			agency: T::AccountId,
-			agency_info: AnyText,
 		},
 		// Deregister Agency
 		DeregisterAgency {
@@ -379,13 +359,17 @@ pub mod pallet {
 		/// Register an agency
 		///
 		/// The dispatch origin for this call must be _Signed_.
-		///
-		/// - `agency_info`: The information of the agency.
 		#[pallet::call_index(7)]
-		pub fn register_agency(origin: OriginFor<T>, agency_info: AnyText) -> DispatchResult {
+		pub fn register_agency(origin: OriginFor<T>) -> DispatchResult {
 			let agency = ensure_signed(origin)?;
-			Agencies::<T>::insert(agency.clone(), agency_info.clone());
-			Self::deposit_event(Event::<T>::RegisterAgency { agency, agency_info });
+			Agencies::<T>::try_mutate(|list| -> DispatchResult {
+				if list.contains(&agency) {
+					return Err(Error::<T>::InvalidAgency.into());
+				}
+				list.push(agency.clone());
+				Ok(())
+			})?;
+			Self::deposit_event(Event::<T>::RegisterAgency { agency });
 			Ok(())
 		}
 
@@ -395,9 +379,14 @@ pub mod pallet {
 		#[pallet::call_index(8)]
 		pub fn deregister_agency(origin: OriginFor<T>) -> DispatchResult {
 			let agency = ensure_signed(origin)?;
-			if Agencies::<T>::contains_key(&agency) {
-				Agencies::<T>::remove(&agency);
-			}
+			Agencies::<T>::try_mutate(|list| -> DispatchResult {
+				if list.contains(&agency) {
+					list.retain(|x| x != &agency);
+				} else {
+					return Err(Error::<T>::InvalidAgency.into());
+				}
+				Ok(())
+			})?;
 			Self::deposit_event(Event::<T>::DeregisterAgency { agency });
 			Ok(())
 		}
@@ -513,16 +502,20 @@ pub mod pallet {
 		/// The dispatch origin for this call must be _Admin_.
 		///
 		/// - `agency`: The agency of the contract.
-		/// - `agency_info`: The information of the agency.
 		#[pallet::call_index(15)]
 		pub fn register_agency_by_admin(
 			origin: OriginFor<T>,
 			agency: T::AccountId,
-			agency_info: AnyText,
 		) -> DispatchResult {
 			T::AdminOrigin::ensure_origin(origin)?;
-			Agencies::<T>::insert(agency.clone(), agency_info.clone());
-			Self::deposit_event(Event::<T>::RegisterAgency { agency, agency_info });
+			Agencies::<T>::try_mutate(|list| -> DispatchResult {
+				if list.contains(&agency) {
+					return Err(Error::<T>::InvalidAgency.into());
+				}
+				list.push(agency.clone());
+				Ok(())
+			})?;
+			Self::deposit_event(Event::<T>::RegisterAgency { agency });
 			Ok(())
 		}
 
@@ -537,9 +530,14 @@ pub mod pallet {
 			agency: T::AccountId,
 		) -> DispatchResult {
 			T::AdminOrigin::ensure_origin(origin)?;
-			if Agencies::<T>::contains_key(&agency) {
-				Agencies::<T>::remove(&agency);
-			}
+			Agencies::<T>::try_mutate(|list| -> DispatchResult {
+				if list.contains(&agency) {
+					list.retain(|x| x != &agency);
+				} else {
+					return Err(Error::<T>::InvalidAgency.into());
+				}
+				Ok(())
+			})?;
 			Self::deposit_event(Event::<T>::DeregisterAgency { agency });
 			Ok(())
 		}
@@ -610,6 +608,10 @@ where
 	pub fn get_platform_account() -> T::AccountId {
 		const ID: PalletId = PalletId(*b"platform");
 		AccountIdConversion::<T::AccountId>::into_account_truncating(&ID)
+	}
+
+	pub fn check_agency_exist(agency: &T::AccountId) -> bool {
+		Agencies::<T>::get().contains(agency)
 	}
 
 	pub fn do_deposit_balance(
@@ -787,9 +789,16 @@ where
 			duration,
 		} = params;
 
-		ensure!(Agencies::<T>::contains_key(&agency), Error::<T>::InvalidAgency);
+		ensure!(Self::check_agency_exist(&agency), Error::<T>::InvalidAgency);
 
 		let current_block_number = frame_system::Pallet::<T>::block_number();
+
+		let mut signed_status: ContractSigner<T::AccountId> = BoundedBTreeMap::new();
+		signed_status
+			.try_insert(agency.clone(), SignStatus::Signed)
+			.and_then(|_| signed_status.try_insert(data_owner.clone(), SignStatus::Unsigned))
+			.map_err(|_| Error::<T>::ExceedContractSigner)?;
+
 		let detail: DataDelegateContractDetail<T::AccountId, BlockNumberFor<T>> =
 			DataDelegateContractDetail {
 				data_owner: data_owner.clone(),
@@ -798,6 +807,7 @@ where
 				deligated_data,
 				effective_at: current_block_number,
 				expired_at: current_block_number + duration,
+				signed_status,
 			};
 
 		let contract_id =
@@ -818,14 +828,6 @@ where
 			});
 		}
 
-		let mut contract_status: ContractSigner<T> = BoundedBTreeMap::new();
-		contract_status
-			.try_insert(agency.clone(), SignStatus::Signed)
-			.and_then(|_| contract_status.try_insert(data_owner.clone(), SignStatus::Unsigned))
-			.map_err(|_| Error::<T>::ExceedContractSigner)?;
-
-		ContractStatus::<T>::insert(contract_id, contract_status);
-
 		Self::deposit_event(Event::<T>::MakeDataDelegateContract { contract_id, agency });
 
 		Ok(())
@@ -841,9 +843,12 @@ where
 		ensure!(maybe_owner == detail.data_owner, Error::<T>::InvalidOwner);
 
 		let mut is_signed = false;
-		ContractStatus::<T>::try_mutate(contract_id, |status| -> DispatchResult {
-			let status = status.as_mut().ok_or(Error::<T>::ContractStatusNotExist)?;
-			let signed = status.get_mut(&maybe_owner).ok_or(Error::<T>::ContractSignerNotExist)?;
+		DataDelegateContracts::<T>::try_mutate(contract_id, |detail| -> DispatchResult {
+			let detail = detail.as_mut().ok_or(Error::<T>::ContractStatusNotExist)?;
+			let signed = detail
+				.signed_status
+				.get_mut(&maybe_owner)
+				.ok_or(Error::<T>::ContractSignerNotExist)?;
 			*signed = SignStatus::Signed;
 			is_signed = true;
 			Ok(())
@@ -873,6 +878,13 @@ where
 		} = params.clone();
 
 		let current_block_number = frame_system::Pallet::<T>::block_number();
+
+		let contract_id =
+			NextContractId::<T>::try_mutate(|c| -> Result<ContractId, DispatchError> {
+				*c = c.checked_add(1).ok_or(Error::<T>::Overflow)?;
+				Ok(*c - 1)
+			})?;
+
 		let mut detail: DataPurchaseContractDetail<
 			T::AccountId,
 			BlockNumberFor<T>,
@@ -887,20 +899,16 @@ where
 			agency: None,
 			price_per_data,
 			deposit,
+			trade_count: 0,
+			signed_status: BoundedBTreeMap::new(),
+			data_trade_record: vec![], // empty
 		};
 
-		let contract_id =
-			NextContractId::<T>::try_mutate(|c| -> Result<ContractId, DispatchError> {
-				*c = c.checked_add(1).ok_or(Error::<T>::Overflow)?;
-				Ok(*c - 1)
-			})?;
-
+		let mut signed_status: ContractSigner<T::AccountId> = BoundedBTreeMap::new();
+		signed_status
+			.try_insert(data_buyer.clone(), SignStatus::Signed)
+			.map_err(|_| Error::<T>::ExceedContractSigner)?;
 		if is_agency_exist {
-			let mut contract_status: ContractSigner<T> = BoundedBTreeMap::new();
-			contract_status
-				.try_insert(data_buyer.clone(), SignStatus::Signed)
-				.map_err(|_| Error::<T>::ExceedContractSigner)?;
-
 			let agency = agency.ok_or(Error::<T>::InvalidAgency)?;
 			ensure!(data_verifier.is_none(), Error::<T>::InvalidVerifier);
 
@@ -910,16 +918,16 @@ where
 				});
 			}
 
-			contract_status
+			signed_status
 				.try_insert(agency.clone(), SignStatus::Unsigned)
 				.map_err(|_| Error::<T>::ExceedContractSigner)?;
-			ContractStatus::<T>::insert(contract_id, contract_status.clone());
 
 			detail.agency = Some(agency.clone());
 		} else {
 			ensure!(agency.is_none(), Error::<T>::InvalidAgency);
 			ensure!(data_verifier.is_some(), Error::<T>::InvalidVerifier);
 		}
+		detail.signed_status = signed_status;
 
 		DataPurchaseContracts::<T>::insert(contract_id, detail);
 
@@ -952,9 +960,12 @@ where
 
 		if detail.agency.is_some() {
 			let mut is_signed = false;
-			ContractStatus::<T>::try_mutate(contract_id, |status| -> DispatchResult {
-				let status = status.as_mut().ok_or(Error::<T>::ContractStatusNotExist)?;
-				let signed = status.get_mut(&agency).ok_or(Error::<T>::ContractSignerNotExist)?;
+			DataPurchaseContracts::<T>::try_mutate(contract_id, |detail| -> DispatchResult {
+				let detail = detail.as_mut().ok_or(Error::<T>::ContractStatusNotExist)?;
+				let signed = detail
+					.signed_status
+					.get_mut(&agency)
+					.ok_or(Error::<T>::ContractSignerNotExist)?;
 				*signed = SignStatus::Signed;
 				is_signed = true;
 				Ok(())
@@ -978,38 +989,33 @@ where
 		maybe_signer: T::AccountId,
 		contract_id: ContractId,
 	) -> DispatchResult {
-		let detail =
+		let mut detail =
 			DataDelegateContracts::<T>::get(contract_id).ok_or(Error::<T>::ContractNotExist)?;
 
-		let status =
-			ContractStatus::<T>::get(contract_id).ok_or(Error::<T>::ContractStatusNotExist)?;
-
+		let mut signed_status = detail.signed_status;
 		let mut is_signed = false;
-		ContractStatus::<T>::try_mutate(contract_id, |status| -> DispatchResult {
-			let status = status.as_mut().ok_or(Error::<T>::ContractStatusNotExist)?;
-			let signed = status.get_mut(&maybe_signer).ok_or(Error::<T>::ContractSignerNotExist)?;
-			*signed = SignStatus::WantToTerminate;
-			is_signed = true;
-			Ok(())
-		})?;
-
+		signed_status.iter_mut().for_each(|(signer, status)| {
+			if signer == &maybe_signer {
+				*status = SignStatus::WantToTerminate;
+				is_signed = true;
+			}
+		});
 		ensure!(is_signed, Error::<T>::NotSigned);
 
 		let current_block_number = <frame_system::Pallet<T>>::block_number();
 
-		if status.iter().all(|(_, signed)| *signed != SignStatus::Signed) ||
+		if signed_status.iter().all(|(_, signed)| *signed != SignStatus::Signed) ||
 			current_block_number > detail.expired_at
 		{
 			DataDelegateContracts::<T>::remove(contract_id);
-			ContractStatus::<T>::remove(contract_id);
 			Self::deposit_event(Event::<T>::ContractTerminated {
 				contract_type: ContractType::Delegate,
 				contract_id,
 			});
 		} else {
 			// Storage update when pending terminate only
-			ContractStatus::<T>::insert(contract_id, status);
-
+			detail.signed_status = signed_status;
+			DataDelegateContracts::<T>::insert(contract_id, detail);
 			Self::deposit_event(Event::<T>::PendingContractTerminate {
 				contract_type: ContractType::Delegate,
 				contract_id,
@@ -1023,32 +1029,28 @@ where
 		maybe_signer: T::AccountId,
 		contract_id: ContractId,
 	) -> DispatchResult {
-		let detail =
+		let mut detail =
 			DataPurchaseContracts::<T>::get(contract_id).ok_or(Error::<T>::ContractNotExist)?;
-		let status =
-			ContractStatus::<T>::get(contract_id).ok_or(Error::<T>::ContractStatusNotExist)?;
+		let mut signed_status = detail.signed_status;
 
 		if detail.agency.is_some() {
 			let mut is_signed = false;
-			ContractStatus::<T>::try_mutate(contract_id, |status| -> DispatchResult {
-				let status = status.as_mut().ok_or(Error::<T>::ContractStatusNotExist)?;
-				let signed =
-					status.get_mut(&maybe_signer).ok_or(Error::<T>::ContractSignerNotExist)?;
-				*signed = SignStatus::WantToTerminate;
-				is_signed = true;
-				Ok(())
-			})?;
+			signed_status.iter_mut().for_each(|(signer, status)| {
+				if signer == &maybe_signer {
+					*status = SignStatus::WantToTerminate;
+					is_signed = true;
+				}
+			});
 
 			ensure!(is_signed, Error::<T>::NotSigned);
 		}
 
 		let current_block_number = <frame_system::Pallet<T>>::block_number();
 
-		if status.iter().all(|(_, signed)| *signed != SignStatus::Signed) ||
+		if signed_status.iter().all(|(_, signed)| *signed != SignStatus::Signed) ||
 			current_block_number > detail.expired_at
 		{
 			DataPurchaseContracts::<T>::remove(contract_id);
-			ContractStatus::<T>::remove(contract_id);
 
 			if detail.deposit > 0.into() {
 				Self::transfer_escrow(
@@ -1059,16 +1061,14 @@ where
 				)?;
 			}
 
-			TradeCountForContract::<T>::remove(contract_id);
-			let _ = DataTradeRecords::<T>::clear_prefix(contract_id, u32::MAX, None);
-
 			Self::deposit_event(Event::<T>::ContractTerminated {
 				contract_type: ContractType::Purchase,
 				contract_id,
 			});
 		} else {
 			// Storage update when pending terminate only
-			ContractStatus::<T>::insert(contract_id, status);
+			detail.signed_status = signed_status;
+			DataPurchaseContracts::<T>::insert(contract_id, detail);
 
 			Self::deposit_event(Event::<T>::PendingContractTerminate {
 				contract_type: ContractType::Purchase,
@@ -1090,11 +1090,10 @@ where
 		maybe_agency_fee_ratio: Option<u32>,
 		data_verification_proof: VerificationProof<AnyText>,
 	) -> DispatchResult {
-		let detail =
+		let mut detail =
 			DataPurchaseContracts::<T>::get(contract_id).ok_or(Error::<T>::ContractNotExist)?;
 		let price_per_data = detail.price_per_data;
-		let status =
-			ContractStatus::<T>::get(contract_id).ok_or(Error::<T>::ContractStatusNotExist)?;
+		let status = detail.signed_status.clone();
 		let current_block_number = <frame_system::Pallet<T>>::block_number();
 
 		let data_verifier = detail.clone().data_verifier.ok_or(Error::<T>::InvalidVerifier)?;
@@ -1110,24 +1109,26 @@ where
 			ensure!(agency == agency_from_detail, Error::<T>::InvalidAgency);
 		}
 
-		let mut trade_count = TradeCountForContract::<T>::get(contract_id);
-		ensure!(trade_count < T::MaxPurchaseQuantity::get(), Error::<T>::TradeLimitReached);
-		trade_count += 1;
-		TradeCountForContract::<T>::insert(contract_id, trade_count);
+		ensure!(detail.trade_count < T::MaxPurchaseQuantity::get(), Error::<T>::TradeLimitReached);
+		detail.trade_count += 1;
+
+		ensure!(
+			(detail.data_trade_record.len() as u128) < T::MaxPurchaseQuantity::get(),
+			Error::<T>::TradeLimitReached
+		);
 
 		if detail.agency.is_none() {
 			// If Agency doesnt exist, then the data owner only sell data one time
-			ensure!(
-				DataTradeRecords::<T>::contains_key(contract_id, &data_owner),
-				Error::<T>::AlreadyPurchased
-			);
+			ensure!(detail.data_trade_record.contains(&data_owner), Error::<T>::AlreadyPurchased);
 		} else {
 			// If Agency exist, then the data owner can sell data multiple times. but insert storage
 			// only one time
-			if !DataTradeRecords::<T>::contains_key(contract_id, &data_owner) {
-				DataTradeRecords::<T>::insert(contract_id, &data_owner, ());
+			if !detail.data_trade_record.contains(&data_owner) {
+				detail.data_trade_record.push(data_owner.clone());
 			}
 		}
+
+		DataPurchaseContracts::<T>::insert(contract_id, detail.clone());
 
 		let market_config = PlatformConfig::<T>::get();
 		let MarketConfiguration { total_fee_ratio, min_platform_fee_ratio } = market_config;
