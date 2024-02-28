@@ -26,7 +26,6 @@ hex = { version = "0.4.3", default-features = false }
 log = { version = "0.4.17", default-features = false }
 
 # System
-pallet-assets = { path = "../assets", default-features = false }
 frame-benchmarking = { path = "../benchmarking", default-features = false, optional = true }
 frame-support = { path = "../support", default-features = false }
 frame-system = { path = "../system", default-features = false }
@@ -41,13 +40,16 @@ xcm = { package = "staging-xcm", path = "../../../infrablockchain/xcm", default-
 
 [dev-dependencies]
 sp-keyring = { path = "../../primitives/keyring", default-features = false }
+pallet-assets = { path = "../assets", default-features = false }
 pallet-timestamp = { path = "../timestamp", default-features = false }
+pallet-balances = { path = "../balances", default-features = false }
 
 [features]
 default = ["std"]
 runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
 std = [
     "pallet-assets/std",
+    "pallet-balances/std",
     "log/std",
     "codec/std",
     "scale-info/std",
