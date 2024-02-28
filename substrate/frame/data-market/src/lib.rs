@@ -47,6 +47,10 @@ pub mod pallet {
 		// The maximum quantity of data that can be purchased
 		#[pallet::constant]
 		type MaxPurchaseQuantity: Get<Quantity>;
+
+		// The maximum quantity of contracts that can be joined
+		#[pallet::constant]
+		type MaxContracts: Get<u32>;
 	}
 
 	// The Next value of contract id
@@ -76,17 +80,18 @@ pub mod pallet {
 		OptionQuery,
 	>;
 
-	// The Data Delegate Contract List
+	// The Contract List
 	#[pallet::storage]
-	#[pallet::getter(fn get_data_delegate_contract_list)]
-	pub(super) type DataDelegateContractList<T: Config> =
-		StorageMap<_, Twox64Concat, T::AccountId, Vec<ContractId>, ValueQuery>;
-
-	// The Data Purchase Contract List
-	#[pallet::storage]
-	#[pallet::getter(fn get_data_purchase_contract_list)]
-	pub(super) type DataPurchaseContractList<T: Config> =
-		StorageMap<_, Twox64Concat, T::AccountId, Vec<ContractId>, ValueQuery>;
+	#[pallet::getter(fn get_contract_list)]
+	pub(crate) type ContractList<T: Config> = StorageDoubleMap<
+		_,
+		Twox64Concat,
+		T::AccountId,
+		Twox64Concat,
+		ContractType,
+		BoundedVec<ContractId, T::MaxContracts>,
+		ValueQuery,
+	>;
 
 	// Agency list
 	#[pallet::storage]
@@ -199,6 +204,8 @@ pub mod pallet {
 		InvalidConfig,
 		/// The Data Owner has already sold data
 		AlreadyPurchased,
+		/// The Signer has already reached  contract limit
+		MaxContractsReached,
 	}
 
 	#[pallet::genesis_config]
@@ -800,14 +807,14 @@ where
 
 		DataDelegateContracts::<T>::insert(contract_id, detail);
 
-		DataDelegateContractList::<T>::mutate(&data_owner, |list| {
-			list.push(contract_id);
-		});
+		<ContractList<T>>::try_mutate(&data_owner, &ContractType::Delegate, |ref mut list| {
+			list.try_push(contract_id).map_err(|_| Error::<T>::MaxContractsReached)
+		})?;
 
 		if data_owner != agency {
-			DataDelegateContractList::<T>::mutate(&agency, |list| {
-				list.push(contract_id);
-			});
+			<ContractList<T>>::try_mutate(&agency, &ContractType::Delegate, |ref mut list| {
+				list.try_push(contract_id).map_err(|_| Error::<T>::MaxContractsReached)
+			})?;
 		}
 
 		Self::deposit_event(Event::<T>::MakeDataDelegateContract { contract_id, agency });
@@ -819,23 +826,21 @@ where
 		maybe_owner: T::AccountId,
 		contract_id: ContractId,
 	) -> DispatchResult {
-		let detail =
+		let mut detail =
 			DataDelegateContracts::<T>::get(contract_id).ok_or(Error::<T>::ContractNotExist)?;
 
 		ensure!(maybe_owner == detail.data_owner, Error::<T>::InvalidOwner);
 
 		let mut is_signed = false;
-		DataDelegateContracts::<T>::try_mutate(contract_id, |detail| -> DispatchResult {
-			let detail = detail.as_mut().ok_or(Error::<T>::ContractStatusNotExist)?;
-			let signed = detail
-				.signed_status
-				.get_mut(&maybe_owner)
-				.ok_or(Error::<T>::ContractSignerNotExist)?;
-			*signed = SignStatus::Signed;
-			is_signed = true;
-			Ok(())
-		})?;
+		detail.signed_status.iter_mut().for_each(|(signer, status)| {
+			if signer == &maybe_owner {
+				*status = SignStatus::Signed;
+				is_signed = true;
+			}
+		});
 		ensure!(is_signed, Error::<T>::NotSigned);
+
+		DataDelegateContracts::<T>::insert(contract_id, detail);
 
 		Self::deposit_event(Event::<T>::SignDateDelegateContract {
 			contract_id,
@@ -897,9 +902,9 @@ where
 			ensure!(data_verifier.is_none(), Error::<T>::InvalidVerifier);
 
 			if data_buyer != agency {
-				DataPurchaseContractList::<T>::mutate(&agency, |list| {
-					list.push(contract_id);
-				});
+				<ContractList<T>>::try_mutate(&agency, &ContractType::Purchase, |ref mut list| {
+					list.try_push(contract_id).map_err(|_| Error::<T>::MaxContractsReached)
+				})?;
 			}
 
 			signed_status
@@ -915,9 +920,9 @@ where
 
 		DataPurchaseContracts::<T>::insert(contract_id, detail);
 
-		DataPurchaseContractList::<T>::mutate(&data_buyer, |list| {
-			list.push(contract_id);
-		});
+		<ContractList<T>>::try_mutate(&data_buyer, &ContractType::Purchase, |ref mut list| {
+			list.try_push(contract_id).map_err(|_| Error::<T>::MaxContractsReached)
+		})?;
 
 		let escrow_account = Self::get_escrow_account();
 		Self::transfer_escrow(data_buyer.clone(), escrow_account, system_token_id, deposit)?;
@@ -939,16 +944,12 @@ where
 
 		if detail.agency.is_some() {
 			let mut is_signed = false;
-			DataPurchaseContracts::<T>::try_mutate(contract_id, |detail| -> DispatchResult {
-				let detail = detail.as_mut().ok_or(Error::<T>::ContractStatusNotExist)?;
-				let signed = detail
-					.signed_status
-					.get_mut(&agency)
-					.ok_or(Error::<T>::ContractSignerNotExist)?;
-				*signed = SignStatus::Signed;
-				is_signed = true;
-				Ok(())
-			})?;
+			detail.signed_status.iter_mut().for_each(|(signer, status)| {
+				if signer == &maybe_agency {
+					*status = SignStatus::Signed;
+					is_signed = true;
+				}
+			});
 			ensure!(is_signed, Error::<T>::NotSigned);
 
 			detail.data_verifier = Some(data_verifier.clone());
@@ -987,6 +988,19 @@ where
 			current_block_number > detail.expired_at
 		{
 			DataDelegateContracts::<T>::remove(contract_id);
+			// If the contract is terminated, Remove from the contract list
+			<ContractList<T>>::mutate(
+				&detail.data_owner,
+				&ContractType::Delegate,
+				|ref mut list| {
+					list.retain(|x| x != &contract_id);
+				},
+			);
+
+			<ContractList<T>>::mutate(&detail.agency, &ContractType::Delegate, |ref mut list| {
+				list.retain(|x| x != &contract_id);
+			});
+
 			Self::deposit_event(Event::<T>::ContractTerminated {
 				contract_type: ContractType::Delegate,
 				contract_id,
@@ -1010,11 +1024,27 @@ where
 	) -> DispatchResult {
 		let mut detail =
 			DataPurchaseContracts::<T>::get(contract_id).ok_or(Error::<T>::ContractNotExist)?;
-		let mut signed_status = detail.signed_status;
 
-		if detail.agency.is_some() {
+		let DataPurchaseContractDetail {
+			ref data_buyer,
+			data_verifier: _,
+			data_purchase_info: _,
+			system_token_id,
+			agency: ref agency_in_detail,
+			price_per_data: _,
+			deposit,
+			trade_count: _,
+			signed_status,
+			data_trade_record: _,
+			effective_at: _,
+			expired_at,
+		} = detail;
+
+		let mut new_signed_status = signed_status;
+
+		if agency_in_detail.is_some() {
 			let mut is_signed = false;
-			signed_status.iter_mut().for_each(|(signer, status)| {
+			new_signed_status.iter_mut().for_each(|(signer, status)| {
 				if signer == &maybe_signer {
 					*status = SignStatus::WantToTerminate;
 					is_signed = true;
@@ -1026,19 +1056,25 @@ where
 
 		let current_block_number = <frame_system::Pallet<T>>::block_number();
 
-		if signed_status.iter().all(|(_, signed)| *signed != SignStatus::Signed) ||
-			current_block_number > detail.expired_at
+		if new_signed_status.iter().all(|(_, signed)| *signed != SignStatus::Signed) ||
+			current_block_number > expired_at
 		{
 			DataPurchaseContracts::<T>::remove(contract_id);
 
-			if detail.deposit > 0.into() {
+			if deposit > 0.into() {
 				let escrow = Self::get_escrow_account();
-				Self::transfer_escrow(
-					escrow,
-					detail.data_buyer,
-					detail.system_token_id,
-					detail.deposit,
-				)?;
+				Self::transfer_escrow(escrow, data_buyer.clone(), system_token_id, detail.deposit)?;
+			}
+
+			// If the contract is terminated, Remove from the contract list
+			<ContractList<T>>::mutate(data_buyer, &ContractType::Purchase, |ref mut list| {
+				list.retain(|x| x != &contract_id);
+			});
+
+			if let Some(agency) = agency_in_detail {
+				<ContractList<T>>::mutate(agency, &ContractType::Purchase, |ref mut list| {
+					list.retain(|x| x != &contract_id);
+				});
 			}
 
 			Self::deposit_event(Event::<T>::ContractTerminated {
@@ -1047,7 +1083,7 @@ where
 			});
 		} else {
 			// Storage update when pending terminate only
-			detail.signed_status = signed_status;
+			detail.signed_status = new_signed_status;
 			DataPurchaseContracts::<T>::insert(contract_id, detail);
 
 			Self::deposit_event(Event::<T>::PendingContractTerminate {

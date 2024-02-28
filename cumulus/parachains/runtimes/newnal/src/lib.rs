@@ -505,6 +505,7 @@ parameter_types! {
 	pub const MaxRequest: u32 = 100;
 
 	pub const MaxPurchaseQuantity: u32 = 1_000_000_000;
+	pub const MaxContracts: u32 = 100;
 }
 
 impl pallet_urauth::Config for Runtime {
@@ -537,6 +538,7 @@ impl pallet_data_market::Config for Runtime {
 	type Assets = Assets;
 	type AdminOrigin = EnsureSignedBy<AdminController, AccountId>;
 	type MaxPurchaseQuantity = MaxPurchaseQuantity;
+	type MaxContracts = MaxContracts;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
