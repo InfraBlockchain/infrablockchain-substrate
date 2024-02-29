@@ -23,7 +23,7 @@ use parachain_primitives::primitives::HeadData;
 use scale_info::TypeInfo;
 use sp_runtime::{
 	types::{
-		Fiat, InfraSystemConfig, PotVotesResult, RemoteAssetMetadata, SystemTokenAssetId,
+		Fiat, InfraSystemConfig, SystemTokenAssetId,
 		SystemTokenWeight,
 	},
 	RuntimeDebug,
@@ -33,7 +33,7 @@ use sp_std::prelude::*;
 pub use infrablockchain_core_primitives::InboundDownwardMessage;
 pub use parachain_primitives::primitives::{
 	DmpMessageHandler, Id as ParaId, IsSystem, UpwardMessage, ValidationParams, XcmpMessageFormat,
-	XcmpMessageHandler,
+	XcmpMessageHandler, PotVotesResult
 };
 pub use primitives::{AbridgedHostConfiguration, AbridgedHrmpChannel, PersistedValidationData};
 
@@ -317,7 +317,7 @@ pub struct CollationInfoV1 {
 	/// The vote result sent by the parachain.
 	pub vote_result: Option<PotVotesResult>,
 	/// Requested assets sent by the parachain.
-	pub requested_asset: Option<RemoteAssetMetadata>,
+	pub requested_asset: Option<relay_chain::OpaqueRemoteAssetMetadata>,
 }
 
 impl CollationInfoV1 {
@@ -353,9 +353,9 @@ pub struct CollationInfo {
 	/// The head data, aka encoded header, of the block that corresponds to the collation.
 	pub head_data: HeadData,
 	/// The vote result sent by the parachain.
-	pub vote_result: Option<PotVotesResult>,
+	pub vote_result: Option<relay_chain::PotVotesResult>,
 	/// Requested assets sent by the parachain.
-	pub requested_asset: Option<RemoteAssetMetadata>,
+	pub requested_asset: Option<relay_chain::OpaqueRemoteAssetMetadata>,
 }
 
 sp_api::decl_runtime_apis! {

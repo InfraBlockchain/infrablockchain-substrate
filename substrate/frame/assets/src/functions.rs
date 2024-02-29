@@ -18,7 +18,7 @@
 //! Functions for the Assets pallet.
 
 use super::*;
-use frame_support::{defensive, traits::Get};
+use frame_support::{defensive, traits::{nonfungible::InspectEnumerable, Get}};
 
 #[must_use]
 pub(super) enum DeadConsequence {
@@ -965,9 +965,9 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		symbol: Vec<u8>,
 		decimals: u8,
 	) -> DispatchResult {
-		let bounded_name: BoundedSystemTokenName =
+		let bounded_name: BoundedVec<u8, T::StringLimit>  =
 			name.clone().try_into().map_err(|_| Error::<T, I>::BadMetadata)?;
-		let bounded_symbol: BoundedSystemTokenSymbol =
+		let bounded_symbol: BoundedVec<u8, T::StringLimit> =
 			symbol.clone().try_into().map_err(|_| Error::<T, I>::BadMetadata)?;
 
 		let d = Asset::<T, I>::get(&id).ok_or(Error::<T, I>::Unknown)?;
@@ -1032,6 +1032,20 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		asset_id: &T::AssetId,
 	) -> Option<AssetDetails<T::Balance, T::AccountId, DepositBalanceOf<T, I>>> {
 		Asset::<T, I>::get(asset_id)
+	}
+
+	pub fn most_system_token_balance(who: &T::AccountId) -> T::Balance {
+		let mut most: T::Balance = Zero::zero();
+		// TODO: Adjust based on system token weight
+		<Self as fungibles::EnumerateSystemToken<T::AccountId>>::system_token_ids()
+			.into_iter()
+			.for_each(|id| {
+				let balance = Self::balance(id, who);
+				if balance > most {
+					most = balance;
+				}
+			});
+		most
 	}
 
 	/// Try promote local `asset` to System Token

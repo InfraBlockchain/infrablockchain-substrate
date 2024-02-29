@@ -31,10 +31,7 @@ use application_crypto::KeyTypeId;
 use inherents::InherentIdentifier;
 use primitives::RuntimeDebug;
 use runtime_primitives::traits::{AppVerify, Header as HeaderT};
-pub use runtime_primitives::types::{
-	token::{InfraSystemConfig, RemoteAssetMetadata},
-	vote::PotVotesResult,
-};
+pub use runtime_primitives::types::InfraSystemConfig;
 use sp_arithmetic::traits::{BaseArithmetic, Saturating};
 
 pub use runtime_primitives::traits::{BlakeTwo256, Hash as HashT};
@@ -43,13 +40,13 @@ pub use runtime_primitives::traits::{BlakeTwo256, Hash as HashT};
 pub use infrablockchain_core_primitives::v2::{
 	AccountId, AccountIndex, AccountPublic, Balance, Block, BlockId, BlockNumber, CandidateHash,
 	ChainId, DownwardMessage, Hash, Header, InboundDownwardMessage, InboundHrmpMessage, Moment,
-	Nonce, OutboundHrmpMessage, Remark, Signature, UncheckedExtrinsic,
+	Nonce, OutboundHrmpMessage, Remark, Signature, UncheckedExtrinsic, OpaqueRemoteAssetMetadata
 };
 
 // Export some polkadot-parachain primitives
 pub use parachain_primitives::primitives::{
 	HeadData, HorizontalMessages, HrmpChannelId, Id, UpwardMessage, UpwardMessages, ValidationCode,
-	ValidationCodeHash, LOWEST_PUBLIC_ID,
+	ValidationCodeHash, LOWEST_PUBLIC_ID, PotVotesResult
 };
 
 use serde::{Deserialize, Serialize};
@@ -709,7 +706,7 @@ pub struct CandidateCommitments<N = BlockNumber> {
 	/// Result of pot votes sent by the parachain
 	pub vote_result: Option<PotVotesResult>,
 	/// Requested assets for System Token,
-	pub requested_asset: Option<RemoteAssetMetadata>,
+	pub requested_asset: Option<OpaqueRemoteAssetMetadata>,
 }
 
 impl CandidateCommitments {

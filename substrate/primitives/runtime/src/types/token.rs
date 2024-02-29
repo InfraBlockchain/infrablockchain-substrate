@@ -34,9 +34,9 @@ pub type SystemTokenBalance = u128;
 /// General decimal type for System Token
 pub type SystemTokenDecimal = u8;
 /// Bounded name for System Token
-pub type BoundedSystemTokenName = BoundedVec<u8, ConstU32<20>>;
-/// Bounded symbol for System Token
-pub type BoundedSystemTokenSymbol = BoundedVec<u8, ConstU32<5>>;
+pub type BoundedStringMetadata = BoundedVec<u8, ConstU32<20>>;
+
+
 
 /// System configuration for InfraBlockchain
 #[derive(
@@ -173,39 +173,25 @@ impl SystemTokenId {
 
 pub const MAX_REQUESTED_ASSETS: u32 = 1;
 /// Upper limit of number of assets to be requested
-pub type BoundedRequestedAssets = BoundedVec<RemoteAssetMetadata, ConstU32<MAX_REQUESTED_ASSETS>>;
+pub type BoundedRequestedAssets<AssetId, Balance> = BoundedVec<RemoteAssetMetadata<AssetId, Balance>, ConstU32<MAX_REQUESTED_ASSETS>>;
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Default, Hash))]
-pub struct RemoteAssetMetadata {
-	/// General Assets pallet index on Runtime
-	pub pallet_id: SystemTokenPalletId,
+pub struct RemoteAssetMetadata<AssetId, Balance> {
 	/// General asset id on Runtime
 	#[codec(compact)]
-	pub asset_id: SystemTokenAssetId,
+	pub asset_id: AssetId,
 	/// Human readable name of System Token, which should be bounded
-	pub name: BoundedSystemTokenName,
+	pub name: Vec<u8>,
 	/// Human readable symbol of System Token, which should be bounded
-	pub symbol: BoundedSystemTokenSymbol,
+	pub symbol: Vec<u8>,
 	/// Currency type of base system token
 	pub currency_type: Fiat,
 	/// Decimal of base system token
 	pub decimals: u8,
 	/// Minimum balance of system token
 	#[codec(compact)]
-	pub min_balance: SystemTokenBalance,
-}
-
-impl MaxEncodedLen for RemoteAssetMetadata {
-	fn max_encoded_len() -> usize {
-		SystemTokenPalletId::max_encoded_len() +
-			SystemTokenAssetId::max_encoded_len() +
-			BoundedSystemTokenSymbol::max_encoded_len() +
-			BoundedSystemTokenName::max_encoded_len() +
-			Fiat::max_encoded_len() +
-			u8::max_encoded_len() +
-			SystemTokenBalance::max_encoded_len()
-	}
+	pub min_balance: Balance,
 }
 
 /// API for interacting with local assets on Runtime
@@ -219,61 +205,12 @@ pub trait LocalAssetProvider<Asset, Account> {
 	) -> Asset;
 }
 
-/// API to handle local assets which refers to System Token
-// TODO: Generic
-pub trait LocalAssetManager {
-	type AccountId: MaxEncodedLen;
-	type Error;
-
-	/// Create local asset with metadata which refers to `wrapped` System Token
-	fn create_wrapped_local(
-		asset_id: SystemTokenAssetId,
-		currency_type: Fiat,
-		min_balance: SystemTokenBalance,
-		name: Vec<u8>,
-		symbol: Vec<u8>,
-		decimals: u8,
-		system_token_weight: SystemTokenWeight,
-	) -> Result<(), Self::Error>;
-	/// Promote local asset to System Token when registered(e.g `is_sufficient` to `true`)
-	fn promote(
-		asset_id: SystemTokenAssetId,
-		system_token_weight: SystemTokenWeight,
-	) -> Result<(), Self::Error>;
-	/// Demote System Token to local asset(e.g `is_sufficient` to `false`)
-	fn demote(asset_id: SystemTokenAssetId) -> Result<(), Self::Error>;
-	/// Update weight of System Token(e.g Exhange rate has been changed)
-	fn update_system_token_weight(
-		asset_id: SystemTokenAssetId,
-		system_token_weight: SystemTokenWeight,
-	) -> Result<(), Self::Error>;
-	/// Request register System Token
-	fn request_register(asset_id: SystemTokenAssetId) -> Result<(), Self::Error>;
-	/// Get a list of System Token's local asset id
-	fn system_token_list() -> Vec<SystemTokenAssetId> {
-		Vec::new()
-	}
-	/// Return system token asset balances of `who``
-	fn account_system_token_balances(
-		who: Self::AccountId,
-	) -> Vec<(SystemTokenAssetId, SystemTokenBalance)>;
-	/// Return most system token balance of given 'asset_id' and 'account'
-	fn get_most_system_token_balance_of(
-		asset_ids: impl IntoIterator<Item = SystemTokenAssetId>,
-		account: Self::AccountId,
-	) -> SystemTokenAssetId;
-
-	/// Retrieve metadata of given `asset_id` and return `RemoteAssetMetadata`, which is for
-	/// Relay-chain
-	fn get_metadata(asset_id: SystemTokenAssetId) -> Result<RemoteAssetMetadata, Self::Error>;
-}
-
-pub trait AssetMetadataProvider {
-	fn requested(asset: RemoteAssetMetadata);
+pub trait AssetMetadataProvider<AssetId, Balance> {
+	fn requested(asset: RemoteAssetMetadata<AssetId, Balance>);
 }
 
 /// API for interacting with registered System Token
-pub trait SystemTokenInterface {
+pub trait SystemTokenInterface<AssetId, Balance> {
 	/// Check the system token is registered.
 	fn is_system_token(system_token: &SystemTokenId) -> bool;
 	/// Convert para system token to original system token.
@@ -283,11 +220,11 @@ pub trait SystemTokenInterface {
 	/// Update the metadata for requested asset received from enshirned chain
 	fn requested_asset_metadata(
 		para_id: SystemTokenParaId,
-		maybe_requested_asset: Option<RemoteAssetMetadata>,
+		maybe_requested_asset: Option<RemoteAssetMetadata<AssetId, Balance>>,
 	);
 }
 
-impl SystemTokenInterface for () {
+impl<AssetId, Balance> SystemTokenInterface<AssetId, Balance> for () {
 	fn is_system_token(_system_token: &SystemTokenId) -> bool {
 		false
 	}
@@ -299,7 +236,7 @@ impl SystemTokenInterface for () {
 	}
 	fn requested_asset_metadata(
 		_para_id: SystemTokenParaId,
-		_maybe_requested_asset: Option<RemoteAssetMetadata>,
+		_maybe_requested_asset: Option<RemoteAssetMetadata<AssetId, Balance>>,
 	) {
 	}
 }

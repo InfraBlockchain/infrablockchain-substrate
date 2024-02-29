@@ -211,7 +211,7 @@ pub struct AssetAccount<Balance, DepositBalance, Extra, AccountId> {
 }
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Default, RuntimeDebug, MaxEncodedLen, TypeInfo)]
-pub struct AssetMetadata<DepositBalance> {
+pub struct AssetMetadata<DepositBalance, BoundedString> {
 	/// Optional fiat currency type of this asset.
 	///
 	/// It it is set, then the asset becomes potential System Token.
@@ -221,9 +221,9 @@ pub struct AssetMetadata<DepositBalance> {
 	/// This pays for the data stored in this struct.
 	pub(super) deposit: DepositBalance,
 	/// The user friendly name of this asset. Limited in length by `StringLimit`.
-	pub(super) name: BoundedSystemTokenName,
+	pub(super) name: BoundedString,
 	/// The ticker symbol for this asset. Limited in length by `StringLimit`.
-	pub(super) symbol: BoundedSystemTokenSymbol,
+	pub(super) symbol: BoundedString,
 	/// The number of decimals this asset uses to represent one unit.
 	pub(super) decimals: u8,
 	/// Whether the asset metadata may be changed by a non Force origin.

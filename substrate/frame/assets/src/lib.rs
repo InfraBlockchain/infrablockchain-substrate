@@ -154,8 +154,8 @@ pub use extra_mutator::*;
 mod functions;
 
 mod impl_fungibles;
-mod impl_infra_related;
 mod impl_stored_map;
+mod impl_system_token;
 
 pub mod types;
 pub use types::*;
@@ -322,6 +322,9 @@ pub mod pallet {
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
 
+		#[pallet::constant]
+		type StringLimit: Get<u32>;
+
 		/// Helper trait for benchmarks.
 		#[cfg(feature = "runtime-benchmarks")]
 		type BenchmarkHelper: BenchmarkHelper<Self::AssetIdParameter>;
@@ -367,7 +370,7 @@ pub mod pallet {
 		_,
 		Blake2_128Concat,
 		T::AssetId,
-		AssetMetadata<DepositBalanceOf<T, I>>,
+		AssetMetadata<DepositBalanceOf<T, I>, BoundedVec<u8, T::StringLimit>>,
 		OptionQuery,
 	>;
 
@@ -411,9 +414,9 @@ pub mod pallet {
 			for (id, name, symbol, decimals) in &self.metadata {
 				assert!(Asset::<T, I>::contains_key(id), "Asset does not exist");
 
-				let bounded_name: BoundedSystemTokenName =
+				let bounded_name: BoundedVec<u8, T::StringLimit> =
 					name.clone().try_into().expect("asset name is too long");
-				let bounded_symbol: BoundedSystemTokenSymbol =
+				let bounded_symbol: BoundedVec<u8, T::StringLimit> =
 					symbol.clone().try_into().expect("asset symbol is too long");
 
 				let metadata = AssetMetadata {
@@ -1235,10 +1238,10 @@ pub mod pallet {
 			T::ForceOrigin::ensure_origin(origin)?;
 			let id: T::AssetId = id.into();
 
-			let bounded_name: BoundedSystemTokenName =
+			let bounded_name: BoundedVec<u8, T::StringLimit> =
 				name.clone().try_into().map_err(|_| Error::<T, I>::BadMetadata)?;
 
-			let bounded_symbol: BoundedSystemTokenSymbol =
+			let bounded_symbol: BoundedVec<u8, T::StringLimit> =
 				symbol.clone().try_into().map_err(|_| Error::<T, I>::BadMetadata)?;
 
 			ensure!(Asset::<T, I>::contains_key(&id), Error::<T, I>::Unknown);

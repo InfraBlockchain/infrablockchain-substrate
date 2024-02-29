@@ -49,7 +49,7 @@ pub use v6::{
 	InvalidDisputeStatementKind, Moment, MultiDisputeStatementSet, Nonce, OccupiedCore,
 	OccupiedCoreAssumption, OutboundHrmpMessage, ParathreadClaim, ParathreadEntry,
 	PersistedValidationData, PvfCheckStatement, PvfExecTimeoutKind, PvfPrepTimeoutKind,
-	RemoteAssetMetadata, RuntimeMetricLabel, RuntimeMetricLabelValue, RuntimeMetricLabelValues,
+	PotVotesResult, OpaqueRemoteAssetMetadata, RuntimeMetricLabel, RuntimeMetricLabelValue, RuntimeMetricLabelValues,
 	RuntimeMetricLabels, RuntimeMetricOp, RuntimeMetricUpdate, ScheduledCore, ScrapedOnChainVotes,
 	SessionIndex, SessionInfo, Signature, Signed, SignedAvailabilityBitfield,
 	SignedAvailabilityBitfields, SignedStatement, SigningContext, Slot, UncheckedSigned,

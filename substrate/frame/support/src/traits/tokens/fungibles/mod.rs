@@ -26,6 +26,7 @@ mod lifetime;
 pub mod metadata;
 mod regular;
 pub mod roles;
+pub mod system_token;
 
 pub use enumerable::Inspect as InspectEnumerable;
 pub use freeze::{Inspect as InspectFreeze, Mutate as MutateFreeze};
@@ -37,4 +38,8 @@ pub use imbalance::{split_no_refund, Credit, Debt, HandleImbalanceDrop, Imbalanc
 pub use lifetime::{Create, Destroy};
 pub use regular::{
 	Balanced, DecreaseIssuance, Dust, IncreaseIssuance, Inspect, Mutate, Unbalanced,
+};
+pub use system_token::{
+	Inspect as InspectSystemToken, Manage as ManageSystemToken, 
+	Enumerate as EnumerateSystemToken, Metadata as InspectSystemTokenMetadata,
 };
