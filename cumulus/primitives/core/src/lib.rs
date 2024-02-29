@@ -23,7 +23,7 @@ use parachain_primitives::primitives::HeadData;
 use scale_info::TypeInfo;
 use sp_runtime::{
 	types::{
-		Fiat, InfraSystemConfig, PotVotesResult, RemoteAssetMetadata, SystemTokenAssetId,
+		InfraSystemConfig, PotVotesResult, RemoteAssetMetadata, SystemTokenAssetId,
 		SystemTokenWeight,
 	},
 	RuntimeDebug,

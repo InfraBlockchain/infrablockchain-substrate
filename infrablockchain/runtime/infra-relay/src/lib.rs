@@ -82,7 +82,7 @@ use sp_runtime::{
 		Verify,
 	},
 	transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
-	types::{token::*, vote::*},
+	types::vote::*,
 	ApplyExtrinsicResult, FixedU128, KeyTypeId, Perbill, Percent, Permill,
 };
 

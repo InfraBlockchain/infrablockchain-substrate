@@ -263,7 +263,10 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 				pallet_assets::Call::set_metadata { .. } |
 				pallet_assets::Call::mint { .. },
 			) |
-			RuntimeCall::InfraXcm(pallet_xcm::Call::limited_teleport_assets { .. }) => true,
+			RuntimeCall::InfraXcm(pallet_xcm::Call::limited_teleport_assets { .. }) |
+			RuntimeCall::InfraParaCore(
+				cumulus_pallet_infra_parachain_core::Call::request_register_system_token { .. },
+			) => true,
 			_ => false,
 		}
 	}
@@ -686,6 +689,12 @@ where
 	type OverarchingCall = RuntimeCall;
 }
 
+impl pallet_sudo::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
+	type WeightInfo = ();
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime {
@@ -737,6 +746,8 @@ construct_runtime!(
 		OffchainSignatures: offchain_signatures::{Pallet, Call, Storage, Event} = 67,
 		StatusListCredential: status_list_credential::{Pallet, Call, Storage, Event} = 68,
 		TrustedEntity: trusted_entity::{Pallet, Call, Storage, Event} = 69,
+
+		Sudo: pallet_sudo::{Pallet, Call, Storage, Config<T>, Event<T>} = 99,
 	}
 );
 

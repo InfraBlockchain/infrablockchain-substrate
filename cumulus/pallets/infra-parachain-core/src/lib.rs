@@ -2,7 +2,7 @@
 
 use cumulus_pallet_xcm::{ensure_relay, Origin};
 use cumulus_primitives_core::UpdateRCConfig;
-use frame_support::{pallet_prelude::*, traits::fungibles::Inspect};
+use frame_support::pallet_prelude::*;
 use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
 use sp_runtime::{
@@ -321,7 +321,7 @@ pub mod pallet {
 
 impl<T: Config> Pallet<T> {
 	fn do_request(
-		id: SystemTokenAssetId,
+		_id: SystemTokenAssetId,
 		asset_metadata: RemoteAssetMetadata,
 	) -> Result<BlockNumberFor<T>, DispatchError> {
 		let current = <frame_system::Pallet<T>>::block_number();
