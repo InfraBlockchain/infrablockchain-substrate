@@ -25,6 +25,7 @@ target
 !target/release/infra-relaychain-execute-worker
 !target/release/infra-relaychain-prepare-worker
 !target/release/infra-assethub-parachain
+!target/release/infra-parachain
 **/wip/*.stderr
 /.cargo/config
 /.envrc
