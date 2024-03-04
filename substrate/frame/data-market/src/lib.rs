@@ -1151,6 +1151,7 @@ where
 		if agency_in_detail.is_none() {
 			// If Agency doesnt exist, then the data owner only sell data one time
 			ensure!(!data_trade_record.contains(&data_owner), Error::<T>::AlreadyPurchased);
+			data_trade_record.push(data_owner.clone());
 		} else {
 			// If Agency exist, then the data owner can sell data multiple times. but insert storage
 			// only one time

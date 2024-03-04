@@ -557,7 +557,7 @@ construct_runtime!(
 
 		// The main stage
 		URAuth: pallet_urauth::{Pallet, Call, Storage, Config<T>, Event<T>} = 5,
-		DataMarket: pallet_data_market::{Pallet, Call, Storage, Event<T>} = 6,
+		DataMarket: pallet_data_market::{Pallet, Call, Storage, Event<T>, Config<T>} = 6,
 
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
