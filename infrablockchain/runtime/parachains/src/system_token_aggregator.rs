@@ -16,7 +16,7 @@
 // limitations under the License.
 
 pub use crate::system_token_helper;
-use frame_support::{pallet_prelude::*, traits::fungibles::roles::Inspect};
+use frame_support::{pallet_prelude::*, traits::fungibles::{roles::Inspect, EnumerateSystemToken      }};
 use frame_system::pallet_prelude::BlockNumberFor;
 pub use pallet::*;
 use sp_runtime::{self, traits::Zero, types::token::*};
@@ -25,7 +25,6 @@ use xcm::{latest::prelude::*, opaque::lts::MultiLocation};
 use xcm_primitives::AssetMultiLocationGetter;
 
 type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
-type FungibleAccountIdOf<T> = <<T as Config>::LocalAssetManager as LocalAssetManager>::AccountId;
 
 #[frame_support::pallet(dev_mode)]
 pub mod pallet {
@@ -38,7 +37,7 @@ pub mod pallet {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		#[pallet::constant]
 		type Period: Get<BlockNumberFor<Self>>;
-		type LocalAssetManager: LocalAssetManager + Inspect<Self::AccountId>;
+		type Fungibles: Inspect<Self::AccountId> + EnumerateSystemToken<Self::AccountId>;
 		type AssetMultiLocationGetter: AssetMultiLocationGetter<SystemTokenAssetId>;
 		type SendXcm: SendXcm;
 		type IsRelay: Get<bool>;
@@ -58,10 +57,7 @@ pub mod pallet {
 	pub struct Pallet<T>(_);
 
 	#[pallet::hooks]
-	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T>
-	where
-		FungibleAccountIdOf<T>: IsType<AccountIdOf<T>>,
-	{
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_initialize(n: BlockNumberFor<T>) -> Weight {
 			if n % T::Period::get() == Zero::zero() {
 				let is_relay = T::IsRelay::get();
@@ -80,29 +76,20 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
-	pub(crate) fn do_aggregate_system_token(is_relay: bool) -> Result<(), DispatchError>
-	where
-		FungibleAccountIdOf<T>: IsType<AccountIdOf<T>>,
-	{
+	pub(crate) fn do_aggregate_system_token(is_relay: bool) -> Result<(), DispatchError> {
 		let fee_account = system_token_helper::sovereign_account::<T>();
-		let system_token_asset_list = T::LocalAssetManager::system_token_list();
-		let balances =
-			T::LocalAssetManager::account_system_token_balances(fee_account.clone().into());
-		for (asset_id, amount) in balances.into_iter() {
-			if !system_token_asset_list.contains(&asset_id) {
-				continue
-			}
+		for (asset, balance) in T::Fungibles::system_token_account_balances(fee_account.clone().into()).into_iter() {
 			if let Some(asset_multi_loc) =
-				T::AssetMultiLocationGetter::get_asset_multi_location(asset_id)
+				T::AssetMultiLocationGetter::get_asset_multi_location(asset) // TODO: Remove
 			{
 				system_token_helper::do_teleport_asset::<T::AccountId, T::SendXcm>(
 					&fee_account,
-					&amount,
+					&balance,
 					&asset_multi_loc,
 					is_relay,
 				)?;
 
-				Self::deposit_event(Event::<T>::SystemTokenAggregated { asset_multi_loc, amount });
+				Self::deposit_event(Event::<T>::SystemTokenAggregated { asset_multi_loc, amount: balance });
 			}
 		}
 		Ok(())

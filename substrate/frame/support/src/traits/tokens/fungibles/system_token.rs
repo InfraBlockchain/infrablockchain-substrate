@@ -10,9 +10,9 @@ pub trait Inspect<AccountId>: super::Inspect<AccountId> {
     type Fiat;
 
     /// Returns true if the asset is a system token which refers to `is_sufficient = true`
-    fn is_system_token(asset: Self::AssetId) -> bool;
+    fn is_system_token(asset: &Self::AssetId) -> bool;
     /// Return System Token balance of `who`. If asset is `None`, most balance of `who` will be returned
-    fn balance(who: AccountId, maybe_asset: Option<Self::AssetId>) -> Self::Balance;
+    fn balance(who: &AccountId, maybe_asset: Option<Self::AssetId>) -> Option<(Self::AssetId, Self::Balance)>;
     /// Return `Self::SystemTokenWeight` of System Token
     fn system_token_weight(asset: Self::AssetId) -> Result<Self::SystemTokenWeight, sp_runtime::DispatchError>;
     /// Return `Self::Fiat` of System Token
@@ -43,8 +43,10 @@ pub trait Manage<AccountId, Metadata>: super::InspectSystemToken<AccountId> {
 
 /// Interface for enumerating System Token
 pub trait Enumerate<AccountId>: super::InspectEnumerable<AccountId> {
-    /// Returns all system tokens
+    /// Returns all registered system tokens
     fn system_token_ids() -> impl IntoIterator<Item = Self::AssetId>;
+    /// Returns all System Tokens of 'who'
+    fn system_token_account_balances(who: &AccountId) -> impl IntoIterator<Item = (Self::AssetId, Self::Balance)>;
 }
 
 /// Interface for inspecting System Token Metadata

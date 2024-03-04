@@ -32,7 +32,7 @@ use frame_support::{
 	pallet_prelude::*,
 	traits::{
 		tokens::{
-			fungibles::{Balanced, Credit, Inspect},
+			fungibles::{Balanced, Credit, Inspect, InspectSystemToken},
 			WithdrawConsequence,
 		},
 		CallMetadata, Contains, GetCallMetadata, IsType,
@@ -69,7 +69,7 @@ pub mod pallet {
 		/// Interface that is related to transaction for Infrablockchain Runtime
 		type InfraTxInterface: RuntimeConfigProvider + VotingHandler;
 		/// The fungibles instance used to pay for transactions in assets.
-		type Assets: Balanced<Self::AccountId> + LocalAssetManager<AccountId = Self::AccountId>;
+		type Fungibles: Balanced<Self::AccountId> + InspectSystemToken<Self::AccountId>;
 		/// The actual transaction charging logic that charges the fees.
 		type OnChargeSystemToken: OnChargeSystemToken<Self>;
 		/// Filters for bootstrappring runtime.
@@ -143,7 +143,7 @@ where
 	AssetBalanceOf<T>: Send + Sync + FixedPointOperand,
 	BalanceOf<T>: Send + Sync + FixedPointOperand + IsType<ChargeAssetBalanceOf<T>>,
 	ChargeSystemTokenAssetIdOf<T>: Send + Sync,
-	Credit<T::AccountId, T::Assets>: IsType<ChargeAssetLiquidityOf<T>>,
+	Credit<T::AccountId, T::Fungibles>: IsType<ChargeAssetLiquidityOf<T>>,
 {
 	// For benchmarking only
 	pub fn new() -> Self {
@@ -227,7 +227,7 @@ where
 		+ IsType<ChargeAssetBalanceOf<T>>
 		+ From<AssetBalanceOf<T>>,
 	ChargeSystemTokenAssetIdOf<T>: Send + Sync,
-	Credit<T::AccountId, T::Assets>: IsType<ChargeAssetLiquidityOf<T>>,
+	Credit<T::AccountId, T::Fungibles>: IsType<ChargeAssetLiquidityOf<T>>,
 {
 	const IDENTIFIER: &'static str = "ChargeSystemToken";
 	type AccountId = T::AccountId;
@@ -397,9 +397,9 @@ where
 }
 
 pub struct CreditToBucket<T>(PhantomData<T>);
-impl<T: Config> HandleCredit<T::AccountId, T::Assets> for CreditToBucket<T> {
-	fn handle_credit(credit: Credit<T::AccountId, T::Assets>) {
+impl<T: Config> HandleCredit<T::AccountId, T::Fungibles> for CreditToBucket<T> {
+	fn handle_credit(credit: Credit<T::AccountId, T::Fungibles>) {
 		let dest = T::PalletId::get().into_account_truncating();
-		let _ = <T::Assets as Balanced<T::AccountId>>::resolve(&dest, credit);
+		let _ = <T::Fungibles as Balanced<T::AccountId>>::resolve(&dest, credit);
 	}
 }

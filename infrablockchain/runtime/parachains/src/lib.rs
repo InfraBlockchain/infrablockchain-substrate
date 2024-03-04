@@ -105,3 +105,23 @@ pub fn schedule_code_upgrade<T: paras::Config>(
 pub fn set_current_head<T: paras::Config>(id: ParaId, new_head: HeadData) {
 	paras::Pallet::<T>::set_current_head(id, new_head)
 }
+
+/// API for interacting with registered System Token
+// TODO: Fully-generic
+pub trait SystemTokenInterface<VoteWeight = F64> {
+
+	type AssetId;
+	type Balance;
+
+	/// Check the system token is registered.
+	fn is_system_token(system_token: &Self::AssetId) -> bool;
+	/// Convert para system token to original system token.
+	fn convert_to_original_system_token(wrapped_token: &Self::AssetId) -> Option<AssetId>;
+	/// Adjust the vote weight calculating exchange rate.
+	fn adjusted_weight(system_token: &Self::AssetId, vote_weight: VoteWeight) -> VoteWeight;
+	/// Update the metadata for requested asset received from enshirned chain
+	fn requested_asset_metadata(
+		para_id: ParaId,
+		maybe_requested_asset: Option<RemoteAssetMetadata<Self::AssetId, Self::Balance>>,
+	);
+}

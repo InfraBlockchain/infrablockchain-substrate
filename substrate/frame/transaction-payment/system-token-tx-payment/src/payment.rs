@@ -50,7 +50,7 @@ pub trait OnChargeSystemToken<T: Config> {
 		who: &T::AccountId,
 		call: &T::RuntimeCall,
 		dispatch_info: &DispatchInfoOf<T::RuntimeCall>,
-		system_token_asset_id: Option<Self::SystemTokenAssetId>,
+		asset_id: Option<Self::SystemTokenAssetId>,
 		fee: Self::Balance,
 		tip: Self::Balance,
 	) -> Result<Self::LiquidityInfo, TransactionValidityError>;
@@ -124,14 +124,14 @@ impl<T, CON, HC, ConvertBalance> OnChargeSystemToken<T>
 where
 	T: Config,
 	CON: ConversionToAssetBalance<BalanceOf<T>, AssetIdOf<T>, AssetBalanceOf<T>>,
-	HC: HandleCredit<T::AccountId, T::Assets>,
+	HC: HandleCredit<T::AccountId, T::Fungibles>,
 	AssetIdOf<T>: AssetId + From<SystemTokenAssetId>,
 	AssetBalanceOf<T>: From<BalanceOf<T>>,
 	ConvertBalance: MaybeEquivalence<u128, AssetBalanceOf<T>>,
 {
 	type Balance = BalanceOf<T>;
 	type SystemTokenAssetId = AssetIdOf<T>;
-	type LiquidityInfo = Credit<T::AccountId, T::Assets>;
+	type LiquidityInfo = Credit<T::AccountId, T::Fungibles>;
 
 	/// Withdraw the predicted fee from the transaction origin.
 	///
@@ -141,7 +141,7 @@ where
 		_call: &T::RuntimeCall,
 		_info: &DispatchInfoOf<T::RuntimeCall>,
 		// which asset to pay
-		system_token_asset_id: Option<Self::SystemTokenAssetId>,
+		asset_id: Option<Self::SystemTokenAssetId>,
 		// actual fee
 		fee: Self::Balance,
 		_tip: Self::Balance,
@@ -159,33 +159,26 @@ where
 		// Error
 		// 1. If there is no system token on Runtime
 
-		let system_token_asset_id = if let Some(asset_id) = system_token_asset_id {
-			asset_id
-		} else {
-			let l = T::Assets::system_token_list();
-			ensure!(
-				!l.is_empty(),
-				TransactionValidityError::from(InvalidTransaction::SystemTokenMissing)
-			);
-			T::Assets::get_most_system_token_balance_of(l, who.clone()).into()
-		};
+		let (asset_id, _) = <T::Fungibles as InspectSystemToken<T::AccountId>>::balance(who, asset_id)
+			.take()
+			.ok_or(TransactionValidityError::from(InvalidTransaction::Payment))?;	
 		let min_converted_fee = if fee.is_zero() { Zero::zero() } else { One::one() };
 		// CON::to_asset_balance => fee / system_token_weight
-		let mut converted_fee = CON::to_asset_balance(fee, system_token_asset_id.clone())
+		let mut converted_fee = CON::to_asset_balance(fee, asset_id.clone())
 			.map_err(|_| TransactionValidityError::from(InvalidTransaction::Payment))?
 			.max(min_converted_fee);
 		let tx_rational = Self::tx_fee_rational()?;
 		converted_fee = converted_fee * tx_rational;
-		let can_withdraw = <T::Assets as Inspect<T::AccountId>>::can_withdraw(
-			system_token_asset_id.clone(),
+		let can_withdraw = <T::Fungibles as Inspect<T::AccountId>>::can_withdraw(
+			asset_id.clone(),
 			who,
 			converted_fee,
 		);
 		if !matches!(can_withdraw, WithdrawConsequence::Success) {
 			return Err(InvalidTransaction::Payment.into())
 		}
-		<T::Assets as Balanced<T::AccountId>>::withdraw(
-			system_token_asset_id,
+		<T::Fungibles as Balanced<T::AccountId>>::withdraw(
+			asset_id,
 			who,
 			converted_fee,
 			Exact,
@@ -230,7 +223,7 @@ where
 		// Refund to the account that paid the fees. If this fails, the account might have dropped
 		// below the existential balance. In that case we don't refund anything.
 		let final_fee_amount = final_fee.peek();
-		let _ = <T::Assets as Balanced<T::AccountId>>::resolve(who, refund);
+		let _ = <T::Fungibles as Balanced<T::AccountId>>::resolve(who, refund);
 		// Handle the final fee, e.g. by transferring to the block author or burning.
 		HC::handle_credit(final_fee);
 		Ok((final_fee_amount, converted_tip))

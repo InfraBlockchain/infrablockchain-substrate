@@ -12,10 +12,10 @@ pub(crate) type LiquidityInfoOf<T> =
 // Type alias used for interaction with fungibles (assets).
 // Balance type alias.
 pub(crate) type AssetBalanceOf<T> =
-	<<T as Config>::Assets as Inspect<<T as frame_system::Config>::AccountId>>::Balance;
+	<<T as Config>::Fungibles as Inspect<<T as frame_system::Config>::AccountId>>::Balance;
 /// Asset id type alias.
 pub(crate) type AssetIdOf<T> =
-	<<T as Config>::Assets as Inspect<<T as frame_system::Config>::AccountId>>::AssetId;
+	<<T as Config>::Fungibles as Inspect<<T as frame_system::Config>::AccountId>>::AssetId;
 
 // Type aliases used for interaction with `OnChargeAssetTransaction`.
 // Balance type alias.
@@ -40,7 +40,7 @@ pub enum InitialPayment<T: Config> {
 	/// The initial fee was payed in the native currency.
 	Native(LiquidityInfoOf<T>),
 	/// The initial fee was payed in an asset.
-	Asset(Credit<T::AccountId, T::Assets>),
+	Asset(Credit<T::AccountId, T::Fungibles>),
 }
 
 #[derive(Encode, Decode, Clone, TypeInfo, PartialEq, RuntimeDebugNoBound)]

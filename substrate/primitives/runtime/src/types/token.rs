@@ -132,44 +132,44 @@ impl Default for BaseSystemTokenDetail {
 }
 
 /// Data structure for Original system tokens
-#[derive(
-	Clone,
-	Encode,
-	Decode,
-	Copy,
-	Eq,
-	PartialEq,
-	PartialOrd,
-	Ord,
-	RuntimeDebug,
-	Default,
-	TypeInfo,
-	MaxEncodedLen,
-)]
-#[cfg_attr(feature = "std", derive(Hash, Serialize, Deserialize))]
-pub struct SystemTokenId {
-	/// ParaId where to use the system token. Especially, we assigned the relaychain as ParaID = 0
-	#[codec(compact)]
-	pub para_id: SystemTokenParaId,
-	/// PalletId on the parachain where to use the system token
-	#[codec(compact)]
-	pub pallet_id: SystemTokenPalletId,
-	/// AssetId on the parachain where to use the system token
-	#[codec(compact)]
-	pub asset_id: SystemTokenAssetId,
-}
+// #[derive(
+// 	Clone,
+// 	Encode,
+// 	Decode,
+// 	Copy,
+// 	Eq,
+// 	PartialEq,
+// 	PartialOrd,
+// 	Ord,
+// 	RuntimeDebug,
+// 	Default,
+// 	TypeInfo,
+// 	MaxEncodedLen,
+// )]
+// #[cfg_attr(feature = "std", derive(Hash, Serialize, Deserialize))]
+// pub struct SystemTokenId {
+// 	/// ParaId where to use the system token. Especially, we assigned the relaychain as ParaID = 0
+// 	#[codec(compact)]
+// 	pub para_id: SystemTokenParaId,
+// 	/// PalletId on the parachain where to use the system token
+// 	#[codec(compact)]
+// 	pub pallet_id: SystemTokenPalletId,
+// 	/// AssetId on the parachain where to use the system token
+// 	#[codec(compact)]
+// 	pub asset_id: SystemTokenAssetId,
+// }
 
-impl SystemTokenId {
-	/// Create new instance of `SystemTokenId`
-	pub fn new(para_id: u32, pallet_id: u8, asset_id: SystemTokenAssetId) -> Self {
-		Self { para_id, pallet_id, asset_id }
-	}
+// impl SystemTokenId {
+// 	/// Create new instance of `SystemTokenId`
+// 	pub fn new(para_id: u32, pallet_id: u8, asset_id: SystemTokenAssetId) -> Self {
+// 		Self { para_id, pallet_id, asset_id }
+// 	}
 
-	/// Clone `self` and return new instance of `SystemTokenId`
-	pub fn asset_id(&self) -> SystemTokenAssetId {
-		self.clone().asset_id
-	}
-}
+// 	/// Clone `self` and return new instance of `SystemTokenId`
+// 	pub fn asset_id(&self) -> SystemTokenAssetId {
+// 		self.clone().asset_id
+// 	}
+// }
 
 pub const MAX_REQUESTED_ASSETS: u32 = 1;
 /// Upper limit of number of assets to be requested
@@ -178,12 +178,12 @@ pub type BoundedRequestedAssets<AssetId, Balance> = BoundedVec<RemoteAssetMetada
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Default, Hash))]
 pub struct RemoteAssetMetadata<AssetId, Balance> {
-	/// General asset id on Runtime
+	/// General asset id on Runtime(e.g `MultiLocation`)
 	#[codec(compact)]
 	pub asset_id: AssetId,
-	/// Human readable name of System Token, which should be bounded
+	/// Human readable name of System Token. Accept unbounded 'Vec<u8>' because it would be checked `bounded` when initiated
 	pub name: Vec<u8>,
-	/// Human readable symbol of System Token, which should be bounded
+	/// Human readable symbol of System Token. Accept unbounded 'Vec<u8>' because it would be checked `bounded` when initiated
 	pub symbol: Vec<u8>,
 	/// Currency type of base system token
 	pub currency_type: Fiat,
@@ -209,42 +209,10 @@ pub trait AssetMetadataProvider {
 	fn requested(byte: Vec<u8>);
 }
 
-/// API for interacting with registered System Token
-pub trait SystemTokenInterface<AssetId, Balance> {
-	/// Check the system token is registered.
-	fn is_system_token(system_token: &SystemTokenId) -> bool;
-	/// Convert para system token to original system token.
-	fn convert_to_original_system_token(wrapped_token: &SystemTokenId) -> Option<SystemTokenId>;
-	/// Adjust the vote weight calculating exchange rate.
-	fn adjusted_weight(system_token: &SystemTokenId, vote_weight: VoteWeight) -> VoteWeight;
-	/// Update the metadata for requested asset received from enshirned chain
-	fn requested_asset_metadata(
-		para_id: SystemTokenParaId,
-		maybe_requested_asset: Option<RemoteAssetMetadata<AssetId, Balance>>,
-	);
-}
-
-impl<AssetId, Balance> SystemTokenInterface<AssetId, Balance> for () {
-	fn is_system_token(_system_token: &SystemTokenId) -> bool {
-		false
-	}
-	fn convert_to_original_system_token(_wrapped_token: &SystemTokenId) -> Option<SystemTokenId> {
-		None
-	}
-	fn adjusted_weight(_system_token: &SystemTokenId, _vote_weight: VoteWeight) -> VoteWeight {
-		Default::default()
-	}
-	fn requested_asset_metadata(
-		_para_id: SystemTokenParaId,
-		_maybe_requested_asset: Option<RemoteAssetMetadata<AssetId, Balance>>,
-	) {
-	}
-}
-
 pub trait AssetLinkInterface<AssetId> {
 	type Error;
 
-	fn link(asset_id: &AssetId, parents: u8, original: SystemTokenId) -> Result<(), Self::Error>;
+	fn link(asset_id: &AssetId, parents: u8, original: AssetId) -> Result<(), Self::Error>;
 	fn unlink(asset_id: &AssetId) -> Result<(), Self::Error>;
 }
 
@@ -254,7 +222,7 @@ impl<AssetId> AssetLinkInterface<AssetId> for () {
 	fn link(
 		_asset_id: &AssetId,
 		_parents: u8,
-		_original: SystemTokenId,
+		_original: AssetId,
 	) -> Result<(), Self::Error> {
 		Ok(())
 	}

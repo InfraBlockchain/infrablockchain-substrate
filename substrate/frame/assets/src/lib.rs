@@ -631,8 +631,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			id: T::AssetIdParameter,
 			admin: AccountIdLookupOf<T>,
-			min_balance: T::Balance,
-			fiat: Option<Fiat>
+			min_balance: T::Balance
 		) -> DispatchResult {
 			let id: T::AssetId = id.into();
 			let owner = T::CreateOrigin::ensure_origin(origin, &id)?;
@@ -659,7 +658,7 @@ pub mod pallet {
 					sufficients: 0,
 					approvals: 0,
 					status: AssetStatus::InActive,
-					currency_type: fiat, 
+					currency_type: None, 
 					system_token_weight: None,
 				},
 			);

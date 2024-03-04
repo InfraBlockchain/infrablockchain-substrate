@@ -1018,10 +1018,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	}
 
 	/// Returns all the non-zero balances for all assets of the given `account`.
-	pub fn account_balances(account: T::AccountId) -> Vec<(T::AssetId, T::Balance)> {
+	pub fn account_balances(account: &T::AccountId) -> Vec<(T::AssetId, T::Balance)> {
 		Asset::<T, I>::iter_keys()
 			.filter_map(|id| {
-				Self::maybe_balance(id.clone(), account.clone()).map(|balance| (id, balance))
+				Self::maybe_balance(id.clone(), account).map(|balance| (id, balance))
 			})
 			.collect::<Vec<_>>()
 	}
@@ -1035,18 +1035,22 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		Asset::<T, I>::get(asset_id)
 	}
 
-	pub fn most_system_token_balance(who: &T::AccountId) -> T::Balance {
-		let mut most: T::Balance = Zero::zero();
-		// TODO: Adjust based on system token weight
-		<Self as fungibles::EnumerateSystemToken<T::AccountId>>::system_token_ids()
-			.into_iter()
-			.for_each(|id| {
-				let balance = Self::balance(id, who);
-				if balance > most {
-					most = balance;
-				}
-			});
-		most
+	/// Return most of the system token balance of 'asset' and 'who'. If asset is 'Some(_), it will return balance of that asset.
+	/// If it is None, it will return most of the balance of 'who' 
+	pub fn system_token_balance(who: &T::AccountId, maybe_asset: Option<T::AssetId>) -> Option<(T::AssetId, T::Balance)> {
+		maybe_asset.map_or_else(
+			|| {
+				<Self as fungibles::EnumerateSystemToken<T::AccountId>>::system_token_ids()
+					.into_iter()
+					.filter_map(|id| {
+						let balance = Self::balance(id.clone(), who);
+						// TODO: Adjust value based on system token weight
+						Some((id, balance))
+					})
+					.max_by_key(|&(_, balance)| balance)
+			},
+			|id| Some((id.clone(), Self::balance(id, who)))
+		)
 	}
 
 	// pub fn try_promote(
