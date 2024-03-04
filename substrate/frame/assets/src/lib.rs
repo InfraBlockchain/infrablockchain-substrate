@@ -245,6 +245,16 @@ pub mod pallet {
 			+ TypeInfo
 			+ IsType<SystemTokenBalance>;
 
+		/// The units in which we record weight of System Token
+		type SystemTokenWeight: Member
+			+ Parameter
+			+ AtLeast32BitUnsigned
+			+ Default
+			+ Copy
+			+ MaybeSerializeDeserialize
+			+ MaxEncodedLen
+			+ TypeInfo;
+
 		/// Max number of items to destroy per `destroy_accounts` and `destroy_approvals` call.
 		///
 		/// Must be configured to result in a weight that makes each call fit in a block.
@@ -336,7 +346,7 @@ pub mod pallet {
 		_,
 		Blake2_128Concat,
 		T::AssetId,
-		AssetDetails<T::Balance, T::AccountId, DepositBalanceOf<T, I>>,
+		AssetDetails<T::Balance, T::AccountId, DepositBalanceOf<T, I>, T::SystemTokenWeight>,
 	>;
 
 	#[pallet::storage]
@@ -406,6 +416,7 @@ pub mod pallet {
 						sufficients: 0,
 						approvals: 0,
 						status: AssetStatus::Live,
+						currency_type: None,
 						system_token_weight: None,
 					},
 				);
@@ -420,7 +431,6 @@ pub mod pallet {
 					symbol.clone().try_into().expect("asset symbol is too long");
 
 				let metadata = AssetMetadata {
-					currency_type: None,
 					deposit: Zero::zero(),
 					name: bounded_name,
 					symbol: bounded_symbol,
@@ -622,6 +632,7 @@ pub mod pallet {
 			id: T::AssetIdParameter,
 			admin: AccountIdLookupOf<T>,
 			min_balance: T::Balance,
+			fiat: Option<Fiat>
 		) -> DispatchResult {
 			let id: T::AssetId = id.into();
 			let owner = T::CreateOrigin::ensure_origin(origin, &id)?;
@@ -648,6 +659,7 @@ pub mod pallet {
 					sufficients: 0,
 					approvals: 0,
 					status: AssetStatus::InActive,
+					currency_type: fiat, 
 					system_token_weight: None,
 				},
 			);
@@ -687,11 +699,12 @@ pub mod pallet {
 			owner: AccountIdLookupOf<T>,
 			is_sufficient: bool,
 			#[pallet::compact] min_balance: T::Balance,
+			fiat: Option<Fiat>,
 		) -> DispatchResult {
 			T::ForceOrigin::ensure_origin(origin)?;
 			let owner = T::Lookup::lookup(owner)?;
 			let id: T::AssetId = id.into();
-			Self::do_force_create(id, &owner, is_sufficient, min_balance, None, None)
+			Self::do_force_create(id, &owner, is_sufficient, min_balance, None, fiat, None)
 		}
 
 		/// Start the process of destroying a fungible asset class.
@@ -1229,7 +1242,6 @@ pub mod pallet {
 		pub fn force_set_metadata(
 			origin: OriginFor<T>,
 			id: T::AssetIdParameter,
-			currency_type: Fiat,
 			name: Vec<u8>,
 			symbol: Vec<u8>,
 			decimals: u8,
@@ -1248,7 +1260,6 @@ pub mod pallet {
 			Metadata::<T, I>::try_mutate_exists(id.clone(), |metadata| {
 				let deposit = metadata.take().map_or(Zero::zero(), |m| m.deposit);
 				*metadata = Some(AssetMetadata {
-					currency_type: Some(currency_type),
 					deposit,
 					name: bounded_name,
 					symbol: bounded_symbol,

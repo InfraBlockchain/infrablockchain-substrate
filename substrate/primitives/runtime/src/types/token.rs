@@ -205,8 +205,8 @@ pub trait LocalAssetProvider<Asset, Account> {
 	) -> Asset;
 }
 
-pub trait AssetMetadataProvider<AssetId, Balance> {
-	fn requested(asset: RemoteAssetMetadata<AssetId, Balance>);
+pub trait AssetMetadataProvider {
+	fn requested(byte: Vec<u8>);
 }
 
 /// API for interacting with registered System Token

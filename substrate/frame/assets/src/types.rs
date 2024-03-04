@@ -61,7 +61,7 @@ impl AssetStatus {
 }
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
-pub struct AssetDetails<Balance, AccountId, DepositBalance> {
+pub struct AssetDetails<Balance, AccountId, DepositBalance, Weight> {
 	/// Can change `owner`, `issuer`, `freezer` and `admin` accounts.
 	pub(super) owner: AccountId,
 	/// Can mint tokens.
@@ -87,13 +87,17 @@ pub struct AssetDetails<Balance, AccountId, DepositBalance> {
 	pub(super) approvals: u32,
 	/// The status of the asset
 	pub(super) status: AssetStatus,
+	/// Optional fiat currency type of this asset.
+	///
+	/// It it is set, then the asset becomes potential System Token.
+	pub(super) currency_type: Option<Fiat>,
 	/// The system token weight compared with base system token. 'None' if it is not a system
 	/// token.
-	pub(super) system_token_weight: Option<SystemTokenWeight>,
+	pub(super) system_token_weight: Option<Weight>,
 }
 
-impl<Balance, AccountId, DepositBalance> AssetDetails<Balance, AccountId, DepositBalance> {
-	pub fn set_system_token_weight(&mut self, weight: SystemTokenWeight) {
+impl<Balance, AccountId, DepositBalance, Weight> AssetDetails<Balance, AccountId, DepositBalance, Weight> {
+	pub fn set_system_token_weight(&mut self, weight: Weight) {
 		self.system_token_weight = Some(weight);
 	}
 
@@ -212,10 +216,6 @@ pub struct AssetAccount<Balance, DepositBalance, Extra, AccountId> {
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Default, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 pub struct AssetMetadata<DepositBalance, BoundedString> {
-	/// Optional fiat currency type of this asset.
-	///
-	/// It it is set, then the asset becomes potential System Token.
-	pub(super) currency_type: Option<Fiat>,
 	/// The balance deposited for this metadata.
 	///
 	/// This pays for the data stored in this struct.

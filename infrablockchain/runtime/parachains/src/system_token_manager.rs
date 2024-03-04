@@ -1177,7 +1177,6 @@ impl<T: Config> SystemTokenInterface for Pallet<T> {
 	) {
 		if let Some(request_asset_metadata) = maybe_requested_asset {
 			let RemoteAssetMetadata {
-				pallet_id,
 				asset_id,
 				name,
 				symbol,
@@ -1185,7 +1184,7 @@ impl<T: Config> SystemTokenInterface for Pallet<T> {
 				decimals,
 				min_balance,
 			} = request_asset_metadata;
-			let system_token_id = SystemTokenId::new(para_id, pallet_id, asset_id);
+			let system_token_id = SystemTokenId::new(para_id, 0, asset_id); // TODO: Remove `pallet_id`
 			OriginalSystemTokenMetadata::<T>::insert(
 				system_token_id,
 				SystemTokenMetadata::new(

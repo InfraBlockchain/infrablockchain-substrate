@@ -705,8 +705,6 @@ pub mod pallet {
 		DownwardMessagesProcessed { weight_used: Weight, dmq_head: relay_chain::Hash },
 		/// An upward message was sent to the relay chain.
 		UpwardMessageSent { message_hash: Option<XcmHash> },
-		/// Requested assets' metadata
-		AssetForSystemTokenRequestsed { requested_asset: RemoteAssetMetadata },
 	}
 
 	#[pallet::error]
@@ -914,7 +912,7 @@ pub mod pallet {
 	pub(super) type CollectedPotVotes<T: Config> = StorageValue<_, PotVotes, OptionQuery>;
 
 	#[pallet::storage]
-	pub(super) type RequestedAsset<T: Config> = StorageValue<_, RemoteAssetMetadata>;
+	pub(super) type RequestedAsset<T: Config> = StorageValue<_, relay_chain::OpaqueRemoteAssetMetadata>;
 
 	#[pallet::inherent]
 	impl<T: Config> ProvideInherent for Pallet<T> {
@@ -991,9 +989,8 @@ impl<T: Config> CollectVote for Pallet<T> {
 }
 
 impl<T: Config> AssetMetadataProvider for Pallet<T> {
-	fn requested(asset: RemoteAssetMetadata) {
+	fn requested(bytes: Vec<u8>) {
 		RequestedAsset::<T>::put(&asset);
-		Self::deposit_event(Event::AssetForSystemTokenRequestsed { requested_asset: asset });
 	}
 }
 
