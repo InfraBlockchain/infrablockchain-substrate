@@ -1,4 +1,4 @@
-name: Docker build (relay)
+name: Docker build
 
 # Controls when the action will run.
 on:
@@ -68,16 +68,16 @@ jobs:
             - name: Build, tag, and push image to Amazon ECR (relay)
               id: build-image-relay
               env:
-                  ECR_REGISTRY: public.ecr.aws/v8x3j0k5/infrablockspace
+                  ECR_REGISTRY: public.ecr.aws/v8x3j0k5/infra-relaychain
                   IMAGE_TAG: master
               run: |
                   # Build a docker container and
                   # push it to ECR so that it can
                   # be deployed to ECS.
                   docker system prune -a -f
-                  docker build -f docker/dockerfiles/infrablockspace/injected_infrablockspace_builder.Dockerfile -t public.ecr.aws/v8x3j0k5/infrablockspace:$IMAGE_TAG .
-                  docker push public.ecr.aws/v8x3j0k5/infrablockspace:$IMAGE_TAG
-                  echo "::set-output name=image::public.ecr.aws/v8x3j0k5/infrablockspace:$IMAGE_TAG"
+                  docker build -f docker/dockerfiles/infrablockspace/injected_infrablockspace_builder.Dockerfile -t public.ecr.aws/v8x3j0k5/infra-relaychain:$IMAGE_TAG .
+                  docker push public.ecr.aws/v8x3j0k5/infra-relaychain:$IMAGE_TAG
+                  echo "::set-output name=image::public.ecr.aws/v8x3j0k5/infra-relaychain:$IMAGE_TAG"
 
             - name: Build, tag, and push image to Amazon ECR (para)
               id: build-image-para
@@ -88,6 +88,6 @@ jobs:
                   # Build a docker container and
                   # push it to ECR so that it can
                   # be deployed to ECS.
-                  docker build -f docker/dockerfiles/infra-parachain/injected_infra-parachain.Dockerfile -t public.ecr.aws/v8x3j0k5/infra-para:$IMAGE_TAG .
+                  docker build -f docker/dockerfiles/infra-parachain/injected_infra-parachain.Dockerfile -t public.ecr.aws/v8x3j0k5/infra-para:$IMAGE_TAG --progress=plain . 
                   docker push public.ecr.aws/v8x3j0k5/infra-para:$IMAGE_TAG
                   echo "::set-output name=image::public.ecr.aws/v8x3j0k5/infra-para:$IMAGE_TAG"
