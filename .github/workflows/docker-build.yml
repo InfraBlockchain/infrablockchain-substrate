@@ -4,7 +4,7 @@ name: Docker build
 on:
     # Triggers the workflow on push or pull request events but only for the master branch
     push:
-        branches: [master]
+        branches: [master, docker-build]
 
     # Allows you to run this workflow manually from the Actions tab
     workflow_dispatch:
@@ -75,7 +75,7 @@ jobs:
                   # push it to ECR so that it can
                   # be deployed to ECS.
                   docker system prune -a -f
-                  docker build -f docker/dockerfiles/infrablockspace/injected_infrablockspace_builder.Dockerfile -t public.ecr.aws/v8x3j0k5/infra-relaychain:$IMAGE_TAG .
+                  docker build -f docker/dockerfiles/infra-relaychain/injected_infra-relaychain_builder.Dockerfile -t public.ecr.aws/v8x3j0k5/infra-relaychain:$IMAGE_TAG .
                   docker push public.ecr.aws/v8x3j0k5/infra-relaychain:$IMAGE_TAG
                   echo "::set-output name=image::public.ecr.aws/v8x3j0k5/infra-relaychain:$IMAGE_TAG"
 

@@ -8,7 +8,7 @@ COPY . /cumulus
 RUN cargo build --release --locked -p infra-parachain-bin
 
 # This is the 2nd stage: a very small image where we copy the infrablockchain binary."
-FROM docker.io/library/ubuntu:20.04
+FROM docker.io/library/ubuntu:22.04
 
 COPY --from=builder /cumulus/target/release/infra-parachain /usr/local/bin
 
