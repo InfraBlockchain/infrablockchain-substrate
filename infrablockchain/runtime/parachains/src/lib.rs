@@ -108,20 +108,20 @@ pub fn set_current_head<T: paras::Config>(id: ParaId, new_head: HeadData) {
 
 /// API for interacting with registered System Token
 // TODO: Fully-generic
-pub trait SystemTokenInterface<VoteWeight = F64> {
+pub trait SystemTokenInterface<VoteWeight = F64, Metadata> {
 
-	type AssetId;
+	type Id;
 	type Balance;
 
 	/// Check the system token is registered.
-	fn is_system_token(system_token: &Self::AssetId) -> bool;
+	fn is_system_token(system_token: &Self::Id) -> bool;
 	/// Convert para system token to original system token.
-	fn convert_to_original_system_token(wrapped_token: &Self::AssetId) -> Option<AssetId>;
+	fn convert_to_original_system_token(wrapped_token: &Self::Id) -> Option<Id>;
 	/// Adjust the vote weight calculating exchange rate.
-	fn adjusted_weight(system_token: &Self::AssetId, vote_weight: VoteWeight) -> VoteWeight;
+	fn adjusted_weight(system_token: &Self::Id, vote_weight: VoteWeight) -> VoteWeight;
 	/// Update the metadata for requested asset received from enshirned chain
 	fn requested_asset_metadata(
 		para_id: ParaId,
-		maybe_requested_asset: Option<RemoteAssetMetadata<Self::AssetId, Self::Balance>>,
+		maybe_requested_asset: Option<Metadata>,
 	);
 }

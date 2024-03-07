@@ -1,26 +1,27 @@
 use super::{
 	fee::{ExtrinsicMetadata, Mode},
-	token::*,
+	token::{Fiat, SystemTokenConfig},
 };
 
+use codec::Encode;
 use sp_std::vec::Vec;
 
 /// API that updates Infra-* Runtime configuration
 // TODO: Remove 'ParaId', 'SystemTokenId'
-pub trait UpdateInfraConfig {
+pub trait UpdateInfraConfig<Location> {
 
 	/// `AssetId` for InfraBlockchain(e.g MultiLocation) 
-	type AssetId;
+	type AssetId: Encode + Into<Location>;
 	/// 'ParaId' for XCM destination
-	type ParaId;
+	type ParaId: Encode;
 	/// Associated `Weight` type for InfraBlockchain
-	type SystemTokenWeight;
+	type SystemTokenWeight: Encode;
 	/// Associated `Balance` type for InfraBlockchain
-	type Balance;
+	type Balance: Encode;
 
 	/// Update fee table for `dest_id` Runtime
 	fn update_fee_table(
-		dest_id: Self::ParaId,
+		asset_id: Self::AssetId,
 		pallet_name: Vec<u8>,
 		call_name: Vec<u8>,
 		fee: Self::Balance,
@@ -32,7 +33,7 @@ pub trait UpdateInfraConfig {
 	/// Update `SystemTokenWeight` for `dest_id` Runtime
 	fn update_system_token_weight(
 		asset_id: Self::AssetId,
-		system_token_weight: SystemTokenWeight,
+		system_token_weight: Self::SystemTokenWeight,
 	);
 	/// Register `Original` System Token for `dest_id` Runtime(e.g `set_sufficient=true`)
 	fn register_system_token(
@@ -43,7 +44,7 @@ pub trait UpdateInfraConfig {
 	/// Create local asset of `Wrapped` System Token for `dest_id` Runtime
 	fn create_wrapped_local(
 		dest_id: Self::ParaId,
-		original: Self::AssetId,
+		original: Location,
 		currency_type: Fiat,
 		min_balance: Self::Balance,
 		name: Vec<u8>,
@@ -55,18 +56,18 @@ pub trait UpdateInfraConfig {
 	/// Deregister `Original/Wrapped` System Token for `dest_id` Runtime
 	fn deregister_system_token(
 		dest_id: Self::ParaId,
-		asset_id: Self::AssetId,
+		asset_id: Location,
 		is_unlink: bool,
 	);
 }
 
 /// API for providing Infra-* Runtime configuration
-pub trait RuntimeConfigProvider {
+pub trait RuntimeConfigProvider<SystemTokenBalance, SystemTokenWeight> {
 	/// General error type
 	type Error;
 
-	/// System configuration Infra-* Runtime
-	fn infra_system_config() -> Result<InfraSystemConfig, Self::Error>;
+	/// System Token configuration
+	fn system_token_config() -> Result<SystemTokenConfig<SystemTokenWeight>, Self::Error>;
 	/// Para fee rate of Infra-* Runtime
 	fn para_fee_rate() -> Result<SystemTokenWeight, Self::Error>;
 	/// Query for tx fee of `ext` extrinsic

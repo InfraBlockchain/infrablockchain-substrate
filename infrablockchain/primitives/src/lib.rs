@@ -45,7 +45,7 @@ pub use v6::{
 	CoreState, DisputeState, DisputeStatement, DisputeStatementSet, DownwardMessage, EncodeAs,
 	ExecutorParam, ExecutorParams, ExecutorParamsHash, ExplicitDisputeStatement, GroupIndex,
 	GroupRotationInfo, Hash, HashT, HeadData, Header, HorizontalMessages, HrmpChannelId, Id,
-	InboundDownwardMessage, InboundHrmpMessage, IndexedVec, InfraSystemConfig, InherentData,
+	InboundDownwardMessage, InboundHrmpMessage, IndexedVec, SystemTokenConfig, InherentData,
 	InvalidDisputeStatementKind, Moment, MultiDisputeStatementSet, Nonce, OccupiedCore,
 	OccupiedCoreAssumption, OutboundHrmpMessage, ParathreadClaim, ParathreadEntry,
 	PersistedValidationData, PvfCheckStatement, PvfExecTimeoutKind, PvfPrepTimeoutKind,

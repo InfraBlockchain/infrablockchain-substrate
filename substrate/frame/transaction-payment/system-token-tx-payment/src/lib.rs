@@ -67,7 +67,7 @@ pub mod pallet {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Interface that is related to transaction for Infrablockchain Runtime
-		type InfraTxInterface: RuntimeConfigProvider + VotingHandler;
+		type InfraTxInterface: RuntimeConfigProvider<AssetBalanceOf<Self>, AssetWeightOf<Self>> + VotingHandler;
 		/// The fungibles instance used to pay for transactions in assets.
 		type Fungibles: Balanced<Self::AccountId> + InspectSystemToken<Self::AccountId>;
 		/// The actual transaction charging logic that charges the fees.
@@ -89,8 +89,8 @@ pub mod pallet {
 		/// has been paid by `who` in an asset `asset_id`.
 		SystemTokenTxFeePaid {
 			fee_payer: T::AccountId,
-			detail: Detail<T>,
-			vote_candidate: Option<VoteAccountId>,
+			detail: Detail<ChargeAssetBalanceOf<T>, BalanceOf<T>, AssetBalanceOf<T>>,
+			vote_candidate: Option<T::AccountId>,
 		},
 		/// Currently, Runtime is in bootstrap mode.
 		OnBootstrapping,
@@ -131,9 +131,9 @@ pub struct ChargeSystemToken<T: Config> {
 	#[codec(compact)]
 	tip: BalanceOf<T>,
 	// Asset to pay the fee with
-	system_token_id: Option<SystemTokenId>,
+	asset_id: Option<ChargeSystemTokenAssetIdOf<T>>,
 	// whom to vote for
-	vote_candidate: Option<VoteAccountId>,
+	vote_candidate: Option<T::AccountId>,
 }
 
 impl<T: Config> ChargeSystemToken<T>
@@ -147,16 +147,16 @@ where
 {
 	// For benchmarking only
 	pub fn new() -> Self {
-		Self { tip: Default::default(), system_token_id: None, vote_candidate: None }
+		Self { tip: Default::default(), asset_id: None, vote_candidate: None }
 	}
 
 	/// Utility constructor. Used only in client/factory code.
 	pub fn from(
 		tip: BalanceOf<T>,
-		system_token_id: Option<SystemTokenId>,
-		vote_candidate: Option<VoteAccountId>,
+		asset_id: Option<ChargeSystemTokenAssetIdOf<T>>,
+		vote_candidate: Option<T::AccountId>,
 	) -> Self {
-		Self { tip, system_token_id, vote_candidate }
+		Self { tip, asset_id, vote_candidate }
 	}
 
 	/// Taking fee **before dispatching transactions.**
@@ -243,9 +243,9 @@ where
 		// imbalance resulting from withdrawing the fee
 		InitialPayment<T>,
 		// asset_id for the transaction payment
-		Option<SystemTokenId>,
+		Option<ChargeSystemTokenAssetIdOf<T>>,
 		// vote info included in the transaction. Should be same as Relay Chain's AccountId type
-		Option<VoteAccountId>,
+		Option<T::AccountId>,
 	);
 
 	fn additional_signed(&self) -> sp_std::result::Result<(), TransactionValidityError> {

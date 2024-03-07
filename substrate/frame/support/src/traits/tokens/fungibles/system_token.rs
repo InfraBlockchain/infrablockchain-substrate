@@ -1,11 +1,13 @@
 
 use sp_std::vec::Vec;
 
+use crate::traits::tokens::Balance;
+
 /// Interface for inspecting System Token 
 pub trait Inspect<AccountId>: super::Inspect<AccountId> {
 
     /// Associate type of weight for System Token
-    type SystemTokenWeight;
+    type SystemTokenWeight: Balance;
     /// Associate type of fiat for System Token
     type Fiat;
 

@@ -17181,6 +17181,7 @@ dependencies = [
  "scale-info",
  "serde",
  "sp-io",
+ "sp-runtime",
  "sp-weights",
  "xcm-procedural",
 ]

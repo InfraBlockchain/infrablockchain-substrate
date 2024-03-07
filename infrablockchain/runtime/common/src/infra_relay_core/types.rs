@@ -1,4 +1,9 @@
+
 use super::*;
+
+pub type SystemTokenAssetIdOf<T> = <<T as Config>::Fungibles as Inspect>::AssetId;
+pub type SystemTokenBalanceOf<T> = <<T as Config>::Fungibles as Insepct>::Balance;
+pub type SystemTokenWeightOf<T> = <<T as Config>::Fungibles as InspectSystemToken>::SystemTokenWeight;
 
 #[derive(Encode, Decode)]
 pub enum ParachainRuntimePallets {
@@ -26,7 +31,7 @@ pub enum ParachainConfigCalls {
 		u8,
 		SystemTokenWeight,
 		u8,
-		SystemTokenId,
+		MultiLocation,
 	),
 	#[codec(index = 6)]
 	DeregisterSystemToken(SystemTokenAssetId, bool),

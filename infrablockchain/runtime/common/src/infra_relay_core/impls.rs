@@ -18,10 +18,10 @@ impl<T: Config> VotingHandler for Pallet<T> {
 	}
 }
 
-impl<T: Config> RuntimeConfigProvider for Pallet<T> {
+impl<T: Config, SystemTokenBalance, SystemTokenWeight> RuntimeConfigProvider<SystemTokenBalance, SystemTokenWeight> for Pallet<T> {
 	type Error = DispatchError;
 
-	fn infra_system_config() -> Result<InfraSystemConfig, Self::Error> {
+	fn system_token_config() -> Result<SystemTokenConfig, Self::Error> {
 		Ok(ActiveSystemConfig::<T>::get())
 	}
 
@@ -40,11 +40,17 @@ impl<T: Config> RuntimeConfigProvider for Pallet<T> {
 
 // TODO: Find a way to dispatch XCM locally. Then it would be clearer
 impl<T: Config> UpdateInfraConfig for Pallet<T> {
+
+	type AssetId = MultiLocation;
+	type ParaId = SystemTokenParaId;
+	type Balance = SystemTokenBalanceOf<T>;
+	type SystemTokenWeight = SystemTokenWeightOf<T>;
+
 	fn update_fee_table(
-		dest_id: SystemTokenParaId,
+		dest_id: Self::ParaId,
 		pallet_name: Vec<u8>,
 		call_name: Vec<u8>,
-		fee: SystemTokenBalance,
+		fee: Self::Balance,
 	) {
 		if dest_id != RELAY_CHAIN_PARA_ID {
 			let set_fee_table_call = ParachainRuntimePallets::InfraParaCore(
@@ -54,7 +60,7 @@ impl<T: Config> UpdateInfraConfig for Pallet<T> {
 		}
 	}
 
-	fn update_para_fee_rate(dest_id: SystemTokenParaId, fee_rate: SystemTokenWeight) {
+	fn update_para_fee_rate(dest_id: Self::ParaId, fee_rate: Self::SystemTokenWeight) {
 		if dest_id != RELAY_CHAIN_PARA_ID {
 			let set_fee_rate_call = ParachainRuntimePallets::InfraParaCore(
 				ParachainConfigCalls::UpdateParaFeeRate(fee_rate),
@@ -63,7 +69,7 @@ impl<T: Config> UpdateInfraConfig for Pallet<T> {
 		}
 	}
 
-	fn update_runtime_state(dest_id: SystemTokenParaId) {
+	fn update_runtime_state(dest_id: Self::ParaId) {
 		if dest_id == RELAY_CHAIN_PARA_ID {
 			Self::do_update_runtime_state();
 		} else {
@@ -74,17 +80,17 @@ impl<T: Config> UpdateInfraConfig for Pallet<T> {
 	}
 
 	fn update_system_token_weight(
-		asset_id: SystemTokenAssetId,
-		system_token_weight: SystemTokenWeight,
+		asset_id: Self::AssetId,
+		system_token_weight: Self::SystemTokenWeight,
 	) {
 		// TODO: Error handling
 		let _ = T::LocalAssetManager::update_system_token_weight(asset_id, system_token_weight);
 	}
 
 	fn register_system_token(
-		dest_id: SystemTokenParaId,
-		asset_id: SystemTokenAssetId,
-		system_token_weight: SystemTokenWeight,
+		dest_id: Self::ParaId,
+		asset_id: Self::AssetId,
+		system_token_weight: Self::SystemTokenWeight,
 	) {
 		if dest_id == RELAY_CHAIN_PARA_ID {
 			// TODO: Error handling
@@ -98,16 +104,16 @@ impl<T: Config> UpdateInfraConfig for Pallet<T> {
 	}
 
 	fn create_wrapped_local(
-		dest_id: SystemTokenParaId,
-		asset_id: SystemTokenAssetId,
+		dest_id: Self::ParaId,
+		asset_id: Self::AssetId,
 		currency_type: Fiat,
-		min_balance: SystemTokenBalance,
+		min_balance: Self::Balance,
 		name: Vec<u8>,
 		symbol: Vec<u8>,
 		decimals: u8,
-		system_token_weight: SystemTokenWeight,
+		system_token_weight: Self::SystemTokenWeight,
 		asset_link_parent: u8,
-		original: SystemTokenId,
+		original: MultiLocation,
 	) {
 		if dest_id == RELAY_CHAIN_PARA_ID {
 			// TODO: Error handling
@@ -139,8 +145,8 @@ impl<T: Config> UpdateInfraConfig for Pallet<T> {
 	}
 
 	fn deregister_system_token(
-		dest_id: SystemTokenParaId,
-		asset_id: SystemTokenAssetId,
+		dest_id: Self::ParaId,
+		asset_id: Self::AssetId,
 		is_unlink: bool,
 	) {
 		if dest_id == RELAY_CHAIN_PARA_ID {

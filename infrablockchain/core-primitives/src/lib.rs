@@ -16,7 +16,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-//! Core Polkadot types.
+//! Core InfraBlockchain types.
 //!
 //! These core Polkadot types are used by the relay chain and the Parachains.
 

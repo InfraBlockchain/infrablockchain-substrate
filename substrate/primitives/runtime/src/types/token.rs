@@ -7,6 +7,7 @@ use crate::{
 	RuntimeDebug,
 };
 use bounded_collections::{BoundedVec, ConstU32};
+use sp_arithmetic::traits::Zero;
 use sp_std::prelude::*;
 
 #[cfg(feature = "std")]
@@ -36,9 +37,7 @@ pub type SystemTokenDecimal = u8;
 /// Bounded name for System Token
 pub type BoundedStringMetadata = BoundedVec<u8, ConstU32<20>>;
 
-
-
-/// System configuration for InfraBlockchain
+/// System Token configuration for transaction fee calculation
 #[derive(
 	Encode,
 	Decode,
@@ -51,9 +50,9 @@ pub type BoundedStringMetadata = BoundedVec<u8, ConstU32<20>>;
 	serde::Serialize,
 	serde::Deserialize,
 )]
-pub struct InfraSystemConfig {
+pub struct SystemTokenConfig<SystemTokenWeight> {
 	/// Detail of base system token
-	pub base_system_token_detail: BaseSystemTokenDetail,
+	pub base_system_token_detail: BaseSystemTokenDetail<SystemTokenWeight>,
 	/// Scale of weight for calculating tx fee
 	pub weight_scale: SystemTokenWeight,
 }
@@ -66,13 +65,7 @@ pub enum InitError {
 	InvalidWeightScale,
 }
 
-impl Default for InfraSystemConfig {
-	fn default() -> Self {
-		Self { base_system_token_detail: Default::default(), weight_scale: 25 }
-	}
-}
-
-impl InfraSystemConfig {
+impl<SystemTokenWeight: Clone + PartialEq + Zero + sp_std::fmt::Debug> SystemTokenConfig<SystemTokenWeight> {
 	/// Clone of base_currency type of `BaseSystemTokenDetail`
 	pub fn base_currency(&self) -> Fiat {
 		self.base_system_token_detail.clone().base_currency
@@ -87,10 +80,10 @@ impl InfraSystemConfig {
 	}
 
 	pub fn check_validity(&self) -> Result<(), InitError> {
-		if self.base_system_token_detail.base_weight == 0 {
+		if self.base_system_token_detail.base_weight == Zero::zero() {
 			return Err(InitError::InvalidBaseSystemTokenDetail)
 		}
-		if self.weight_scale == 0 {
+		if self.weight_scale == Zero::zero() {
 			return Err(InitError::InvalidWeightScale)
 		}
 		Ok(())
@@ -116,7 +109,7 @@ impl InfraSystemConfig {
 	serde::Deserialize,
 )]
 /// Detail of base system token
-pub struct BaseSystemTokenDetail {
+pub struct BaseSystemTokenDetail<SystemTokenWeight> {
 	/// Currency type of base system token
 	pub base_currency: Fiat,
 	/// Weight of base system token
@@ -125,51 +118,11 @@ pub struct BaseSystemTokenDetail {
 	pub base_decimals: u8,
 }
 
-impl Default for BaseSystemTokenDetail {
-	fn default() -> Self {
-		Self { base_currency: Fiat::USD, base_weight: 1_000_000, base_decimals: 4 }
+impl<SystemTokenWeight> BaseSystemTokenDetail<SystemTokenWeight> {
+	fn new(fiat: Fiat, weight: SystemTokenWeight, decimals: u8) -> Self {
+		Self { base_currency: fiat, base_weight: weight, base_decimals: decimals }
 	}
 }
-
-/// Data structure for Original system tokens
-// #[derive(
-// 	Clone,
-// 	Encode,
-// 	Decode,
-// 	Copy,
-// 	Eq,
-// 	PartialEq,
-// 	PartialOrd,
-// 	Ord,
-// 	RuntimeDebug,
-// 	Default,
-// 	TypeInfo,
-// 	MaxEncodedLen,
-// )]
-// #[cfg_attr(feature = "std", derive(Hash, Serialize, Deserialize))]
-// pub struct SystemTokenId {
-// 	/// ParaId where to use the system token. Especially, we assigned the relaychain as ParaID = 0
-// 	#[codec(compact)]
-// 	pub para_id: SystemTokenParaId,
-// 	/// PalletId on the parachain where to use the system token
-// 	#[codec(compact)]
-// 	pub pallet_id: SystemTokenPalletId,
-// 	/// AssetId on the parachain where to use the system token
-// 	#[codec(compact)]
-// 	pub asset_id: SystemTokenAssetId,
-// }
-
-// impl SystemTokenId {
-// 	/// Create new instance of `SystemTokenId`
-// 	pub fn new(para_id: u32, pallet_id: u8, asset_id: SystemTokenAssetId) -> Self {
-// 		Self { para_id, pallet_id, asset_id }
-// 	}
-
-// 	/// Clone `self` and return new instance of `SystemTokenId`
-// 	pub fn asset_id(&self) -> SystemTokenAssetId {
-// 		self.clone().asset_id
-// 	}
-// }
 
 pub const MAX_REQUESTED_ASSETS: u32 = 1;
 /// Upper limit of number of assets to be requested

@@ -1,4 +1,4 @@
-use frame_support::{pallet_prelude::*, DefaultNoBound};
+use frame_support::{pallet_prelude::*, DefaultNoBound, traits::tokens::fungibles::{InspectSystemToken, Inspect}};
 use frame_system::{ensure_root, pallet_prelude::*};
 use log;
 use pallet_validator_election::VotingInterface;
@@ -7,6 +7,7 @@ use primitives::well_known_keys;
 use sp_runtime::types::{fee::*, infra_core::*, token::*, vote::*};
 use sp_std::vec::Vec;
 use xcm::latest::prelude::*;
+use runtime_parachains::SystemTokenInterface;
 
 mod impls;
 mod types;
@@ -29,7 +30,7 @@ pub mod pallet {
 		/// Managing System Token
 		type SystemTokenInterface: SystemTokenInterface;
 		/// Type that interacts with local asset
-		type LocalAssetManager: LocalAssetManager;
+		type Fungibles: InspectSystemToken<Self::AccountId>;
 		/// Type that links asset with System Token
 		type AssetLink: AssetLinkInterface<SystemTokenAssetId>;
 		/// Type that delivers XCM messages
@@ -39,7 +40,7 @@ pub mod pallet {
 	/// System configuration for `InfraRelay` Runtime
 	#[pallet::storage]
 	#[pallet::getter(fn active_system_config)]
-	pub type ActiveSystemConfig<T: Config> = StorageValue<_, InfraSystemConfig, ValueQuery>;
+	pub type ActiveSystemConfig<T: Config> = StorageValue<_, SystemTokenConfig, ValueQuery>;
 
 	/// Relay Chain's tx fee rate
 	#[pallet::storage]

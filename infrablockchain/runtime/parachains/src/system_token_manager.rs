@@ -37,6 +37,8 @@ pub mod pallet {
 			+ Into<Result<ParachainOrigin, <Self as Config>::RuntimeOrigin>>;
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+		/// Id of System Token that used in this module
+		type SystemTokenId: Into<MultiLocation> + TryFrom<MultiLocation>;
 		/// Core interface for InfraBlockchain Runtime
 		type InfraCore: UpdateInfraConfig<
 				AssetId=SystemTokenAssetId,
@@ -211,7 +213,7 @@ pub mod pallet {
 	///
 	/// `SystemTokenMetadata`
 	pub type OriginalSystemTokenMetadata<T: Config> =
-		StorageMap<_, Blake2_128Concat, InfraAssetIdOf<T>, SystemTokenMetadata<BoundedStringOf<T>>>;
+		StorageMap<_, Blake2_128Concat, SystemTokenIdOf<T>, SystemTokenMetadata<BoundedStringOf<T>>>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn system_token_properties)]
@@ -227,7 +229,7 @@ pub mod pallet {
 	///
 	/// `SystemTokenProperty`
 	pub type SystemTokenProperties<T: Config> =
-		StorageMap<_, Blake2_128Concat, InfraAssetIdOf<T>, SystemTokenProperty>;
+		StorageMap<_, Blake2_128Concat, SystemTokenIdOf<T>, SystemTokenProperty>;
 
 	/// **Description:**
 	///
@@ -247,8 +249,8 @@ pub mod pallet {
 		Twox64Concat,
 		Fiat,
 		Twox64Concat,
-		InfraAssetIdOf<T>,
-		BoundedVec<InfraAssetIdOf<T>, T::MaxOriginalUsedParaIds>,
+		SystemTokenIdOf<T>,
+		BoundedVec<SystemTokenIdOf<T>, T::MaxOriginalUsedParaIds>,
 	>;
 
 	#[pallet::storage]
@@ -336,8 +338,8 @@ pub mod pallet {
 		#[pallet::call_index(0)]
 		pub fn register_system_token(
 			origin: OriginFor<T>,
-			system_token_type: SystemTokenType,
-			wrapped_for_relay_chain: Option<SystemTokenId>,
+			system_token_type: SystemTokenType<SystemTokenIdOf<T>>,
+			wrapped_for_relay_chain: Option<SystemTokenIdOf<T>>,
 			extended_metadata: Option<ExtendedMetadata>,
 		) -> DispatchResult {
 			ensure_root(origin)?;
@@ -387,7 +389,7 @@ pub mod pallet {
 		// - original: Original system token id expected to be deregistered
 		pub fn deregister_system_token(
 			origin: OriginFor<T>,
-			system_token_type: SystemTokenType,
+			system_token_type: SystemTokenType<SystemTokenIdOf<T>>,
 		) -> DispatchResult {
 			ensure_root(origin)?;
 			match system_token_type {
@@ -416,7 +418,7 @@ pub mod pallet {
 		// - original: Original system token id expected to be suspended
 		pub fn suspend_system_token(
 			origin: OriginFor<T>,
-			system_token_type: SystemTokenType,
+			system_token_type: SystemTokenType<SystemTokenIdOf<T>>,
 		) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -723,7 +725,7 @@ impl<T: Config> Pallet<T> {
 	/// `ParaIdSystemTokens`, `SystemTokenUsedParaIds`, `SystemTokenProperties`,
 	/// `OriginalSystemTokenConverter`, `OriginalSystemTokenMetadata`
 	fn try_register_original(
-		original: &SystemTokenId,
+		original: &SystemTokenIdOf<T>,
 		extended_metadata: Option<ExtendedMetadata>,
 	) -> DispatchResult {
 		let mut system_token_metadata =
@@ -1122,7 +1124,7 @@ impl<T: Config> Pallet<T> {
 	/// If `para_id == 0`, call internal `Assets` pallet method.
 	/// Otherwise, send DMP of `force_create_with_metadata` to expected `para_id` destination
 	fn try_create_wrapped(
-		wrapped: &SystemTokenId,
+		wrapped: &SystemTokenIdOf<T>,
 		system_token_weight: InfraSystemTokenWeightOf<T>,
 	) -> DispatchResult {
 		let original = <OriginalSystemTokenConverter<T>>::get(wrapped)
@@ -1157,30 +1159,34 @@ pub mod types {
 	pub type InfraBalanceOf<T> = <<T as Config>::InfraCore as UpdateInfraConfig>::Balance;
 	pub type InfraParaIdOf<T> = <<T as Config>::InfraCore as UpdateInfraConfig>::ParaId;
 	pub type InfraSystemTokenWeightOf<T> = <<T as Config>::InfraCore as UpdateInfraConfig>::SystemTokenWeight;
+	pub type SystemTokenIdOf<T> = <T as Config>::SystemTokenId;
 	pub type BoundedStringOf<T> = BoundedVec<u8, <T as Config>::StringLimit>;
-	
-	#[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
-	pub struct SystemTokenId(MultiLocation);
 
-	impl SystemTokenId {
-		/// Check validity of `MultiLocaiton` format
-		fn check(from: MultiLocation, is_relay: bool) -> Result<Self, DispatchError> {
-			let is_valid = if is_relay {
-				matches!(from, MultiLocation { parents: 0, interior: xcm::v3::Junctions::X2(Junction::PalletInstance(_), Junction::GeneralIndex(_))})
-			} else {
-				matches!(from, MultiLocation { parents: 0, interior: xcm::v3::Junctions::X3(Junction::Parachain(_), Junction::PalletInstance(_), Junction::GeneralIndex(_))})
-			};
-			ensure!(is_valid, Error::<T>::InvalidSystemTokenId);
-			Ok(from)
-		}
+	// impl TryFrom<MultiLocation> for SystemTokenId {
+	// 	type Error = SystemTokenError;
+	// 	fn try_from(value: MultiLocation) -> Result<Self, Self::Error> {
+	// 		match value {
+	// 			Junctions::X3(Junction::Parachain(para_id), Junction::PalletInstance(pallet_id), Junction::GeneralIndex(asset_id)) => {
+	// 				Ok(SystemTokenId::new(Some(para_id), pallet_id, asset_id))
+	// 			},
+	// 			_ => Err(SystemTokenError::ConvertError)
+	// 		}
+	// 	}
+	// }
 
-		fn new()
-	}
+	// impl Into<MultiLocation> for SystemTokenId {
+	// 	fn into(self) -> MultiLocation {
+	// 		match self.para_id {
+	// 			Some(_) => MultiLocation { parents: 0, interior: Junctions::X3(Junction::Parachain(self.para_id), Junction::PalletInstance(self.pallet_id), Junction::GeneralIndex(self.asset_id))},
+	// 			None => MultiLocation { parents: 0, interior: Junctions::X2(Junction::PalletInstance(self.pallet_id), Junction::GeneralIndex(self.asset_id))}
+	// 		}
+	// 	}
+	// }
 
 	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, TypeInfo)]
-	pub enum SystemTokenType {
-		Original(SystemTokenId),
-		Wrapped { original: SystemTokenId, wrapped: SystemTokenId },
+	pub enum SystemTokenType<Id> {
+		Original(Id),
+		Wrapped { original: Id, wrapped: Id },
 	}
 
 	#[derive(
@@ -1292,15 +1298,15 @@ pub mod types {
 mod impl_traits {
 	use super::*;
 
-	impl<T: Config> SystemTokenInterface<VoteWeight> for Pallet<T> {
+	impl<T: Config> SystemTokenInterface<VoteWeight, RemoteAssetMetadata<>> for Pallet<T> {
 
-		type AssetId = InfraAssetIdOf<T>;
+		type Id = SystemTokenIdOf<T>;
 		type Balance = InfraBalanceOf<T>;
 
-		fn is_system_token(original: &Self::AssetId) -> bool {
+		fn is_system_token(original: &Self::Id) -> bool {
 			<OriginalSystemTokenMetadata<T>>::get(original).is_some()
 		}
-		fn convert_to_original_system_token(wrapped: &Self::AssetId) -> Option<Self::AssetId> {
+		fn convert_to_original_system_token(wrapped: &Self::Id) -> Option<Self::Id> {
 			if let Some(original) = <OriginalSystemTokenConverter<T>>::get(wrapped) {
 				Self::deposit_event(Event::<T>::SystemTokenConverted {
 					from: wrapped.clone(),
@@ -1310,7 +1316,7 @@ mod impl_traits {
 			}
 			None
 		}
-		fn adjusted_weight(original: &Self::AssetId, vote_weight: VoteWeight) -> VoteWeight {
+		fn adjusted_weight(original: &Self::Id, vote_weight: VoteWeight) -> VoteWeight {
 			if let Some(p) = <SystemTokenProperties<T>>::get(original) {
 				if let Ok(infra_system_config) = T::InfraCore::infra_system_config() {
 					let system_token_weight = {

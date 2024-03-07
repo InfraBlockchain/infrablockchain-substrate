@@ -31,7 +31,7 @@ use application_crypto::KeyTypeId;
 use inherents::InherentIdentifier;
 use primitives::RuntimeDebug;
 use runtime_primitives::traits::{AppVerify, Header as HeaderT};
-pub use runtime_primitives::types::InfraSystemConfig;
+pub use runtime_primitives::types::SystemTokenConfig;
 use sp_arithmetic::traits::{BaseArithmetic, Saturating};
 
 pub use runtime_primitives::traits::{BlakeTwo256, Hash as HashT};
