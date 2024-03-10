@@ -12742,6 +12742,7 @@ name = "primitives"
 version = "1.0.0"
 dependencies = [
  "bitvec",
+ "frame-support",
  "hex-literal 0.4.1",
  "infrablockchain-core-primitives",
  "parachain-primitives",
@@ -17173,6 +17174,7 @@ dependencies = [
  "bounded-collections",
  "derivative",
  "environmental",
+ "frame-support",
  "hex",
  "hex-literal 0.4.1",
  "impl-trait-for-tuples",

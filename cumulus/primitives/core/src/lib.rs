@@ -23,7 +23,7 @@ use parachain_primitives::primitives::HeadData;
 use scale_info::TypeInfo;
 use sp_runtime::{
 	types::{
-		Fiat, InfraSystemConfig, SystemTokenAssetId,
+		Fiat, SystemTokenConfig, SystemTokenAssetId,
 		SystemTokenWeight,
 	},
 	RuntimeDebug,

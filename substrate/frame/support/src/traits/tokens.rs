@@ -32,6 +32,6 @@ pub use misc::{
 	AssetId, Balance, BalanceStatus, ConversionFromAssetBalance, ConversionToAssetBalance,
 	ConvertRank, DepositConsequence, ExistenceRequirement, Fortitude, GetSalary, Locker, Precision,
 	Preservation, Provenance, Restriction, UnityAssetBalanceConversion, WithdrawConsequence,
-	WithdrawReasons,
+	WithdrawReasons, SystemTokenId
 };
 pub use pay::{Pay, PayFromAccount, PaymentStatus};

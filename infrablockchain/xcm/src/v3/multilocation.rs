@@ -24,7 +24,7 @@ use core::{
 };
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
-
+use frame_support::{traits::tokens::SystemTokenId, PalletError};
 /// A relative path between state-bearing consensus systems.
 ///
 /// A location in a consensus system is defined as an *isolatable state machine* held within global
@@ -76,6 +76,35 @@ pub struct MultiLocation {
 impl Default for MultiLocation {
 	fn default() -> Self {
 		Self { parents: 0, interior: Junctions::Here }
+	}
+}
+
+#[derive(Encode, Decode, PalletError, scale_info::TypeInfo)]
+pub enum SystemTokenIdError {
+    /// Error converting `self` to SystemTokenId
+	ConvertError,
+	/// Error converting System Token Id to `self`
+	ConvertBackError
+}
+
+impl SystemTokenId for MultiLocation {
+	type AssetId = u128;
+	type PalletId = u8;
+	type OriginId = u32;
+	type Error = SystemTokenIdError;
+
+	fn id(&self) -> Result<(Self::OriginId, Self::PalletId, Self::AssetId), Self::Error> {
+		match self.interior {
+			Junctions::X3(Junction::Parachain(para_id), Junction::PalletInstance(pallet_id), Junction::GeneralIndex(asset_id)) => Ok((para_id, pallet_id, asset_id)),
+			_ => Err(SystemTokenIdError::ConvertError)
+		}
+	}
+
+	fn convert_back(origin_id: Self::OriginId, pallet_id: Self::PalletId, asset_id: Self::AssetId) -> Self {
+		MultiLocation::new(
+			0, 
+			Junctions::X3(Junction::Parachain(origin_id), Junction::PalletInstance(pallet_id), Junction::GeneralIndex(asset_id))
+		)
 	}
 }
 
