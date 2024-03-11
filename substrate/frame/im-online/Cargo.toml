@@ -30,7 +30,6 @@ sp-io = { path = "../../primitives/io", default-features = false }
 sp-runtime = { path = "../../primitives/runtime", default-features = false, features = ["serde"] }
 sp-staking = { path = "../../primitives/staking", default-features = false, features = ["serde"] }
 sp-std = { path = "../../primitives/std", default-features = false }
-# pallet-validator-election = { path = "../validator-election", default-features = false }
 
 [dev-dependencies]
 pallet-session = { path = "../session" }
@@ -45,7 +44,6 @@ std = [
 	"log/std",
 	"pallet-authorship/std",
 	"pallet-session/std",
-	# "pallet-validator-election/std",
 	"scale-info/std",
 	"sp-application-crypto/std",
 	"sp-core/std",

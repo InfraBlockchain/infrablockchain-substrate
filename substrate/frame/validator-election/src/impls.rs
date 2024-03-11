@@ -122,7 +122,7 @@ where
 			consumed_weight += T::DbWeight::get().reads_writes(reads, writes);
 		};
 
-		let mut old_kicked_out_validators = KickedOutValidators::<T>::get();
+		let mut kicked_out_validators = KickedOutValidators::<T>::get();
 		let mut seed_trust_validators = SeedTrustValidators::<T>::get();
 		let mut seed_trust_validator_pool = SeedTrustValidatorPool::<T>::get();
 		let mut pot_validators = PotValidators::<T>::get();
@@ -132,31 +132,30 @@ where
 		for offence_detail in offenders {
 			let offender: &T::InfraVoteAccountId = &offence_detail.offender.0.clone().into();
 
-			if !old_kicked_out_validators.iter().any(|v| match v {
+			if !kicked_out_validators.iter().any(|v| match v {
 				ValidatorType::SeedTrust(account) | ValidatorType::Pot(account, _) =>
 					account == offender,
 			}) {
 				if let Some((_, points)) =
 					pot_validator_pool.iter().find(|(account, _)| account == offender)
 				{
-					old_kicked_out_validators.push(ValidatorType::Pot(offender.clone(), *points));
+					kicked_out_validators.push(ValidatorType::Pot(offender.clone(), *points));
+					pot_validators.retain(|validator| validator != offender);
+					pot_validator_pool.retain(|(validator, _)| validator != offender);
 				} else {
-					old_kicked_out_validators.push(ValidatorType::SeedTrust(offender.clone()));
+					kicked_out_validators.push(ValidatorType::SeedTrust(offender.clone()));
+					seed_trust_validators.retain(|validator| validator != offender);
+					seed_trust_validator_pool.retain(|validator| validator != offender);
 				}
 			}
-
-			seed_trust_validators.retain(|validator| validator != offender);
-			seed_trust_validator_pool.retain(|validator| validator != offender);
-			pot_validators.retain(|validator| validator != offender);
-			pot_validator_pool.retain(|(validator, _)| validator != offender);
 		}
 
-		KickedOutValidators::<T>::put(old_kicked_out_validators);
+		KickedOutValidators::<T>::put(kicked_out_validators);
 		SeedTrustValidators::<T>::put(seed_trust_validators);
 		SeedTrustValidatorPool::<T>::put(seed_trust_validator_pool);
 		PotValidators::<T>::put(pot_validators);
 		PotValidatorPool::<T>::put(VotingStatus { status: pot_validator_pool });
-		add_db_reads_writes(5, 5);
+		add_db_reads_writes(0, 5);
 
 		consumed_weight
 	}
