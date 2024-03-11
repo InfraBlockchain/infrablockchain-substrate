@@ -234,10 +234,10 @@ pub trait SystemTokenId {
 	type Error;
 
 	/// Id for System Token
-	fn id(&self) -> Result<(Self::OriginId, Self::PalletId, Self::AssetId), Self::Error>;
+	fn id(&self) -> Result<(Option<Self::OriginId>, Self::PalletId, Self::AssetId), Self::Error>;
 
 	/// Convert the id back to the original type
-	fn convert_back(origin_id: Self::OriginId, pallet_id: Self::PalletId, asset_id: Self::AssetId) -> Self;
+	fn convert_back(origin_id: Option<Self::OriginId>, pallet_id: Self::PalletId, asset_id: Self::AssetId) -> Self;
 }
 
 /// Simple amalgamation trait to collect together properties for an AssetId under one roof.

@@ -93,18 +93,26 @@ impl SystemTokenId for MultiLocation {
 	type OriginId = u32;
 	type Error = SystemTokenIdError;
 
-	fn id(&self) -> Result<(Self::OriginId, Self::PalletId, Self::AssetId), Self::Error> {
+	fn id(&self) -> Result<(Option<Self::OriginId>, Self::PalletId, Self::AssetId), Self::Error> {
 		match self.interior {
-			Junctions::X3(Junction::Parachain(para_id), Junction::PalletInstance(pallet_id), Junction::GeneralIndex(asset_id)) => Ok((para_id, pallet_id, asset_id)),
+			Junctions::X3(Junction::Parachain(para_id), Junction::PalletInstance(pallet_id), Junction::GeneralIndex(asset_id)) => Ok((Some(para_id), pallet_id, asset_id)),
+			Junctions::X2(Junction::PalletInstance(pallet_id), Junction::GeneralIndex(asset_id)) => Ok((None, pallet_id, asset_id)),
 			_ => Err(SystemTokenIdError::ConvertError)
 		}
 	}
 
-	fn convert_back(origin_id: Self::OriginId, pallet_id: Self::PalletId, asset_id: Self::AssetId) -> Self {
-		MultiLocation::new(
-			0, 
-			Junctions::X3(Junction::Parachain(origin_id), Junction::PalletInstance(pallet_id), Junction::GeneralIndex(asset_id))
-		)
+	fn convert_back(origin_id: Option<Self::OriginId>, pallet_id: Self::PalletId, asset_id: Self::AssetId) -> Self {
+		if let Some(para_id) = origin_id {
+			MultiLocation::new(
+				0, 
+				Junctions::X3(Junction::Parachain(para_id), Junction::PalletInstance(pallet_id), Junction::GeneralIndex(asset_id))
+			)
+		} else {
+			MultiLocation::new(
+				0, 
+				Junctions::X2(Junction::PalletInstance(pallet_id), Junction::GeneralIndex(asset_id))
+			)
+		}
 	}
 }
 

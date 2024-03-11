@@ -12,27 +12,25 @@ pub enum ParachainRuntimePallets {
 }
 
 #[derive(Encode, Decode)]
-pub enum ParachainConfigCalls {
+pub enum ParachainConfigCalls<Location, Balance, Weight> {
 	#[codec(index = 1)]
-	UpdateFeeTable(Vec<u8>, Vec<u8>, SystemTokenBalance),
+	UpdateFeeTable(Vec<u8>, Vec<u8>, Balance),
 	#[codec(index = 2)]
-	UpdateParaFeeRate(SystemTokenWeight),
+	UpdateParaFeeRate(Weight),
 	#[codec(index = 3)]
 	UpdateRuntimeState,
 	#[codec(index = 4)]
-	RegisterSystemToken(SystemTokenAssetId, SystemTokenWeight),
+	RegisterSystemToken(Location, Weight),
 	#[codec(index = 5)]
 	CreateWrappedLocal(
-		SystemTokenAssetId,
+		Location,
 		Fiat,
 		SystemTokenBalance,
 		Vec<u8>,
 		Vec<u8>,
 		u8,
-		SystemTokenWeight,
-		u8,
-		MultiLocation,
+		SystemTokenWeight
 	),
 	#[codec(index = 6)]
-	DeregisterSystemToken(SystemTokenAssetId, bool),
+	DeregisterSystemToken(Location, bool),
 }

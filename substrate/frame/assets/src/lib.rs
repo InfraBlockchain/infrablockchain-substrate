@@ -160,6 +160,7 @@ mod impl_system_token;
 pub mod types;
 pub use types::*;
 
+use softfloat::F64;
 use frame_support::{
 	pallet_prelude::*,
 	storage::KeyPrefixIterator,
@@ -207,7 +208,9 @@ impl<AssetId, AccountId> AssetsCallback<AssetId, AccountId> for () {}
 
 #[frame_support::pallet]
 pub mod pallet {
-	use super::*;
+	use frame_support::traits::tokens::Balance;
+
+use super::*;
 
 	/// The current storage version.
 	const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -246,14 +249,7 @@ pub mod pallet {
 			+ IsType<SystemTokenBalance>;
 
 		/// The units in which we record weight of System Token
-		type SystemTokenWeight: Member
-			+ Parameter
-			+ AtLeast32BitUnsigned
-			+ Default
-			+ Copy
-			+ MaybeSerializeDeserialize
-			+ MaxEncodedLen
-			+ TypeInfo;
+		type SystemTokenWeight: Balance + From<F64> + TryInto<i128>;
 
 		/// Max number of items to destroy per `destroy_accounts` and `destroy_approvals` call.
 		///

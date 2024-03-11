@@ -1,4 +1,6 @@
 
+use codec::FullCodec;
+use softfloat::F64;
 use sp_std::vec::Vec;
 
 use crate::traits::tokens::Balance;
@@ -7,9 +9,9 @@ use crate::traits::tokens::Balance;
 pub trait Inspect<AccountId>: super::Inspect<AccountId> {
 
     /// Associate type of weight for System Token
-    type SystemTokenWeight: Balance;
+    type SystemTokenWeight: Balance + From<F64> + TryInto<i128>;
     /// Associate type of fiat for System Token
-    type Fiat;
+    type Fiat: FullCodec;
 
     /// Returns true if the asset is a system token which refers to `is_sufficient = true`
     fn is_system_token(asset: &Self::AssetId) -> bool;
