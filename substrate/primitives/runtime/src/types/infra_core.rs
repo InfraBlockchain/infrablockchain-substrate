@@ -13,29 +13,30 @@ pub trait UpdateInfraConfig<Location, OriginId, Weight, Balance> {
 
 	/// Update fee table for `dest_id` Runtime
 	fn update_fee_table(
-		dest_id: Option<OriginId>,
+		dest_id: OriginId,
 		pallet_name: Vec<u8>,
 		call_name: Vec<u8>,
 		fee: Balance,
 	);
 	/// Update fee rate for `dest_id` Runtime
-	fn update_para_fee_rate(dest_id: Option<OriginId>, fee_rate: Balance);
+	fn update_para_fee_rate(dest_id: OriginId, fee_rate: Balance);
 	/// Set runtime state for `dest_id` Runtime
 	fn update_runtime_state(dest_id: Option<OriginId>);
-	/// Update `SystemTokenWeight` for Relay Runtime
-	fn update_system_token_weight(
-		asset_id: Location,
-		system_token_weight: Weight,
-	);
 	/// Register `Original` System Token for `dest_id` Runtime(e.g `set_sufficient=true`)
 	fn register_system_token(
-		dest_id: Option<OriginId>,
+		dest_id: OriginId,
 		asset_id: Location,
 		system_token_weight: Weight,
 	);
+	/// Deregister `Original/Wrapped` System Token for `dest_id` Runtime
+	fn deregister_system_token(
+		dest_id: OriginId,
+		asset_id: Location,
+		is_unlink: bool,
+	);
 	/// Create local asset of `Wrapped` System Token for `dest_id` Runtime
-	fn create_wrapped_local(
-		dest_id: Option<OriginId>,
+	fn create_wrapped(
+		dest_id: OriginId,
 		original: Location,
 		currency_type: Fiat,
 		min_balance: Balance,
@@ -44,12 +45,6 @@ pub trait UpdateInfraConfig<Location, OriginId, Weight, Balance> {
 		decimals: u8,
 		system_token_weight: Weight,
 		asset_link_parent: u8,
-	);
-	/// Deregister `Original/Wrapped` System Token for `dest_id` Runtime
-	fn deregister_system_token(
-		dest_id: Option<OriginId>,
-		asset_id: Location,
-		is_unlink: bool,
 	);
 }
 

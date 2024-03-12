@@ -54,26 +54,22 @@ where
 	Balance: Encode
 {
 	fn update_fee_table(
-		dest_id: Option<OriginId>,
+		dest_id: OriginId,
 		pallet_name: Vec<u8>,
 		call_name: Vec<u8>,
 		fee: Self::Balance,
 	) {
-		if let Some(dest_id) = dest_id {
-			let set_fee_table_call = ParachainRuntimePallets::InfraParaCore(
-				ParachainConfigCalls::UpdateFeeTable(pallet_name, call_name, fee),
-			);
-			Self::send_xcm_for(set_fee_table_call.encode(), dest_id);
-		}
+		let set_fee_table_call = ParachainRuntimePallets::InfraParaCore(
+			ParachainConfigCalls::UpdateFeeTable(pallet_name, call_name, fee),
+		);
+		Self::send_xcm_for(set_fee_table_call.encode(), dest_id);
 	}
 
-	fn update_para_fee_rate(dest_id: Option<OriginId>, fee_rate: Weight) {
-		if let Some(dest_id) = dest_id {
-			let set_fee_rate_call = ParachainRuntimePallets::InfraParaCore(
-				ParachainConfigCalls::UpdateParaFeeRate(fee_rate),
-			);
-			Self::send_xcm_for(set_fee_rate_call.encode(), dest_id);
-		}
+	fn update_para_fee_rate(dest_id: OriginId, fee_rate: Weight) {
+		let set_fee_rate_call = ParachainRuntimePallets::InfraParaCore(
+			ParachainConfigCalls::UpdateParaFeeRate(fee_rate),
+		);
+		Self::send_xcm_for(set_fee_rate_call.encode(), dest_id);
 	}
 
 	fn update_runtime_state(dest_id: Option<OriginId>) {
@@ -86,32 +82,30 @@ where
 		}
 	}
 
-	fn update_system_token_weight(
-		asset_id: Location,
-		system_token_weight: Self::SystemTokenWeight,
-	) {
-		// TODO
-		unimplemented!("impl me!")
-	}
-
 	fn register_system_token(
-		dest_id: Option<OriginId>,
+		dest_id: OriginId,
 		asset_id: Location,
 		system_token_weight: Weight,
 	) {
-		if let Some(dest_id) = dest_id {
-			let register_call = ParachainRuntimePallets::InfraParaCore(
-				ParachainConfigCalls::RegisterSystemToken(asset_id, system_token_weight),
-			);
-			Self::send_xcm_for(register_call.encode(), dest_id);
-		} else {
-			// TODO: Error handling
-			let _ = T::LocalAssetManager::promote(asset_id, system_token_weight);
-		}
+		let register_call = ParachainRuntimePallets::InfraParaCore(
+			ParachainConfigCalls::RegisterSystemToken(asset_id, system_token_weight),
+		);
+		Self::send_xcm_for(register_call.encode(), dest_id);
 	}
 
-	fn create_wrapped_local(
-		dest_id: Option<OriginId>,
+	fn deregister_system_token(
+		dest_id: OriginId,
+		asset_id: Location,
+		is_unlink: bool,
+	) {
+		let deregister_call = ParachainRuntimePallets::InfraParaCore(
+			ParachainConfigCalls::DeregisterSystemToken(asset_id, is_unlink),
+		);
+		Self::send_xcm_for(deregister_call.encode(), dest_id);
+	}
+
+	fn create_wrapped(
+		dest_id: OriginId,
 		original: Location,
 		currency_type: Fiat,
 		min_balance: Self::Balance,
@@ -120,8 +114,7 @@ where
 		decimals: u8,
 		system_token_weight: Weight,
 	) {
-		if let Some(dest_id) = dest_id {
-			let create_call =
+		let create_call =
 			ParachainRuntimePallets::InfraParaCore(ParachainConfigCalls::CreateWrappedLocal(
 				original,
 				currency_type,
@@ -131,37 +124,7 @@ where
 				decimals,
 				system_token_weight
 			));
-			Self::send_xcm_for(create_call.encode(), dest_id);
-		} else {
-			// TODO: Error handling
-			// let _ = T::LocalAssetManager::create_wrapped_local(
-			// 	asset_id,
-			// 	currency_type,
-			// 	min_balance,
-			// 	name,
-			// 	symbol,
-			// 	decimals,
-			// 	system_token_weight,
-			// );
-			// let _ = T::AssetLink::link(&asset_id, asset_link_parent, original);
-			unimplemented!("impl me!")
-		}
-	}
-
-	fn deregister_system_token(
-		dest_id: Option<OriginId>,
-		asset_id: Location,
-		is_unlink: bool,
-	) {
-		if let Some(dest_id) = dest_id {
-			let deregister_call = ParachainRuntimePallets::InfraParaCore(
-				ParachainConfigCalls::DeregisterSystemToken(asset_id, is_unlink),
-			);
-			Self::send_xcm_for(deregister_call.encode(), dest_id);
-		} else {
-			// TODO: Error handling
-			let _ = T::LocalAssetManager::demote(asset_id);
-		}
+		Self::send_xcm_for(create_call.encode(), dest_id);
 	}
 }
 
