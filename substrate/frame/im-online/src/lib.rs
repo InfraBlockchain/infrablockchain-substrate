@@ -780,7 +780,6 @@ impl<T: Config> OneSessionHandler<T::AccountId> for Pallet<T> {
 		let current_validators = T::ValidatorSet::validators();
 
 		let offenders = current_validators
-			.clone()
 			.into_iter()
 			.enumerate()
 			.filter(|(index, id)| !Self::is_online_aux(*index as u32, id))

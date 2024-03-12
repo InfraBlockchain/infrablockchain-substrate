@@ -234,6 +234,7 @@ fn asset_hub_genesis(
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
 			..Default::default()
 		},
+		#[cfg(feature = "fast-runtime")]
 		sudo: asset_hub_runtime::SudoConfig { key: root_key },
 	}
 }

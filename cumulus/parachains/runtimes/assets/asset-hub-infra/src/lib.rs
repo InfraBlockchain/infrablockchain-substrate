@@ -685,12 +685,19 @@ impl system_token_aggregator::Config for Runtime {
 	type SendXcm = XcmRouter;
 	type IsRelay = IsRelay;
 }
-
 #[cfg(feature = "fast-runtime")]
 impl pallet_sudo::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
 	type WeightInfo = ();
+}
+
+impl<C> frame_system::offchain::SendTransactionTypes<C> for Runtime
+where
+	RuntimeCall: From<C>,
+{
+	type Extrinsic = UncheckedExtrinsic;
+	type OverarchingCall = RuntimeCall;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -733,9 +740,9 @@ construct_runtime!(
 		// The main stage.
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>, Config<T>} = 50,
 		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
-		AssetLink: pallet_asset_link = 52,
-		SystemTokenAggregator: system_token_aggregator = 53,
-		SystemToken: pallet_system_token = 54,
+		AssetLink: pallet_asset_link::{Pallet, Storage, Event<T>} = 52,
+		SystemTokenAggregator: system_token_aggregator = 54,
+		SystemTokenOracle: pallet_system_token_oracle::{Pallet, Call, Storage, ValidateUnsigned} = 55,
 
 		#[cfg(feature = "fast-runtime")]
 		Sudo: pallet_sudo::{Pallet, Call, Storage, Config<T>, Event<T>} = 99,
