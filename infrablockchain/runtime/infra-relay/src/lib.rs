@@ -393,7 +393,6 @@ impl infra_relay_core::Config for Runtime {
 	type VotingInterface = ValidatorElection;
 	type SystemTokenInterface = SystemTokenManager;
 	type Fungibles = Assets;
-	type AssetLink = AssetLink;
 	type XcmRouter = XcmRouter;
 }
 
@@ -1377,19 +1376,19 @@ impl pallet_assets::Config for Runtime {
 	type RemoveItemsLimit = ConstU32<1000>;
 }
 
-parameter_types! {
-	pub const Period: BlockNumber = 10;
-	pub const IsRelay: bool = true;
-}
+// parameter_types! {
+// 	pub const Period: BlockNumber = 10;
+// 	pub const IsRelay: bool = true;
+// }
 
-impl system_token_aggregator::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type Period = Period;
-	type Fungibles = Assets;
-	type AssetMultiLocationGetter = AssetLink;
-	type SendXcm = XcmRouter;
-	type IsRelay = IsRelay;
-}
+// impl system_token_aggregator::Config for Runtime {
+// 	type RuntimeEvent = RuntimeEvent;
+// 	type Period = Period;
+// 	type Fungibles = Assets;
+// 	type AssetMultiLocationGetter = AssetLink;
+// 	type SendXcm = XcmRouter;
+// 	type IsRelay = IsRelay;
+// }
 
 construct_runtime! {
 	pub enum Runtime
@@ -1405,8 +1404,7 @@ construct_runtime! {
 		InfraRelayCore: infra_relay_core::{Pallet, Call, Config<T>, Storage, Event<T>} = 20,
 		SystemTokenManager: system_token_manager::{Pallet, Call, Storage, Event<T>} = 21,
 		ValidatorRewardManager: validator_reward_manager::{Pallet, Call, Storage, Event<T>} = 22,
-		AssetLink: pallet_asset_link::{Pallet, Storage, Event<T>} = 24,
-		SystemTokenAggregator: system_token_aggregator = 25,
+		// SystemTokenAggregator: system_token_aggregator = 25,
 
 		// Babe must be before session.
 		Babe: pallet_babe::{Pallet, Call, Storage, Config<T>, ValidateUnsigned} = 2,

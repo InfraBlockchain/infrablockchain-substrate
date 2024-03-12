@@ -3,7 +3,6 @@ use super::{
 	token::{Fiat, SystemTokenConfig},
 };
 
-use codec::FullCodec;
 use softfloat::F64;
 use sp_std::vec::Vec;
 

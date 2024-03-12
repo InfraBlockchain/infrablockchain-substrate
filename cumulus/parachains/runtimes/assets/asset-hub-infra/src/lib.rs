@@ -532,8 +532,7 @@ parameter_types! {
 impl cumulus_pallet_infra_parachain_core::Config for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeEvent = RuntimeEvent;
-	type LocalAssetManager = Assets;
-	type AssetLink = AssetLink;
+	type Fungibles = Assets;
 	type ParachainSystem = ParachainSystem;
 	type ActiveRequestPeriod = ActiveRequestPeriod;
 }
@@ -672,19 +671,19 @@ parameter_types! {
 	pub const WeightFactor: u64 = 1;
 }
 
-parameter_types! {
-	pub const AggregatedPeriod: BlockNumber = 10;
-	pub const IsRelay: bool = false;
-}
+// parameter_types! {
+// 	pub const AggregatedPeriod: BlockNumber = 10;
+// 	pub const IsRelay: bool = false;
+// }
 
-impl system_token_aggregator::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type Period = AggregatedPeriod;
-	type LocalAssetManager = Assets;
-	type AssetMultiLocationGetter = AssetLink;
-	type SendXcm = XcmRouter;
-	type IsRelay = IsRelay;
-}
+// impl system_token_aggregator::Config for Runtime {
+// 	type RuntimeEvent = RuntimeEvent;
+// 	type Period = AggregatedPeriod;
+// 	type LocalAssetManager = Assets;
+// 	type AssetMultiLocationGetter = AssetLink;
+// 	type SendXcm = XcmRouter;
+// 	type IsRelay = IsRelay;
+// }
 
 impl pallet_sudo::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -740,8 +739,7 @@ construct_runtime!(
 		// The main stage.
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>, Config<T>} = 50,
 		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
-		AssetLink: pallet_asset_link::{Pallet, Storage, Event<T>} = 52,
-		SystemTokenAggregator: system_token_aggregator = 54,
+		// SystemTokenAggregator: system_token_aggregator = 54,
 		SystemTokenOracle: pallet_system_token_oracle::{Pallet, Call, Storage, ValidateUnsigned} = 55,
 
 		Sudo: pallet_sudo::{Pallet, Call, Storage, Config<T>, Event<T>} = 99,

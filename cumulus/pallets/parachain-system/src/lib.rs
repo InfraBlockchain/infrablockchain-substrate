@@ -182,7 +182,8 @@ where
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use frame_support::pallet_prelude::*;
+	use cumulus_primitives_core::relay_chain::OpaquePotVote;
+use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::pallet]
@@ -224,7 +225,7 @@ pub mod pallet {
 		type CheckAssociatedRelayNumber: CheckAssociatedRelayNumber;
 
 		/// Type that updates configuration set by relay chain
-		type UpdateRCConfig: UpdateRCConfig;
+		type UpdateRCConfig: UpdateRCConfig<SystemTokenWeight>;
 
 		/// An entry-point for higher-level logic to manage the backlog of unincluded parachain
 		/// blocks and authorship rights for those blocks.
@@ -431,7 +432,7 @@ pub mod pallet {
 			UpwardMessages::<T>::kill();
 			HrmpOutboundMessages::<T>::kill();
 			CustomValidationHeadData::<T>::kill();
-			CollectedPotVotes::<T>::kill();
+			// CollectedPotVotes::<T>::kill();
 			RequestedAsset::<T>::kill();
 
 			weight += T::DbWeight::get().writes(8);
@@ -794,7 +795,7 @@ pub mod pallet {
 
 	#[pallet::storage]
 	pub(super) type UpdatedInfraSystemConfig<T: Config> =
-		StorageValue<_, Option<InfraSystemConfig>, ValueQuery>;
+		StorageValue<_, Option<SystemTokenConfig<SystemTokenWeight>>, ValueQuery>;
 
 	/// Optional upgrade go-ahead signal from the relay-chain.
 	///
@@ -909,7 +910,7 @@ pub mod pallet {
 
 	/// The vote weight of a specific account for a specific asset.
 	#[pallet::storage]
-	pub(super) type CollectedPotVotes<T: Config> = StorageValue<_, PotVotes, OptionQuery>;
+	pub(super) type CollectedPotVotes<T: Config> = StorageValue<_, Vec<OpaquePotVote>, OptionQuery>;
 
 	#[pallet::storage]
 	pub(super) type RequestedAsset<T: Config> =
@@ -977,21 +978,21 @@ pub mod pallet {
 	}
 }
 
-impl<T: Config> CollectVote for Pallet<T> {
-	fn collect_vote(who: VoteAccountId, system_token_id: SystemTokenId, vote_weight: VoteWeight) {
-		let pot_votes = if let Some(mut old) = CollectedPotVotes::<T>::get() {
-			old.update_vote_weight(system_token_id, who, vote_weight);
-			old
-		} else {
-			PotVotes::new(system_token_id, who, vote_weight)
-		};
-		CollectedPotVotes::<T>::put(pot_votes);
-	}
-}
+// impl<T: Config> CollectVote for Pallet<T> {
+// 	fn collect_vote(who: VoteAccountId, system_token_id: SystemTokenId, vote_weight: VoteWeight) {
+// 		let pot_votes = if let Some(mut old) = CollectedPotVotes::<T>::get() {
+// 			old.update_vote_weight(system_token_id, who, vote_weight);
+// 			old
+// 		} else {
+// 			PotVotes::new(system_token_id, who, vote_weight)
+// 		};
+// 		CollectedPotVotes::<T>::put(pot_votes);
+// 	}
+// }
 
 impl<T: Config> AssetMetadataProvider for Pallet<T> {
 	fn requested(bytes: Vec<u8>) {
-		RequestedAsset::<T>::put(&asset);
+		RequestedAsset::<T>::put(&bytes);
 	}
 }
 
@@ -1421,12 +1422,6 @@ impl<T: Config> Pallet<T> {
 	/// This is expected to be used by the
 	/// [`CollectCollationInfo`](cumulus_primitives_core::CollectCollationInfo) runtime api.
 	pub fn collect_collation_info(header: &HeaderFor<T>) -> CollationInfo {
-		let vote_result = if let Some(res) = CollectedPotVotes::<T>::get() {
-			let vote_result = res.votes();
-			Some(vote_result)
-		} else {
-			None
-		};
 		CollationInfo {
 			hrmp_watermark: HrmpWatermark::<T>::get(),
 			horizontal_messages: HrmpOutboundMessages::<T>::get(),
@@ -1438,7 +1433,7 @@ impl<T: Config> Pallet<T> {
 			head_data: CustomValidationHeadData::<T>::get()
 				.map_or_else(|| header.encode(), |v| v)
 				.into(),
-			vote_result,
+			vote_result: CollectedPotVotes::<T>::get(),
 			requested_asset: RequestedAsset::<T>::get(),
 		}
 	}

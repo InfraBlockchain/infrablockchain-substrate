@@ -18,7 +18,7 @@
 pub mod fungible_conversion;
 pub mod matching;
 pub mod runtime_api;
-use crate::matching::{Equals, ParentLocation, StartsWith};
+use crate::matching::{Equals, ParentLocation, LocalLocationPattern, StartsWith};
 use sp_runtime::traits::Zero;
 
 use frame_support::traits::{
@@ -222,31 +222,28 @@ pub type MultiLocationConvertedConcreteId<MultiLocationFilter, AssetConverter, B
 	>;
 
 /// [`MatchedConvertedConcreteId`] converter dedicated for storing `ForeignAssets` with `AssetId` as
-/// `MultiLocation`.
+/// `Location`.
 ///
 /// Excludes by default:
 /// - parent as relay chain
-/// - all local MultiLocations
+/// - all local Locations
 ///
-/// `AdditionalMultiLocationExclusionFilter` can customize additional excluded MultiLocations
-pub type ForeignAssetsConvertedConcreteId<
-	AdditionalMultiLocationExclusionFilter,
-	AssetConverter,
-	Balance,
-> = MultiLocationConvertedConcreteId<
-	EverythingBut<(
-		// Excludes relay/parent chain currency
-		Equals<ParentLocation>,
-		// Here we rely on fact that something like this works:
-		// assert!(MultiLocation::new(1,
-		// X1(Parachain(100))).starts_with(&MultiLocation::parent())); assert!(X1(Parachain(100)).
-		// starts_with(&Here)); StartsWith<LocalMultiLocationPattern>,
-		// Here we can exclude more stuff or leave it as `()`
-		AdditionalMultiLocationExclusionFilter,
-	)>,
-	AssetConverter,
-	Balance,
->;
+/// `AdditionalLocationExclusionFilter` can customize additional excluded Locations
+pub type ForeignAssetsConvertedConcreteId<AdditionalLocationExclusionFilter, Balance> =
+	LocationConvertedConcreteId<
+		EverythingBut<(
+			// Excludes relay/parent chain currency
+			Equals<ParentLocation>,
+			// Here we rely on fact that something like this works:
+			// assert!(Location::new(1,
+			// [Parachain(100)]).starts_with(&Location::parent()));
+			// assert!([Parachain(100)].into().starts_with(&Here));
+			StartsWith<LocalLocationPattern>,
+			// Here we can exclude more stuff or leave it as `()`
+			AdditionalLocationExclusionFilter,
+		)>,
+		Balance,
+	>;
 
 #[cfg(test)]
 mod tests {

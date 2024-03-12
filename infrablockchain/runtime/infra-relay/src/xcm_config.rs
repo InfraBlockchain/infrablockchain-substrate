@@ -17,7 +17,7 @@
 //! XCM configuration for infrablockspace.
 
 use super::{
-	parachains_origin, system_token_manager, AccountId, AllPalletsWithSystem, AssetLink, Assets,
+	parachains_origin, system_token_manager, AccountId, AllPalletsWithSystem, Assets,
 	Authorship, Balance, Balances, ParaId, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
 	ValidatorCollective, WeightToFee, XcmPallet,
 };
@@ -64,19 +64,18 @@ pub type LocationToAccountId = (
 	AccountId32Aliases<RelayNetwork, AccountId>,
 );
 
-/// `AssetId/Balance` converter for `TrustBackedAssets`
+/// `AssetId`/`Balance` converter for `ForeignAssets`.
 pub type ForeignAssetsConvertedConcreteId = infra_asset_common::ForeignAssetsConvertedConcreteId<
 	(
 		// Ignore `TrustBackedAssets` explicitly
 		StartsWith<TrustBackedAssetsPalletLocation>,
 		// Ignore asset which starts explicitly with our `GlobalConsensus(NetworkId)`, means:
-		// - foreign assets from our consensus should be: `MultiLocation {parent: 1,
-		//   X*(Parachain(xyz))}
+		// - foreign assets from our consensus should be: `Location {parents: 1, X*(Parachain(xyz),
+		//   ..)}
 		// - foreign assets outside our consensus with the same `GlobalConsensus(NetworkId)` wont
 		//   be accepted here
 		StartsWithExplicitGlobalConsensus<UniversalLocationNetworkId>,
 	),
-	AssetLink,
 	Balance,
 >;
 
@@ -132,6 +131,8 @@ parameter_types! {
 	pub CheckingAccount: AccountId = XcmPallet::check_account();
 	pub TrustBackedAssetsPalletLocation: MultiLocation =
 		PalletInstance(<Assets as PalletInfoAccess>::index() as u8).into();
+	// pub WrappedAssetsPalletLocation: MultiLocation = 
+	// 	PalletInstance(<WrappedAssets as PalletInfoAccess>::index() as u8).into();
 	pub UniversalLocationNetworkId: NetworkId = UniversalLocation::get().global_consensus().unwrap();
 	pub const RelayNetwork: Option<NetworkId> = Some(NetworkId::InfraRelay);
 	pub XcmAssetFeesReceiver: Option<AccountId> = Authorship::author();
@@ -333,7 +334,7 @@ impl xcm_executor::Config for XcmConfig {
 		>,
 	);
 	type ResponseHandler = XcmPallet;
-	type AssetTrap = TrappistDropAssets<AssetId, AssetLink, Assets, Balances, XcmPallet, AccountId>;
+	type AssetTrap = XcmPallet;
 	type AssetLocker = ();
 	type AssetExchanger = ();
 	type AssetClaims = XcmPallet;

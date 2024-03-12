@@ -39,8 +39,6 @@ pub mod pallet {
 		type SystemTokenInterface: SystemTokenInterface;
 		/// Type that interacts with local asset
 		type Fungibles: InspectSystemToken<Self::AccountId>;
-		/// Type that links asset with System Token
-		type AssetLink: AssetLinkInterface<SystemTokenAssetId>;
 		/// Type that delivers XCM messages
 		type XcmRouter: SendXcm;
 	}
@@ -85,15 +83,6 @@ pub mod pallet {
 		},
 		/// Bootstrap has been ended by Relay-chain governance.
 		BootstrapEnded,
-		/// Asset is linked since it has registered as System Token by Relay-chain governance
-		AssetLinked {
-			asset_id: SystemTokenAssetId,
-			multi_loc: MultiLocation,
-		},
-		/// Asset is unlinked by Relay-chain governance
-		AssetUnlinked {
-			asset_id: SystemTokenAssetId,
-		},
 		/// Infra configuration has been udpated
 		InfraConfigUpdated {
 			new: InfraSystemConfig,
@@ -266,8 +255,6 @@ pub mod pallet {
 				system_token_weight,
 			)
 			.map_err(|_| Error::<T>::ErrorCreateWrappedLocal)?;
-			T::AssetLink::link(&asset_id, asset_link_parent, original)
-				.map_err(|_| Error::<T>::ErrorLinkAsset)?;
 			Ok(())
 		}
 

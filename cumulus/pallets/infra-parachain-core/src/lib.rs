@@ -2,16 +2,21 @@
 
 use cumulus_pallet_xcm::{ensure_relay, Origin};
 use cumulus_primitives_core::UpdateRCConfig;
-use frame_support::{pallet_prelude::*, traits::fungibles::Inspect};
+use frame_support::{pallet_prelude::*, traits::{fungibles::{Inspect, InspectSystemToken}, tokens::SystemTokenId}};
 use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
 use sp_runtime::{
 	types::{fee::*, infra_core::*, token::*, vote::*},
 	Saturating,
 };
+
 use sp_std::vec::Vec;
 
 pub use pallet::*;
+
+pub type SystemTokenAssetIdOf<T> = <<T as Config>::Fungibles as Inspect>::AssetId;
+pub type SystemTokenBalanceOf<T> = <<T as Config>::Fungibles as Inspect>::Balance;
+pub type SystemTokenWeightOf<T> = <<T as Config>::Fungibles as InspectSystemToken>::SystemTokenWeight;
 
 #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 pub struct RequestStatus<BlockNumber> {
@@ -50,15 +55,13 @@ pub mod pallet {
 		/// Runtime Origin for the System Token pallet.
 		type RuntimeOrigin: From<<Self as frame_system::Config>::RuntimeOrigin>
 			+ Into<Result<Origin, <Self as Config>::RuntimeOrigin>>;
+		type SystemTokenId: SystemTokenId;
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Type that interacts with local asset
-		// TODO: Move `LocalAssetManager: Inspect` to fungibles
-		type LocalAssetManager: LocalAssetManager<AccountId = Self::AccountId>;
-		/// Type that links local asset with System Token
-		type AssetLink: AssetLinkInterface<SystemTokenAssetId>;
+		type Fungibles: InspectSystemToken<AccountId = Self::AccountId>;
 		/// Type that interacts with Parachain System
-		type ParachainSystem: CollectVote + AssetMetadataProvider;
+		type ParachainSystem: AssetMetadataProvider; // CollectVote
 		/// Active request period for registering System Token
 		#[pallet::constant]
 		type ActiveRequestPeriod: Get<BlockNumberFor<Self>>;
@@ -71,40 +74,40 @@ pub mod pallet {
 	pub type ParaCoreAdmin<T: Config> = StorageValue<_, T::AccountId>;
 
 	#[pallet::storage]
-	pub type RCSystemConfig<T: Config> = StorageValue<_, InfraSystemConfig>;
+	pub type RCSystemConfig<T: Config> = StorageValue<_, SystemTokenConfig<SystemTokenWeightOf<T>>>;
 
 	#[pallet::storage]
-	pub type ParaFeeRate<T: Config> = StorageValue<_, SystemTokenWeight>;
+	pub type ParaFeeRate<T: Config> = StorageValue<_, SystemTokenWeightOf<T>>;
 
 	#[pallet::storage]
 	pub(super) type RuntimeState<T: Config> = StorageValue<_, Mode, ValueQuery>;
 
 	#[pallet::storage]
-	pub type FeeTable<T: Config> = StorageMap<_, Twox128, ExtrinsicMetadata, SystemTokenBalance>;
+	pub type FeeTable<T: Config> = StorageMap<_, Twox128, ExtrinsicMetadata, SystemTokenBalanceOf<T>>;
 
 	#[pallet::storage]
 	pub type CurrentRequest<T: Config> =
-		StorageValue<_, (RemoteAssetMetadata, RequestStatus<BlockNumberFor<T>>)>;
+		StorageValue<_, (RemoteAssetMetadata<T::SystemTokenId, SystemTokenBalanceOf<T>>, RequestStatus<BlockNumberFor<T>>)>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// System Token has been regierested by Relay-chain governance
-		Registered { asset_id: SystemTokenAssetId },
+		Registered { asset_id: T::SystemTokenId },
 		/// System Token has been deregistered by Relay-chain governance
-		Deregistered { asset_id: SystemTokenAssetId },
+		Deregistered { asset_id: T::SystemTokenId },
 		/// Fee table for has been updated by Relay-chain governance
-		FeeTableUpdated { extrinsic_metadata: ExtrinsicMetadata, fee: SystemTokenBalance },
+		FeeTableUpdated { extrinsic_metadata: ExtrinsicMetadata, fee: SystemTokenBalanceOf<T> },
 		/// Weight of System Token has been updated by Relay-chain governance
-		SystemTokenWeightUpdated { asset_id: SystemTokenAssetId },
+		SystemTokenWeightUpdated { asset_id: T::SystemTokenId },
 		/// Bootstrap has been ended by Relay-chain governance.
 		BootstrapEnded,
 		/// Origin of this pallet has been set by Relay-chain governance.
 		ParaCoreAdminUpdated { who: T::AccountId },
 		/// System Token registration has been requested
-		RegisterRequested { asset_id: SystemTokenAssetId, exp: BlockNumberFor<T> },
+		RegisterRequested { asset_id: T::SystemTokenId, exp: BlockNumberFor<T> },
 		/// Wrapped local asset has been created
-		WrappedCreated { asset_id: SystemTokenAssetId, original: SystemTokenId },
+		WrappedCreated { asset_id: T::SystemTokenId },
 	}
 
 	#[pallet::error]
@@ -223,8 +226,8 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
 			Self::check_valid_register()?;
-			T::LocalAssetManager::promote(asset_id, system_token_weight)
-				.map_err(|_| Error::<T>::ErrorRegisterSystemToken)?;
+			// T::LocalAssetManager::promote(asset_id, system_token_weight)
+			// 	.map_err(|_| Error::<T>::ErrorRegisterSystemToken)?;
 			Self::deposit_event(Event::<T>::Registered { asset_id });
 			Ok(())
 		}
@@ -242,7 +245,7 @@ pub mod pallet {
 		#[pallet::call_index(5)]
 		pub fn create_wrapped_local(
 			origin: OriginFor<T>,
-			asset_id: SystemTokenAssetId,
+			asset_id: T::SystemTokenId,
 			currency_type: Fiat,
 			min_balance: SystemTokenBalance,
 			name: Vec<u8>,
@@ -253,19 +256,17 @@ pub mod pallet {
 			original: SystemTokenId,
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
-			T::LocalAssetManager::create_wrapped_local(
-				asset_id,
-				currency_type,
-				min_balance,
-				name,
-				symbol,
-				decimals,
-				system_token_weight,
-			)
-			.map_err(|_| Error::<T>::ErrorCreateWrappedLocalAsset)?;
-			T::AssetLink::link(&asset_id, asset_link_parent, original)
-				.map_err(|_| Error::<T>::ErrorLinkAsset)?;
-			Self::deposit_event(Event::<T>::WrappedCreated { asset_id, original });
+			// T::LocalAssetManager::create_wrapped_local(
+			// 	asset_id,
+			// 	currency_type,
+			// 	min_balance,
+			// 	name,
+			// 	symbol,
+			// 	decimals,
+			// 	system_token_weight,
+			// )
+			// .map_err(|_| Error::<T>::ErrorCreateWrappedLocalAsset)?;
+			Self::deposit_event(Event::<T>::WrappedCreated { asset_id });
 			Ok(())
 		}
 
@@ -276,11 +277,11 @@ pub mod pallet {
 			is_unlink: bool,
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
-			T::LocalAssetManager::demote(asset_id)
-				.map_err(|_| Error::<T>::ErrorDeregisterSystemToken)?;
-			if is_unlink {
-				T::AssetLink::unlink(&asset_id).map_err(|_| Error::<T>::ErrorUnlinkAsset)?;
-			}
+			// T::LocalAssetManager::demote(asset_id)
+			// 	.map_err(|_| Error::<T>::ErrorDeregisterSystemToken)?;
+			// if is_unlink {
+			// 	T::AssetLink::unlink(&asset_id).map_err(|_| Error::<T>::ErrorUnlinkAsset)?;
+			// }
 			Self::deposit_event(Event::<T>::Deregistered { asset_id });
 			Ok(())
 		}
@@ -308,11 +309,11 @@ pub mod pallet {
 			if let Some(acc) = ensure_signed_or_root(origin)? {
 				ensure!(ParaCoreAdmin::<T>::get() == Some(acc), Error::<T>::NoPermission);
 			}
-			let remote_asset_metadata = T::LocalAssetManager::get_metadata(asset_id)
-				.map_err(|_| Error::<T>::ErrorOnGetMetadata)?;
-			T::LocalAssetManager::request_register(asset_id)
-				.map_err(|_| Error::<T>::ErrorOnRequestRegister)?;
-			let exp = Self::do_request(asset_id, remote_asset_metadata)?;
+			// let remote_asset_metadata = T::LocalAssetManager::get_metadata(asset_id)
+			// 	.map_err(|_| Error::<T>::ErrorOnGetMetadata)?;
+			// T::LocalAssetManager::request_register(asset_id)
+			// 	.map_err(|_| Error::<T>::ErrorOnRequestRegister)?;
+			// let exp = Self::do_request(asset_id, remote_asset_metadata)?;
 			Self::deposit_event(Event::<T>::RegisterRequested { asset_id, exp });
 			Ok(())
 		}
@@ -354,7 +355,7 @@ impl<T: Config> Pallet<T> {
 impl<T: Config> RuntimeConfigProvider for Pallet<T> {
 	type Error = DispatchError;
 
-	fn infra_system_config() -> Result<InfraSystemConfig, Self::Error> {
+	fn system_token_config() -> Result<SystemTokenConfig<SystemTokenWeightOf<T>>, Self::Error> {
 		Ok(RCSystemConfig::<T>::get().ok_or(Error::<T>::NotInitiated)?)
 	}
 
@@ -384,7 +385,7 @@ impl<T: Config> VotingHandler for Pallet<T> {
 		system_token_id: SystemTokenId,
 		vote_weight: VoteWeight,
 	) {
-		T::ParachainSystem::collect_vote(who, system_token_id, vote_weight);
+		// T::ParachainSystem::collect_vote(who, system_token_id, vote_weight);
 	}
 }
 
