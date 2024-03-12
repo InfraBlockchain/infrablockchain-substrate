@@ -1,9 +1,9 @@
-
 use super::*;
 
 pub type SystemTokenAssetIdOf<T> = <<T as Config>::Fungibles as Inspect>::AssetId;
 pub type SystemTokenBalanceOf<T> = <<T as Config>::Fungibles as Insepct>::Balance;
-pub type SystemTokenWeightOf<T> = <<T as Config>::Fungibles as InspectSystemToken>::SystemTokenWeight;
+pub type SystemTokenWeightOf<T> =
+	<<T as Config>::Fungibles as InspectSystemToken>::SystemTokenWeight;
 
 #[derive(Encode, Decode)]
 pub enum ParachainRuntimePallets {
@@ -22,15 +22,7 @@ pub enum ParachainConfigCalls<Location, Balance, Weight> {
 	#[codec(index = 4)]
 	RegisterSystemToken(Location, Weight),
 	#[codec(index = 5)]
-	CreateWrappedLocal(
-		Location,
-		Fiat,
-		SystemTokenBalance,
-		Vec<u8>,
-		Vec<u8>,
-		u8,
-		SystemTokenWeight
-	),
+	CreateWrappedLocal(Location, Fiat, SystemTokenBalance, Vec<u8>, Vec<u8>, u8, SystemTokenWeight),
 	#[codec(index = 6)]
 	DeregisterSystemToken(Location, bool),
 }

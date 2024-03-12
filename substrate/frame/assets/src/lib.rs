@@ -160,7 +160,6 @@ mod impl_system_token;
 pub mod types;
 pub use types::*;
 
-use softfloat::F64;
 use frame_support::{
 	pallet_prelude::*,
 	storage::KeyPrefixIterator,
@@ -173,6 +172,7 @@ use frame_support::{
 };
 use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
+use softfloat::F64;
 use sp_runtime::{
 	traits::{
 		AccountIdConversion, AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Saturating,
@@ -210,7 +210,7 @@ impl<AssetId, AccountId> AssetsCallback<AssetId, AccountId> for () {}
 pub mod pallet {
 	use frame_support::traits::tokens::Balance;
 
-use super::*;
+	use super::*;
 
 	/// The current storage version.
 	const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -627,7 +627,7 @@ use super::*;
 			origin: OriginFor<T>,
 			id: T::AssetIdParameter,
 			admin: AccountIdLookupOf<T>,
-			min_balance: T::Balance
+			min_balance: T::Balance,
 		) -> DispatchResult {
 			let id: T::AssetId = id.into();
 			let owner = T::CreateOrigin::ensure_origin(origin, &id)?;
@@ -654,7 +654,7 @@ use super::*;
 					sufficients: 0,
 					approvals: 0,
 					status: AssetStatus::InActive,
-					currency_type: None, 
+					currency_type: None,
 					system_token_weight: None,
 				},
 			);

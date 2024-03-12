@@ -18,8 +18,9 @@ pub(crate) type AssetIdOf<T> =
 	<<T as Config>::Fungibles as Inspect<<T as frame_system::Config>::AccountId>>::AssetId;
 
 /// SystemTokenWeight type alias
-pub(crate) type AssetWeightOf<T> =
-	<<T as Config>::Fungibles as InspectSystemToken<<T as frame_system::Config>::AccountId>>::SystemTokenWeight;
+pub(crate) type AssetWeightOf<T> = <<T as Config>::Fungibles as InspectSystemToken<
+	<T as frame_system::Config>::AccountId,
+>>::SystemTokenWeight;
 
 // Type aliases used for interaction with `OnChargeAssetTransaction`.
 // Balance type alias.

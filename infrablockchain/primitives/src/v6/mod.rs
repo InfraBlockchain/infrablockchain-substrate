@@ -40,13 +40,13 @@ pub use runtime_primitives::traits::{BlakeTwo256, Hash as HashT};
 pub use infrablockchain_core_primitives::v2::{
 	AccountId, AccountIndex, AccountPublic, Balance, Block, BlockId, BlockNumber, CandidateHash,
 	ChainId, DownwardMessage, Hash, Header, InboundDownwardMessage, InboundHrmpMessage, Moment,
-	Nonce, OutboundHrmpMessage, Remark, Signature, UncheckedExtrinsic, OpaqueRemoteAssetMetadata
+	Nonce, OpaqueRemoteAssetMetadata, OutboundHrmpMessage, Remark, Signature, UncheckedExtrinsic,
 };
 
 // Export some polkadot-parachain primitives
 pub use parachain_primitives::primitives::{
-	HeadData, HorizontalMessages, HrmpChannelId, Id, UpwardMessage, UpwardMessages, ValidationCode,
-	ValidationCodeHash, LOWEST_PUBLIC_ID, PotVotesResult
+	HeadData, HorizontalMessages, HrmpChannelId, Id, PotVotesResult, UpwardMessage, UpwardMessages,
+	ValidationCode, ValidationCodeHash, LOWEST_PUBLIC_ID,
 };
 
 use serde::{Deserialize, Serialize};

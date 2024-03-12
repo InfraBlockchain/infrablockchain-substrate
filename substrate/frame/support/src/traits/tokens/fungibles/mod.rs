@@ -40,6 +40,6 @@ pub use regular::{
 	Balanced, DecreaseIssuance, Dust, IncreaseIssuance, Inspect, Mutate, Unbalanced,
 };
 pub use system_token::{
-	Inspect as InspectSystemToken, Manage as ManageSystemToken, 
-	Enumerate as EnumerateSystemToken, Metadata as InspectSystemTokenMetadata,
+	Enumerate as EnumerateSystemToken, Inspect as InspectSystemToken, Manage as ManageSystemToken,
+	Metadata as InspectSystemTokenMetadata,
 };

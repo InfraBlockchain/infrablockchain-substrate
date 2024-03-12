@@ -25,11 +25,7 @@ pub mod types {
 
 	impl<AccountId, AssetId, Weight> PotVote<AccountId, AssetId, Weight> {
 		/// Create new instance of vote
-		pub fn new(
-			asset: AssetId,
-			candidate: AccountId,
-			weight: Weight,
-		) -> Self {
+		pub fn new(asset: AssetId, candidate: AccountId, weight: Weight) -> Self {
 			Self { asset, candidate, weight }
 		}
 	}
@@ -37,12 +33,12 @@ pub mod types {
 
 #[cfg(test)]
 mod tests {
-	use sp_core::crypto::AccountId32;
 	use super::*;
+	use sp_core::crypto::AccountId32;
 	pub struct MockToken {
 		para_id: Option<u32>,
 		pallet_id: u8,
-		asset_id: u128
+		asset_id: u128,
 	}
 
 	#[test]

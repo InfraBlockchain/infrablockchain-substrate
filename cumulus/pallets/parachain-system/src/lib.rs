@@ -912,7 +912,8 @@ pub mod pallet {
 	pub(super) type CollectedPotVotes<T: Config> = StorageValue<_, PotVotes, OptionQuery>;
 
 	#[pallet::storage]
-	pub(super) type RequestedAsset<T: Config> = StorageValue<_, relay_chain::OpaqueRemoteAssetMetadata>;
+	pub(super) type RequestedAsset<T: Config> =
+		StorageValue<_, relay_chain::OpaqueRemoteAssetMetadata>;
 
 	#[pallet::inherent]
 	impl<T: Config> ProvideInherent for Pallet<T> {

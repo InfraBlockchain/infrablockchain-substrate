@@ -159,9 +159,10 @@ where
 		// Error
 		// 1. If there is no system token on Runtime
 
-		let (asset_id, _) = <T::Fungibles as InspectSystemToken<T::AccountId>>::balance(who, asset_id)
-			.take()
-			.ok_or(TransactionValidityError::from(InvalidTransaction::Payment))?;	
+		let (asset_id, _) =
+			<T::Fungibles as InspectSystemToken<T::AccountId>>::balance(who, asset_id)
+				.take()
+				.ok_or(TransactionValidityError::from(InvalidTransaction::Payment))?;
 		let min_converted_fee = if fee.is_zero() { Zero::zero() } else { One::one() };
 		// CON::to_asset_balance => fee / system_token_weight
 		let mut converted_fee = CON::to_asset_balance(fee, asset_id.clone())

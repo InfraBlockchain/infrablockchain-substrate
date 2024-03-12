@@ -1,14 +1,18 @@
-use frame_support::{pallet_prelude::*, DefaultNoBound, traits::tokens::fungibles::{InspectSystemToken, Inspect}};
+use frame_support::{
+	pallet_prelude::*,
+	traits::tokens::fungibles::{Inspect, InspectSystemToken},
+	DefaultNoBound,
+};
 use frame_system::{ensure_root, pallet_prelude::*};
 use log;
 use pallet_validator_election::VotingInterface;
 use parity_scale_codec::Encode;
 use primitives::well_known_keys;
+use runtime_parachains::SystemTokenInterface;
+use softfloat::F64;
 use sp_runtime::types::{fee::*, infra_core::*, token::*, vote::*};
 use sp_std::vec::Vec;
 use xcm::latest::prelude::*;
-use runtime_parachains::SystemTokenInterface;
-use softfloat::F64;
 
 mod impls;
 mod types;
@@ -27,7 +31,7 @@ pub mod pallet {
 	pub trait Config: frame_system::Config {
 		/// Overarching event type
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-		/// Type of weight for voting 
+		/// Type of weight for voting
 		type VoteWeight: Into<F64>;
 		/// Updating vote type
 		type VotingInterface: VotingInterface<Self>;

@@ -22,9 +22,9 @@ use core::{
 	convert::{TryFrom, TryInto},
 	result,
 };
+use frame_support::{traits::tokens::SystemTokenId, PalletError};
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
-use frame_support::{traits::tokens::SystemTokenId, PalletError};
 /// A relative path between state-bearing consensus systems.
 ///
 /// A location in a consensus system is defined as an *isolatable state machine* held within global
@@ -81,10 +81,12 @@ impl Default for MultiLocation {
 
 #[derive(Encode, Decode, PalletError, scale_info::TypeInfo)]
 pub enum SystemTokenIdError {
-    /// Error converting `self` to SystemTokenId
+	/// Error converting `self` to SystemTokenId
 	ConvertError,
 	/// Error converting System Token Id to `self`
-	ConvertBackError
+	ConvertBackError,
+	/// Error occured while converting to `wrapped`
+	ConvertToWrappedError,
 }
 
 impl SystemTokenId for MultiLocation {
@@ -95,23 +97,69 @@ impl SystemTokenId for MultiLocation {
 
 	fn id(&self) -> Result<(Option<Self::OriginId>, Self::PalletId, Self::AssetId), Self::Error> {
 		match self.interior {
-			Junctions::X3(Junction::Parachain(para_id), Junction::PalletInstance(pallet_id), Junction::GeneralIndex(asset_id)) => Ok((Some(para_id), pallet_id, asset_id)),
-			Junctions::X2(Junction::PalletInstance(pallet_id), Junction::GeneralIndex(asset_id)) => Ok((None, pallet_id, asset_id)),
-			_ => Err(SystemTokenIdError::ConvertError)
+			Junctions::X3(
+				Junction::Parachain(para_id),
+				Junction::PalletInstance(pallet_id),
+				Junction::GeneralIndex(asset_id),
+			) => Ok((Some(para_id), pallet_id, asset_id)),
+			Junctions::X2(
+				Junction::PalletInstance(pallet_id),
+				Junction::GeneralIndex(asset_id),
+			) => Ok((None, pallet_id, asset_id)),
+			_ => Err(SystemTokenIdError::ConvertError),
 		}
 	}
 
-	fn convert_back(origin_id: Option<Self::OriginId>, pallet_id: Self::PalletId, asset_id: Self::AssetId) -> Self {
+	fn convert_back(
+		origin_id: Option<Self::OriginId>,
+		pallet_id: Self::PalletId,
+		asset_id: Self::AssetId,
+	) -> Self {
 		if let Some(para_id) = origin_id {
 			MultiLocation::new(
-				0, 
-				Junctions::X3(Junction::Parachain(para_id), Junction::PalletInstance(pallet_id), Junction::GeneralIndex(asset_id))
+				0,
+				Junctions::X3(
+					Junction::Parachain(para_id),
+					Junction::PalletInstance(pallet_id),
+					Junction::GeneralIndex(asset_id),
+				),
 			)
 		} else {
 			MultiLocation::new(
-				0, 
-				Junctions::X2(Junction::PalletInstance(pallet_id), Junction::GeneralIndex(asset_id))
+				0,
+				Junctions::X2(
+					Junction::PalletInstance(pallet_id),
+					Junction::GeneralIndex(asset_id),
+				),
 			)
+		}
+	}
+
+	fn wrapped(&self) -> Result<Self, Self::Error> {
+		match self.interior {
+			Junctions::X3(
+				Junction::Parachain(para_id),
+				Junction::PalletInstance(pallet_id),
+				Junction::GeneralIndex(asset_id),
+			) => Ok(Self {
+				parents: 1,
+				interior: Junctions::X3(
+					Junction::Parachain(para_id),
+					Junction::PalletInstance(pallet_id),
+					Junction::GeneralIndex(asset_id),
+				),
+			}),
+			Junctions::X2(
+				Junction::PalletInstance(pallet_id),
+				Junction::GeneralIndex(asset_id),
+			) => Ok(Self {
+				parents: 1,
+				interior: Junctions::X2(
+					Junction::PalletInstance(pallet_id),
+					Junction::GeneralIndex(asset_id),
+				),
+			}),
+			_ => Err(SystemTokenIdError::ConvertToWrappedError),
 		}
 	}
 }

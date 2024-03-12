@@ -16,7 +16,10 @@
 // limitations under the License.
 
 pub use crate::system_token_helper;
-use frame_support::{pallet_prelude::*, traits::fungibles::{roles::Inspect, EnumerateSystemToken      }};
+use frame_support::{
+	pallet_prelude::*,
+	traits::fungibles::{roles::Inspect, EnumerateSystemToken},
+};
 use frame_system::pallet_prelude::BlockNumberFor;
 pub use pallet::*;
 use sp_runtime::{self, traits::Zero, types::token::*};
@@ -78,9 +81,12 @@ pub mod pallet {
 impl<T: Config> Pallet<T> {
 	pub(crate) fn do_aggregate_system_token(is_relay: bool) -> Result<(), DispatchError> {
 		let fee_account = system_token_helper::sovereign_account::<T>();
-		for (asset, balance) in T::Fungibles::system_token_account_balances(fee_account.clone().into()).into_iter() {
+		for (asset, balance) in
+			T::Fungibles::system_token_account_balances(fee_account.clone().into()).into_iter()
+		{
 			if let Some(asset_multi_loc) =
-				T::AssetMultiLocationGetter::get_asset_multi_location(asset) // TODO: Remove
+				T::AssetMultiLocationGetter::get_asset_multi_location(asset)
+			// TODO: Remove
 			{
 				system_token_helper::do_teleport_asset::<T::AccountId, T::SendXcm>(
 					&fee_account,
@@ -89,7 +95,10 @@ impl<T: Config> Pallet<T> {
 					is_relay,
 				)?;
 
-				Self::deposit_event(Event::<T>::SystemTokenAggregated { asset_multi_loc, amount: balance });
+				Self::deposit_event(Event::<T>::SystemTokenAggregated {
+					asset_multi_loc,
+					amount: balance,
+				});
 			}
 		}
 		Ok(())

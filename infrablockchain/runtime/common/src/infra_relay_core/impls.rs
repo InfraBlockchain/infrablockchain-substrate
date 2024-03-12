@@ -4,15 +4,17 @@ use super::{types::*, *};
 use sp_std::vec;
 
 impl<T: Config> TaaV for Pallet<T> {
-
 	type AccountId = T::AccountId;
 	type VoteWeight = T::VoteWeight;
 	type Error = DispatchError;
 
 	fn process_vote(bytes: &mut Vec<u8>) -> Result<(), Self::Error> {
 		// Try decode
-		let vote = PotVote::<Self::AccountId, SystemTokenAssetIdOf<T>, Self::VoteWeight>::decode(&mut bytes[..]).map_err(|_| Error::<T>::ErrorDecode)?;
-		log::info!("😇😇😇 Vote: {:?}", vote);	
+		let vote = PotVote::<Self::AccountId, SystemTokenAssetIdOf<T>, Self::VoteWeight>::decode(
+			&mut bytes[..],
+		)
+		.map_err(|_| Error::<T>::ErrorDecode)?;
+		log::info!("😇😇😇 Vote: {:?}", vote);
 		// Validity Check
 		// Check whether it is registered system token
 		// if !T::SystemTokenInterface::is_system_token(&system_token_id) {
@@ -25,7 +27,9 @@ impl<T: Config> TaaV for Pallet<T> {
 	}
 }
 
-impl<T: Config, SystemTokenBalance, SystemTokenWeight> RuntimeConfigProvider<SystemTokenBalance, SystemTokenWeight> for Pallet<T> {
+impl<T: Config, SystemTokenBalance, SystemTokenWeight>
+	RuntimeConfigProvider<SystemTokenBalance, SystemTokenWeight> for Pallet<T>
+{
 	type Error = DispatchError;
 
 	fn system_token_config() -> Result<SystemTokenConfig, Self::Error> {
@@ -46,12 +50,12 @@ impl<T: Config, SystemTokenBalance, SystemTokenWeight> RuntimeConfigProvider<Sys
 }
 
 // TODO: Find a way to dispatch XCM locally. Then it would be clearer
-impl<T: Config, Location, OriginId, Weight, Balance> UpdateInfraConfig<Location> for Pallet<T> 
+impl<T: Config, Location, OriginId, Weight, Balance> UpdateInfraConfig<Location> for Pallet<T>
 where
 	Location: Encode,
 	OriginId: Encode,
 	Weight: Encode,
-	Balance: Encode
+	Balance: Encode,
 {
 	fn update_fee_table(
 		dest_id: OriginId,
@@ -82,22 +86,14 @@ where
 		}
 	}
 
-	fn register_system_token(
-		dest_id: OriginId,
-		asset_id: Location,
-		system_token_weight: Weight,
-	) {
+	fn register_system_token(dest_id: OriginId, asset_id: Location, system_token_weight: Weight) {
 		let register_call = ParachainRuntimePallets::InfraParaCore(
 			ParachainConfigCalls::RegisterSystemToken(asset_id, system_token_weight),
 		);
 		Self::send_xcm_for(register_call.encode(), dest_id);
 	}
 
-	fn deregister_system_token(
-		dest_id: OriginId,
-		asset_id: Location,
-		is_unlink: bool,
-	) {
+	fn deregister_system_token(dest_id: OriginId, asset_id: Location, is_unlink: bool) {
 		let deregister_call = ParachainRuntimePallets::InfraParaCore(
 			ParachainConfigCalls::DeregisterSystemToken(asset_id, is_unlink),
 		);
@@ -122,15 +118,15 @@ where
 				name,
 				symbol,
 				decimals,
-				system_token_weight
+				system_token_weight,
 			));
 		Self::send_xcm_for(create_call.encode(), dest_id);
 	}
 }
 
-impl<T: Config, OriginId> Pallet<T> 
+impl<T: Config, OriginId> Pallet<T>
 where
-	OriginId: Encode
+	OriginId: Encode,
 {
 	pub(super) fn send_xcm_for(call: Vec<u8>, dest_id: OriginId) {
 		let message = Xcm(vec![

@@ -222,8 +222,8 @@ impl WithdrawReasons {
 	}
 }
 
-/// Interface for Infrablockchain System Token used in Relay/Para chain 
-pub trait SystemTokenId {
+/// Interface for Infrablockchain System Token used in Relay/Para chain
+pub trait SystemTokenId: Sized {
 	/// Id for general token index(e.g `u32`)
 	type AssetId: AssetId;
 	/// Id for token pallet id(e.g `u8`)
@@ -237,7 +237,14 @@ pub trait SystemTokenId {
 	fn id(&self) -> Result<(Option<Self::OriginId>, Self::PalletId, Self::AssetId), Self::Error>;
 
 	/// Convert the id back to the original type
-	fn convert_back(origin_id: Option<Self::OriginId>, pallet_id: Self::PalletId, asset_id: Self::AssetId) -> Self;
+	fn convert_back(
+		origin_id: Option<Self::OriginId>,
+		pallet_id: Self::PalletId,
+		asset_id: Self::AssetId,
+	) -> Self;
+
+	/// Convert to `Self` in contect of `Wrapped`
+	fn wrapped(&self) -> Result<Self, Self::Error>;
 }
 
 /// Simple amalgamation trait to collect together properties for an AssetId under one roof.

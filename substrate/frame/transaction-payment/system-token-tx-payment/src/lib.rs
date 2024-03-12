@@ -67,7 +67,8 @@ pub mod pallet {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Interface that is related to transaction for Infrablockchain Runtime
-		type InfraTxInterface: RuntimeConfigProvider<AssetBalanceOf<Self>, AssetWeightOf<Self>> + VotingHandler;
+		type InfraTxInterface: RuntimeConfigProvider<AssetBalanceOf<Self>, AssetWeightOf<Self>>
+			+ VotingHandler;
 		/// The fungibles instance used to pay for transactions in assets.
 		type Fungibles: Balanced<Self::AccountId> + InspectSystemToken<Self::AccountId>;
 		/// The actual transaction charging logic that charges the fees.

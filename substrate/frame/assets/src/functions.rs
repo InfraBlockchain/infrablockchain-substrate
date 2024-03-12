@@ -65,7 +65,12 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 	pub(super) fn new_account(
 		who: &T::AccountId,
-		d: &mut AssetDetails<T::Balance, T::AccountId, DepositBalanceOf<T, I>, T::SystemTokenWeight>,
+		d: &mut AssetDetails<
+			T::Balance,
+			T::AccountId,
+			DepositBalanceOf<T, I>,
+			T::SystemTokenWeight,
+		>,
 		maybe_deposit: Option<(&T::AccountId, DepositBalanceOf<T, I>)>,
 	) -> Result<ExistenceReasonOf<T, I>, DispatchError> {
 		let accounts = d.accounts.checked_add(1).ok_or(ArithmeticError::Overflow)?;
@@ -96,7 +101,12 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 	pub(super) fn dead_account(
 		who: &T::AccountId,
-		d: &mut AssetDetails<T::Balance, T::AccountId, DepositBalanceOf<T, I>, T::SystemTokenWeight>,
+		d: &mut AssetDetails<
+			T::Balance,
+			T::AccountId,
+			DepositBalanceOf<T, I>,
+			T::SystemTokenWeight,
+		>,
 		reason: &ExistenceReasonOf<T, I>,
 		force: bool,
 	) -> DeadConsequence {
@@ -437,7 +447,12 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		beneficiary: &T::AccountId,
 		amount: T::Balance,
 		check: impl FnOnce(
-			&mut AssetDetails<T::Balance, T::AccountId, DepositBalanceOf<T, I>, T::SystemTokenWeight>,
+			&mut AssetDetails<
+				T::Balance,
+				T::AccountId,
+				DepositBalanceOf<T, I>,
+				T::SystemTokenWeight,
+			>,
 		) -> DispatchResult,
 	) -> DispatchResult {
 		if amount.is_zero() {
@@ -527,7 +542,12 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		f: DebitFlags,
 		check: impl FnOnce(
 			T::Balance,
-			&mut AssetDetails<T::Balance, T::AccountId, DepositBalanceOf<T, I>, T::SystemTokenWeight>,
+			&mut AssetDetails<
+				T::Balance,
+				T::AccountId,
+				DepositBalanceOf<T, I>,
+				T::SystemTokenWeight,
+			>,
 		) -> DispatchResult,
 	) -> Result<T::Balance, DispatchError> {
 		if amount.is_zero() {
@@ -967,7 +987,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		symbol: Vec<u8>,
 		decimals: u8,
 	) -> DispatchResult {
-		let bounded_name: BoundedVec<u8, T::StringLimit>  =
+		let bounded_name: BoundedVec<u8, T::StringLimit> =
 			name.clone().try_into().map_err(|_| Error::<T, I>::BadMetadata)?;
 		let bounded_symbol: BoundedVec<u8, T::StringLimit> =
 			symbol.clone().try_into().map_err(|_| Error::<T, I>::BadMetadata)?;
@@ -1020,9 +1040,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	/// Returns all the non-zero balances for all assets of the given `account`.
 	pub fn account_balances(account: &T::AccountId) -> Vec<(T::AssetId, T::Balance)> {
 		Asset::<T, I>::iter_keys()
-			.filter_map(|id| {
-				Self::maybe_balance(id.clone(), account).map(|balance| (id, balance))
-			})
+			.filter_map(|id| Self::maybe_balance(id.clone(), account).map(|balance| (id, balance)))
 			.collect::<Vec<_>>()
 	}
 }
@@ -1031,13 +1049,17 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	pub fn asset_detail(
 		asset_id: &T::AssetId,
-	) -> Option<AssetDetails<T::Balance, T::AccountId, DepositBalanceOf<T, I>, T::SystemTokenWeight>> {
+	) -> Option<AssetDetails<T::Balance, T::AccountId, DepositBalanceOf<T, I>, T::SystemTokenWeight>>
+	{
 		Asset::<T, I>::get(asset_id)
 	}
 
-	/// Return most of the system token balance of 'asset' and 'who'. If asset is 'Some(_), it will return balance of that asset.
-	/// If it is None, it will return most of the balance of 'who' 
-	pub fn system_token_balance(who: &T::AccountId, maybe_asset: Option<T::AssetId>) -> Option<(T::AssetId, T::Balance)> {
+	/// Return most of the system token balance of 'asset' and 'who'. If asset is 'Some(_), it will
+	/// return balance of that asset. If it is None, it will return most of the balance of 'who'
+	pub fn system_token_balance(
+		who: &T::AccountId,
+		maybe_asset: Option<T::AssetId>,
+	) -> Option<(T::AssetId, T::Balance)> {
 		maybe_asset.map_or_else(
 			|| {
 				<Self as fungibles::EnumerateSystemToken<T::AccountId>>::system_token_ids()
@@ -1049,7 +1071,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 					})
 					.max_by_key(|&(_, balance)| balance)
 			},
-			|id| Some((id.clone(), Self::balance(id, who)))
+			|id| Some((id.clone(), Self::balance(id, who))),
 		)
 	}
 

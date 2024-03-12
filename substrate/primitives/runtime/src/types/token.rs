@@ -65,7 +65,9 @@ pub enum InitError {
 	InvalidWeightScale,
 }
 
-impl<SystemTokenWeight: Clone + PartialEq + Zero + sp_std::fmt::Debug> SystemTokenConfig<SystemTokenWeight> {
+impl<SystemTokenWeight: Clone + PartialEq + Zero + sp_std::fmt::Debug>
+	SystemTokenConfig<SystemTokenWeight>
+{
 	/// Clone of base_currency type of `BaseSystemTokenDetail`
 	pub fn base_currency(&self) -> Fiat {
 		self.base_system_token_detail.clone().base_currency
@@ -126,7 +128,8 @@ impl<SystemTokenWeight> BaseSystemTokenDetail<SystemTokenWeight> {
 
 pub const MAX_REQUESTED_ASSETS: u32 = 1;
 /// Upper limit of number of assets to be requested
-pub type BoundedRequestedAssets<AssetId, Balance> = BoundedVec<RemoteAssetMetadata<AssetId, Balance>, ConstU32<MAX_REQUESTED_ASSETS>>;
+pub type BoundedRequestedAssets<AssetId, Balance> =
+	BoundedVec<RemoteAssetMetadata<AssetId, Balance>, ConstU32<MAX_REQUESTED_ASSETS>>;
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Default, Hash))]
@@ -134,9 +137,11 @@ pub struct RemoteAssetMetadata<AssetId, Balance> {
 	/// General asset id on Runtime(e.g `MultiLocation`)
 	#[codec(compact)]
 	pub asset_id: AssetId,
-	/// Human readable name of System Token. Accept unbounded 'Vec<u8>' because it would be checked `bounded` when initiated
+	/// Human readable name of System Token. Accept unbounded 'Vec<u8>' because it would be checked
+	/// `bounded` when initiated
 	pub name: Vec<u8>,
-	/// Human readable symbol of System Token. Accept unbounded 'Vec<u8>' because it would be checked `bounded` when initiated
+	/// Human readable symbol of System Token. Accept unbounded 'Vec<u8>' because it would be
+	/// checked `bounded` when initiated
 	pub symbol: Vec<u8>,
 	/// Currency type of base system token
 	pub currency_type: Fiat,
@@ -172,11 +177,7 @@ pub trait AssetLinkInterface<AssetId> {
 impl<AssetId> AssetLinkInterface<AssetId> for () {
 	type Error = ();
 
-	fn link(
-		_asset_id: &AssetId,
-		_parents: u8,
-		_original: AssetId,
-	) -> Result<(), Self::Error> {
+	fn link(_asset_id: &AssetId, _parents: u8, _original: AssetId) -> Result<(), Self::Error> {
 		Ok(())
 	}
 	fn unlink(_asset_id: &AssetId) -> Result<(), Self::Error> {

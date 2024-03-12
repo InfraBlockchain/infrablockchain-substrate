@@ -111,10 +111,7 @@ pub trait SystemTokenInterface<SystemTokenId, Balance, Metadata, VoteWeight = F6
 	/// Adjust the vote weight calculating exchange rate.
 	fn adjusted_weight(system_token: &Self::Id, vote_weight: VoteWeight) -> VoteWeight;
 	/// Update the metadata for requested asset received from enshirned chain
-	fn requested_asset_metadata(
-		para_id: ParaId,
-		maybe_requested_asset: Option<Metadata>,
-	);
+	fn requested_asset_metadata(para_id: ParaId, maybe_requested_asset: Option<Metadata>);
 }
 
 impl SystemTokenInterface<VoteWeight> for () {

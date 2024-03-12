@@ -22,18 +22,15 @@ use codec::{Decode, Encode};
 use parachain_primitives::primitives::HeadData;
 use scale_info::TypeInfo;
 use sp_runtime::{
-	types::{
-		Fiat, SystemTokenConfig, SystemTokenAssetId,
-		SystemTokenWeight,
-	},
+	types::{Fiat, SystemTokenAssetId, SystemTokenConfig, SystemTokenWeight},
 	RuntimeDebug,
 };
 use sp_std::prelude::*;
 
 pub use infrablockchain_core_primitives::InboundDownwardMessage;
 pub use parachain_primitives::primitives::{
-	DmpMessageHandler, Id as ParaId, IsSystem, UpwardMessage, ValidationParams, XcmpMessageFormat,
-	XcmpMessageHandler, PotVotesResult
+	DmpMessageHandler, Id as ParaId, IsSystem, PotVotesResult, UpwardMessage, ValidationParams,
+	XcmpMessageFormat, XcmpMessageHandler,
 };
 pub use primitives::{AbridgedHostConfiguration, AbridgedHrmpChannel, PersistedValidationData};
 

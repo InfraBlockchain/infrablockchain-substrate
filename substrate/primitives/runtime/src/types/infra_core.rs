@@ -10,30 +10,16 @@ use sp_std::vec::Vec;
 /// API that updates Infra-* Runtime configuration
 // TODO: Remove 'ParaId', 'SystemTokenId'
 pub trait UpdateInfraConfig<Location, OriginId, Weight, Balance> {
-
 	/// Update fee table for `dest_id` Runtime
-	fn update_fee_table(
-		dest_id: OriginId,
-		pallet_name: Vec<u8>,
-		call_name: Vec<u8>,
-		fee: Balance,
-	);
+	fn update_fee_table(dest_id: OriginId, pallet_name: Vec<u8>, call_name: Vec<u8>, fee: Balance);
 	/// Update fee rate for `dest_id` Runtime
 	fn update_para_fee_rate(dest_id: OriginId, fee_rate: Balance);
 	/// Set runtime state for `dest_id` Runtime
 	fn update_runtime_state(dest_id: Option<OriginId>);
 	/// Register `Original` System Token for `dest_id` Runtime(e.g `set_sufficient=true`)
-	fn register_system_token(
-		dest_id: OriginId,
-		asset_id: Location,
-		system_token_weight: Weight,
-	);
+	fn register_system_token(dest_id: OriginId, asset_id: Location, system_token_weight: Weight);
 	/// Deregister `Original/Wrapped` System Token for `dest_id` Runtime
-	fn deregister_system_token(
-		dest_id: OriginId,
-		asset_id: Location,
-		is_unlink: bool,
-	);
+	fn deregister_system_token(dest_id: OriginId, asset_id: Location, is_unlink: bool);
 	/// Create local asset of `Wrapped` System Token for `dest_id` Runtime
 	fn create_wrapped(
 		dest_id: OriginId,

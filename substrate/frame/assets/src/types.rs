@@ -96,7 +96,9 @@ pub struct AssetDetails<Balance, AccountId, DepositBalance, Weight> {
 	pub(super) system_token_weight: Option<Weight>,
 }
 
-impl<Balance, AccountId, DepositBalance, Weight> AssetDetails<Balance, AccountId, DepositBalance, Weight> {
+impl<Balance, AccountId, DepositBalance, Weight>
+	AssetDetails<Balance, AccountId, DepositBalance, Weight>
+{
 	pub fn set_system_token_weight(&mut self, weight: Weight) {
 		self.system_token_weight = Some(weight);
 	}

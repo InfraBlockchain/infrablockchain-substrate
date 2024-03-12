@@ -29,12 +29,14 @@ use futures::Future;
 use parity_scale_codec::{Decode, Encode, Error as CodecError, Input};
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 
-pub use parachain_primitives::primitives::{BlockData, HorizontalMessages, UpwardMessages, PotVotesResult};
+pub use parachain_primitives::primitives::{
+	BlockData, HorizontalMessages, PotVotesResult, UpwardMessages,
+};
 use primitives::{
 	BlakeTwo256, BlockNumber, CandidateCommitments, CandidateHash, CollatorPair,
 	CommittedCandidateReceipt, CompactStatement, EncodeAs, Hash, HashT, HeadData, Id as ParaId,
-	PersistedValidationData, SessionIndex, Signed, UncheckedSigned, ValidationCode,
-	ValidationCodeHash, ValidatorIndex, MAX_CODE_SIZE, MAX_POV_SIZE, OpaqueRemoteAssetMetadata
+	OpaqueRemoteAssetMetadata, PersistedValidationData, SessionIndex, Signed, UncheckedSigned,
+	ValidationCode, ValidationCodeHash, ValidatorIndex, MAX_CODE_SIZE, MAX_POV_SIZE,
 };
 pub use sp_consensus_babe::{
 	AllowedSlots as BabeAllowedSlots, BabeEpochConfiguration, Epoch as BabeEpoch,
