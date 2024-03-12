@@ -378,12 +378,11 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 impl pallet_system_token_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type InfraTxInterface = InfraRelayCore;
-	type Assets = Assets;
+	type Fungibles = Assets;
 	type OnChargeSystemToken = TransactionFeeCharger<
 		Runtime,
 		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
-		CreditToBucket,
-		JustTry,
+		CreditToBucket
 	>;
 	type BootstrapCallFilter = BootstrapCallFilter;
 	type PalletId = FeeTreasuryId;
@@ -393,7 +392,7 @@ impl infra_relay_core::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type VotingInterface = ValidatorElection;
 	type SystemTokenInterface = SystemTokenManager;
-	type LocalAssetManager = Assets;
+	type Fungibles = Assets;
 	type AssetLink = AssetLink;
 	type XcmRouter = XcmRouter;
 }
@@ -1109,12 +1108,10 @@ parameter_types! {
 impl pallet_validator_election::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type SessionsPerEra = SessionsPerEra;
-	type InfraVoteAccountId = VoteAccountId;
-	type InfraVotePoints = VoteWeight;
+	type Score = VoteWeight;
 	type NextNewSession = Session;
 	type SessionInterface = Self;
 	type CollectiveInterface = Council;
-	type RewardInterface = ValidatorRewardManager;
 }
 
 impl pallet_asset_link::Config for Runtime {
@@ -1130,8 +1127,9 @@ parameter_types! {
 impl system_token_manager::Config for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeEvent = RuntimeEvent;
+	type SystemTokenId = MultiLocation;
 	type InfraCore = InfraRelayCore;
-	type UnixTime = Timestamp;
+	type Fungibles = Assets;
 	type StringLimit = ConstU32<128>;
 	type MaxSystemTokens = ConstU32<10>;
 	type MaxOriginalUsedParaIds = ConstU32<10>;
@@ -1361,6 +1359,7 @@ type AssetId = u32;
 impl pallet_assets::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
+	type SystemTokenWeight = SystemTokenWeight;
 	type AssetId = AssetId;
 	type AssetIdParameter = parity_scale_codec::Compact<AssetId>;
 	type Currency = Balances;
@@ -1386,7 +1385,7 @@ parameter_types! {
 impl system_token_aggregator::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Period = Period;
-	type LocalAssetManager = Assets;
+	type Fungibles = Assets;
 	type AssetMultiLocationGetter = AssetLink;
 	type SendXcm = XcmRouter;
 	type IsRelay = IsRelay;

@@ -27,6 +27,7 @@ sp-core = { path = "../../../substrate/primitives/core", default-features = fals
 sp-io = { path = "../../../substrate/primitives/io", default-features = false }
 sp-runtime = { path = "../../primitives/runtime", default-features = false }
 sp-std = { path = "../../primitives/std", default-features = false }
+sp-arithmetic = { path = "../../primitives/arithmetic", default-features = false }
 
 # frames
 frame-benchmarking = { path = "../benchmarking", default-features = false, optional = true }
@@ -49,6 +50,7 @@ std = [
 	"codec/std",
 	"log/std",
 	"sp-application-crypto/std",
+	"sp-arithmetic/std",
 	"sp-core/std",
 	"sp-io/std",
 	"sp-runtime/std",

@@ -49,9 +49,9 @@ pub mod relay_chain {
 }
 
 // TODO: Generic
-pub trait UpdateRCConfig {
+pub trait UpdateRCConfig<Weight> {
 	/// System config set by Relay Chain
-	fn update_system_config(infra_system_config: InfraSystemConfig);
+	fn update_system_config(system_token_config: SystemTokenConfig<Weight>);
 	/// System Token weight set by Relay Chain
 	fn update_system_token_weight_for(assets: Vec<(SystemTokenAssetId, SystemTokenWeight)>);
 }

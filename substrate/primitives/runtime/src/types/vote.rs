@@ -7,6 +7,8 @@ use sp_std::prelude::*;
 
 pub use types::*;
 
+pub type VoteWeight = F64;
+
 pub mod types {
 
 	use super::*;

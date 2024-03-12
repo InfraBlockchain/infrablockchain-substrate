@@ -24,5 +24,5 @@ pub enum ParachainConfigCalls<Location, Balance, Weight> {
 	#[codec(index = 5)]
 	CreateWrappedLocal(Location, Fiat, SystemTokenBalance, Vec<u8>, Vec<u8>, u8, SystemTokenWeight),
 	#[codec(index = 6)]
-	DeregisterSystemToken(Location, bool),
+	DeregisterSystemToken(Location),
 }

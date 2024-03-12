@@ -76,26 +76,25 @@ where
 		Self::send_xcm_for(set_fee_rate_call.encode(), dest_id);
 	}
 
-	fn update_runtime_state(dest_id: Option<OriginId>) {
-		if let Some(dest_id) = dest_id {
-			let set_runtime_state_call =
-				ParachainRuntimePallets::InfraParaCore(ParachainConfigCalls::UpdateRuntimeState);
-			Self::send_xcm_for(set_runtime_state_call.encode(), dest_id)
-		} else {
-			Self::do_update_runtime_state();
-		}
+	fn update_runtime_state(dest_id: OriginId) {
+		let set_runtime_state_call =
+			ParachainRuntimePallets::InfraParaCore(ParachainConfigCalls::UpdateRuntimeState);
+		Self::send_xcm_for(set_runtime_state_call.encode(), dest_id);
 	}
 
-	fn register_system_token(dest_id: OriginId, asset_id: Location, system_token_weight: Weight) {
+	fn register_system_token(dest_id: OriginId, system_token_id: Location, system_token_weight: Weight) {
 		let register_call = ParachainRuntimePallets::InfraParaCore(
-			ParachainConfigCalls::RegisterSystemToken(asset_id, system_token_weight),
+			ParachainConfigCalls::RegisterSystemToken(system_token_id, system_token_weight),
 		);
 		Self::send_xcm_for(register_call.encode(), dest_id);
+		Self::update_runtime_state(Some(dest_id));
+		// For Relay Chain
+		Self::do_update_runtime_state();
 	}
 
-	fn deregister_system_token(dest_id: OriginId, asset_id: Location, is_unlink: bool) {
+	fn deregister_system_token(dest_id: OriginId, system_token_id: Location) {
 		let deregister_call = ParachainRuntimePallets::InfraParaCore(
-			ParachainConfigCalls::DeregisterSystemToken(asset_id, is_unlink),
+			ParachainConfigCalls::DeregisterSystemToken(system_token_id),
 		);
 		Self::send_xcm_for(deregister_call.encode(), dest_id);
 	}

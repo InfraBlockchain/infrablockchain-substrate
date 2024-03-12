@@ -22,24 +22,22 @@ impl<T: Config> SessionAlert<BlockNumberFor<T>> for Pallet<T> {
 }
 
 /// Something that handles fee reward
-pub trait RewardInterface {
+pub trait RewardInterface<Location, Balance> {
 	/// Fee will be aggregated on certain account for current session
 	fn aggregate_reward(
 		session_index: SessionIndex,
-		para_id: SystemTokenParaId,
-		system_token_id: SystemTokenId,
-		amount: VoteWeight,
+		system_token_id: Location,
+		amount: Balance,
 	);
 	/// Fee will be distributed to the validators for current session
 	fn distribute_reward(session_index: SessionIndex);
 }
 
-impl RewardInterface for () {
+impl<Location, Balance> RewardInterface<Location, Balance> for () {
 	fn aggregate_reward(
 		_session_index: SessionIndex,
-		_para_id: SystemTokenParaId,
-		__system_token_id: SystemTokenId,
-		_amount: VoteWeight,
+		_system_token_id: Location,
+		_amount: Balance,
 	) {
 	}
 	fn distribute_reward(_session_index: SessionIndex) {}
@@ -85,32 +83,31 @@ impl<AccountId> SessionInterface<AccountId> for () {
 	}
 }
 
-pub trait VotingInterface<T> {
+pub trait VotingInterface<Account, VoteWeight> {
 	/// Update the vote status for the given account.
-	fn update_vote_status(who: VoteAccountId, weight: VoteWeight) -> bool;
+	fn update_vote_status(who: Account, weight: VoteWeight) -> bool;
 }
 
-impl<T: Config> VotingInterface<T> for Pallet<T>
+impl<T: Config, Account: Clone, VoteWeight> VotingInterface<Account, VoteWeight> for Pallet<T> 
 where
-	T::AccountId: From<VoteAccountId>,
+	T::AccountId: From<Account>,
+	T::Score: From<VoteWeight>
 {
-	fn update_vote_status(who: VoteAccountId, weight: VoteWeight) -> bool {
+	fn update_vote_status(who: Account, weight: VoteWeight) -> bool {
 		// Return if vote candidate is in SeedTrustValidatorPool
 		if SeedTrustValidatorPool::<T>::get().contains(&who.clone().into()) {
 			return false
 		}
-		let vote_account_id: T::InfraVoteAccountId = who.into();
-		let vote_points: T::InfraVotePoints = weight.into();
 
 		let mut vote_status = PotValidatorPool::<T>::get();
-		vote_status.add_points(&vote_account_id, vote_points);
+		vote_status.add_vote(&who.into(), weight.into());
 		PotValidatorPool::<T>::put(vote_status);
 		true
 	}
 }
 
-impl<T: Config> VotingInterface<T> for () {
-	fn update_vote_status(_: VoteAccountId, _: VoteWeight) -> bool {
+impl<Account, VoteWeight> VotingInterface<Account, VoteWeight> for () {
+	fn update_vote_status(_: Account, _: VoteWeight) -> bool {
 		false
 	}
 }
@@ -154,7 +151,7 @@ impl<T: Config> pallet_session::SessionManager<T::AccountId> for Pallet<T> {
 	}
 	fn end_session(end_index: SessionIndex) {
 		log!(info, "⏰ ending session {}", end_index);
-		T::RewardInterface::distribute_reward(end_index);
+		// T::RewardInterface::distribute_reward(end_index);
 	}
 }
 

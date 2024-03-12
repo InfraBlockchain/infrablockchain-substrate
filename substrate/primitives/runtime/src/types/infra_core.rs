@@ -15,11 +15,11 @@ pub trait UpdateInfraConfig<Location, OriginId, Weight, Balance> {
 	/// Update fee rate for `dest_id` Runtime
 	fn update_para_fee_rate(dest_id: OriginId, fee_rate: Balance);
 	/// Set runtime state for `dest_id` Runtime
-	fn update_runtime_state(dest_id: Option<OriginId>);
+	fn update_runtime_state(dest_id: OriginId);
 	/// Register `Original` System Token for `dest_id` Runtime(e.g `set_sufficient=true`)
 	fn register_system_token(dest_id: OriginId, asset_id: Location, system_token_weight: Weight);
 	/// Deregister `Original/Wrapped` System Token for `dest_id` Runtime
-	fn deregister_system_token(dest_id: OriginId, asset_id: Location, is_unlink: bool);
+	fn deregister_system_token(dest_id: OriginId, asset_id: Location);
 	/// Create local asset of `Wrapped` System Token for `dest_id` Runtime
 	fn create_wrapped(
 		dest_id: OriginId,

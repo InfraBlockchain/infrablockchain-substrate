@@ -11,24 +11,24 @@ pub(crate) type LiquidityInfoOf<T> =
 
 // Type alias used for interaction with fungibles (assets).
 // Balance type alias.
-pub(crate) type AssetBalanceOf<T> =
+pub(crate) type SystemTokenBalanceOf<T> =
 	<<T as Config>::Fungibles as Inspect<<T as frame_system::Config>::AccountId>>::Balance;
 /// Asset id type alias
-pub(crate) type AssetIdOf<T> =
+pub(crate) type SystemTokenAssetIdOf<T> =
 	<<T as Config>::Fungibles as Inspect<<T as frame_system::Config>::AccountId>>::AssetId;
 
 /// SystemTokenWeight type alias
-pub(crate) type AssetWeightOf<T> = <<T as Config>::Fungibles as InspectSystemToken<
+pub(crate) type SystemTokenWeightOf<T> = <<T as Config>::Fungibles as InspectSystemToken<
 	<T as frame_system::Config>::AccountId,
 >>::SystemTokenWeight;
 
 // Type aliases used for interaction with `OnChargeAssetTransaction`.
 // Balance type alias.
-pub(crate) type ChargeAssetBalanceOf<T> =
+pub(crate) type ChargeSystemTokenBalanceOf<T> =
 	<<T as Config>::OnChargeSystemToken as OnChargeSystemToken<T>>::Balance;
 
 pub(crate) type ChargeSystemTokenAssetIdOf<T> =
-	<<T as Config>::OnChargeSystemToken as OnChargeSystemToken<T>>::SystemTokenAssetId;
+	<<T as Config>::OnChargeSystemToken as OnChargeSystemToken<T>>::AssetId;
 
 // Liquity info type alias.
 pub(crate) type ChargeAssetLiquidityOf<T> =
@@ -48,7 +48,7 @@ pub enum InitialPayment<T: Config> {
 	Asset(Credit<T::AccountId, T::Fungibles>),
 }
 
-#[derive(Encode, Decode, Clone, TypeInfo, PartialEq, RuntimeDebugNoBound)]
+#[derive(Encode, Decode, Clone, TypeInfo, PartialEq, RuntimeDebug)]
 /// Details of fee payment of which system token used and its amount.
 pub struct Detail<ChargeAsset, Balance, AssetBalance> {
 	pub paid_asset_id: ChargeAsset,
