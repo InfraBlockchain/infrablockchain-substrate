@@ -168,8 +168,6 @@ impl<Location: Get<MultiLocation>> ContainsPair<MultiAsset, MultiLocation>
 	}
 }
 
-pub type AssetIdForTrustBackedAssets = u32;
-
 /// Allow checking in assets that have issuance > 0.
 pub struct NonZeroIssuance<AccountId, Assets>(PhantomData<(AccountId, Assets)>);
 impl<AccountId, Assets> Contains<<Assets as fungibles::Inspect<AccountId>>::AssetId>
@@ -194,9 +192,16 @@ where
 	}
 }
 
-/// `MultiLocation` vs `AssetIdForTrustBackedAssets` converter for `TrustBackedAssets`
+pub type AssetIdForTrustBackedAssets = u32;
+
+/// `Location` vs `AssetIdForTrustBackedAssets` converter for `TrustBackedAssets`
 pub type AssetIdForTrustBackedAssetsConvert<TrustBackedAssetsPalletLocation> =
-	AsPrefixedGeneralIndex<TrustBackedAssetsPalletLocation, AssetIdForTrustBackedAssets, JustTry>;
+	AsPrefixedGeneralIndex<
+		TrustBackedAssetsPalletLocation,
+		AssetIdForTrustBackedAssets,
+		JustTry,
+		xcm::v3::Location,
+	>;
 
 /// [`MatchedConvertedConcreteId`] converter dedicated for `TrustBackedAssets`
 pub type TrustBackedAssetsConvertedConcreteId<TrustBackedAssetsPalletLocation, Balance> =

@@ -43,7 +43,7 @@ pub mod shared;
 pub mod system_token_aggregator;
 pub mod system_token_helper;
 pub mod system_token_manager;
-pub mod validator_reward_manager;
+// pub mod validator_reward_manager;
 
 pub mod runtime_api_impl;
 
@@ -105,27 +105,4 @@ pub fn schedule_code_upgrade<T: paras::Config>(
 /// Sets the current parachain head with the given id.
 pub fn set_current_head<T: paras::Config>(id: ParaId, new_head: HeadData) {
 	paras::Pallet::<T>::set_current_head(id, new_head)
-}
-
-/// API for interacting with registered System Token
-pub trait SystemTokenInterface<
-	AssetId,
-	Balance,
-	VoteWeight = F64,
-	Metadata = RemoteAssetMetadata<AssetId, Balance>,
->
-{
-	/// Adjust the vote weight calculating exchange rate.
-	fn adjusted_weight(system_token_id: &AssetId, vote_weight: VoteWeight) -> VoteWeight;
-	/// Update the metadata for requested asset received from enshirned chain
-	fn requested_asset_metadata(para_id: ParaId, maybe_requested_asset: Option<Vec<u8>>);
-}
-
-impl<AssetId, Balance, VoteWeight, Metadata>
-	SystemTokenInterface<AssetId, Balance, VoteWeight, Metadata> for ()
-{
-	fn adjusted_weight(_system_token_id: &AssetId, _vote_weight: VoteWeight) -> VoteWeight {
-		Default::default()
-	}
-	fn requested_asset_metadata(_para_id: ParaId, _maybe_requested_asset: Option<Metadata>) {}
 }

@@ -16,7 +16,7 @@
 // limitations under the License.
 
 use crate::{
-	configuration, ensure_parachain, paras, Origin as ParachainOrigin, ParaId, SystemTokenInterface,
+	configuration, ensure_parachain, paras, Origin as ParachainOrigin, ParaId,
 };
 use frame_support::storage::KeyPrefixIterator;
 pub use frame_support::{
@@ -32,7 +32,7 @@ pub use frame_support::{
 use frame_system::pallet_prelude::*;
 pub use pallet::*;
 use softfloat::F64;
-use sp_runtime::types::{infra_core::*, token::*, vote::*};
+use sp_runtime::types::{infra_core::*, token::* };
 use sp_std::prelude::*;
 use types::*;
 
@@ -1163,79 +1163,79 @@ pub mod types {
 mod impl_traits {
 	use super::*;
 
-	impl<T: Config>
-		SystemTokenInterface<
-			SystemTokenIdOf<T>,
-			SystemTokenBalanceOf<T>,
-			RemoteAssetMetadata<SystemTokenIdOf<T>, SystemTokenBalanceOf<T>>,
-			VoteWeightOf<T>,
-		> for Pallet<T>
-	{
-		fn adjusted_weight(
-			original: &SystemTokenIdOf<T>,
-			vote_weight: VoteWeightOf<T>,
-		) -> VoteWeightOf<T> {
-			// impl_me!
-			// if let Some(p) = <SystemTokenProperties<T>>::get(original) {
-			// 	if let Ok(infra_system_config) = T::InfraCore::system_token_config() {
-			// 		let system_token_weight = {
-			// 			let w: u128 =
-			// 				p.system_token_weight.map_or(infra_system_config.base_weight(), |w| w);
-			// 			let system_token_weight = F64::from_i128(w as i128);
-			// 			system_token_weight
-			// 		};
-			// 		let converted_base_weight =
-			// 			F64::from_i128(infra_system_config.base_weight() as i128);
+	// impl<T: Config>
+	// 	SystemTokenInterface<
+	// 		SystemTokenIdOf<T>,
+	// 		SystemTokenBalanceOf<T>,
+	// 		RemoteAssetMetadata<SystemTokenIdOf<T>, SystemTokenBalanceOf<T>>,
+	// 		VoteWeightOf<T>,
+	// 	> for Pallet<T>
+	// {
+	// 	fn adjusted_weight(
+	// 		original: &SystemTokenIdOf<T>,
+	// 		vote_weight: VoteWeightOf<T>,
+	// 	) -> VoteWeightOf<T> {
+	// 		impl_me!
+	// 		if let Some(p) = <SystemTokenProperties<T>>::get(original) {
+	// 			if let Ok(infra_system_config) = T::InfraCore::system_token_config() {
+	// 				let system_token_weight = {
+	// 					let w: u128 =
+	// 						p.system_token_weight.map_or(infra_system_config.base_weight(), |w| w);
+	// 					let system_token_weight = F64::from_i128(w as i128);
+	// 					system_token_weight
+	// 				};
+	// 				let converted_base_weight =
+	// 					F64::from_i128(infra_system_config.base_weight() as i128);
 
-			// 		// Since the base_weight cannot be zero, this division is guaranteed to be safe.
-			// 		return vote_weight.mul(system_token_weight).div(converted_base_weight)
-			// 	}
-			// 	return vote_weight
-			// }
-			vote_weight
-		}
-		fn requested_asset_metadata(
-			para_id: SystemTokenOriginIdOf<T>,
-			maybe_requested_asset: Option<Vec<u8>>,
-		) {
-			if let Some(mut bytes) = maybe_requested_asset {
-				if let Ok(remote_asset_metadata) = RemoteAssetMetadata::<
-					SystemTokenIdOf<T>,
-					SystemTokenBalanceOf<T>,
-				>::decode(&mut bytes[..])
-				.map_err(|_| Error::<T>::ErrorConvertToRemoteAssetMetadata)
-				{
-					let RemoteAssetMetadata {
-						asset_id,
-						name,
-						symbol,
-						currency_type,
-						decimals,
-						min_balance,
-					} = remote_asset_metadata;
-					if let Ok((origin_id, pallet_id, asset_id)) =
-						asset_id.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)
-					{
-						let system_token_id =
-							T::SystemTokenId::convert_back(origin_id, pallet_id, asset_id);
-						Metadata::<T>::insert(
-							system_token_id,
-							SystemTokenMetadata::new(
-								currency_type.clone(),
-								name,
-								symbol,
-								decimals,
-								min_balance,
-							),
-						);
-						RequestFiatList::<T>::mutate(|request_fiat| {
-							if !request_fiat.contains(&currency_type) {
-								request_fiat.push(currency_type);
-							}
-						});
-					}
-				}
-			}
-		}
-	}
+	// 				// Since the base_weight cannot be zero, this division is guaranteed to be safe.
+	// 				return vote_weight.mul(system_token_weight).div(converted_base_weight)
+	// 			}
+	// 			return vote_weight
+	// 		}
+	// 		vote_weight
+	// 	}
+	// 	fn requested_asset_metadata(
+	// 		para_id: SystemTokenOriginIdOf<T>,
+	// 		maybe_requested_asset: Option<Vec<u8>>,
+	// 	) {
+	// 		if let Some(mut bytes) = maybe_requested_asset {
+	// 			if let Ok(remote_asset_metadata) = RemoteAssetMetadata::<
+	// 				SystemTokenIdOf<T>,
+	// 				SystemTokenBalanceOf<T>,
+	// 			>::decode(&mut bytes[..])
+	// 			.map_err(|_| Error::<T>::ErrorConvertToRemoteAssetMetadata)
+	// 			{
+	// 				let RemoteAssetMetadata {
+	// 					asset_id,
+	// 					name,
+	// 					symbol,
+	// 					currency_type,
+	// 					decimals,
+	// 					min_balance,
+	// 				} = remote_asset_metadata;
+	// 				if let Ok((origin_id, pallet_id, asset_id)) =
+	// 					asset_id.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)
+	// 				{
+	// 					let system_token_id =
+	// 						T::SystemTokenId::convert_back(origin_id, pallet_id, asset_id);
+	// 					Metadata::<T>::insert(
+	// 						system_token_id,
+	// 						SystemTokenMetadata::new(
+	// 							currency_type.clone(),
+	// 							name,
+	// 							symbol,
+	// 							decimals,
+	// 							min_balance,
+	// 						),
+	// 					);
+	// 					RequestFiatList::<T>::mutate(|request_fiat| {
+	// 						if !request_fiat.contains(&currency_type) {
+	// 							request_fiat.push(currency_type);
+	// 						}
+	// 					});
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// }
 }

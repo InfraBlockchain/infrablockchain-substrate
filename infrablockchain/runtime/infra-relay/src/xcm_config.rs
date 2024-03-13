@@ -17,7 +17,7 @@
 //! XCM configuration for infrablockspace.
 
 use super::{
-	parachains_origin, system_token_manager, AccountId, AllPalletsWithSystem, Assets, Authorship,
+	parachains_origin, system_token_manager, AccountId, AllPalletsWithSystem, OriginalAssets, WrappedAssets, Authorship,
 	Balance, Balances, ParaId, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
 	ValidatorCollective, WeightToFee, XcmPallet,
 };
@@ -27,7 +27,7 @@ use frame_support::{
 };
 use infra_asset_common::{
 	matching::{StartsWith, StartsWithExplicitGlobalConsensus},
-	AssetFeeAsExistentialDepositMultiplier,
+	AssetFeeAsExistentialDepositMultiplier, AssetIdForTrustBackedAssetsConvert
 };
 use parachain_primitives::primitives::Sibling;
 use runtime_common::{paras_registrar, xcm_sender};
@@ -39,7 +39,7 @@ use xcm_builder::{
 	AllowTopLevelPaidExecutionFrom, BackingToPlurality, ChildParachainAsNative,
 	ChildParachainConvertsVia, FixedWeightBounds, FungiblesAdapter, LocalMint, NonLocalMint,
 	ParentIsPreset, SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-	SovereignSignedViaLocation, TakeWeightCredit,
+	SovereignSignedViaLocation, TakeWeightCredit, NoChecking,
 };
 use xcm_executor::traits::WithOriginFilter;
 use xcm_primitives::TrappistDropAssets;
@@ -68,7 +68,7 @@ pub type LocationToAccountId = (
 pub type ForeignAssetsConvertedConcreteId = infra_asset_common::ForeignAssetsConvertedConcreteId<
 	(
 		// Ignore `TrustBackedAssets` explicitly
-		StartsWith<TrustBackedAssetsPalletLocation>,
+		StartsWith<OriginalAssetsPalletLocation>,
 		// Ignore asset which starts explicitly with our `GlobalConsensus(NetworkId)`, means:
 		// - foreign assets from our consensus should be: `Location {parents: 1, X*(Parachain(xyz),
 		//   ..)}
@@ -82,7 +82,7 @@ pub type ForeignAssetsConvertedConcreteId = infra_asset_common::ForeignAssetsCon
 /// Means for transacting foreign assets from different global consensus.
 pub type ForeignFungiblesTransactor = FungiblesAdapter<
 	// Use this fungibles implementation:
-	Assets,
+	WrappedAssets,
 	// Use this currency when it is a fungible asset matching the given location or name:
 	ForeignAssetsConvertedConcreteId,
 	// Convert an XCM MultiLocation into a local account id:
@@ -90,7 +90,7 @@ pub type ForeignFungiblesTransactor = FungiblesAdapter<
 	// Our chain's account ID type (we can't get away without mentioning it explicitly):
 	AccountId,
 	// We dont need to check teleports here.
-	NonLocalMint<infra_asset_common::AnyIssuance<AccountId, Assets>>,
+	NoChecking,
 	// The account to use for tracking teleports.
 	CheckingAccount,
 >;
@@ -98,14 +98,14 @@ pub type ForeignFungiblesTransactor = FungiblesAdapter<
 /// `AssetId/Balancer` converter for `TrustBackedAssets``
 pub type TrustBackedAssetsConvertedConcreteId =
 	infra_asset_common::TrustBackedAssetsConvertedConcreteId<
-		TrustBackedAssetsPalletLocation,
+		OriginalAssetsPalletLocation,
 		Balance,
 	>;
 
 /// Means for transacting assets besides the native currency on this chain.
 pub type LocalIssuedFungiblesTransactor = FungiblesAdapter<
 	// Use this fungibles implementation:
-	Assets,
+	OriginalAssets,
 	// Use this currency when it is a fungible asset matching the given location or name:
 	TrustBackedAssetsConvertedConcreteId,
 	// Convert an XCM MultiLocation into a local account id:
@@ -114,7 +114,7 @@ pub type LocalIssuedFungiblesTransactor = FungiblesAdapter<
 	AccountId,
 	// We only want to allow teleports of known assets. We use non-zero issuance as an indication
 	// that this asset is known.
-	LocalMint<infra_asset_common::NonZeroIssuance<AccountId, Assets>>,
+	LocalMint<infra_asset_common::NonZeroIssuance<AccountId, OriginalAssets>>,
 	// The account to use for tracking teleports.
 	CheckingAccount,
 >;
@@ -129,10 +129,10 @@ parameter_types! {
 	pub const UniversalLocation: InteriorMultiLocation = X1(GlobalConsensus(ThisNetwork::get()));
 	/// The Checking Account, which holds any native assets that have been teleported out and not back in (yet).
 	pub CheckingAccount: AccountId = XcmPallet::check_account();
-	pub TrustBackedAssetsPalletLocation: MultiLocation =
-		PalletInstance(<Assets as PalletInfoAccess>::index() as u8).into();
-	// pub WrappedAssetsPalletLocation: MultiLocation =
-	// 	PalletInstance(<WrappedAssets as PalletInfoAccess>::index() as u8).into();
+	pub OriginalAssetsPalletLocation: MultiLocation =
+		PalletInstance(<OriginalAssets as PalletInfoAccess>::index() as u8).into();
+	pub WrappedAssetsPalletLocation: MultiLocation =
+		PalletInstance(<WrappedAssets as PalletInfoAccess>::index() as u8).into();
 	pub UniversalLocationNetworkId: NetworkId = UniversalLocation::get().global_consensus().unwrap();
 	pub const RelayNetwork: Option<NetworkId> = Some(NetworkId::InfraRelay);
 	pub XcmAssetFeesReceiver: Option<AccountId> = Authorship::author();
@@ -320,12 +320,13 @@ impl xcm_executor::Config for XcmConfig {
 	type Barrier = Barrier;
 	type Weigher = FixedWeightBounds<BaseXcmWeight, RuntimeCall, MaxInstructions>;
 	// The weight trader piggybacks on the existing transaction-fee conversion logic.
+	// TODO: change me!
 	type Trader = (
 		cumulus_primitives_utility::TakeFirstAssetTrader<
 			AccountId,
 			AssetFeeAsExistentialDepositMultiplierFeeCharger,
 			ForeignAssetsConvertedConcreteId,
-			Assets,
+			OriginalAssets,
 			cumulus_primitives_utility::XcmFeesTo32ByteAccount<
 				LocalIssuedFungiblesTransactor,
 				AccountId,

@@ -223,13 +223,13 @@ impl WithdrawReasons {
 }
 
 /// Interface for Infrablockchain System Token used in Relay/Para chain
-pub trait SystemTokenId: Sized {
+pub trait SystemTokenId: AssetId {
 	/// Id for general token index(e.g `u32`)
-	type AssetId: AssetId;
+	type AssetId;
 	/// Id for token pallet id(e.g `u8`)
-	type PalletId: AssetId;
+	type PalletId;
 	/// Id for token origin(e.g `u32`)
-	type OriginId: AssetId;
+	type OriginId: Encode + Clone;
 	/// Error type
 	type Error;
 

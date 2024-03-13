@@ -23,39 +23,42 @@ use xcm::latest::prelude::*;
 use xcm_executor::traits::{Error as MatchError, MatchesFungibles, MatchesNonFungibles};
 
 /// Converter struct implementing `AssetIdConversion` converting a numeric asset ID (must be
-/// `TryFrom/TryInto<u128>`) into a `GeneralIndex` junction, prefixed by some `MultiLocation` value.
-/// The `MultiLocation` value will typically be a `PalletInstance` junction.
-pub struct AsPrefixedGeneralIndex<Prefix, AssetId, ConvertAssetId>(
-	PhantomData<(Prefix, AssetId, ConvertAssetId)>,
+/// `TryFrom/TryInto<u128>`) into a `GeneralIndex` junction, prefixed by some `Location` value.
+/// The `Location` value will typically be a `PalletInstance` junction.
+pub struct AsPrefixedGeneralIndex<Prefix, AssetId, ConvertAssetId, L = MultiLocation>(
+	PhantomData<(Prefix, AssetId, ConvertAssetId, L)>,
 );
 impl<
-		Prefix: Get<MultiLocation>,
+		Prefix: Get<L>,
 		AssetId: Clone,
 		ConvertAssetId: MaybeEquivalence<u128, AssetId>,
-	> MaybeEquivalence<MultiLocation, AssetId>
-	for AsPrefixedGeneralIndex<Prefix, AssetId, ConvertAssetId>
+		L: TryInto<MultiLocation> + TryFrom<MultiLocation> + Clone,
+	> MaybeEquivalence<L, AssetId> for AsPrefixedGeneralIndex<Prefix, AssetId, ConvertAssetId, L>
 {
-	fn convert(id: &MultiLocation) -> Option<AssetId> {
+	fn convert(id: &L) -> Option<AssetId> {
 		let prefix = Prefix::get();
-		if prefix.parent_count() != id.parent_count() ||
-			prefix
+		let latest_prefix: MultiLocation = prefix.try_into().ok()?;
+		let latest_id: MultiLocation = (*id).clone().try_into().ok()?;
+		if latest_prefix.parent_count() != latest_id.parent_count() ||
+			latest_prefix
 				.interior()
 				.iter()
 				.enumerate()
-				.any(|(index, junction)| id.interior().at(index) != Some(junction))
+				.any(|(index, junction)| latest_id.interior().at(index) != Some(junction))
 		{
 			return None
 		}
-		match id.interior().at(prefix.interior().len()) {
-			Some(Junction::GeneralIndex(id)) => ConvertAssetId::convert(id),
+		match latest_id.interior().at(latest_prefix.interior().len()) {
+			Some(Junction::GeneralIndex(id)) => ConvertAssetId::convert(&id),
 			_ => None,
 		}
 	}
-	fn convert_back(what: &AssetId) -> Option<MultiLocation> {
-		let mut location = Prefix::get();
+	fn convert_back(what: &AssetId) -> Option<L> {
+		let location = Prefix::get();
+		let mut latest_location: MultiLocation = location.try_into().ok()?;
 		let id = ConvertAssetId::convert_back(what)?;
-		location.push_interior(Junction::GeneralIndex(id)).ok()?;
-		Some(location)
+		latest_location.push_interior(Junction::GeneralIndex(id)).ok()?;
+		latest_location.try_into().ok()
 	}
 }
 

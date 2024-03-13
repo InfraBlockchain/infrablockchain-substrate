@@ -38,8 +38,9 @@ use runtime_parachains::{
 	paras_inherent as parachains_paras_inherent,
 	runtime_api_impl::v7 as parachains_runtime_api_impl,
 	scheduler as parachains_scheduler, session_info as parachains_session_info,
-	shared as parachains_shared, system_token_aggregator, system_token_manager,
-	validator_reward_manager,
+	shared as parachains_shared, system_token_manager,
+	// validator_reward_manager, 
+	// system_token_aggregator
 };
 
 use authority_discovery_primitives::AuthorityId as AuthorityDiscoveryId;
@@ -106,8 +107,10 @@ use infra_relay_runtime_constants::{currency::*, fee::*, system_parachain::ASSET
 // Weights used in the runtime.
 mod weights;
 
+// XCM
 pub mod xcm_config;
-use xcm_config::XcmRouter;
+use xcm_config::{ XcmRouter, TrustBackedAssetsPalletLocation };
+use infra_asset_common::{AssetIdForTrustBackedAssetsConvert, AssetIdForTrustBackedAssets};
 
 impl_runtime_weights!(infra_relay_runtime_constants);
 
@@ -378,7 +381,7 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 impl pallet_system_token_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type InfraTxInterface = InfraRelayCore;
-	type Fungibles = Assets;
+	type Fungibles = OriginalAndWrappedAssets;
 	type OnChargeSystemToken = TransactionFeeCharger<
 		Runtime,
 		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
@@ -392,7 +395,7 @@ impl infra_relay_core::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Voting = ValidatorElection;
 	type SystemTokenInterface = SystemTokenManager;
-	type Fungibles = Assets;
+	type Fungibles = OriginalAndWrappedAssets;
 	type XcmRouter = XcmRouter;
 }
 
@@ -1091,9 +1094,6 @@ impl parachains_inclusion::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type DisputesHandler = ParasDisputes;
 	type RewardValidators = RewardValidators;
-	type VotingInterface = ValidatorElection;
-	type SystemTokenInterface = SystemTokenManager;
-	type RewardInterface = ValidatorRewardManager;
 	type MessageQueue = MessageQueue;
 	type WeightInfo = weights::runtime_parachains_inclusion::WeightInfo<Runtime>;
 }
@@ -1124,17 +1124,17 @@ impl system_token_manager::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type SystemTokenId = MultiLocation;
 	type InfraCore = InfraRelayCore;
-	type Fungibles = Assets;
+	type Fungibles = OriginalAndWrappedAssets;
 	type StringLimit = StringLimit;
 	type MaxSystemTokens = MaxSystemTokens;
 	type MaxOriginalUsedParaIds = MaxOriginalUsedParaIds;
 	type AssetHubId = AssetHubId;
 }
 
-impl validator_reward_manager::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type ValidatorSet = Historical;
-}
+// impl validator_reward_manager::Config for Runtime {
+// 	type RuntimeEvent = RuntimeEvent;
+// 	type ValidatorSet = Historical;
+// }
 
 parameter_types! {
 	pub const ParasUnsignedPriority: TransactionPriority = TransactionPriority::max_value();
@@ -1360,12 +1360,13 @@ parameter_types! {
 	pub const MetadataDepositPerByte: Balance = deposit(0, 1);
 }
 
-type AssetId = u32;
-impl pallet_assets::Config for Runtime {
+pub type OriginalAssetsInstance = pallet_assets::Instance1;
+type OriginalAssetsCall = pallet_assets::Call<Runtime, TrustBackedAssetsInstance>;
+impl pallet_assets::Config<OriginalAssetsInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
-	type AssetId = AssetId;
-	type AssetIdParameter = parity_scale_codec::Compact<AssetId>;
+	type AssetId = AssetIdForTrustBackedAssets;
+	type AssetIdParameter = parity_scale_codec::Compact<AssetIdForTrustBackedAssets>;
 	type SystemTokenWeight = SystemTokenWeight;
 	type Currency = Balances;
 	type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
@@ -1382,6 +1383,42 @@ impl pallet_assets::Config for Runtime {
 	type WeightInfo = ();
 	type RemoveItemsLimit = ConstU32<1000>;
 }
+
+pub type WrappedAssetsInstance = pallet_assets::Instance2;
+impl pallet_assets::Config<WrappedAssetsInstance> for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Balance = Balance;
+	type AssetId = xcm::v3::MultiLocation;
+	type AssetIdParameter = parity_scale_codec::Compact<xcm::v3::MultiLocation>;
+	type SystemTokenWeight = SystemTokenWeight;
+	type Currency = Balances;
+	type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
+	type ForceOrigin = AuthorityOrigin;
+	type AssetDeposit = DepositToCreateAsset;
+	type AssetAccountDeposit = DepositToMaintainAsset;
+	type MetadataDepositBase = MetadataDepositBase;
+	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type ApprovalDeposit = ApprovalDeposit;
+	type StringLimit = StringLimit;
+	type Freezer = ();
+	type Extra = ();
+	type CallbackHandle = ();
+	type WeightInfo = ();
+	type RemoveItemsLimit = ConstU32<1000>;
+}
+
+/// Union fungibles implementation for `Assets` and `ForeignAssets`.
+pub type OriginalAndWrappedAssets = fungibles::UnionOf<
+	OriginalAssets,
+	WrappedAssets,
+	LocalFromLeft<
+		AssetIdForTrustBackedAssetsConvert<TrustBackedAssetsPalletLocation>,
+		AssetIdForTrustBackedAssets,
+		xcm::v3::MultiLocation,
+	>,
+	xcm::v3::MultiLocation,
+	AccountId,
+>;
 
 // parameter_types! {
 // 	pub const Period: BlockNumber = 10;
@@ -1410,7 +1447,9 @@ construct_runtime! {
 		// InfraBlockchain Support
 		InfraRelayCore: infra_relay_core::{Pallet, Call, Config<T>, Storage, Event<T>} = 20,
 		SystemTokenManager: system_token_manager::{Pallet, Call, Storage, Event<T>} = 21,
-		ValidatorRewardManager: validator_reward_manager::{Pallet, Call, Storage, Event<T>} = 22,
+		OriginalAssets: pallet_assets::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>} = 22,
+		WrappedAssets: pallet_assets::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>} = 23,
+		// ValidatorRewardManager: validator_reward_manager::{Pallet, Call, Storage, Event<T>} = 22,
 		// SystemTokenAggregator: system_token_aggregator = 25,
 
 		// Babe must be before session.
@@ -1419,7 +1458,7 @@ construct_runtime! {
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 3,
 		Indices: pallet_indices::{Pallet, Call, Storage, Config<T>, Event<T>} = 4,
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 5,
-		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>, Config<T>} = 6,
+
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 31,
 		SystemTokenTxPayment: pallet_system_token_tx_payment::{Pallet, Storage, Event<T>} = 32,
 
