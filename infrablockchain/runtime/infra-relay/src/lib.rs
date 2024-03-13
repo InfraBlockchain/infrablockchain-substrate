@@ -382,7 +382,7 @@ impl pallet_system_token_tx_payment::Config for Runtime {
 	type OnChargeSystemToken = TransactionFeeCharger<
 		Runtime,
 		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
-		CreditToBucket
+		CreditToBucket,
 	>;
 	type BootstrapCallFilter = BootstrapCallFilter;
 	type PalletId = FeeTreasuryId;

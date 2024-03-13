@@ -50,19 +50,15 @@ impl<T: Config, SystemTokenBalance, SystemTokenWeight>
 }
 
 // TODO: Find a way to dispatch XCM locally. Then it would be clearer
-impl<T: Config, Location, OriginId, Weight, Balance> UpdateInfraConfig<Location, OriginId, Weight, Balance> for Pallet<T>
+impl<T: Config, Location, OriginId, Weight, Balance>
+	UpdateInfraConfig<Location, OriginId, Weight, Balance> for Pallet<T>
 where
 	Location: Encode,
 	OriginId: Encode,
 	Weight: Encode,
 	Balance: Encode,
 {
-	fn update_fee_table(
-		dest_id: OriginId,
-		pallet_name: Vec<u8>,
-		call_name: Vec<u8>,
-		fee: Balance,
-	) {
+	fn update_fee_table(dest_id: OriginId, pallet_name: Vec<u8>, call_name: Vec<u8>, fee: Balance) {
 		let set_fee_table_call = ParachainRuntimePallets::InfraParaCore(
 			ParachainConfigCalls::UpdateFeeTable(pallet_name, call_name, fee),
 		);
@@ -82,7 +78,11 @@ where
 		Self::send_xcm_for(set_runtime_state_call.encode(), dest_id);
 	}
 
-	fn register_system_token(dest_id: OriginId, system_token_id: Location, system_token_weight: Weight) {
+	fn register_system_token(
+		dest_id: OriginId,
+		system_token_id: Location,
+		system_token_weight: Weight,
+	) {
 		let register_call = ParachainRuntimePallets::InfraParaCore(
 			ParachainConfigCalls::RegisterSystemToken(system_token_id, system_token_weight),
 		);

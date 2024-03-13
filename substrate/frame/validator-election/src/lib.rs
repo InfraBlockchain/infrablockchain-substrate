@@ -23,10 +23,10 @@ pub mod impls;
 pub use impls::*;
 
 use codec::{Decode, Encode, MaxEncodedLen};
-use frame_support::traits::{EstimateNextNewSession, Get, tokens::fungibles::*};
-use sp_arithmetic::traits::Saturating;
+use frame_support::traits::{tokens::fungibles::*, EstimateNextNewSession, Get};
 pub use pallet::*;
 use scale_info::TypeInfo;
+use sp_arithmetic::traits::Saturating;
 use sp_runtime::RuntimeDebug;
 
 #[cfg(test)]

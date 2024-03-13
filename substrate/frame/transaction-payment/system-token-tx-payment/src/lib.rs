@@ -347,12 +347,7 @@ where
 						(Some(vote_candidate), Some(system_token_id)) => {
 							Pallet::<T>::deposit_event(Event::<T>::SystemTokenTxFeePaid {
 								fee_payer: who,
-								detail: Detail {
-									paid_asset_id,
-									actual_fee,
-									converted_fee,
-									tip,
-								},
+								detail: Detail { paid_asset_id, actual_fee, converted_fee, tip },
 								vote_candidate: Some(vote_candidate.clone()),
 							});
 
@@ -367,12 +362,7 @@ where
 						_ => {
 							Pallet::<T>::deposit_event(Event::<T>::SystemTokenTxFeePaid {
 								fee_payer: who,
-								detail: Detail {
-									paid_asset_id,
-									actual_fee,
-									converted_fee,
-									tip,
-								},
+								detail: Detail { paid_asset_id, actual_fee, converted_fee, tip },
 								vote_candidate: None,
 							});
 						},

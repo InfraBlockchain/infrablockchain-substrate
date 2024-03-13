@@ -37,7 +37,7 @@ pub mod pallet {
 		type Voting: PotInterface<Self::AccountId>;
 		/// Managing System Token
 		type SystemTokenInterface: SystemTokenInterface<
-			SystemTokenAssetIdOf<T>, 
+			SystemTokenAssetIdOf<T>,
 			SystemTokenBalanceOf<T>,
 			VoteWeightOf<T>,
 			RemoteAssetMetadata<SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>>,
@@ -49,7 +49,8 @@ pub mod pallet {
 	/// System configuration for `InfraRelay` Runtime
 	#[pallet::storage]
 	#[pallet::getter(fn active_system_config)]
-	pub type ActiveSystemConfig<T: Config> = StorageValue<_, SystemTokenConfig<SystemTokenWeightOf<T>>, ValueQuery>;
+	pub type ActiveSystemConfig<T: Config> =
+		StorageValue<_, SystemTokenConfig<SystemTokenWeightOf<T>>, ValueQuery>;
 
 	/// Relay Chain's tx fee rate
 	#[pallet::storage]
@@ -61,7 +62,8 @@ pub mod pallet {
 
 	/// Relay Chain's fee for each extrinsic
 	#[pallet::storage]
-	pub type FeeTable<T: Config> = StorageMap<_, Twox128, ExtrinsicMetadata, SystemTokenBalanceOf<T>>;
+	pub type FeeTable<T: Config> =
+		StorageMap<_, Twox128, ExtrinsicMetadata, SystemTokenBalanceOf<T>>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -76,20 +78,13 @@ pub mod pallet {
 		/// System Token has been deregistered by Relay-chain governance
 		Deregistered,
 		/// Fee table for has been updated by Relay-chain governance
-		FeeTableUpdated {
-			extrinsic_metadata: ExtrinsicMetadata,
-			fee: SystemTokenBalanceOf<T>,
-		},
+		FeeTableUpdated { extrinsic_metadata: ExtrinsicMetadata, fee: SystemTokenBalanceOf<T> },
 		/// Weight of System Token has been updated by Relay-chain governance
-		SystemTokenWeightUpdated {
-			asset_id: SystemTokenAssetIdOf<T>,
-		},
+		SystemTokenWeightUpdated { asset_id: SystemTokenAssetIdOf<T> },
 		/// Bootstrap has been ended by Relay-chain governance.
 		BootstrapEnded,
 		/// Infra configuration has been udpated
-		InfraConfigUpdated {
-			new: SystemTokenConfig<SystemTokenWeightOf<T>>,
-		},
+		InfraConfigUpdated { new: SystemTokenConfig<SystemTokenWeightOf<T>> },
 	}
 
 	#[pallet::error]

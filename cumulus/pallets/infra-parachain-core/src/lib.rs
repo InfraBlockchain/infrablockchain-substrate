@@ -2,7 +2,13 @@
 
 use cumulus_pallet_xcm::{ensure_relay, Origin};
 use cumulus_primitives_core::UpdateRCConfig;
-use frame_support::{pallet_prelude::*, traits::{fungibles::{Inspect, InspectSystemToken}, tokens::SystemTokenId}};
+use frame_support::{
+	pallet_prelude::*,
+	traits::{
+		fungibles::{Inspect, InspectSystemToken},
+		tokens::SystemTokenId,
+	},
+};
 use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
 use sp_runtime::{
@@ -14,9 +20,13 @@ use sp_std::vec::Vec;
 
 pub use pallet::*;
 
-pub type SystemTokenAssetIdOf<T> = <<T as Config>::Fungibles as Inspect<<T as frame_system::Config>::AccountId>>::AssetId;
-pub type SystemTokenBalanceOf<T> = <<T as Config>::Fungibles as Inspect<<T as frame_system::Config>::AccountId>>::Balance;
-pub type SystemTokenWeightOf<T> = <<T as Config>::Fungibles as InspectSystemToken<<T as frame_system::Config>::AccountId>>::SystemTokenWeight;
+pub type SystemTokenAssetIdOf<T> =
+	<<T as Config>::Fungibles as Inspect<<T as frame_system::Config>::AccountId>>::AssetId;
+pub type SystemTokenBalanceOf<T> =
+	<<T as Config>::Fungibles as Inspect<<T as frame_system::Config>::AccountId>>::Balance;
+pub type SystemTokenWeightOf<T> = <<T as Config>::Fungibles as InspectSystemToken<
+	<T as frame_system::Config>::AccountId,
+>>::SystemTokenWeight;
 
 #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 pub struct RequestStatus<BlockNumber> {
@@ -82,11 +92,17 @@ pub mod pallet {
 	pub(super) type RuntimeState<T: Config> = StorageValue<_, Mode, ValueQuery>;
 
 	#[pallet::storage]
-	pub type FeeTable<T: Config> = StorageMap<_, Twox128, ExtrinsicMetadata, SystemTokenBalanceOf<T>>;
+	pub type FeeTable<T: Config> =
+		StorageMap<_, Twox128, ExtrinsicMetadata, SystemTokenBalanceOf<T>>;
 
 	#[pallet::storage]
-	pub type CurrentRequest<T: Config> =
-		StorageValue<_, (RemoteAssetMetadata<T::SystemTokenId, SystemTokenBalanceOf<T>>, RequestStatus<BlockNumberFor<T>>)>;
+	pub type CurrentRequest<T: Config> = StorageValue<
+		_,
+		(
+			RemoteAssetMetadata<T::SystemTokenId, SystemTokenBalanceOf<T>>,
+			RequestStatus<BlockNumberFor<T>>,
+		),
+	>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -350,7 +366,9 @@ impl<T: Config> Pallet<T> {
 	}
 }
 
-impl<T: Config> RuntimeConfigProvider<SystemTokenBalanceOf<T>, SystemTokenWeightOf<T>> for Pallet<T> {
+impl<T: Config> RuntimeConfigProvider<SystemTokenBalanceOf<T>, SystemTokenWeightOf<T>>
+	for Pallet<T>
+{
 	type Error = DispatchError;
 
 	fn system_token_config() -> Result<SystemTokenConfig<SystemTokenWeightOf<T>>, Self::Error> {
@@ -392,7 +410,9 @@ impl<T: Config> UpdateRCConfig for Pallet<T> {
 		RCSystemConfig::<T>::put(system_token_config);
 	}
 
-	fn update_system_token_weight_for(assets: Vec<(SystemTokenAssetIdOf<T>, SystemTokenWeightOf<T>)>) {
+	fn update_system_token_weight_for(
+		assets: Vec<(SystemTokenAssetIdOf<T>, SystemTokenWeightOf<T>)>,
+	) {
 		for (asset_id, weight) in assets {
 			// if let Err(_) = T::Fungibles::update_system_token_weight(asset_id, weight) {
 			// 	TODO: Handle Error

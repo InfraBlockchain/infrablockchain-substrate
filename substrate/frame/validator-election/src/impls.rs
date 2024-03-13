@@ -24,11 +24,7 @@ impl<T: Config> SessionAlert<BlockNumberFor<T>> for Pallet<T> {
 /// Something that handles fee reward
 pub trait RewardInterface<Location, Balance> {
 	/// Fee will be aggregated on certain account for current session
-	fn aggregate_reward(
-		session_index: SessionIndex,
-		system_token_id: Location,
-		amount: Balance,
-	);
+	fn aggregate_reward(session_index: SessionIndex, system_token_id: Location, amount: Balance);
 	/// Fee will be distributed to the validators for current session
 	fn distribute_reward(session_index: SessionIndex);
 }
@@ -85,18 +81,16 @@ impl<AccountId> SessionInterface<AccountId> for () {
 
 /// Interface for Proof-of-Transaction
 pub trait PotInterface<Account> {
-
 	type VoteWeight;
 
 	/// Update the vote status for the given account.
 	fn vote(who: Account, weight: Self::VoteWeight) -> bool;
 }
 
-impl<T: Config, Account: Clone> PotInterface<Account> for Pallet<T> 
+impl<T: Config, Account: Clone> PotInterface<Account> for Pallet<T>
 where
 	T::AccountId: From<Account>,
 {
-
 	type VoteWeight = T::Score;
 
 	fn vote(who: Account, weight: Self::VoteWeight) -> bool {
@@ -112,7 +106,6 @@ where
 }
 
 impl<Account> PotInterface<Account> for () {
-
 	type VoteWeight = ();
 
 	fn vote(_: Account, _: Self::VoteWeight) -> bool {

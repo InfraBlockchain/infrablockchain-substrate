@@ -183,7 +183,7 @@ where
 pub mod pallet {
 	use super::*;
 	use cumulus_primitives_core::relay_chain::OpaquePotVote;
-use frame_support::pallet_prelude::*;
+	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::pallet]

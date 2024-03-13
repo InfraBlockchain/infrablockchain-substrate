@@ -51,10 +51,7 @@ use frame_system::{
 
 use pallet_system_token_tx_payment::{CreditToBucket, TransactionFeeCharger};
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-pub use sp_runtime::{
-	types::SystemTokenWeight,
-	MultiAddress, Perbill, Permill,
-};
+pub use sp_runtime::{types::SystemTokenWeight, MultiAddress, Perbill, Permill};
 use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
 
 #[cfg(any(feature = "std", test))]
@@ -197,13 +194,13 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 
 impl pallet_system_token_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type Fungibles = ; = Assets;
+	type Fungibles = Assets;
 	type InfraTxInterface = InfraParaCore;
 	/// The actual transaction charging logic that charges the fees.
 	type OnChargeSystemToken = TransactionFeeCharger<
 		Runtime,
 		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
-		CreditToBucket<Runtime>
+		CreditToBucket<Runtime>,
 	>;
 	type BootstrapCallFilter = BootstrapCallFilter;
 	type PalletId = FeeTreasuryId;

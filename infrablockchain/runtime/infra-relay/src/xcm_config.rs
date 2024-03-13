@@ -17,8 +17,8 @@
 //! XCM configuration for infrablockspace.
 
 use super::{
-	parachains_origin, system_token_manager, AccountId, AllPalletsWithSystem, Assets,
-	Authorship, Balance, Balances, ParaId, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
+	parachains_origin, system_token_manager, AccountId, AllPalletsWithSystem, Assets, Authorship,
+	Balance, Balances, ParaId, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
 	ValidatorCollective, WeightToFee, XcmPallet,
 };
 use frame_support::{
@@ -131,7 +131,7 @@ parameter_types! {
 	pub CheckingAccount: AccountId = XcmPallet::check_account();
 	pub TrustBackedAssetsPalletLocation: MultiLocation =
 		PalletInstance(<Assets as PalletInfoAccess>::index() as u8).into();
-	// pub WrappedAssetsPalletLocation: MultiLocation = 
+	// pub WrappedAssetsPalletLocation: MultiLocation =
 	// 	PalletInstance(<WrappedAssets as PalletInfoAccess>::index() as u8).into();
 	pub UniversalLocationNetworkId: NetworkId = UniversalLocation::get().global_consensus().unwrap();
 	pub const RelayNetwork: Option<NetworkId> = Some(NetworkId::InfraRelay);

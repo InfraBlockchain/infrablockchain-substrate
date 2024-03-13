@@ -42,11 +42,9 @@ use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{
-		AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto,
-	},
-	types::SystemTokenWeight,
+	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto},
 	transaction_validity::{TransactionSource, TransactionValidity},
+	types::SystemTokenWeight,
 	ApplyExtrinsicResult,
 };
 
@@ -283,7 +281,7 @@ impl pallet_system_token_tx_payment::Config for Runtime {
 	type OnChargeSystemToken = TransactionFeeCharger<
 		Runtime,
 		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
-		CreditToBucket<Runtime>
+		CreditToBucket<Runtime>,
 	>;
 	type BootstrapCallFilter = BootstrapCallFilter;
 	type PalletId = FeeTreasuryId;

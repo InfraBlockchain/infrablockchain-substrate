@@ -18,7 +18,7 @@
 pub mod fungible_conversion;
 pub mod matching;
 pub mod runtime_api;
-use crate::matching::{Equals, ParentLocation, LocalLocationPattern, StartsWith};
+use crate::matching::{Equals, LocalLocationPattern, ParentLocation, StartsWith};
 use sp_runtime::traits::Zero;
 
 use frame_support::traits::{

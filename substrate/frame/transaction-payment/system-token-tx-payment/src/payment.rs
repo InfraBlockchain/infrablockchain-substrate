@@ -91,14 +91,12 @@ impl<A, B: Balanced<A>> HandleCredit<A, B> for () {
 /// [`BalanceConversion`]) and a credit handler (implementing [`HandleCredit`]).
 ///
 /// The credit handler is given the complete fee in terms of the asset used for the transaction.
-pub struct TransactionFeeCharger<T, CON, HC>(
-	PhantomData<(T, CON, HC)>,
-);
+pub struct TransactionFeeCharger<T, CON, HC>(PhantomData<(T, CON, HC)>);
 
 impl<T, CON, HC> TransactionFeeCharger<T, CON, HC>
 where
 	T: Config,
-	SystemTokenBalanceOf<T>: From<SystemTokenWeightOf<T>>
+	SystemTokenBalanceOf<T>: From<SystemTokenWeightOf<T>>,
 {
 	/// Rational of transaction fee
 	/// para_fee_rate * weight_scale / base_weight
@@ -117,8 +115,7 @@ where
 
 /// Default implementation for a runtime instantiating this pallet, a balance to asset converter and
 /// a credit handler.
-impl<T, CON, HC> OnChargeSystemToken<T>
-	for TransactionFeeCharger<T, CON, HC>
+impl<T, CON, HC> OnChargeSystemToken<T> for TransactionFeeCharger<T, CON, HC>
 where
 	T: Config,
 	CON: ConversionToAssetBalance<BalanceOf<T>, SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>>,

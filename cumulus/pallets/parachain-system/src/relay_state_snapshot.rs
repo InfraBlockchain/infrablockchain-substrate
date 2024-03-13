@@ -296,7 +296,9 @@ impl RelayChainStateProof {
 		.map_err(Error::UpdateSystemTokenWeight)
 	}
 
-	pub fn read_infra_system_config(&self) -> Result<relay_chain::SystemTokenConfig<SystemTokenWeight>, Error> {
+	pub fn read_infra_system_config(
+		&self,
+	) -> Result<relay_chain::SystemTokenConfig<SystemTokenWeight>, Error> {
 		read_entry(&self.trie_backend, relay_chain::well_known_keys::SYSTEM_CONFIG, None)
 			.map_err(Error::UpdatedInfraSystemConfig)
 	}

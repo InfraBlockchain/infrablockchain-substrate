@@ -313,7 +313,7 @@ pub mod pallet {
 		// - extended_metadata: Additional metadata for `Original` System Token
 		//
 		// Process:
-		// - Create & register `Original` System Token 
+		// - Create & register `Original` System Token
 		// - Create `wrapped` for Relay if None. Otherwise, create asset remotely via DMP
 		#[pallet::call_index(0)]
 		pub fn register_system_token(
@@ -803,7 +803,10 @@ where
 			Ok(())
 		})?;
 
-		Self::do_deregister_system_token(DeregisterKind::Specific { original, wrapped: Some(para_id)})?;
+		Self::do_deregister_system_token(DeregisterKind::Specific {
+			original,
+			wrapped: Some(para_id),
+		})?;
 
 		Ok(())
 	}
@@ -886,7 +889,10 @@ where
 	/// **Description:**
 	///
 	/// Try remove `ParaIdSystemTokens` for any(`original` or `wrapped`) system token id
-	fn remove_system_token_for_para_id(system_token_id: &SystemTokenIdOf<T>, para_id: &SystemTokenOriginIdOf<T>) -> DispatchResult {
+	fn remove_system_token_for_para_id(
+		system_token_id: &SystemTokenIdOf<T>,
+		para_id: &SystemTokenOriginIdOf<T>,
+	) -> DispatchResult {
 		ParaIdSystemTokens::<T>::try_mutate_exists(
 			para_id,
 			|maybe_system_tokens| -> Result<(), DispatchError> {
@@ -909,13 +915,17 @@ where
 // XCM-related internal methods
 impl<T: Config> Pallet<T> {
 	/// **Description:**
-	/// 
+	///
 	/// Deregister system token for given `kind`
-	fn do_deregister_system_token(kind: DeregisterKind<SystemTokenIdOf<T>, SystemTokenOriginIdOf<T>>) -> DispatchResult {
+	fn do_deregister_system_token(
+		kind: DeregisterKind<SystemTokenIdOf<T>, SystemTokenOriginIdOf<T>>,
+	) -> DispatchResult {
 		match kind {
 			DeregisterKind::All(original) => {
-				let system_token_detail = SystemToken::<T>::get(&original).ok_or(Error::<T>::OriginalNotRegistered)?;
-				let (origin_id, _) = original.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
+				let system_token_detail =
+					SystemToken::<T>::get(&original).ok_or(Error::<T>::OriginalNotRegistered)?;
+				let (origin_id, _) =
+					original.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
 				for para_id in system_token_detail.list_all_wrapped().iter() {
 					Self::remove_system_token_for_para_id(&original, &para_id)?;
 				}
@@ -930,15 +940,18 @@ impl<T: Config> Pallet<T> {
 			},
 			DeregisterKind::Specific { original, wrapped } => {
 				if let Some(para_id) = wrapped {
-					let system_token_detail =
-						SystemToken::<T>::get(&original).ok_or(Error::<T>::SystemTokenNotRegistered)?;
-					ensure!(system_token_detail.is_used_by(&para_id), Error::<T>::WrappedNotRegistered);
+					let system_token_detail = SystemToken::<T>::get(&original)
+						.ok_or(Error::<T>::SystemTokenNotRegistered)?;
+					ensure!(
+						system_token_detail.is_used_by(&para_id),
+						Error::<T>::WrappedNotRegistered
+					);
 					Self::remove_system_token_for_para_id(&original, &para_id)?;
 				} else {
 					// TODO: Relay Chain
 					// Fungibles::deregister()
 				}
-			}
+			},
 		}
 		Ok(())
 	}
@@ -952,9 +965,8 @@ impl<T: Config> Pallet<T> {
 		system_token_id: &SystemTokenIdOf<T>,
 		system_token_weight: Option<SystemTokenWeightOf<T>>,
 	) -> DispatchResult {
-		let (origin_id, _) = system_token_id
-			.id()
-			.map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
+		let (origin_id, _) =
+			system_token_id.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
 		let weight = system_token_weight.ok_or(Error::<T>::WeightMissing)?;
 		if let Some(para_id) = origin_id {
 			T::InfraCore::register_system_token(para_id.clone(), system_token_id, weight);
@@ -1225,7 +1237,8 @@ mod impl_traits {
 					decimals,
 					min_balance,
 				} = request_asset_metadata;
-				let system_token_id = T::SystemTokenId::convert_back(Some(para_id), pallet_id, asset_id);
+				let system_token_id =
+					T::SystemTokenId::convert_back(Some(para_id), pallet_id, asset_id);
 				Metadata::<T>::insert(
 					system_token_id,
 					SystemTokenMetadata::new(
