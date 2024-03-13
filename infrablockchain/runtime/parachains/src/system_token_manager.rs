@@ -15,9 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{
-	configuration, ensure_parachain, paras, Origin as ParachainOrigin, ParaId,
-};
+use crate::{configuration, ensure_parachain, paras, Origin as ParachainOrigin, ParaId};
 use frame_support::storage::KeyPrefixIterator;
 pub use frame_support::{
 	pallet_prelude::*,
@@ -32,7 +30,7 @@ pub use frame_support::{
 use frame_system::pallet_prelude::*;
 pub use pallet::*;
 use softfloat::F64;
-use sp_runtime::types::{infra_core::*, token::* };
+use sp_runtime::types::{infra_core::*, token::*};
 use sp_std::prelude::*;
 use types::*;
 

@@ -17,9 +17,9 @@
 //! XCM configuration for infrablockspace.
 
 use super::{
-	parachains_origin, system_token_manager, AccountId, AllPalletsWithSystem, OriginalAssets, WrappedAssets, Authorship,
-	Balance, Balances, ParaId, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
-	ValidatorCollective, WeightToFee, XcmPallet,
+	parachains_origin, system_token_manager, AccountId, AllPalletsWithSystem, Authorship, Balance,
+	Balances, OriginalAssets, ParaId, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
+	ValidatorCollective, WeightToFee, WrappedAssets, XcmPallet,
 };
 use frame_support::{
 	match_types, parameter_types,
@@ -27,7 +27,7 @@ use frame_support::{
 };
 use infra_asset_common::{
 	matching::{StartsWith, StartsWithExplicitGlobalConsensus},
-	AssetFeeAsExistentialDepositMultiplier, AssetIdForTrustBackedAssetsConvert
+	AssetFeeAsExistentialDepositMultiplier, AssetIdForTrustBackedAssetsConvert,
 };
 use parachain_primitives::primitives::Sibling;
 use runtime_common::{paras_registrar, xcm_sender};
@@ -37,9 +37,9 @@ use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowSubscriptionsFrom,
 	AllowTopLevelPaidExecutionFrom, BackingToPlurality, ChildParachainAsNative,
-	ChildParachainConvertsVia, FixedWeightBounds, FungiblesAdapter, LocalMint, NonLocalMint,
-	ParentIsPreset, SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-	SovereignSignedViaLocation, TakeWeightCredit, NoChecking,
+	ChildParachainConvertsVia, FixedWeightBounds, FungiblesAdapter, LocalMint, NoChecking,
+	NonLocalMint, ParentIsPreset, SiblingParachainConvertsVia, SignedAccountId32AsNative,
+	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
 };
 use xcm_executor::traits::WithOriginFilter;
 use xcm_primitives::TrappistDropAssets;
@@ -97,10 +97,7 @@ pub type ForeignFungiblesTransactor = FungiblesAdapter<
 
 /// `AssetId/Balancer` converter for `TrustBackedAssets``
 pub type TrustBackedAssetsConvertedConcreteId =
-	infra_asset_common::TrustBackedAssetsConvertedConcreteId<
-		OriginalAssetsPalletLocation,
-		Balance,
-	>;
+	infra_asset_common::TrustBackedAssetsConvertedConcreteId<OriginalAssetsPalletLocation, Balance>;
 
 /// Means for transacting assets besides the native currency on this chain.
 pub type LocalIssuedFungiblesTransactor = FungiblesAdapter<
