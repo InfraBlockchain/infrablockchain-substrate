@@ -910,7 +910,7 @@ pub mod pallet {
 
 	/// The vote weight of a specific account for a specific asset.
 	#[pallet::storage]
-	pub(super) type CollectedPotVotes<T: Config> = StorageValue<_, Vec<OpaquePotVote>, OptionQuery>;
+	pub(super) type PotVotes<T: Config> = StorageValue<_, Vec<OpaquePotVote>, OptionQuery>;
 
 	#[pallet::storage]
 	pub(super) type RequestedAsset<T: Config> =
@@ -1515,6 +1515,15 @@ pub struct ParachainSetCode<T>(sp_std::marker::PhantomData<T>);
 impl<T: Config> frame_system::SetCode<T> for ParachainSetCode<T> {
 	fn set_code(code: Vec<u8>) -> DispatchResult {
 		Pallet::<T>::schedule_code_upgrade(code)
+	}
+}
+
+/// Something deals with infra- stuff
+impl<T: Config> Pallet<T> {
+	pub fn handle_vote(bytes: Vec<u8>) {
+		PotVotes::<T>::mutate(|votes| {
+			votes.push(bytes);
+		});
 	}
 }
 

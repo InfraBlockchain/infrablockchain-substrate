@@ -8,6 +8,7 @@ description = "Adds functionality to handle Cumulus-based chain policy which is 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 scale-info = { version = "2.9.0", default-features = false, features = ["derive"] }
+softfloat = { path = "../../../substrate/primitives/softfloat", default-features = false }
 
 # Primitives
 sp-runtime = { path = "../../../substrate/primitives/runtime", default-features = false}
@@ -31,6 +32,7 @@ cumulus-pallet-xcm = { path = "../xcm", default-features = false }
 default = [ "std" ]
 std = [
 	"codec/std",
+	"softfloat/std",
 	"scale-info/std",
 	"frame-support/std",
 	"frame-system/std",

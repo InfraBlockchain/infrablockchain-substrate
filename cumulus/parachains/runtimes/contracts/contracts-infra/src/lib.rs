@@ -307,7 +307,7 @@ parameter_types! {
 impl cumulus_pallet_infra_parachain_core::Config for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeEvent = RuntimeEvent;
-	type Fugibles = Assets;
+	type Fungibles = Assets;
 	type ParachainSystem = ParachainSystem;
 	type ActiveRequestPeriod = ActiveRequestPeriod;
 }

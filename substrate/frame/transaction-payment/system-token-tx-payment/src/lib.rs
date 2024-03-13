@@ -45,10 +45,10 @@ use softfloat::F64;
 use sp_runtime::{
 	traits::{
 		AccountIdConversion, DispatchInfoOf, Dispatchable, PostDispatchInfoOf, SignedExtension,
-		Zero,
+		Zero
 	},
 	transaction_validity::{TransactionValidity, TransactionValidityError, ValidTransaction},
-	types::{fee::*, infra_core::*, token::*},
+	types::{fee::*, infra_core::*, token::*, vote::PotVote},
 	FixedPointNumber, FixedPointOperand, FixedU128,
 };
 
@@ -67,7 +67,7 @@ pub mod pallet {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Interface that is related to transaction for Infrablockchain Runtime
 		type InfraTxInterface: RuntimeConfigProvider<SystemTokenBalanceOf<Self>, SystemTokenWeightOf<Self>>
-			+ TaaV;
+			+ TaaV<Vote=PotVote<Self::AccountId, SystemTokenAssetIdOf<Self>>>;
 		/// The fungibles instance used to pay for transactions in assets.
 		type Fungibles: Balanced<Self::AccountId> + InspectSystemToken<Self::AccountId>;
 		/// The actual transaction charging logic that charges the fees.
@@ -90,7 +90,7 @@ pub mod pallet {
 		SystemTokenTxFeePaid {
 			fee_payer: T::AccountId,
 			detail: Detail<SystemTokenAssetIdOf<T>, BalanceOf<T>, SystemTokenBalanceOf<T>>,
-			vote_candidate: Option<T::AccountId>,
+			candidate: Option<T::AccountId>,
 		},
 		/// Currently, Runtime is in bootstrap mode.
 		OnBootstrapping,
@@ -108,7 +108,10 @@ pub mod pallet {
 	}
 }
 
-impl<T: Config> Pallet<T> {
+impl<T: Config> Pallet<T> 
+where 
+	SystemTokenWeightOf<T>: From<SystemTokenBalanceOf<T>>,
+{
 	fn check_bootstrap_and_filter(call: &T::RuntimeCall) -> Result<bool, TransactionValidityError> {
 		match (T::InfraTxInterface::runtime_state(), T::BootstrapCallFilter::contains(call)) {
 			(Mode::Bootstrap, false) =>
@@ -116,6 +119,14 @@ impl<T: Config> Pallet<T> {
 			(Mode::Bootstrap, true) => Ok(true),
 			(Mode::Normal, _) => Ok(false),
 		}
+	}
+
+	fn do_handle_vote(candidate: &T::AccountId, system_token_id: &SystemTokenAssetIdOf<T>, converted_fee: SystemTokenBalanceOf<T>) -> Result<(), TransactionValidityError>{
+		let balance_to_weight: SystemTokenWeightOf<T> = converted_fee.into();
+		let to_i128: i128 = balance_to_weight.try_into().map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::ConversionError))?;
+		let vote = PotVote::new(system_token_id.clone(), candidate.clone(), F64::from_i128(to_i128));
+		T::InfraTxInterface::handle_vote(vote);
+		Ok(())
 	}
 }
 
@@ -133,7 +144,7 @@ pub struct ChargeSystemToken<T: Config> {
 	// Asset to pay the fee with
 	asset_id: Option<ChargeSystemTokenAssetIdOf<T>>,
 	// whom to vote for
-	vote_candidate: Option<T::AccountId>,
+	candidate: Option<T::AccountId>,
 }
 
 impl<T: Config> ChargeSystemToken<T>
@@ -147,16 +158,16 @@ where
 {
 	// For benchmarking only
 	pub fn new() -> Self {
-		Self { tip: Default::default(), asset_id: None, vote_candidate: None }
+		Self { tip: Default::default(), asset_id: None, candidate: None }
 	}
 
 	/// Utility constructor. Used only in client/factory code.
 	pub fn from(
 		tip: BalanceOf<T>,
 		asset_id: Option<ChargeSystemTokenAssetIdOf<T>>,
-		vote_candidate: Option<T::AccountId>,
+		candidate: Option<T::AccountId>,
 	) -> Self {
-		Self { tip, asset_id, vote_candidate }
+		Self { tip, asset_id, candidate }
 	}
 
 	/// Taking fee **before dispatching transactions.**
@@ -220,6 +231,7 @@ where
 	SystemTokenBalanceOf<T>: Send + Sync + FixedPointOperand,
 	BalanceOf<T>: From<SystemTokenBalance>,
 	SystemTokenAssetIdOf<T>: Send + Sync + IsType<ChargeSystemTokenAssetIdOf<T>>,
+	SystemTokenWeightOf<T>: From<SystemTokenBalanceOf<T>>,
 	BalanceOf<T>: Send
 		+ Sync
 		+ From<u64>
@@ -292,7 +304,7 @@ where
 			call_metadata,
 			initial_payment,
 			self.asset_id,
-			self.vote_candidate,
+			self.candidate,
 		))
 	}
 
@@ -303,7 +315,7 @@ where
 		len: usize,
 		_result: &DispatchResult,
 	) -> Result<(), TransactionValidityError> {
-		if let Some((tip, who, call_metadata, initial_payment, system_token_id, vote_candidate)) =
+		if let Some((tip, who, call_metadata, initial_payment, maybe_system_token_id, maybe_candidate)) =
 			pre
 		{
 			match initial_payment {
@@ -342,28 +354,21 @@ where
 					let tip: Option<SystemTokenBalanceOf<T>> =
 						if converted_tip.is_zero() { None } else { Some(converted_tip) };
 					// update_vote_info is only excuted when vote_info has some data
-					match (&vote_candidate, &system_token_id) {
+					match (&maybe_candidate, &maybe_system_token_id) {
 						// Case: Voting and system token has clarified
-						(Some(vote_candidate), Some(system_token_id)) => {
+						(Some(candidate), Some(system_token_id)) => {
 							Pallet::<T>::deposit_event(Event::<T>::SystemTokenTxFeePaid {
 								fee_payer: who,
-								detail: Detail { paid_asset_id, actual_fee, converted_fee, tip },
-								vote_candidate: Some(vote_candidate.clone()),
+								detail: Detail { paid_asset_id, actual_fee, converted_fee: converted_fee.clone(), tip },
+								candidate: Some(candidate.clone()),
 							});
-
-							// TODO
-							// let vote_weight = F64::from_i128(converted_fee.into() as i128);
-							// T::InfraTxInterface::update_pot_vote(
-							// 	vote_candidate.clone().into(),
-							// 	system_token_id.clone(),
-							// 	vote_weight,
-							// );
+							Pallet::<T>::do_handle_vote(candidate, &system_token_id.clone().into(), converted_fee)?;
 						},
 						_ => {
 							Pallet::<T>::deposit_event(Event::<T>::SystemTokenTxFeePaid {
 								fee_payer: who,
 								detail: Detail { paid_asset_id, actual_fee, converted_fee, tip },
-								vote_candidate: None,
+								candidate: None,
 							});
 						},
 					}

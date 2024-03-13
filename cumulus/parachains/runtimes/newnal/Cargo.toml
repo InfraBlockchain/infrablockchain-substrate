@@ -68,7 +68,6 @@ runtime-parachains = { path = "../../../../infrablockchain/runtime/parachains", 
 
 # Xcm
 pallet-xcm = { path = "../../../../infrablockchain/xcm/pallet-xcm", default-features = false }
-pallet-asset-link = { package = "infra-asset-link", path = "../../../../infrablockchain/xcm/infra-asset-link", default-features = false }
 xcm-primitives = { path = "../../../../infrablockchain/xcm/xcm-primitives", default-features = false }
 xcm = { package = "staging-xcm", path = "../../../../infrablockchain/xcm", default-features = false }
 xcm-builder = { package = "staging-xcm-builder", path = "../../../../infrablockchain/xcm/xcm-builder", default-features = false }
@@ -121,7 +120,6 @@ std = [
 	"pallet-scheduler/std",
 	"pallet-preimage/std",
 	"pallet-assets/std",
-	"pallet-asset-link/std",
 	"xcm-primitives/std",
 	"frame-benchmarking/std",
 	"frame-try-runtime/std",
@@ -165,7 +163,6 @@ std = [
 ]
 
 runtime-benchmarks = [
-	"pallet-asset-link/runtime-benchmarks",
 	"frame-benchmarking/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
 	"frame-system-benchmarking/runtime-benchmarks",

@@ -19,7 +19,6 @@ smallvec = "1.11.0"
 # InfraBlockchain
 pallet-system-token-tx-payment = { path = "../../../../substrate/frame/transaction-payment/system-token-tx-payment", default-features = false }
 pallet-assets = { path = "../../../../substrate/frame/assets", default-features = false }
-pallet-asset-link = { package = "infra-asset-link", path = "../../../../infrablockchain/xcm/infra-asset-link", default-features = false }
 pallet-uniques = { path = "../../../../substrate/frame/uniques", default-features = false }
 assets-common = { path = "../assets/common", default-features = false }
 
@@ -132,7 +131,6 @@ runtime-benchmarks = [
 	"pallet-collator-selection/runtime-benchmarks",
 	"cumulus-pallet-xcmp-queue/runtime-benchmarks",
 	"pallet-xcm-benchmarks/runtime-benchmarks",
-	"pallet-asset-link/runtime-benchmarks",
 ]
 try-runtime = [
 	"cumulus-pallet-aura-ext/try-runtime",

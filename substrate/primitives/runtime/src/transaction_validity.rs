@@ -86,6 +86,8 @@ pub enum InvalidTransaction {
 	SystemTokenMissing,
 	/// The bootstrapping process is not finished yet.
 	InvalidBootstrappingCall,
+	/// Error occured while converting type
+	ConversionError,
 }
 
 impl InvalidTransaction {
@@ -119,6 +121,7 @@ impl From<InvalidTransaction> for &'static str {
 			InvalidTransaction::BadSigner => "Invalid signing address",
 			InvalidTransaction::SystemTokenMissing => "System Token is not existed",
 			InvalidTransaction::InvalidBootstrappingCall => "Unexpected bootstrapping call",
+			InvalidTransaction::ConversionError => "Error occured while converting type"
 		}
 	}
 }

@@ -37,7 +37,9 @@ pub mod types {
 mod tests {
 	use super::*;
 	use sp_core::crypto::AccountId32;
-	pub struct MockToken {
+	
+	#[derive(Encode, Decode)]
+	pub struct MockSystemTokenId {
 		para_id: Option<u32>,
 		pallet_id: u8,
 		asset_id: u128,
@@ -46,12 +48,12 @@ mod tests {
 	#[test]
 	fn decode_works() {
 		let vote = PotVote::new(
-			MockToken { para_id: Some(1), pallet_id: 1, asset_id: 1 },
+			MockSystemTokenId { para_id: Some(1), pallet_id: 1, asset_id: 1 },
 			AccountId32::new([0; 32]),
 			F64::from_i128(10),
 		);
 		let bytes = vote.encode();
-		if let Ok(vote) = PotVote::<AccountId32, MockToken, F64>::decode(&bytes) {
+		if let Ok(vote) = PotVote::<AccountId32, MockSystemTokenId, F64>::decode(&bytes) {
 			println!("{:?}", vote);
 		}
 	}

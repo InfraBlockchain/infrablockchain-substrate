@@ -69,7 +69,6 @@ xcm = { package = "staging-xcm", path = "../../xcm", default-features = false }
 xcm-executor = { package = "staging-xcm-executor", path = "../../xcm/xcm-executor", default-features = false }
 primitives = { path = "../../primitives", default-features = false }
 pallet-xcm = { path = "../../xcm/pallet-xcm", default-features = false }
-pallet-asset-link = { package = "infra-asset-link", path = "../../xcm/infra-asset-link", default-features = false }
 xcm-primitives = { path = "../../xcm/xcm-primitives", default-features = false }
 
 parachain-primitives = { path = "../../parachain", default-features = false }
@@ -99,7 +98,6 @@ std = [
 	"inherents/std",
 	"log/std",
 	"pallet-assets/std",
-	"pallet-asset-link/std",
 	"pallet-xcm/std",
 	"pallet-validator-election/std",
 	"pallet-system-token-oracle/std",

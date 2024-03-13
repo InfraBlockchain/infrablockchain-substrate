@@ -63,7 +63,8 @@ mod ump_tests;
 pub use origin::{ensure_parachain, Origin};
 pub use paras::ParaLifecycle;
 use primitives::{HeadData, Id as ParaId, ValidationCode};
-use sp_runtime::{DispatchResult, FixedU128};
+use sp_runtime::{DispatchResult, FixedU128, types::token::RemoteAssetMetadata};
+use softfloat::F64;
 
 /// Trait for tracking message delivery fees on a transport protocol.
 pub trait FeeTracker {
@@ -117,11 +118,11 @@ pub trait SystemTokenInterface<
 	/// Adjust the vote weight calculating exchange rate.
 	fn adjusted_weight(system_token_id: &AssetId, vote_weight: VoteWeight) -> VoteWeight;
 	/// Update the metadata for requested asset received from enshirned chain
-	fn requested_asset_metadata(para_id: ParaId, maybe_requested_asset: Option<Metadata>);
+	fn requested_asset_metadata(para_id: ParaId, maybe_requested_asset: Option<Vec<u8>>);
 }
 
 impl<AssetId, Balance, VoteWeight, Metadata>
-	SystemTokenInterface<AssetId, Balance, Metadata, VoteWeight, Metadata> for ()
+	SystemTokenInterface<AssetId, Balance, VoteWeight, Metadata> for ()
 {
 	fn adjusted_weight(_system_token_id: &AssetId, _vote_weight: VoteWeight) -> VoteWeight {
 		Default::default()

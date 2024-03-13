@@ -121,15 +121,10 @@ pub struct BaseSystemTokenDetail<SystemTokenWeight> {
 }
 
 impl<SystemTokenWeight> BaseSystemTokenDetail<SystemTokenWeight> {
-	fn new(fiat: Fiat, weight: SystemTokenWeight, decimals: u8) -> Self {
+	pub fn new(fiat: Fiat, weight: SystemTokenWeight, decimals: u8) -> Self {
 		Self { base_currency: fiat, base_weight: weight, base_decimals: decimals }
 	}
 }
-
-pub const MAX_REQUESTED_ASSETS: u32 = 1;
-/// Upper limit of number of assets to be requested
-pub type BoundedRequestedAssets<AssetId, Balance> =
-	BoundedVec<RemoteAssetMetadata<AssetId, Balance>, ConstU32<MAX_REQUESTED_ASSETS>>;
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Default, Hash))]

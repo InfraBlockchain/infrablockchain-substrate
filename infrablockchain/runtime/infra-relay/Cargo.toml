@@ -94,7 +94,6 @@ xcm-builder = { package = "staging-xcm-builder", path = "../../xcm/xcm-builder",
 pallet-xcm = { path = "../../xcm/pallet-xcm", default-features = false }
 xcm-primitives = { path = "../../xcm/xcm-primitives", default-features = false }
 cumulus-primitives-utility = { path = "../../../cumulus/primitives/utility", default-features = false }
-pallet-asset-link = { package = "infra-asset-link", path = "../../xcm/infra-asset-link", default-features = false }
 infra-asset-common = { path = "../../xcm/infra-asset-common", default-features = false }
 
 # Dev tool
@@ -195,7 +194,6 @@ std = [
 	"frame-system-benchmarking?/std",
 	"pallet-session-benchmarking?/std",
 	"pallet-offences-benchmarking?/std",
-	"pallet-asset-link/std",
 	"infra-asset-common/std",
 ]
 runtime-benchmarks = [
@@ -234,7 +232,6 @@ runtime-benchmarks = [
 	"hex-literal",
 	"xcm-builder/runtime-benchmarks",
 	"runtime-parachains/runtime-benchmarks",
-	"pallet-asset-link/runtime-benchmarks",
 ]
 try-runtime = [
 	"frame-executive/try-runtime",

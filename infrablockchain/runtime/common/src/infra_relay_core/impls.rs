@@ -4,26 +4,26 @@ use super::{types::*, *};
 use sp_std::vec;
 
 impl<T: Config> TaaV for Pallet<T> {
-	type AccountId = T::AccountId;
-	type VoteWeight = VoteWeightOf<T>;
+	type Vote = PotVote<T::AccountId, SystemTokenAssetIdOf<T>, VoteWeightOf<T>>;
+	type Weight = VoteWeightOf<T>;
 	type Error = DispatchError;
 
 	fn process_vote(bytes: &mut Vec<u8>) -> Result<(), Self::Error> {
 		// Try decode
-		let vote = PotVote::<Self::AccountId, SystemTokenAssetIdOf<T>, Self::VoteWeight>::decode(
+		let vote = Self::Vote::decode(
 			&mut bytes[..],
 		)
 		.map_err(|_| Error::<T>::ErrorDecode)?;
 		log::info!("😇😇😇 Vote: {:?}", vote);
-		// Validity Check
-		// Check whether it is registered system token
-		// if !T::SystemTokenInterface::is_system_token(&system_token_id) {
-		// 	return Ok(())
-		// }
-		// let weight = T::SystemTokenInterface::adjusted_weight(&system_token_id, vote_weight);
-		// T::VotingInterface::update_vote_status(who.clone(), weight);
-		// Self::deposit_event(Event::<T>::Voted { who, system_token_id, vote_weight: weight });
+		let PotVote { candidate, weight, .. } = vote;
+		let adjusted = T::SystemTokenInterface::adjusted_weight(&system_token_id, weight);
+		T::Voting::vote(candidate.clone(), adjusted);
+		Self::deposit_event(Event::<T>::Voted { who: candidate });
 		Ok(())
+	}
+
+	fn handle_vote(_vote: Self::Vote) {
+		// We don't handle vote here
 	}
 }
 

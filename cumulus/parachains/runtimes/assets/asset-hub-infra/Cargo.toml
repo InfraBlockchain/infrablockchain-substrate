@@ -74,7 +74,6 @@ xcm-builder = { package = "staging-xcm-builder", path = "../../../../../infrablo
 xcm-executor = { package = "staging-xcm-executor", path = "../../../../../infrablockchain/xcm/xcm-executor", default-features = false }
 pallet-xcm = { path = "../../../../../infrablockchain/xcm/pallet-xcm", default-features = false }
 pallet-xcm-benchmarks = { path = "../../../../../infrablockchain/xcm/pallet-xcm-benchmarks", default-features = false, optional = true }
-pallet-asset-link = { package = "infra-asset-link", path = "../../../../../infrablockchain/xcm/infra-asset-link", default-features = false }
 xcm-primitives = { path = "../../../../../infrablockchain/xcm/xcm-primitives", default-features = false }
 
 # Cumulus
@@ -124,7 +123,6 @@ runtime-benchmarks = [
 	"pallet-collator-selection/runtime-benchmarks",
 	"cumulus-pallet-xcmp-queue/runtime-benchmarks",
 	"pallet-xcm-benchmarks/runtime-benchmarks",
-	"pallet-asset-link/runtime-benchmarks",
 ]
 try-runtime = [
 	"cumulus-pallet-aura-ext/try-runtime",

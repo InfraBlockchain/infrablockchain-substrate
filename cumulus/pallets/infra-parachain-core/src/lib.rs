@@ -1,5 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use codec::Encode;
+use softfloat::F64;
 use cumulus_pallet_xcm::{ensure_relay, Origin};
 use cumulus_primitives_core::UpdateRCConfig;
 use frame_support::{
@@ -61,14 +63,14 @@ pub mod pallet {
 	use super::*;
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config {
+	pub trait Config: frame_system::Config + cumulus_pallet_parachain_system::Config {
 		/// Runtime Origin for the System Token pallet.
 		type RuntimeOrigin: From<<Self as frame_system::Config>::RuntimeOrigin>
 			+ Into<Result<Origin, <Self as Config>::RuntimeOrigin>>;
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Type that interacts with local asset
-		type Fungibles: InspectSystemToken<AccountId = Self::AccountId>;
+		type Fungibles: InspectSystemToken<Self::AccountId>;
 		/// Type that interacts with Parachain System
 		type ParachainSystem: AssetMetadataProvider; // CollectVote
 		/// Active request period for registering System Token
@@ -99,7 +101,7 @@ pub mod pallet {
 	pub type CurrentRequest<T: Config> = StorageValue<
 		_,
 		(
-			RemoteAssetMetadata<T::SystemTokenId, SystemTokenBalanceOf<T>>,
+			RemoteAssetMetadata<SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>>,
 			RequestStatus<BlockNumberFor<T>>,
 		),
 	>;
@@ -280,7 +282,7 @@ pub mod pallet {
 			// 	system_token_weight,
 			// )
 			// .map_err(|_| Error::<T>::ErrorCreateWrappedLocalAsset)?;
-			Self::deposit_event(Event::<T>::WrappedCreated { original });
+			Self::deposit_event(Event::<T>::WrappedCreated { asset_id: original });
 			Ok(())
 		}
 
@@ -395,13 +397,18 @@ impl<T: Config> RuntimeConfigProvider<SystemTokenBalanceOf<T>, SystemTokenWeight
 	}
 }
 
-impl<T: Config> VotingHandler for Pallet<T> {
-	fn update_pot_vote(
-		who: VoteAccountId,
-		system_token_id: SystemTokenId,
-		vote_weight: VoteWeight,
-	) {
-		// T::ParachainSystem::collect_vote(who, system_token_id, vote_weight);
+impl<T: Config> TaaV for Pallet<T> {
+	type Vote = PotVote<T::AccountId, SystemTokenAssetIdOf<T>>;
+	type Weight = F64;
+	type Error = DispatchError;
+
+	fn process_vote(_bytes: &mut Vec<u8>) -> Result<(), Self::Error> {
+		// We are not processing vote here
+		Ok(())
+	}
+
+	fn handle_vote(vote: Self::Vote) {
+		cumulus_pallet_parachain_system::Pallet::<T>::handle_vote(vote.encode());
 	}
 }
 

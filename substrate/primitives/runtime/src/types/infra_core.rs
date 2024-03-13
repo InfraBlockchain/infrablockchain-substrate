@@ -3,6 +3,7 @@ use super::{
 	token::{Fiat, SystemTokenConfig},
 };
 
+use codec::FullCodec;
 use softfloat::F64;
 use sp_std::vec::Vec;
 
@@ -50,13 +51,16 @@ pub trait RuntimeConfigProvider<Balance, Weight> {
 
 /// Transaction-as-a-Vote
 pub trait TaaV {
-	/// Type of `candidate` of vote
-	type AccountId;
-	/// Type of `weight` of vote
-	type VoteWeight: Into<F64>;
+	/// Type of `vote` used for `TaaV`
+	type Vote: FullCodec;
+	/// Type of  `weight` for vote
+	type Weight: Into<F64>;
 	/// Error type while processing vote
 	type Error;
 
-	/// Try to decode for given `vote` and process `PotVote`
+	/// Try to decode for given opaque `vote` and process `PotVote`
 	fn process_vote(bytes: &mut Vec<u8>) -> Result<(), Self::Error>;
+
+	/// Handle vote 
+	fn handle_vote(vote: Self::Vote);
 }

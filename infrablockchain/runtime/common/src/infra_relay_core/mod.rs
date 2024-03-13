@@ -68,11 +68,7 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		Voted {
-			who: T::AccountId,
-			system_token_id: SystemTokenAssetIdOf<T>,
-			vote_weight: VoteWeightOf<T>,
-		},
+		Voted { who: T::AccountId },
 		/// System Token has been regierested by Relay-chain governance
 		Registered,
 		/// System Token has been deregistered by Relay-chain governance

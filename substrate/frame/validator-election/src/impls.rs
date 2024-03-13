@@ -81,6 +81,7 @@ impl<AccountId> SessionInterface<AccountId> for () {
 
 /// Interface for Proof-of-Transaction
 pub trait PotInterface<Account> {
+	/// Actual weight type for `proof-of-transaction`
 	type VoteWeight;
 
 	/// Update the vote status for the given account.
