@@ -37,7 +37,7 @@ pub mod types {
 mod tests {
 	use super::*;
 	use sp_core::crypto::AccountId32;
-	
+
 	#[derive(Encode, Decode)]
 	pub struct MockSystemTokenId {
 		para_id: Option<u32>,

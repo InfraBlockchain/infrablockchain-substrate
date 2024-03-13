@@ -10,10 +10,7 @@ impl<T: Config> TaaV for Pallet<T> {
 
 	fn process_vote(bytes: &mut Vec<u8>) -> Result<(), Self::Error> {
 		// Try decode
-		let vote = Self::Vote::decode(
-			&mut bytes[..],
-		)
-		.map_err(|_| Error::<T>::ErrorDecode)?;
+		let vote = Self::Vote::decode(&mut bytes[..]).map_err(|_| Error::<T>::ErrorDecode)?;
 		log::info!("😇😇😇 Vote: {:?}", vote);
 		let PotVote { candidate, weight, .. } = vote;
 		let adjusted = T::SystemTokenInterface::adjusted_weight(&system_token_id, weight);

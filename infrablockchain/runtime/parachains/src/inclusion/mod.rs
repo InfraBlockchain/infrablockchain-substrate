@@ -46,10 +46,7 @@ use primitives::{
 };
 use scale_info::TypeInfo;
 use softfloat::F64;
-use sp_runtime::{
-	traits::One,
-	DispatchError, SaturatedConversion, Saturating,
-};
+use sp_runtime::{traits::One, DispatchError, SaturatedConversion, Saturating};
 #[cfg(feature = "std")]
 use sp_std::fmt;
 use sp_std::{

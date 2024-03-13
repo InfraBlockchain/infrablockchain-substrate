@@ -1,7 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::Encode;
-use softfloat::F64;
 use cumulus_pallet_xcm::{ensure_relay, Origin};
 use cumulus_primitives_core::UpdateRCConfig;
 use frame_support::{
@@ -13,6 +12,7 @@ use frame_support::{
 };
 use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
+use softfloat::F64;
 use sp_runtime::{
 	types::{fee::*, infra_core::*, token::*, vote::*},
 	Saturating,

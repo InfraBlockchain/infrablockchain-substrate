@@ -61,6 +61,6 @@ pub trait TaaV {
 	/// Try to decode for given opaque `vote` and process `PotVote`
 	fn process_vote(bytes: &mut Vec<u8>) -> Result<(), Self::Error>;
 
-	/// Handle vote 
+	/// Handle vote
 	fn handle_vote(vote: Self::Vote);
 }

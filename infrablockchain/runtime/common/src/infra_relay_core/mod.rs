@@ -68,19 +68,28 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		Voted { who: T::AccountId },
+		Voted {
+			who: T::AccountId,
+		},
 		/// System Token has been regierested by Relay-chain governance
 		Registered,
 		/// System Token has been deregistered by Relay-chain governance
 		Deregistered,
 		/// Fee table for has been updated by Relay-chain governance
-		FeeTableUpdated { extrinsic_metadata: ExtrinsicMetadata, fee: SystemTokenBalanceOf<T> },
+		FeeTableUpdated {
+			extrinsic_metadata: ExtrinsicMetadata,
+			fee: SystemTokenBalanceOf<T>,
+		},
 		/// Weight of System Token has been updated by Relay-chain governance
-		SystemTokenWeightUpdated { asset_id: SystemTokenAssetIdOf<T> },
+		SystemTokenWeightUpdated {
+			asset_id: SystemTokenAssetIdOf<T>,
+		},
 		/// Bootstrap has been ended by Relay-chain governance.
 		BootstrapEnded,
 		/// Infra configuration has been udpated
-		InfraConfigUpdated { new: SystemTokenConfig<SystemTokenWeightOf<T>> },
+		InfraConfigUpdated {
+			new: SystemTokenConfig<SystemTokenWeightOf<T>>,
+		},
 	}
 
 	#[pallet::error]

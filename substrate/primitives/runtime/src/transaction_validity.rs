@@ -121,7 +121,7 @@ impl From<InvalidTransaction> for &'static str {
 			InvalidTransaction::BadSigner => "Invalid signing address",
 			InvalidTransaction::SystemTokenMissing => "System Token is not existed",
 			InvalidTransaction::InvalidBootstrappingCall => "Unexpected bootstrapping call",
-			InvalidTransaction::ConversionError => "Error occured while converting type"
+			InvalidTransaction::ConversionError => "Error occured while converting type",
 		}
 	}
 }

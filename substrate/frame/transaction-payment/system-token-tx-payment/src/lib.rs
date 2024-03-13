@@ -45,7 +45,7 @@ use softfloat::F64;
 use sp_runtime::{
 	traits::{
 		AccountIdConversion, DispatchInfoOf, Dispatchable, PostDispatchInfoOf, SignedExtension,
-		Zero
+		Zero,
 	},
 	transaction_validity::{TransactionValidity, TransactionValidityError, ValidTransaction},
 	types::{fee::*, infra_core::*, token::*, vote::PotVote},
@@ -67,7 +67,7 @@ pub mod pallet {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Interface that is related to transaction for Infrablockchain Runtime
 		type InfraTxInterface: RuntimeConfigProvider<SystemTokenBalanceOf<Self>, SystemTokenWeightOf<Self>>
-			+ TaaV<Vote=PotVote<Self::AccountId, SystemTokenAssetIdOf<Self>>>;
+			+ TaaV<Vote = PotVote<Self::AccountId, SystemTokenAssetIdOf<Self>>>;
 		/// The fungibles instance used to pay for transactions in assets.
 		type Fungibles: Balanced<Self::AccountId> + InspectSystemToken<Self::AccountId>;
 		/// The actual transaction charging logic that charges the fees.
@@ -108,8 +108,8 @@ pub mod pallet {
 	}
 }
 
-impl<T: Config> Pallet<T> 
-where 
+impl<T: Config> Pallet<T>
+where
 	SystemTokenWeightOf<T>: From<SystemTokenBalanceOf<T>>,
 {
 	fn check_bootstrap_and_filter(call: &T::RuntimeCall) -> Result<bool, TransactionValidityError> {
@@ -121,10 +121,17 @@ where
 		}
 	}
 
-	fn do_handle_vote(candidate: &T::AccountId, system_token_id: &SystemTokenAssetIdOf<T>, converted_fee: SystemTokenBalanceOf<T>) -> Result<(), TransactionValidityError>{
+	fn do_handle_vote(
+		candidate: &T::AccountId,
+		system_token_id: &SystemTokenAssetIdOf<T>,
+		converted_fee: SystemTokenBalanceOf<T>,
+	) -> Result<(), TransactionValidityError> {
 		let balance_to_weight: SystemTokenWeightOf<T> = converted_fee.into();
-		let to_i128: i128 = balance_to_weight.try_into().map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::ConversionError))?;
-		let vote = PotVote::new(system_token_id.clone(), candidate.clone(), F64::from_i128(to_i128));
+		let to_i128: i128 = balance_to_weight
+			.try_into()
+			.map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::ConversionError))?;
+		let vote =
+			PotVote::new(system_token_id.clone(), candidate.clone(), F64::from_i128(to_i128));
 		T::InfraTxInterface::handle_vote(vote);
 		Ok(())
 	}
@@ -298,14 +305,7 @@ where
 			self.withdraw_fee(who, call, info, len)?
 		};
 		let call_metadata = call.get_call_metadata();
-		Ok((
-			self.tip,
-			who.clone(),
-			call_metadata,
-			initial_payment,
-			self.asset_id,
-			self.candidate,
-		))
+		Ok((self.tip, who.clone(), call_metadata, initial_payment, self.asset_id, self.candidate))
 	}
 
 	fn post_dispatch(
@@ -315,8 +315,14 @@ where
 		len: usize,
 		_result: &DispatchResult,
 	) -> Result<(), TransactionValidityError> {
-		if let Some((tip, who, call_metadata, initial_payment, maybe_system_token_id, maybe_candidate)) =
-			pre
+		if let Some((
+			tip,
+			who,
+			call_metadata,
+			initial_payment,
+			maybe_system_token_id,
+			maybe_candidate,
+		)) = pre
 		{
 			match initial_payment {
 				// Ibs only pay with some asset
@@ -359,10 +365,19 @@ where
 						(Some(candidate), Some(system_token_id)) => {
 							Pallet::<T>::deposit_event(Event::<T>::SystemTokenTxFeePaid {
 								fee_payer: who,
-								detail: Detail { paid_asset_id, actual_fee, converted_fee: converted_fee.clone(), tip },
+								detail: Detail {
+									paid_asset_id,
+									actual_fee,
+									converted_fee: converted_fee.clone(),
+									tip,
+								},
 								candidate: Some(candidate.clone()),
 							});
-							Pallet::<T>::do_handle_vote(candidate, &system_token_id.clone().into(), converted_fee)?;
+							Pallet::<T>::do_handle_vote(
+								candidate,
+								&system_token_id.clone().into(),
+								converted_fee,
+							)?;
 						},
 						_ => {
 							Pallet::<T>::deposit_event(Event::<T>::SystemTokenTxFeePaid {

@@ -57,7 +57,7 @@ pub mod pallet {
 				SystemTokenWeightOf<Self>,
 				SystemTokenBalanceOf<Self>,
 			> + RuntimeConfigProvider<SystemTokenBalanceOf<Self>, SystemTokenWeightOf<Self>>
-			+ TaaV<Weight=F64>;
+			+ TaaV<Weight = F64>;
 		/// Local fungibles module
 		type Fungibles: InspectSystemToken<Self::AccountId>;
 		/// The string limit for name and symbol of system token.
@@ -161,7 +161,7 @@ pub mod pallet {
 		/// Error occurred while converting from 'original' to `wrapped`
 		ErrorConvertToWrapped,
 		/// Error occurred while converting to `RemoteAssetMetadata`
-		ErrorConvertToRemoteAssetMetadata
+		ErrorConvertToRemoteAssetMetadata,
 	}
 
 	#[pallet::pallet]
@@ -507,7 +507,11 @@ where
 {
 	/// Extend system token metadata for this runtime
 	pub fn extend_metadata(
-		metadata: &mut SystemTokenMetadata<SystemTokenBalanceOf<T>, BoundedStringOf<T>, BlockNumberFor<T>>,
+		metadata: &mut SystemTokenMetadata<
+			SystemTokenBalanceOf<T>,
+			BoundedStringOf<T>,
+			BlockNumberFor<T>,
+		>,
 		extended: Option<ExtendedMetadata>,
 	) -> Result<(), DispatchError> {
 		if let Some(extended) = extended {
@@ -559,7 +563,8 @@ where
 				// TODO: Update for Relay Chain
 				UpdateExchangeRates::<T>::try_mutate(para_id, |maybe_updated| -> DispatchResult {
 					let mut updated = maybe_updated.take().unwrap_or_default();
-					let wrapped = original.wrapped().map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+					let wrapped =
+						original.wrapped().map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
 					updated = vec![(wrapped, updated_sys_weight)];
 					*maybe_updated = Some(updated);
 					Ok(())
@@ -1012,9 +1017,7 @@ pub mod types {
 		Pending,
 	}
 
-	#[derive(
-		Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, TypeInfo, MaxEncodedLen,
-	)]
+	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 	pub enum DeregisterKind<SystemTokenId, ParaId> {
 		/// Deregister all related to `SystemTokenIdOf<T>`
 		All(SystemTokenId),
@@ -1077,12 +1080,11 @@ pub mod types {
 			para_id: ParaId,
 			system_token_status: SystemTokenStatus,
 		) -> DispatchResult {
-			if let Err(_) = self.para_ids
-				.try_push((para_id, system_token_status)) {
-					Ok(())
-				} else {
-					Ok(())
-				}
+			if let Err(_) = self.para_ids.try_push((para_id, system_token_status)) {
+				Ok(())
+			} else {
+				Ok(())
+			}
 		}
 
 		/// List all `para_ids` that are using this System Token
@@ -1124,7 +1126,9 @@ pub mod types {
 		pub(crate) url: Option<BoundedString>,
 	}
 
-	impl<Balance, BoundedString: Default, BlockNumber> SystemTokenMetadata<Balance, BoundedString, BlockNumber> {
+	impl<Balance, BoundedString: Default, BlockNumber>
+		SystemTokenMetadata<Balance, BoundedString, BlockNumber>
+	{
 		pub fn currency_type(&self) -> Fiat {
 			self.currency_type.clone()
 		}
@@ -1195,7 +1199,12 @@ mod impl_traits {
 			maybe_requested_asset: Option<Vec<u8>>,
 		) {
 			if let Some(mut bytes) = maybe_requested_asset {
-				if let Ok(remote_asset_metadata) = RemoteAssetMetadata::<SystemTokenIdOf<T>, SystemTokenBalanceOf<T>>::decode(&mut bytes[..]).map_err(|_| Error::<T>::ErrorConvertToRemoteAssetMetadata) {
+				if let Ok(remote_asset_metadata) = RemoteAssetMetadata::<
+					SystemTokenIdOf<T>,
+					SystemTokenBalanceOf<T>,
+				>::decode(&mut bytes[..])
+				.map_err(|_| Error::<T>::ErrorConvertToRemoteAssetMetadata)
+				{
 					let RemoteAssetMetadata {
 						asset_id,
 						name,
@@ -1204,7 +1213,9 @@ mod impl_traits {
 						decimals,
 						min_balance,
 					} = remote_asset_metadata;
-					if let Ok((origin_id, pallet_id, asset_id)) = asset_id.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId) {
+					if let Ok((origin_id, pallet_id, asset_id)) =
+						asset_id.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)
+					{
 						let system_token_id =
 							T::SystemTokenId::convert_back(origin_id, pallet_id, asset_id);
 						Metadata::<T>::insert(
