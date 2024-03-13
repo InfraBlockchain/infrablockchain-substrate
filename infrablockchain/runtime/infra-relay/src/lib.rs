@@ -91,7 +91,7 @@ use sp_std::{cmp::Ordering, collections::btree_map::BTreeMap, prelude::*};
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 use static_assertions::const_assert;
-use xcm::latest::Junction;
+use xcm::latest::{Junction, MultiLocation};
 
 pub use frame_system::Call as SystemCall;
 pub use pallet_balances::Call as BalancesCall;
@@ -390,7 +390,7 @@ impl pallet_system_token_tx_payment::Config for Runtime {
 
 impl infra_relay_core::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type VotingInterface = ValidatorElection;
+	type Voting = ValidatorElection;
 	type SystemTokenInterface = SystemTokenManager;
 	type Fungibles = Assets;
 	type XcmRouter = XcmRouter;
@@ -1113,13 +1113,9 @@ impl pallet_validator_election::Config for Runtime {
 	type CollectiveInterface = Council;
 }
 
-impl pallet_asset_link::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type Assets = Assets;
-	type WeightInfo = ();
-}
-
 parameter_types! {
+	pub const MaxOriginalUsedParaIds: u32 = 10;
+	pub const MaxSystemTokens: u32 = 10;
 	pub const AssetHubId: u32 = ASSET_HUB_ID;
 }
 
@@ -1129,9 +1125,9 @@ impl system_token_manager::Config for Runtime {
 	type SystemTokenId = MultiLocation;
 	type InfraCore = InfraRelayCore;
 	type Fungibles = Assets;
-	type StringLimit = ConstU32<128>;
-	type MaxSystemTokens = ConstU32<10>;
-	type MaxOriginalUsedParaIds = ConstU32<10>;
+	type StringLimit = StringLimit;
+	type MaxSystemTokens = MaxSystemTokens;
+	type MaxOriginalUsedParaIds = MaxOriginalUsedParaIds;
 	type AssetHubId = AssetHubId;
 }
 
@@ -1354,21 +1350,32 @@ impl auctions::Config for Runtime {
 	type WeightInfo = weights::runtime_common_auctions::WeightInfo<Runtime>;
 }
 
+parameter_types! {
+	pub const DepositToCreateAsset: Balance = 1 * DOLLARS;
+	pub const DepositToMaintainAsset: Balance = deposit(1, 16);
+	pub const ApprovalDeposit: Balance = EXISTENTIAL_DEPOSIT;
+	pub const StringLimit: u32 = 50;
+	/// Key = 32 bytes, Value = 36 bytes (32+1+1+1+1)
+	pub const MetadataDepositBase: Balance = deposit(1, 68);
+	pub const MetadataDepositPerByte: Balance = deposit(0, 1);
+}
+
 type AssetId = u32;
 impl pallet_assets::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
-	type SystemTokenWeight = SystemTokenWeight;
 	type AssetId = AssetId;
 	type AssetIdParameter = parity_scale_codec::Compact<AssetId>;
+	type SystemTokenWeight = SystemTokenWeight;
 	type Currency = Balances;
 	type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
 	type ForceOrigin = AuthorityOrigin;
-	type AssetDeposit = ConstU128<2>;
-	type AssetAccountDeposit = ConstU128<2>;
-	type MetadataDepositBase = ConstU128<0>;
-	type MetadataDepositPerByte = ConstU128<0>;
-	type ApprovalDeposit = ConstU128<0>;
+	type AssetDeposit = DepositToCreateAsset;
+	type AssetAccountDeposit = DepositToMaintainAsset;
+	type MetadataDepositBase = MetadataDepositBase;
+	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type ApprovalDeposit = ApprovalDeposit;
+	type StringLimit = StringLimit;
 	type Freezer = ();
 	type Extra = ();
 	type CallbackHandle = ();

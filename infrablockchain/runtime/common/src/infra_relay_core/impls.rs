@@ -5,7 +5,7 @@ use sp_std::vec;
 
 impl<T: Config> TaaV for Pallet<T> {
 	type AccountId = T::AccountId;
-	type VoteWeight = T::VoteWeight;
+	type VoteWeight = VoteWeightOf<T>;
 	type Error = DispatchError;
 
 	fn process_vote(bytes: &mut Vec<u8>) -> Result<(), Self::Error> {
@@ -50,7 +50,7 @@ impl<T: Config, SystemTokenBalance, SystemTokenWeight>
 }
 
 // TODO: Find a way to dispatch XCM locally. Then it would be clearer
-impl<T: Config, Location, OriginId, Weight, Balance> UpdateInfraConfig<Location> for Pallet<T>
+impl<T: Config, Location, OriginId, Weight, Balance> UpdateInfraConfig<Location, OriginId, Weight, Balance> for Pallet<T>
 where
 	Location: Encode,
 	OriginId: Encode,
@@ -61,7 +61,7 @@ where
 		dest_id: OriginId,
 		pallet_name: Vec<u8>,
 		call_name: Vec<u8>,
-		fee: Self::Balance,
+		fee: Balance,
 	) {
 		let set_fee_table_call = ParachainRuntimePallets::InfraParaCore(
 			ParachainConfigCalls::UpdateFeeTable(pallet_name, call_name, fee),
@@ -103,7 +103,7 @@ where
 		dest_id: OriginId,
 		original: Location,
 		currency_type: Fiat,
-		min_balance: Self::Balance,
+		min_balance: Balance,
 		name: Vec<u8>,
 		symbol: Vec<u8>,
 		decimals: u8,

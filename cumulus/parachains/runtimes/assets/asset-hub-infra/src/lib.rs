@@ -68,7 +68,7 @@ use sp_runtime::{
 		AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, TryConvertInto as JustTry,
 	},
 	transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
-	types::token::*,
+	types::SystemTokenWeight,
 	ApplyExtrinsicResult,
 };
 
@@ -276,12 +276,11 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 impl pallet_system_token_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type InfraTxInterface = InfraParaCore;
-	type Assets = Assets;
+	type Fungibles = Assets;
 	type OnChargeSystemToken = TransactionFeeCharger<
 		Runtime,
 		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
 		CreditToBucket<Runtime>,
-		JustTry,
 	>;
 	type BootstrapCallFilter = BootstrapCallFilter;
 	type PalletId = FeeTreasuryId;
@@ -291,6 +290,7 @@ parameter_types! {
 	pub const DepositToCreateAsset: Balance = 1 * DOLLARS; // 1 UNITS deposit to create fungible asset class
 	pub const DepositToMaintainAsset: Balance = deposit(1, 16);
 	pub const ApprovalDeposit: Balance = EXISTENTIAL_DEPOSIT;
+	pub const StringLimit: u32 = 50;
 	/// Key = 32 bytes, Value = 36 bytes (32+1+1+1+1)
 	// https://github.com/paritytech/substrate/blob/069917b/frame/assets/src/lib.rs#L257L271
 	pub const MetadataDepositBase: Balance = deposit(1, 68);
@@ -306,6 +306,7 @@ impl pallet_assets::Config for Runtime {
 	type Balance = Balance;
 	type AssetId = AssetId;
 	type AssetIdParameter = codec::Compact<AssetId>;
+	type SystemTokenWeight = SystemTokenWeight;
 	type Currency = Balances;
 	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
 	type ForceOrigin = RootOrigin;
@@ -316,6 +317,7 @@ impl pallet_assets::Config for Runtime {
 	type AssetAccountDeposit = DepositToMaintainAsset;
 	type RemoveItemsLimit = frame_support::traits::ConstU32<1000>;
 	type WeightInfo = weights::pallet_assets::WeightInfo<Runtime>;
+	type StringLimit = StringLimit;
 	type Freezer = ();
 	type Extra = ();
 	type CallbackHandle = ();
@@ -658,12 +660,6 @@ impl pallet_uniques::Config for Runtime {
 	type Helper = ();
 	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
 	type Locker = ();
-}
-
-impl pallet_asset_link::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type Assets = Assets;
-	type WeightInfo = ();
 }
 
 parameter_types! {

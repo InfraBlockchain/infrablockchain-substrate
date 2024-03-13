@@ -4,6 +4,7 @@ pub type SystemTokenAssetIdOf<T> = <<T as Config>::Fungibles as Inspect>::AssetI
 pub type SystemTokenBalanceOf<T> = <<T as Config>::Fungibles as Insepct>::Balance;
 pub type SystemTokenWeightOf<T> =
 	<<T as Config>::Fungibles as InspectSystemToken>::SystemTokenWeight;
+pub type VoteWeightOf<T> = <<T as Config>::Voting as PotInterface>::VoteWeight;
 
 #[derive(Encode, Decode)]
 pub enum ParachainRuntimePallets {

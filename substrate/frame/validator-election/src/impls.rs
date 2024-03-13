@@ -83,31 +83,39 @@ impl<AccountId> SessionInterface<AccountId> for () {
 	}
 }
 
-pub trait VotingInterface<Account, VoteWeight> {
+/// Interface for Proof-of-Transaction
+pub trait PotInterface<Account> {
+
+	type VoteWeight;
+
 	/// Update the vote status for the given account.
-	fn update_vote_status(who: Account, weight: VoteWeight) -> bool;
+	fn vote(who: Account, weight: Self::VoteWeight) -> bool;
 }
 
-impl<T: Config, Account: Clone, VoteWeight> VotingInterface<Account, VoteWeight> for Pallet<T> 
+impl<T: Config, Account: Clone> PotInterface<Account> for Pallet<T> 
 where
 	T::AccountId: From<Account>,
-	T::Score: From<VoteWeight>
 {
-	fn update_vote_status(who: Account, weight: VoteWeight) -> bool {
+
+	type VoteWeight = T::Score;
+
+	fn vote(who: Account, weight: Self::VoteWeight) -> bool {
 		// Return if vote candidate is in SeedTrustValidatorPool
 		if SeedTrustValidatorPool::<T>::get().contains(&who.clone().into()) {
 			return false
 		}
-
-		let mut vote_status = PotValidatorPool::<T>::get();
-		vote_status.add_vote(&who.into(), weight.into());
-		PotValidatorPool::<T>::put(vote_status);
+		PotValidatorPool::<T>::mutate(|voting_status| {
+			voting_status.add_vote(&who.into(), weight);
+		});
 		true
 	}
 }
 
-impl<Account, VoteWeight> VotingInterface<Account, VoteWeight> for () {
-	fn update_vote_status(_: Account, _: VoteWeight) -> bool {
+impl<Account> PotInterface<Account> for () {
+
+	type VoteWeight = ();
+
+	fn vote(_: Account, _: Self::VoteWeight) -> bool {
 		false
 	}
 }

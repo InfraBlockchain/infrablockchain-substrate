@@ -271,8 +271,7 @@ impl xcm_executor::Config for XcmConfig {
 		>,
 	);
 	type ResponseHandler = InfraXcm;
-	// type AssetTrap = InfraXcm;
-	type AssetTrap = TrappistDropAssets<AssetId, AssetLink, Assets, Balances, InfraXcm, AccountId>;
+	type AssetTrap = InfraXcm;
 	type AssetClaims = InfraXcm;
 	type SubscriptionService = InfraXcm;
 	type PalletInstancesInfo = AllPalletsWithSystem;

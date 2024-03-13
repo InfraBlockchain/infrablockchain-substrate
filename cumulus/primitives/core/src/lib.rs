@@ -27,7 +27,7 @@ use sp_runtime::{
 };
 use sp_std::prelude::*;
 
-pub use infrablockchain_core_primitives::InboundDownwardMessage;
+pub use infrablockchain_core_primitives::{InboundDownwardMessage, OpaquePotVote};
 pub use parachain_primitives::primitives::{
 	DmpMessageHandler, Id as ParaId, IsSystem, PotVotesResult, UpwardMessage, ValidationParams,
 	XcmpMessageFormat, XcmpMessageHandler,

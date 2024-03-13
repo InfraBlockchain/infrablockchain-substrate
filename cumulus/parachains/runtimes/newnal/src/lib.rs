@@ -52,7 +52,7 @@ use frame_system::{
 use pallet_system_token_tx_payment::{CreditToBucket, TransactionFeeCharger};
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{
-	types::{VoteAssetId, VoteWeight},
+	types::SystemTokenWeight,
 	MultiAddress, Perbill, Permill,
 };
 use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
@@ -149,6 +149,7 @@ impl pallet_assets::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
 	type AssetId = AssetId;
+	type SystemTokenWeight = SystemTokenWeight;
 	type AssetIdParameter = codec::Compact<AssetId>;
 	type Currency = Balances;
 	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
@@ -160,6 +161,7 @@ impl pallet_assets::Config for Runtime {
 	type AssetAccountDeposit = DepositToMaintainAsset;
 	type RemoveItemsLimit = frame_support::traits::ConstU32<1000>;
 	type WeightInfo = weights::pallet_assets::WeightInfo<Runtime>;
+	type StringLimit = StringLimit;
 	type Freezer = ();
 	type Extra = ();
 	type CallbackHandle = ();
@@ -195,14 +197,13 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 
 impl pallet_system_token_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type Assets = Assets;
+	type Fungibles = ; = Assets;
 	type InfraTxInterface = InfraParaCore;
 	/// The actual transaction charging logic that charges the fees.
 	type OnChargeSystemToken = TransactionFeeCharger<
 		Runtime,
 		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
-		CreditToBucket<Runtime>,
-		JustTry,
+		CreditToBucket<Runtime>
 	>;
 	type BootstrapCallFilter = BootstrapCallFilter;
 	type PalletId = FeeTreasuryId;
@@ -355,8 +356,7 @@ impl cumulus_pallet_infra_parachain_core::Config for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeEvent = RuntimeEvent;
 	type ParachainSystem = ParachainSystem;
-	type LocalAssetManager = Assets;
-	type AssetLink = AssetLink;
+	type Fungibles = Assets;
 	type ActiveRequestPeriod = ActiveRequestPeriod;
 }
 
@@ -437,25 +437,19 @@ impl pallet_collator_selection::Config for Runtime {
 	type WeightInfo = weights::pallet_collator_selection::WeightInfo<Runtime>;
 }
 
-impl pallet_asset_link::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type Assets = Assets;
-	type WeightInfo = ();
-}
+// parameter_types! {
+// 	pub const AggregatedPeriod: BlockNumber = 10;
+// 	pub const IsRelay: bool = false;
+// }
 
-parameter_types! {
-	pub const AggregatedPeriod: BlockNumber = 10;
-	pub const IsRelay: bool = false;
-}
-
-impl system_token_aggregator::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type Period = AggregatedPeriod;
-	type LocalAssetManager = Assets;
-	type AssetMultiLocationGetter = AssetLink;
-	type SendXcm = XcmRouter;
-	type IsRelay = IsRelay;
-}
+// impl system_token_aggregator::Config for Runtime {
+// 	type RuntimeEvent = RuntimeEvent;
+// 	type Period = AggregatedPeriod;
+// 	type LocalAssetManager = Assets;
+// 	type AssetMultiLocationGetter = AssetLink;
+// 	type SendXcm = XcmRouter;
+// 	type IsRelay = IsRelay;
+// }
 
 parameter_types! {
 	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
@@ -575,8 +569,7 @@ construct_runtime!(
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
-		AssetLink: pallet_asset_link::{Pallet, Storage, Event<T>} = 34,
-		SystemTokenAggregator: system_token_aggregator::{Pallet, Event<T>} = 35,
+		// SystemTokenAggregator: system_token_aggregator::{Pallet, Event<T>} = 35,
 
 		// Governance
 		Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>, HoldReason} = 40,

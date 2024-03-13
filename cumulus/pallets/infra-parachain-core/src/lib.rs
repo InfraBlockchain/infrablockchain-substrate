@@ -14,9 +14,9 @@ use sp_std::vec::Vec;
 
 pub use pallet::*;
 
-pub type SystemTokenAssetIdOf<T> = <<T as Config>::Fungibles as Inspect>::AssetId;
-pub type SystemTokenBalanceOf<T> = <<T as Config>::Fungibles as Inspect>::Balance;
-pub type SystemTokenWeightOf<T> = <<T as Config>::Fungibles as InspectSystemToken>::SystemTokenWeight;
+pub type SystemTokenAssetIdOf<T> = <<T as Config>::Fungibles as Inspect<<T as frame_system::Config>::AccountId>>::AssetId;
+pub type SystemTokenBalanceOf<T> = <<T as Config>::Fungibles as Inspect<<T as frame_system::Config>::AccountId>>::Balance;
+pub type SystemTokenWeightOf<T> = <<T as Config>::Fungibles as InspectSystemToken<<T as frame_system::Config>::AccountId>>::SystemTokenWeight;
 
 #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 pub struct RequestStatus<BlockNumber> {
@@ -55,7 +55,6 @@ pub mod pallet {
 		/// Runtime Origin for the System Token pallet.
 		type RuntimeOrigin: From<<Self as frame_system::Config>::RuntimeOrigin>
 			+ Into<Result<Origin, <Self as Config>::RuntimeOrigin>>;
-		type SystemTokenId: SystemTokenId;
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Type that interacts with local asset
@@ -93,21 +92,21 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// System Token has been regierested by Relay-chain governance
-		Registered { asset_id: T::SystemTokenId },
+		Registered { asset_id: SystemTokenAssetIdOf<T> },
 		/// System Token has been deregistered by Relay-chain governance
-		Deregistered { asset_id: T::SystemTokenId },
+		Deregistered { asset_id: SystemTokenAssetIdOf<T> },
 		/// Fee table for has been updated by Relay-chain governance
 		FeeTableUpdated { extrinsic_metadata: ExtrinsicMetadata, fee: SystemTokenBalanceOf<T> },
 		/// Weight of System Token has been updated by Relay-chain governance
-		SystemTokenWeightUpdated { asset_id: T::SystemTokenId },
+		SystemTokenWeightUpdated { asset_id: SystemTokenAssetIdOf<T> },
 		/// Bootstrap has been ended by Relay-chain governance.
 		BootstrapEnded,
 		/// Origin of this pallet has been set by Relay-chain governance.
 		ParaCoreAdminUpdated { who: T::AccountId },
 		/// System Token registration has been requested
-		RegisterRequested { asset_id: T::SystemTokenId, exp: BlockNumberFor<T> },
+		RegisterRequested { asset_id: SystemTokenAssetIdOf<T>, exp: BlockNumberFor<T> },
 		/// Wrapped local asset has been created
-		WrappedCreated { asset_id: T::SystemTokenId },
+		WrappedCreated { asset_id: SystemTokenAssetIdOf<T> },
 	}
 
 	#[pallet::error]
@@ -245,18 +244,17 @@ pub mod pallet {
 		#[pallet::call_index(5)]
 		pub fn create_wrapped_local(
 			origin: OriginFor<T>,
-			asset_id: T::SystemTokenId,
+			original: SystemTokenAssetIdOf<T>,
 			currency_type: Fiat,
-			min_balance: SystemTokenBalance,
+			min_balance: SystemTokenBalanceOf<T>,
 			name: Vec<u8>,
 			symbol: Vec<u8>,
 			decimals: u8,
-			system_token_weight: SystemTokenWeight,
+			system_token_weight: SystemTokenWeightOf<T>,
 			asset_link_parent: u8,
-			original: SystemTokenId,
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
-			// T::LocalAssetManager::create_wrapped_local(
+			// T::Fungibles::create_wrapped_local(
 			// 	asset_id,
 			// 	currency_type,
 			// 	min_balance,
@@ -266,14 +264,14 @@ pub mod pallet {
 			// 	system_token_weight,
 			// )
 			// .map_err(|_| Error::<T>::ErrorCreateWrappedLocalAsset)?;
-			Self::deposit_event(Event::<T>::WrappedCreated { asset_id });
+			Self::deposit_event(Event::<T>::WrappedCreated { original });
 			Ok(())
 		}
 
 		#[pallet::call_index(6)]
 		pub fn deregister_system_token(
 			origin: OriginFor<T>,
-			asset_id: SystemTokenAssetId,
+			asset_id: SystemTokenAssetIdOf<T>,
 			is_unlink: bool,
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
@@ -304,7 +302,7 @@ pub mod pallet {
 		#[pallet::call_index(8)]
 		pub fn request_register_system_token(
 			origin: OriginFor<T>,
-			asset_id: SystemTokenAssetId,
+			asset_id: SystemTokenAssetIdOf<T>,
 		) -> DispatchResult {
 			if let Some(acc) = ensure_signed_or_root(origin)? {
 				ensure!(ParaCoreAdmin::<T>::get() == Some(acc), Error::<T>::NoPermission);
@@ -314,7 +312,7 @@ pub mod pallet {
 			// T::LocalAssetManager::request_register(asset_id)
 			// 	.map_err(|_| Error::<T>::ErrorOnRequestRegister)?;
 			// let exp = Self::do_request(asset_id, remote_asset_metadata)?;
-			Self::deposit_event(Event::<T>::RegisterRequested { asset_id, exp });
+			// Self::deposit_event(Event::<T>::RegisterRequested { asset_id, exp });
 			Ok(())
 		}
 	}
@@ -322,8 +320,8 @@ pub mod pallet {
 
 impl<T: Config> Pallet<T> {
 	fn do_request(
-		id: SystemTokenAssetId,
-		asset_metadata: RemoteAssetMetadata,
+		id: SystemTokenAssetIdOf<T>,
+		asset_metadata: RemoteAssetMetadata<SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>>,
 	) -> Result<BlockNumberFor<T>, DispatchError> {
 		let current = <frame_system::Pallet<T>>::block_number();
 		if let Some((_, request_status)) = CurrentRequest::<T>::get() {
@@ -352,17 +350,17 @@ impl<T: Config> Pallet<T> {
 	}
 }
 
-impl<T: Config> RuntimeConfigProvider for Pallet<T> {
+impl<T: Config> RuntimeConfigProvider<SystemTokenBalanceOf<T>, SystemTokenWeightOf<T>> for Pallet<T> {
 	type Error = DispatchError;
 
 	fn system_token_config() -> Result<SystemTokenConfig<SystemTokenWeightOf<T>>, Self::Error> {
 		Ok(RCSystemConfig::<T>::get().ok_or(Error::<T>::NotInitiated)?)
 	}
 
-	fn para_fee_rate() -> Result<SystemTokenWeight, Self::Error> {
+	fn para_fee_rate() -> Result<SystemTokenWeightOf<T>, Self::Error> {
 		let base_weight = RCSystemConfig::<T>::get().ok_or(Error::<T>::NotInitiated)?.base_weight();
 		Ok(ParaFeeRate::<T>::try_mutate_exists(
-			|maybe_para_fee_rate| -> Result<SystemTokenWeight, DispatchError> {
+			|maybe_para_fee_rate| -> Result<SystemTokenWeightOf<T>, DispatchError> {
 				let pfr = maybe_para_fee_rate.take().map_or(base_weight, |pfr| pfr);
 				*maybe_para_fee_rate = Some(pfr);
 				Ok(pfr)
@@ -370,7 +368,7 @@ impl<T: Config> RuntimeConfigProvider for Pallet<T> {
 		)?)
 	}
 
-	fn fee_for(ext: ExtrinsicMetadata) -> Option<SystemTokenBalance> {
+	fn fee_for(ext: ExtrinsicMetadata) -> Option<SystemTokenBalanceOf<T>> {
 		FeeTable::<T>::get(&ext)
 	}
 
@@ -390,15 +388,15 @@ impl<T: Config> VotingHandler for Pallet<T> {
 }
 
 impl<T: Config> UpdateRCConfig for Pallet<T> {
-	fn update_system_config(infra_system_config: InfraSystemConfig) {
-		RCSystemConfig::<T>::put(infra_system_config);
+	fn update_system_config(system_token_config: SystemTokenConfig<SystemTokenWeightOf<T>>) {
+		RCSystemConfig::<T>::put(system_token_config);
 	}
 
-	fn update_system_token_weight_for(assets: Vec<(SystemTokenAssetId, SystemTokenWeight)>) {
+	fn update_system_token_weight_for(assets: Vec<(SystemTokenAssetIdOf<T>, SystemTokenWeightOf<T>)>) {
 		for (asset_id, weight) in assets {
-			if let Err(_) = T::LocalAssetManager::update_system_token_weight(asset_id, weight) {
-				// TODO: Handle Error
-			}
+			// if let Err(_) = T::Fungibles::update_system_token_weight(asset_id, weight) {
+			// 	TODO: Handle Error
+			// }
 		}
 	}
 }

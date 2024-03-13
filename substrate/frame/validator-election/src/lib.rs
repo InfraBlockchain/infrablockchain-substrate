@@ -185,9 +185,6 @@ pub mod pallet {
 		#[pallet::constant]
 		type SessionsPerEra: Get<SessionIndex>;
 
-		/// Local Fugibles module
-		type Fungibles: InspectSystemToken<Self::AccountId>;
-
 		/// Associated type for vote weight
 		type Score: Balance;
 

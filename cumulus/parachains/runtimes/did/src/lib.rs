@@ -43,8 +43,9 @@ use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{
-		AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, TryConvertInto as JustTry,
+		AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto,
 	},
+	types::SystemTokenWeight,
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,
 };
@@ -278,12 +279,11 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 impl pallet_system_token_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type InfraTxInterface = InfraParaCore;
-	type Assets = Assets;
+	type Fungibles = Assets;
 	type OnChargeSystemToken = TransactionFeeCharger<
 		Runtime,
 		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
-		CreditToBucket<Runtime>,
-		JustTry,
+		CreditToBucket<Runtime>
 	>;
 	type BootstrapCallFilter = BootstrapCallFilter;
 	type PalletId = FeeTreasuryId;
@@ -309,6 +309,7 @@ impl pallet_assets::Config for Runtime {
 	type Balance = Balance;
 	type AssetId = AssetId;
 	type AssetIdParameter = codec::Compact<AssetId>;
+	type SystemTokenWeight = SystemTokenWeight;
 	type Currency = Balances;
 	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
 	type ForceOrigin = RootOrigin;
@@ -319,6 +320,7 @@ impl pallet_assets::Config for Runtime {
 	type AssetAccountDeposit = DepositToMaintainAsset;
 	type RemoveItemsLimit = frame_support::traits::ConstU32<1000>;
 	type WeightInfo = weights::pallet_assets::WeightInfo<Runtime>;
+	type StringLimit = StringLimit;
 	type Freezer = ();
 	type Extra = ();
 	type CallbackHandle = ();
@@ -535,8 +537,7 @@ parameter_types! {
 impl cumulus_pallet_infra_parachain_core::Config for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeEvent = RuntimeEvent;
-	type LocalAssetManager = Assets;
-	type AssetLink = AssetLink;
+	type Fungibles = Assets;
 	type ParachainSystem = ParachainSystem;
 	type ActiveRequestPeriod = ActiveRequestPeriod;
 }
@@ -653,30 +654,24 @@ impl pallet_uniques::Config for Runtime {
 	type Locker = ();
 }
 
-impl pallet_asset_link::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type Assets = Assets;
-	type WeightInfo = ();
-}
-
 parameter_types! {
 	pub const MaxVotedValidators: u32 = 1024;
 	pub const WeightFactor: u64 = 1;
 }
 
-parameter_types! {
-	pub const AggregatedPeriod: BlockNumber = 10;
-	pub const IsRelay: bool = false;
-}
+// parameter_types! {
+// 	pub const AggregatedPeriod: BlockNumber = 10;
+// 	pub const IsRelay: bool = false;
+// }
 
-impl system_token_aggregator::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type Period = AggregatedPeriod;
-	type LocalAssetManager = Assets;
-	type AssetMultiLocationGetter = AssetLink;
-	type SendXcm = XcmRouter;
-	type IsRelay = IsRelay;
-}
+// impl system_token_aggregator::Config for Runtime {
+// 	type RuntimeEvent = RuntimeEvent;
+// 	type Period = AggregatedPeriod;
+// 	type LocalAssetManager = Assets;
+// 	type AssetMultiLocationGetter = AssetLink;
+// 	type SendXcm = XcmRouter;
+// 	type IsRelay = IsRelay;
+// }
 
 impl<C> frame_system::offchain::SendTransactionTypes<C> for Runtime
 where
@@ -724,8 +719,7 @@ construct_runtime!(
 		// The main stage.
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>, Config<T>} = 50,
 		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
-		AssetLink: pallet_asset_link::{Pallet, Storage, Event<T>} = 52,
-		SystemTokenAggregator: system_token_aggregator = 53,
+		// SystemTokenAggregator: system_token_aggregator = 53,
 
 		// DID.
 		DIDModule: did::{Pallet, Call, Storage, Event<T>, Config<T>} = 61,

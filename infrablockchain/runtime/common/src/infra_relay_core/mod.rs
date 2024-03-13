@@ -5,7 +5,7 @@ use frame_support::{
 };
 use frame_system::{ensure_root, pallet_prelude::*};
 use log;
-use pallet_validator_election::VotingInterface;
+use pallet_validator_election::PotInterface;
 use parity_scale_codec::Encode;
 use primitives::well_known_keys;
 use runtime_parachains::SystemTokenInterface;
@@ -31,14 +31,17 @@ pub mod pallet {
 	pub trait Config: frame_system::Config {
 		/// Overarching event type
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-		/// Type of weight for voting
-		type VoteWeight: Into<F64>;
-		/// Updating vote type
-		type VotingInterface: VotingInterface<Self>;
-		/// Managing System Token
-		type SystemTokenInterface: SystemTokenInterface;
 		/// Type that interacts with local asset
 		type Fungibles: InspectSystemToken<Self::AccountId>;
+		/// Updating vote type
+		type Voting: PotInterface<Self::AccountId>;
+		/// Managing System Token
+		type SystemTokenInterface: SystemTokenInterface<
+			SystemTokenAssetIdOf<T>, 
+			SystemTokenBalanceOf<T>,
+			VoteWeightOf<T>,
+			RemoteAssetMetadata<SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>>,
+		>;
 		/// Type that delivers XCM messages
 		type XcmRouter: SendXcm;
 	}
@@ -46,11 +49,11 @@ pub mod pallet {
 	/// System configuration for `InfraRelay` Runtime
 	#[pallet::storage]
 	#[pallet::getter(fn active_system_config)]
-	pub type ActiveSystemConfig<T: Config> = StorageValue<_, SystemTokenConfig, ValueQuery>;
+	pub type ActiveSystemConfig<T: Config> = StorageValue<_, SystemTokenConfig<SystemTokenWeightOf<T>>, ValueQuery>;
 
 	/// Relay Chain's tx fee rate
 	#[pallet::storage]
-	pub type FeeRate<T: Config> = StorageValue<_, SystemTokenWeight>;
+	pub type FeeRate<T: Config> = StorageValue<_, SystemTokenBalanceOf<T>>;
 
 	/// Relay Chain's Runtime state
 	#[pallet::storage]
@@ -58,15 +61,15 @@ pub mod pallet {
 
 	/// Relay Chain's fee for each extrinsic
 	#[pallet::storage]
-	pub type FeeTable<T: Config> = StorageMap<_, Twox128, ExtrinsicMetadata, SystemTokenBalance>;
+	pub type FeeTable<T: Config> = StorageMap<_, Twox128, ExtrinsicMetadata, SystemTokenBalanceOf<T>>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		Voted {
-			who: VoteAccountId,
-			system_token_id: SystemTokenId,
-			vote_weight: VoteWeight,
+			who: T::AccountId,
+			system_token_id: SystemTokenAssetIdOf<T>,
+			vote_weight: VoteWeightOf<T>,
 		},
 		/// System Token has been regierested by Relay-chain governance
 		Registered,
@@ -75,17 +78,17 @@ pub mod pallet {
 		/// Fee table for has been updated by Relay-chain governance
 		FeeTableUpdated {
 			extrinsic_metadata: ExtrinsicMetadata,
-			fee: SystemTokenBalance,
+			fee: SystemTokenBalanceOf<T>,
 		},
 		/// Weight of System Token has been updated by Relay-chain governance
 		SystemTokenWeightUpdated {
-			asset_id: SystemTokenAssetId,
+			asset_id: SystemTokenAssetIdOf<T>,
 		},
 		/// Bootstrap has been ended by Relay-chain governance.
 		BootstrapEnded,
 		/// Infra configuration has been udpated
 		InfraConfigUpdated {
-			new: InfraSystemConfig,
+			new: SystemTokenConfig<SystemTokenWeightOf<T>>,
 		},
 	}
 
@@ -112,15 +115,15 @@ pub mod pallet {
 	#[pallet::genesis_config]
 	#[derive(DefaultNoBound)]
 	pub struct GenesisConfig<T: Config> {
-		pub system_config: InfraSystemConfig,
+		pub system_token_config: SystemTokenConfig<SystemTokenWeightOf<T>>,
 		pub _phantom: PhantomData<T>,
 	}
 
 	#[pallet::genesis_build]
 	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
-			self.system_config.panic_if_not_validated();
-			ActiveSystemConfig::<T>::put(self.system_config.clone());
+			self.system_token_config.panic_if_not_validated();
+			ActiveSystemConfig::<T>::put(self.system_token_config.clone());
 		}
 	}
 
@@ -139,133 +142,15 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::call_index(0)]
-		pub fn update_infra_system_config(
+		pub fn update_system_token_config(
 			origin: OriginFor<T>,
-			infra_system_config: InfraSystemConfig,
+			system_token_config: SystemTokenConfig<SystemTokenWeightOf<T>>,
 		) -> DispatchResult {
 			// TODO: Need Scheduler for upadating InfraSystemConfig
 			// TODO: Base configuration for InfraRelaychain has changed. Needs to update all
 			// parachains' config.
 			ensure_root(origin)?;
-			ActiveSystemConfig::<T>::put(infra_system_config.clone());
-			Ok(())
-		}
-
-		/// Fee table for Runtime will be set by Relay-chain governance
-		///
-		/// Origin
-		/// Relay-chain governance
-		#[pallet::call_index(1)]
-		pub fn set_fee_table(
-			origin: OriginFor<T>,
-			pallet_name: Vec<u8>,
-			call_name: Vec<u8>,
-			fee: SystemTokenBalance,
-		) -> DispatchResult {
-			ensure_root(origin)?;
-			let extrinsic_metadata = ExtrinsicMetadata::new(pallet_name, call_name);
-			FeeTable::<T>::insert(&extrinsic_metadata, fee);
-			Self::deposit_event(Event::<T>::FeeTableUpdated { extrinsic_metadata, fee });
-			Ok(())
-		}
-
-		/// Fee rate for Runtime will be set by Relay-chain governance
-		///
-		/// Origin
-		/// Relay-chain governance
-		#[pallet::call_index(2)]
-		pub fn set_fee_rate(origin: OriginFor<T>, fee_rate: SystemTokenWeight) -> DispatchResult {
-			ensure_root(origin)?;
-			FeeRate::<T>::put(fee_rate);
-			Ok(())
-		}
-
-		/// Set runtime state configuration
-		///
-		/// Origin
-		/// Relay-chain governance
-		#[pallet::call_index(3)]
-		pub fn update_runtime_state(origin: OriginFor<T>) -> DispatchResult {
-			ensure_root(origin)?;
-			Self::do_update_runtime_state();
-			Self::deposit_event(Event::<T>::BootstrapEnded);
-			Ok(())
-		}
-
-		/// Description
-		/// This method is for emergency case. Naturally it would be set automatically
-		///
-		/// Origin
-		/// Relay-chain governance
-		#[pallet::call_index(4)]
-		pub fn set_system_token_weight(
-			origin: OriginFor<T>,
-			asset_id: SystemTokenAssetId,
-			system_token_weight: SystemTokenWeight,
-		) -> DispatchResult {
-			ensure_root(origin)?;
-			T::LocalAssetManager::update_system_token_weight(asset_id, system_token_weight)
-				.map_err(|_| Error::<T>::ErrorUpdateWeight)?;
-			Self::deposit_event(Event::<T>::SystemTokenWeightUpdated { asset_id });
-			Ok(())
-		}
-
-		/// Description
-		/// This method is for emergency case. Naturally it would be set automatically
-		/// Origin
-		/// Relay-chain governance
-		#[pallet::call_index(5)]
-		pub fn register_system_token(
-			origin: OriginFor<T>,
-			asset_id: SystemTokenAssetId,
-			system_token_weight: SystemTokenWeight,
-		) -> DispatchResult {
-			ensure_root(origin)?;
-			T::LocalAssetManager::promote(asset_id, system_token_weight)
-				.map_err(|_| Error::<T>::ErrorRegisterSystemToken)?;
-			Ok(())
-		}
-
-		/// Description
-		/// This method is for emergency case. Naturally it would be set automatically
-		///
-		/// Origin
-		/// Relay-chain governance
-		#[pallet::call_index(6)]
-		pub fn create_wrapped_local(
-			origin: OriginFor<T>,
-			asset_id: SystemTokenAssetId,
-			currency_type: Fiat,
-			min_balance: SystemTokenBalance,
-			name: Vec<u8>,
-			symbol: Vec<u8>,
-			decimals: u8,
-			asset_link_parent: u8,
-			original: SystemTokenId,
-			system_token_weight: SystemTokenWeight,
-		) -> DispatchResult {
-			ensure_root(origin)?;
-			T::LocalAssetManager::create_wrapped_local(
-				asset_id,
-				currency_type,
-				min_balance,
-				name,
-				symbol,
-				decimals,
-				system_token_weight,
-			)
-			.map_err(|_| Error::<T>::ErrorCreateWrappedLocal)?;
-			Ok(())
-		}
-
-		#[pallet::call_index(7)]
-		pub fn deregister_system_token(
-			origin: OriginFor<T>,
-			asset_id: SystemTokenAssetId,
-		) -> DispatchResult {
-			ensure_root(origin)?;
-			T::LocalAssetManager::demote(asset_id)
-				.map_err(|_| Error::<T>::ErrorRegisterSystemToken)?;
+			ActiveSystemConfig::<T>::put(system_token_config.clone());
 			Ok(())
 		}
 	}
