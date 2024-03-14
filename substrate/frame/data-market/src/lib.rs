@@ -738,13 +738,7 @@ where
 		asset_id: u32,
 		amount: AssetBalanceOf<T>,
 	) -> DispatchResult {
-		let _ = T::Assets::transfer(
-			asset_id.into(),
-			&from,
-			&to,
-			amount,
-			Preservation::Protect,
-		);
+		let _ = T::Assets::transfer(asset_id.into(), &from, &to, amount, Preservation::Protect);
 
 		Ok(())
 	}
