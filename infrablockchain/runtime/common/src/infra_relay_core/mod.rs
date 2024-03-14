@@ -8,14 +8,12 @@ use log;
 use pallet_validator_election::PotInterface;
 use parity_scale_codec::Encode;
 use primitives::well_known_keys;
-use runtime_parachains::SystemTokenInterface;
-use softfloat::F64;
 use sp_runtime::types::{fee::*, infra_core::*, token::*, vote::*};
 use sp_std::vec::Vec;
 use xcm::latest::prelude::*;
-
 mod impls;
 mod types;
+pub use types::*;
 
 pub use pallet::*;
 
@@ -37,10 +35,8 @@ pub mod pallet {
 		type Voting: PotInterface<Self::AccountId>;
 		/// Managing System Token
 		type SystemTokenInterface: SystemTokenInterface<
-			SystemTokenAssetIdOf<T>,
-			SystemTokenBalanceOf<T>,
-			VoteWeightOf<T>,
-			RemoteAssetMetadata<SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>>,
+			SystemTokenAssetIdOf<Self>,
+			VoteWeightOf<Self>,
 		>;
 		/// Type that delivers XCM messages
 		type XcmRouter: SendXcm;

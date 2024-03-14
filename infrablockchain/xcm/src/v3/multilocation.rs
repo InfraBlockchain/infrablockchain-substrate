@@ -79,7 +79,7 @@ impl Default for MultiLocation {
 	}
 }
 
-#[derive(Encode, Decode, PalletError, scale_info::TypeInfo)]
+#[derive(Encode, Decode, PalletError, Debug, scale_info::TypeInfo)]
 pub enum SystemTokenIdError {
 	/// Error converting `self` to SystemTokenId
 	ConvertError,

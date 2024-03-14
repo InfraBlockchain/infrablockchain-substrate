@@ -432,7 +432,7 @@ pub mod pallet {
 			UpwardMessages::<T>::kill();
 			HrmpOutboundMessages::<T>::kill();
 			CustomValidationHeadData::<T>::kill();
-			// CollectedPotVotes::<T>::kill();
+			PotVotes::<T>::kill();
 			RequestedAsset::<T>::kill();
 
 			weight += T::DbWeight::get().writes(8);
@@ -1433,7 +1433,7 @@ impl<T: Config> Pallet<T> {
 			head_data: CustomValidationHeadData::<T>::get()
 				.map_or_else(|| header.encode(), |v| v)
 				.into(),
-			vote_result: CollectedPotVotes::<T>::get(),
+			vote_result: PotVotes::<T>::get(),
 			requested_asset: RequestedAsset::<T>::get(),
 		}
 	}
@@ -1521,8 +1521,10 @@ impl<T: Config> frame_system::SetCode<T> for ParachainSetCode<T> {
 /// Something deals with infra- stuff
 impl<T: Config> Pallet<T> {
 	pub fn handle_vote(bytes: Vec<u8>) {
-		PotVotes::<T>::mutate(|votes| {
+		PotVotes::<T>::mutate(|maybe_votes| {
+			let mut votes = maybe_votes.take().map_or_else(Vec::new, |v| v);
 			votes.push(bytes);
+			*maybe_votes = Some(votes);
 		});
 	}
 }

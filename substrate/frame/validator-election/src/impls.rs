@@ -82,7 +82,7 @@ impl<AccountId> SessionInterface<AccountId> for () {
 /// Interface for Proof-of-Transaction
 pub trait PotInterface<Account> {
 	/// Actual weight type for `proof-of-transaction`
-	type VoteWeight;
+	type VoteWeight: frame_support::Parameter + Into<F64>;
 
 	/// Update the vote status for the given account.
 	fn vote(who: Account, weight: Self::VoteWeight) -> bool;
@@ -107,7 +107,7 @@ where
 }
 
 impl<Account> PotInterface<Account> for () {
-	type VoteWeight = ();
+	type VoteWeight = F64;
 
 	fn vote(_: Account, _: Self::VoteWeight) -> bool {
 		false

@@ -225,13 +225,13 @@ impl WithdrawReasons {
 /// Interface for Infrablockchain System Token used in Relay/Para chain
 pub trait SystemTokenId: AssetId {
 	/// Id for general token index(e.g `u32`)
-	type AssetId;
+	type AssetId: AssetId;
 	/// Id for token pallet id(e.g `u8`)
-	type PalletId;
+	type PalletId: AssetId;
 	/// Id for token origin(e.g `u32`)
-	type OriginId: Encode + Clone;
+	type OriginId: AssetId;
 	/// Error type
-	type Error;
+	type Error: FullCodec + Debug;
 
 	/// Id for System Token
 	fn id(&self) -> Result<(Option<Self::OriginId>, Self::PalletId, Self::AssetId), Self::Error>;

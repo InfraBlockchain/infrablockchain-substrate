@@ -22,9 +22,9 @@
 
 use pallet_transaction_payment::CurrencyAdapter;
 use runtime_common::{
-	auctions, crowdloan, impl_runtime_weights, impls::DealWithFees, infra_relay_core,
+	auctions, crowdloan, impl_runtime_weights, impls::DealWithFees,
 	paras_registrar, paras_sudo_wrapper, prod_or_fast, slots, BlockHashCount, BlockLength,
-	SlowAdjustingFeeUpdate,
+	SlowAdjustingFeeUpdate, infra_relay_core
 };
 
 use runtime_parachains::{
@@ -47,6 +47,7 @@ use runtime_parachains::{
 	session_info as parachains_session_info,
 	shared as parachains_shared,
 	system_token_manager,
+	system_token_manager::SystemTokenInterface;
 	// validator_reward_manager,
 	// system_token_aggregator
 };
@@ -114,6 +115,11 @@ use infra_relay_runtime_constants::{currency::*, fee::*, system_parachain::ASSET
 
 // Weights used in the runtime.
 mod weights;
+
+mod system_token;
+use system_token::SystemTokenHandler;
+
+mod policy;
 
 // XCM
 pub mod xcm_config;

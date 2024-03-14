@@ -3,26 +3,29 @@ use super::{
 	token::{Fiat, SystemTokenConfig},
 };
 
-use codec::FullCodec;
+use codec::{Encode, Decode};
 use softfloat::F64;
 use sp_std::vec::Vec;
 
 /// API that updates Infra-* Runtime configuration
 // TODO: Remove 'ParaId', 'SystemTokenId'
-pub trait UpdateInfraConfig<Location, OriginId, Weight, Balance> {
+pub trait UpdateInfraConfig<Location, Weight, Balance> {
+
+	type DestId: Encode;
+
 	/// Update fee table for `dest_id` Runtime
-	fn update_fee_table(dest_id: OriginId, pallet_name: Vec<u8>, call_name: Vec<u8>, fee: Balance);
+	fn update_fee_table(dest_id: Self::DestId, pallet_name: Vec<u8>, call_name: Vec<u8>, fee: Balance);
 	/// Update fee rate for `dest_id` Runtime
-	fn update_para_fee_rate(dest_id: OriginId, fee_rate: Balance);
+	fn update_para_fee_rate(dest_id: Self::DestId, fee_rate: Balance);
 	/// Set runtime state for `dest_id` Runtime
-	fn update_runtime_state(dest_id: OriginId);
+	fn update_runtime_state(dest_id: Self::DestId);
 	/// Register `Original` System Token for `dest_id` Runtime(e.g `set_sufficient=true`)
-	fn register_system_token(dest_id: OriginId, asset_id: Location, system_token_weight: Weight);
+	fn register_system_token(dest_id: Self::DestId, asset_id: Location, system_token_weight: Weight);
 	/// Deregister `Original/Wrapped` System Token for `dest_id` Runtime
-	fn deregister_system_token(dest_id: OriginId, asset_id: Location);
+	fn deregister_system_token(dest_id: Self::DestId, asset_id: Location);
 	/// Create local asset of `Wrapped` System Token for `dest_id` Runtime
 	fn create_wrapped(
-		dest_id: OriginId,
+		dest_id: Self::DestId,
 		original: Location,
 		currency_type: Fiat,
 		min_balance: Balance,
@@ -30,7 +33,6 @@ pub trait UpdateInfraConfig<Location, OriginId, Weight, Balance> {
 		symbol: Vec<u8>,
 		decimals: u8,
 		system_token_weight: Weight,
-		asset_link_parent: u8,
 	);
 }
 
@@ -52,7 +54,7 @@ pub trait RuntimeConfigProvider<Balance, Weight> {
 /// Transaction-as-a-Vote
 pub trait TaaV {
 	/// Type of `vote` used for `TaaV`
-	type Vote: FullCodec;
+	type Vote: Decode;
 	/// Type of  `weight` for vote
 	type Weight: Into<F64>;
 	/// Error type while processing vote

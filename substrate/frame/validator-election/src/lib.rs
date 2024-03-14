@@ -22,12 +22,13 @@ pub mod migrations;
 pub mod impls;
 pub use impls::*;
 
-use codec::{Decode, Encode, MaxEncodedLen};
+use codec::{Decode, Encode, MaxEncodedLen, Codec};
 use frame_support::traits::{tokens::fungibles::*, EstimateNextNewSession, Get};
 pub use pallet::*;
 use scale_info::TypeInfo;
 use sp_arithmetic::traits::Saturating;
 use sp_runtime::RuntimeDebug;
+use softfloat::F64;
 
 #[cfg(test)]
 mod tests;
@@ -186,7 +187,7 @@ pub mod pallet {
 		type SessionsPerEra: Get<SessionIndex>;
 
 		/// Associated type for vote weight
-		type Score: Balance;
+		type Score: Balance + Into<F64>;
 
 		/// Something that can estimate the next session change, accurately or as a best effort
 		/// guess.
