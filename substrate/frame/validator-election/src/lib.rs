@@ -306,6 +306,8 @@ pub mod pallet {
 		NewEraTriggered { era_index: EraIndex },
 		/// New pool status has been set
 		PoolStatusSet { status: Pool },
+		/// Validator has been restored
+		ValidatorRestored { validator_restored: T::AccountId },
 	}
 
 	#[pallet::error]
@@ -318,6 +320,8 @@ pub mod pallet {
 		BadTransactionParams,
 		/// New number of Seed Trust slots should be provided
 		SeedTrustSlotsShouldBeProvided,
+		/// New number of Seed Trust slots should be provided
+		NotFoundKickedOutValidators,
 	}
 
 	/// The current era index.
@@ -346,6 +350,13 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::unbounded]
 	pub type PotValidators<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
+
+	/// Validators kicked out due to being offline
+	#[pallet::storage]
+	#[pallet::unbounded]
+	#[pallet::getter(fn kicked_out_validators)]
+	pub type KickedOutValidators<T: Config> =
+		StorageValue<_, Vec<ValidatorType<T::AccountId, T::InfraVotePoints>>, ValueQuery>;
 
 	/// Number of seed trust validators that can be elected
 	#[pallet::storage]
@@ -382,6 +393,12 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn pool_status)]
 	pub type PoolStatus<T> = StorageValue<_, Pool, ValueQuery>;
+
+	#[derive(Encode, Decode, Clone, PartialEq, RuntimeDebug, TypeInfo)]
+	pub enum ValidatorType<AccountId, VotePoints> {
+		SeedTrust(AccountId),
+		Pot(AccountId, VotePoints),
+	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
@@ -430,6 +447,18 @@ pub mod pallet {
 			ensure_root(origin)?;
 			PoolStatus::<T>::put(status);
 			Self::deposit_event(Event::<T>::PoolStatusSet { status });
+
+			Ok(())
+		}
+
+		#[pallet::call_index(4)]
+		pub fn restore_kicked_out_validator(
+			origin: OriginFor<T>,
+			who: T::AccountId,
+		) -> DispatchResult {
+			ensure_root(origin)?;
+			Self::do_restore_kicked_out_validator(who.clone())?;
+			Self::deposit_event(Event::<T>::ValidatorRestored { validator_restored: who });
 
 			Ok(())
 		}

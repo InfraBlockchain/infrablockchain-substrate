@@ -685,7 +685,7 @@ impl system_token_aggregator::Config for Runtime {
 	type SendXcm = XcmRouter;
 	type IsRelay = IsRelay;
 }
-
+#[cfg(feature = "fast-runtime")]
 impl pallet_sudo::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
@@ -744,6 +744,7 @@ construct_runtime!(
 		SystemTokenAggregator: system_token_aggregator = 54,
 		SystemTokenOracle: pallet_system_token_oracle::{Pallet, Call, Storage, ValidateUnsigned} = 55,
 
+		#[cfg(feature = "fast-runtime")]
 		Sudo: pallet_sudo::{Pallet, Call, Storage, Config<T>, Event<T>} = 99,
 	}
 );
