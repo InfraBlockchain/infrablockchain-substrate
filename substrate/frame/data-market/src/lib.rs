@@ -117,12 +117,12 @@ pub mod pallet {
 		// Make Data Delegate Contract
 		MakeDataDelegateContract {
 			contract_id: ContractId,
-			agency: T::AccountId,
+			data_owner: T::AccountId,
 		},
 		// Sign Data Delegate Contract
 		SignDateDelegateContract {
 			contract_id: ContractId,
-			data_owner: T::AccountId,
+			agency: T::AccountId,
 		},
 		// Make Data Purchase Contract
 		MakeDataPurchaseContract {
@@ -133,7 +133,6 @@ pub mod pallet {
 		SignDataPurchaseContract {
 			contract_id: ContractId,
 			agency: T::AccountId,
-			data_verifier: T::AccountId,
 		},
 		// Pending Contract Terminate
 		PendingContractTerminate {
@@ -235,14 +234,14 @@ pub mod pallet {
 		///
 		/// The dispatch origin for this call must be _Signed_.
 		///
-		/// - `detail`: The detail of the contract.
+		/// - `params`: The detail of the contract.
 		#[pallet::call_index(0)]
 		pub fn make_delegate_contract(
 			origin: OriginFor<T>,
 			params: DataDelegateContractParams<T::AccountId, BlockNumberFor<T>>,
 		) -> DispatchResult {
-			let maybe_agency = ensure_signed(origin)?;
-			Self::do_make_delegate_contract(maybe_agency, params)?;
+			let maybe_owner = ensure_signed(origin)?;
+			Self::do_make_delegate_contract(maybe_owner, params)?;
 			Ok(())
 		}
 
@@ -256,8 +255,8 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			contract_id: ContractId,
 		) -> DispatchResult {
-			let maybe_owner = ensure_signed(origin)?;
-			Self::do_sign_delegate_contract(maybe_owner, contract_id)?;
+			let maybe_agency = ensure_signed(origin)?;
+			Self::do_sign_delegate_contract(maybe_agency, contract_id)?;
 			Ok(())
 		}
 
@@ -265,15 +264,14 @@ pub mod pallet {
 		///
 		/// The dispatch origin for this call must be _Signed_.
 		///
-		/// - `detail`: The detail of the contract.
+		/// - `params`: The detail of the contract.
 		#[pallet::call_index(2)]
 		pub fn make_purchase_contract(
 			origin: OriginFor<T>,
 			params: DataPurchaseContractParams<T::AccountId, BlockNumberFor<T>, AssetBalanceOf<T>>,
-			is_agency_exist: bool,
 		) -> DispatchResult {
 			let maybe_buyer = ensure_signed(origin)?;
-			Self::do_make_purchase_contract(maybe_buyer, params, is_agency_exist)?;
+			Self::do_make_purchase_contract(maybe_buyer, params)?;
 			Ok(())
 		}
 
@@ -282,15 +280,13 @@ pub mod pallet {
 		/// The dispatch origin for this call must be _Signed_.
 		///
 		/// - `contract_id`: The id of the contract.
-		/// - `data_verifier`: The verifier of the contract.
 		#[pallet::call_index(3)]
 		pub fn sign_purchase_contract(
 			origin: OriginFor<T>,
 			contract_id: ContractId,
-			data_verifier: T::AccountId,
 		) -> DispatchResult {
 			let maybe_agency = ensure_signed(origin)?;
-			Self::do_sign_purchase_contract(maybe_agency, contract_id, data_verifier)?;
+			Self::do_sign_purchase_contract(maybe_agency, contract_id)?;
 			Ok(())
 		}
 
@@ -402,16 +398,16 @@ pub mod pallet {
 		///
 		/// The dispatch origin for this call must be _Admin_.
 		///
-		/// - `agency`: The agency of the contract.
+		/// - `data_owner`: The owner of the data.
 		/// - `params`: The detail of the contract.
 		#[pallet::call_index(9)]
 		pub fn make_delegate_contract_by_admin(
 			origin: OriginFor<T>,
-			agency: T::AccountId,
+			data_owner: T::AccountId,
 			params: DataDelegateContractParams<T::AccountId, BlockNumberFor<T>>,
 		) -> DispatchResult {
 			T::AdminOrigin::ensure_origin(origin)?;
-			Self::do_make_delegate_contract(agency, params)?;
+			Self::do_make_delegate_contract(data_owner, params)?;
 			Ok(())
 		}
 
@@ -419,16 +415,16 @@ pub mod pallet {
 		///
 		/// The dispatch origin for this call must be _Admin_.
 		///
+		/// - `agency`: The agency of the contract.
 		/// - `contract_id`: The id of the contract.
-		/// - `data_owner`: The owner of the data.
 		#[pallet::call_index(10)]
 		pub fn sign_delegate_contract_by_admin(
 			origin: OriginFor<T>,
-			data_owner: T::AccountId,
+			agency: T::AccountId,
 			contract_id: ContractId,
 		) -> DispatchResult {
 			T::AdminOrigin::ensure_origin(origin)?;
-			Self::do_sign_delegate_contract(data_owner, contract_id)?;
+			Self::do_sign_delegate_contract(agency, contract_id)?;
 			Ok(())
 		}
 
@@ -438,16 +434,14 @@ pub mod pallet {
 		///
 		/// - `data_buyer`: The buyer of the data.
 		/// - `params`: The detail of the contract.
-		/// - `is_agency_exist`: The flag of the agency.
 		#[pallet::call_index(11)]
 		pub fn make_purchase_contract_by_admin(
 			origin: OriginFor<T>,
 			data_buyer: T::AccountId,
 			params: DataPurchaseContractParams<T::AccountId, BlockNumberFor<T>, AssetBalanceOf<T>>,
-			is_agency_exist: bool,
 		) -> DispatchResult {
 			T::AdminOrigin::ensure_origin(origin)?;
-			Self::do_make_purchase_contract(data_buyer, params, is_agency_exist)?;
+			Self::do_make_purchase_contract(data_buyer, params)?;
 			Ok(())
 		}
 
@@ -455,18 +449,16 @@ pub mod pallet {
 		///
 		/// The dispatch origin for this call must be _Admin_.
 		///
-		/// - `data_agency`: The agency of the contract.
+		/// - `agency`: The agency of the contract.
 		/// - `contract_id`: The id of the contract.
-		/// - `data_verifier`: The verifier of the contract.
 		#[pallet::call_index(12)]
 		pub fn sign_purchase_contract_by_admin(
 			origin: OriginFor<T>,
 			agency: T::AccountId,
 			contract_id: ContractId,
-			data_verifier: T::AccountId,
 		) -> DispatchResult {
 			T::AdminOrigin::ensure_origin(origin)?;
-			Self::do_sign_purchase_contract(agency, contract_id, data_verifier)?;
+			Self::do_sign_purchase_contract(agency, contract_id)?;
 			Ok(())
 		}
 
@@ -633,9 +625,11 @@ where
 
 		let escrow_account = Self::get_escrow_account();
 
-		Self::transfer_escrow(data_buyer, escrow_account, detail.system_token_id, amount)?;
+		let (asset_id, deposit_balance) = detail.deposit;
 
-		Self::update_deposit_in_detail(contract_id, detail.deposit + amount);
+		Self::transfer_escrow(data_buyer, escrow_account, asset_id, amount)?;
+
+		Self::update_deposit_in_detail(contract_id, deposit_balance + amount);
 
 		Self::deposit_event(Event::<T>::DepositBalance { contract_id, amount });
 
@@ -644,7 +638,7 @@ where
 
 	pub fn update_deposit_in_detail(contract_id: ContractId, left_deposit: AssetBalanceOf<T>) {
 		let mut detail = DataPurchaseContracts::<T>::get(contract_id).unwrap();
-		detail.deposit = left_deposit;
+		detail.deposit.1 = left_deposit;
 		DataPurchaseContracts::<T>::insert(contract_id, detail);
 	}
 
@@ -656,17 +650,12 @@ where
 		platform_fee: u128,
 		maybe_agency: Option<T::AccountId>,
 		agency_fee: u128,
-		system_token_asset_id: u32,
+		asset_id: u32,
 	) -> DispatchResult {
 		let platform_account = Self::get_platform_account();
 		let escrow_account = Self::get_escrow_account();
 
-		Self::transfer_escrow(
-			escrow_account.clone(),
-			data_owner,
-			system_token_asset_id,
-			data_owner_fee.into(),
-		)?;
+		Self::transfer_escrow(escrow_account.clone(), data_owner, asset_id, data_owner_fee.into())?;
 
 		let total_weight: u32 = data_issuer.iter().map(|(_, weight)| weight).sum();
 		ensure!(total_weight > 0u32, Error::<T>::IssuerWeightInvalid);
@@ -678,7 +667,7 @@ where
 			Self::transfer_escrow(
 				escrow_account.clone(),
 				issuer.clone(),
-				system_token_asset_id,
+				asset_id,
 				distributed_fee.into(),
 			)?;
 		}
@@ -686,18 +675,13 @@ where
 		Self::transfer_escrow(
 			escrow_account.clone(),
 			platform_account,
-			system_token_asset_id,
+			asset_id,
 			platform_fee.into(),
 		)?;
 
 		if let Some(agency) = maybe_agency {
 			if agency_fee > 0 {
-				Self::transfer_escrow(
-					escrow_account,
-					agency,
-					system_token_asset_id,
-					agency_fee.into(),
-				)?;
+				Self::transfer_escrow(escrow_account, agency, asset_id, agency_fee.into())?;
 			}
 		}
 
@@ -751,11 +735,11 @@ where
 	fn transfer_escrow(
 		from: T::AccountId,
 		to: T::AccountId,
-		system_token_asset_id: u32,
+		asset_id: u32,
 		amount: AssetBalanceOf<T>,
 	) -> DispatchResult {
 		let _ = T::Assets::transfer(
-			system_token_asset_id.into(),
+			asset_id.into(),
 			&from,
 			&to,
 			amount,
@@ -766,11 +750,11 @@ where
 	}
 
 	fn do_make_delegate_contract(
-		agency: T::AccountId,
+		data_owner: T::AccountId,
 		params: DataDelegateContractParams<T::AccountId, BlockNumberFor<T>>,
 	) -> DispatchResult {
 		let DataDelegateContractParams {
-			data_owner,
+			agency,
 			data_owner_minimum_fee_ratio,
 			deligated_data,
 			duration,
@@ -782,8 +766,8 @@ where
 
 		let mut signed_status: ContractSigner<T::AccountId> = BoundedBTreeMap::new();
 		signed_status
-			.try_insert(agency.clone(), SignStatus::Signed)
-			.and_then(|_| signed_status.try_insert(data_owner.clone(), SignStatus::Unsigned))
+			.try_insert(data_owner.clone(), SignStatus::Signed)
+			.and_then(|_| signed_status.try_insert(agency.clone(), SignStatus::Unsigned))
 			.map_err(|_| Error::<T>::ExceedContractSigner)?;
 
 		let detail: DataDelegateContractDetail<T::AccountId, BlockNumberFor<T>> =
@@ -817,23 +801,23 @@ where
 			})?;
 		}
 
-		Self::deposit_event(Event::<T>::MakeDataDelegateContract { contract_id, agency });
+		Self::deposit_event(Event::<T>::MakeDataDelegateContract { contract_id, data_owner });
 
 		Ok(())
 	}
 
 	fn do_sign_delegate_contract(
-		maybe_owner: T::AccountId,
+		maybe_agency: T::AccountId,
 		contract_id: ContractId,
 	) -> DispatchResult {
 		let mut detail =
 			DataDelegateContracts::<T>::get(contract_id).ok_or(Error::<T>::ContractNotExist)?;
 
-		ensure!(maybe_owner == detail.data_owner, Error::<T>::InvalidOwner);
+		ensure!(maybe_agency == detail.agency, Error::<T>::InvalidAgency);
 
 		let mut is_signed = false;
 		detail.signed_status.iter_mut().for_each(|(signer, status)| {
-			if signer == &maybe_owner {
+			if signer == &maybe_agency {
 				*status = SignStatus::Signed;
 				is_signed = true;
 			}
@@ -844,7 +828,7 @@ where
 
 		Self::deposit_event(Event::<T>::SignDateDelegateContract {
 			contract_id,
-			data_owner: maybe_owner,
+			agency: maybe_agency,
 		});
 		Ok(())
 	}
@@ -852,12 +836,10 @@ where
 	fn do_make_purchase_contract(
 		data_buyer: T::AccountId,
 		params: DataPurchaseContractParams<T::AccountId, BlockNumberFor<T>, AssetBalanceOf<T>>,
-		is_agency_exist: bool,
 	) -> DispatchResult {
 		let DataPurchaseContractParams {
 			data_verifier,
 			data_purchase_info,
-			system_token_id,
 			agency,
 			deposit,
 			duration,
@@ -884,7 +866,6 @@ where
 			effective_at: current_block_number,
 			expired_at: current_block_number + duration,
 			data_purchase_info,
-			system_token_id,
 			agency: None,
 			price_per_data,
 			deposit,
@@ -897,9 +878,8 @@ where
 		signed_status
 			.try_insert(data_buyer.clone(), SignStatus::Signed)
 			.map_err(|_| Error::<T>::ExceedContractSigner)?;
-		if is_agency_exist {
+		if agency.is_some() {
 			let agency = agency.ok_or(Error::<T>::InvalidAgency)?;
-			ensure!(data_verifier.is_none(), Error::<T>::InvalidVerifier);
 
 			if data_buyer != agency {
 				<ContractList<T>>::try_mutate(&agency, &ContractType::Purchase, |ref mut list| {
@@ -912,20 +892,18 @@ where
 				.map_err(|_| Error::<T>::ExceedContractSigner)?;
 
 			detail.agency = Some(agency.clone());
-		} else {
-			ensure!(agency.is_none(), Error::<T>::InvalidAgency);
-			ensure!(data_verifier.is_some(), Error::<T>::InvalidVerifier);
 		}
 		detail.signed_status = signed_status;
 
-		DataPurchaseContracts::<T>::insert(contract_id, detail);
+		DataPurchaseContracts::<T>::insert(contract_id, detail.clone());
 
 		<ContractList<T>>::try_mutate(&data_buyer, &ContractType::Purchase, |ref mut list| {
 			list.try_push(contract_id).map_err(|_| Error::<T>::MaxContractsReached)
 		})?;
 
+		let (asset_id, deposit_balance) = detail.deposit;
 		let escrow_account = Self::get_escrow_account();
-		Self::transfer_escrow(data_buyer.clone(), escrow_account, system_token_id, deposit)?;
+		Self::transfer_escrow(data_buyer.clone(), escrow_account, asset_id, deposit_balance)?;
 
 		Self::deposit_event(Event::<T>::MakeDataPurchaseContract { contract_id, data_buyer });
 
@@ -935,7 +913,6 @@ where
 	fn do_sign_purchase_contract(
 		maybe_agency: T::AccountId,
 		contract_id: ContractId,
-		data_verifier: T::AccountId,
 	) -> DispatchResult {
 		let mut detail =
 			DataPurchaseContracts::<T>::get(contract_id).ok_or(Error::<T>::ContractNotExist)?;
@@ -952,13 +929,11 @@ where
 			});
 			ensure!(is_signed, Error::<T>::NotSigned);
 
-			detail.data_verifier = Some(data_verifier.clone());
 			DataPurchaseContracts::<T>::insert(contract_id, detail);
 
 			Self::deposit_event(Event::<T>::SignDataPurchaseContract {
 				contract_id,
 				agency: maybe_agency,
-				data_verifier,
 			});
 		}
 
@@ -1029,7 +1004,6 @@ where
 			ref data_buyer,
 			data_verifier: _,
 			data_purchase_info: _,
-			system_token_id,
 			agency: ref agency_in_detail,
 			price_per_data: _,
 			deposit,
@@ -1061,9 +1035,10 @@ where
 		{
 			DataPurchaseContracts::<T>::remove(contract_id);
 
-			if deposit > 0.into() {
+			let (asset_id, deposit_balance) = deposit;
+			if deposit_balance > 0.into() {
 				let escrow = Self::get_escrow_account();
-				Self::transfer_escrow(escrow, data_buyer.clone(), system_token_id, detail.deposit)?;
+				Self::transfer_escrow(escrow, data_buyer.clone(), asset_id, deposit_balance)?;
 			}
 
 			// If the contract is terminated, Remove from the contract list
@@ -1113,7 +1088,6 @@ where
 			data_buyer: _,
 			data_verifier: ref data_verifier_in_detail,
 			data_purchase_info: _,
-			system_token_id,
 			agency: ref agency_in_detail,
 			price_per_data,
 			deposit,
@@ -1126,7 +1100,7 @@ where
 
 		let current_block_number = <frame_system::Pallet<T>>::block_number();
 
-		let data_verifier = data_verifier_in_detail.clone().ok_or(Error::<T>::InvalidVerifier)?;
+		let data_verifier = data_verifier_in_detail.clone();
 		ensure!(maybe_verifier == data_verifier, Error::<T>::InvalidVerifier);
 		ensure!(
 			signed_status.iter().all(|(_, signed)| *signed == SignStatus::Signed),
@@ -1180,6 +1154,8 @@ where
 			agency_fee_ratio,
 		);
 
+		let (asset_id, deposit_balance) = deposit;
+
 		Self::settle_data_trade(
 			data_owner.clone(),
 			data_owner_fee,
@@ -1188,10 +1164,10 @@ where
 			platform_fee,
 			maybe_agency,
 			agency_fee,
-			system_token_id,
+			asset_id,
 		)?;
 
-		Self::update_deposit_in_detail(contract_id, deposit - price_per_data);
+		Self::update_deposit_in_detail(contract_id, deposit_balance - price_per_data);
 
 		Self::deposit_event(Event::<T>::DataTradeExecuted {
 			contract_id,
