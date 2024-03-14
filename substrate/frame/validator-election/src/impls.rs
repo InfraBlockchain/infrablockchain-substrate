@@ -420,10 +420,7 @@ impl<T: Config> Pallet<T> {
 	}
 }
 
-impl<T: Config> Pallet<T>
-where
-	T: pallet::Config<InfraVoteAccountId = <T as frame_system::Config>::AccountId>,
-{
+impl<T: Config> Pallet<T> {
 	pub fn do_restore_kicked_out_validator(who: T::AccountId) -> DispatchResult {
 		let mut kicked_out_validators = KickedOutValidators::<T>::get();
 		let mut seed_trust_validator_pool = SeedTrustValidatorPool::<T>::get();
@@ -440,7 +437,7 @@ where
 					SeedTrustValidatorPool::<T>::put(seed_trust_validator_pool);
 				},
 				ValidatorType::Pot(_, points) => {
-					pot_validator_pool.push((who.clone(), points));
+					pot_validator_pool.push((who.clone().into(), points));
 					PotValidatorPool::<T>::put(VotingStatus { status: pot_validator_pool });
 				},
 			}

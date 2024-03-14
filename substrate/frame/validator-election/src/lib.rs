@@ -401,10 +401,7 @@ pub mod pallet {
 	}
 
 	#[pallet::call]
-	impl<T: Config> Pallet<T>
-	where
-		T: pallet::Config<InfraVoteAccountId = <T as frame_system::Config>::AccountId>,
-	{
+	impl<T: Config> Pallet<T> {
 		#[pallet::call_index(0)]
 		#[pallet::weight(0)]
 		pub fn set_number_of_validators(

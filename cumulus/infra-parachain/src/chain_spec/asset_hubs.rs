@@ -183,6 +183,7 @@ pub fn asset_hub_config() -> AssetHubChainSpec {
 	)
 }
 
+#[allow(unused_variables)]
 fn asset_hub_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,

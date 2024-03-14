@@ -183,15 +183,13 @@ pub fn asset_hub_config() -> AssetHubChainSpec {
 	)
 }
 
+#[allow(unused_variables)]
 fn asset_hub_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
 	root_key: Option<AccountId>,
 	id: ParaId,
 ) -> asset_hub_runtime::RuntimeGenesisConfig {
-	#[cfg(feature = "fast-runtime")]
-	let root_key = get_account_id_from_seed::<sr25519::Public>("Alice");
-
 	asset_hub_runtime::RuntimeGenesisConfig {
 		system: asset_hub_runtime::SystemConfig {
 			code: asset_hub_runtime::WASM_BINARY
