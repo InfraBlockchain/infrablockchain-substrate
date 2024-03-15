@@ -22,7 +22,7 @@ use codec::{Decode, Encode};
 use parachain_primitives::primitives::HeadData;
 use scale_info::TypeInfo;
 use sp_runtime::{
-	types::{Fiat, SystemTokenAssetId, SystemTokenConfig, SystemTokenWeight},
+	types::SystemConfig,
 	RuntimeDebug,
 };
 use sp_std::prelude::*;
@@ -49,11 +49,11 @@ pub mod relay_chain {
 }
 
 // TODO: Generic
-pub trait UpdateRCConfig<Weight> {
+pub trait UpdateRCConfig<AssetId, Weight> {
 	/// System config set by Relay Chain
-	fn update_system_config(system_token_config: SystemTokenConfig<Weight>);
+	fn update_system_config(system_config: SystemConfig);
 	/// System Token weight set by Relay Chain
-	fn update_system_token_weight_for(assets: Vec<(SystemTokenAssetId, SystemTokenWeight)>);
+	fn update_system_token_weight_for(assets: Vec<(AssetId, Weight)>);
 }
 
 /// An inbound HRMP message.

@@ -27,7 +27,7 @@ use frame_support::traits::{tokens::fungibles::*, EstimateNextNewSession, Get};
 pub use pallet::*;
 use scale_info::TypeInfo;
 use sp_arithmetic::traits::Saturating;
-use sp_runtime::RuntimeDebug;
+use sp_runtime::{RuntimeDebug, types::{infra_core::TaaV, vote::PotVote}};
 use softfloat::F64;
 
 #[cfg(test)]
@@ -249,7 +249,7 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(crate) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Points has been added for candidate validator
-		VotePointsAdded { who: T::AccountId },
+		Voted { who: T::AccountId, amount: T::Score },
 		/// Total number of validators has been changed
 		TotalValidatorSlotsChanged { new: u32 },
 		/// Number of seed trust validators has been changed
@@ -287,6 +287,8 @@ pub mod pallet {
 		BadTransactionParams,
 		/// New number of Seed Trust slots should be provided
 		SeedTrustSlotsShouldBeProvided,
+		/// Error occured while decoding types mostly `PotVote`
+		ErrorDecode
 	}
 
 	/// The current era index.

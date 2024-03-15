@@ -32,7 +32,7 @@ use cumulus_primitives_core::{
 	relay_chain, AbridgedHostConfiguration, ChannelStatus, CollationInfo, DmpMessageHandler,
 	GetChannelInfo, InboundDownwardMessage, InboundHrmpMessage, MessageSendError,
 	OutboundHrmpMessage, ParaId, PersistedValidationData, UpdateRCConfig, UpwardMessage,
-	UpwardMessageSender, XcmpMessageHandler, XcmpMessageSource,
+	UpwardMessageSender, XcmpMessageHandler, XcmpMessageSource, MultiLocation
 };
 use cumulus_primitives_parachain_inherent::{MessageQueueChain, ParachainInherentData};
 use frame_support::{
@@ -225,7 +225,7 @@ pub mod pallet {
 		type CheckAssociatedRelayNumber: CheckAssociatedRelayNumber;
 
 		/// Type that updates configuration set by relay chain
-		type UpdateRCConfig: UpdateRCConfig<SystemTokenWeight>;
+		type UpdateRCConfig: UpdateRCConfig<MultiLocation, SystemTokenWeight>;
 
 		/// An entry-point for higher-level logic to manage the backlog of unincluded parachain
 		/// blocks and authorship rights for those blocks.
@@ -793,10 +793,6 @@ pub mod pallet {
 	pub(super) type UpgradeRestrictionSignal<T: Config> =
 		StorageValue<_, Option<relay_chain::UpgradeRestriction>, ValueQuery>;
 
-	#[pallet::storage]
-	pub(super) type UpdatedInfraSystemConfig<T: Config> =
-		StorageValue<_, Option<SystemTokenConfig<SystemTokenWeight>>, ValueQuery>;
-
 	/// Optional upgrade go-ahead signal from the relay-chain.
 	///
 	/// This storage item is a mirror of the corresponding value for the current parachain from the
@@ -975,24 +971,6 @@ pub mod pallet {
 			}
 			Err(InvalidTransaction::Call.into())
 		}
-	}
-}
-
-// impl<T: Config> CollectVote for Pallet<T> {
-// 	fn collect_vote(who: VoteAccountId, system_token_id: SystemTokenId, vote_weight: VoteWeight) {
-// 		let pot_votes = if let Some(mut old) = CollectedPotVotes::<T>::get() {
-// 			old.update_vote_weight(system_token_id, who, vote_weight);
-// 			old
-// 		} else {
-// 			PotVotes::new(system_token_id, who, vote_weight)
-// 		};
-// 		CollectedPotVotes::<T>::put(pot_votes);
-// 	}
-// }
-
-impl<T: Config> AssetMetadataProvider for Pallet<T> {
-	fn requested(bytes: Vec<u8>) {
-		RequestedAsset::<T>::put(&bytes);
 	}
 }
 

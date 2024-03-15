@@ -47,15 +47,12 @@ pub mod pallet {
 			+ Into<Result<ParachainOrigin, <Self as Config>::RuntimeOrigin>>;
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-		/// Id of System Token that used in this module
-		type SystemTokenId: SystemTokenId;
-		/// Interface for handling System Token
-		type SystemTokenHandler: SystemTokenInterface;
-		/// Core interface for InfraBlockchain Runtime
-		type InfraCore: RuntimeConfigProvider<SystemTokenBalanceOf<Self>, SystemTokenWeightOf<Self>>
-			+ TaaV<Weight = F64>;
 		/// Local fungibles module
 		type Fungibles: InspectSystemToken<Self::AccountId>;
+		/// Id of System Token
+		type SystemTokenId: SystemTokenId;
+		/// Type for handling System Token related calls 
+		type SystemTokenHandler: SystemTokenInterface;
 		/// The string limit for name and symbol of system token.
 		#[pallet::constant]
 		type StringLimit: Get<u32>;
@@ -428,65 +425,6 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(4)]
-		// Description:
-		// Try send DMP for encoded `update_para_fee_rate` to given `para_id`
-		//
-		// Origin:
-		// ** Root(Authorized) privileged call **
-		//
-		// Params:
-		// - para_id: Destination of DMP
-		// - pallet_id: Pallet index of `update_fee_para_rate`
-		// - para_fee_rate: Fee rate for specific parachain expected to be updated
-		pub fn update_para_fee_rate(
-			origin: OriginFor<T>,
-			para_id: SystemTokenOriginIdOf<T>,
-			para_fee_rate: SystemTokenBalanceOf<T>,
-		) -> DispatchResult {
-			ensure_root(origin)?;
-			T::SystemTokenHandler::update_para_fee_rate(para_id.clone(), para_fee_rate);
-			Self::deposit_event(Event::<T>::SetParaFeeRate { para_id, para_fee_rate });
-
-			Ok(())
-		}
-
-		#[pallet::call_index(5)]
-		// Description:
-		// Setting fee for parachain-specific calls(extrinsics).
-		//
-		// Origin:
-		// ** Root(Authorized) privileged call **
-		//
-		// Params:
-		// - para_id: Id of the parachain of which fee to be set
-		// - pallet_id: Pallet index of `System Token`
-		// - pallet_name: Name of the pallet of which extrinsic is defined
-		// - call_name: Name of the call(extrinsic) of which fee to be set
-		// - fee: Amount of fee to be set
-		//
-		// Logic:
-		// When fee is charged on the parachain, extract the metadata of the call, which is
-		// 'pallet_name' and 'call_name' Lookup the fee table with `key = (pallet_name, call_name)`.
-		// If value exists, we charged with that fee. Otherwise, default fee will be charged
-		pub fn update_fee_table(
-			origin: OriginFor<T>,
-			para_call_metadata: ParaCallMetadata<
-				SystemTokenOriginIdOf<T>,
-				SystemTokenPalletIdOf<T>,
-			>,
-			fee: SystemTokenBalanceOf<T>,
-		) -> DispatchResult {
-			ensure_root(origin)?;
-
-			let ParaCallMetadata { para_id, pallet_name, call_name, .. } =
-				para_call_metadata.clone();
-			T::SystemTokenHandler::update_fee_table(para_id, pallet_name, call_name, fee);
-			Self::deposit_event(Event::<T>::SetFeeTable { para_call_metadata, fee });
-
-			Ok(())
-		}
-
-		#[pallet::call_index(6)]
 		pub fn update_exchange_rate(
 			origin: OriginFor<T>,
 			standard_unix_time: StandardUnixTime,
@@ -580,15 +518,8 @@ where
 		currency: &Fiat,
 		original: &SystemTokenIdOf<T>,
 	) -> Result<SystemTokenWeightOf<T>, DispatchError> {
-		let BaseSystemTokenDetail::<SystemTokenWeightOf<T>> {
-			base_weight,
-			base_decimals,
-			base_currency,
-		} = T::InfraCore::system_token_config()
-			.map_err(|_| Error::<T>::NotInitiated)?
-			.base_system_token_detail
-			.clone();
-		// TODO: impl me!
+		let SystemConfig {base_system_token_detail, .. } = configuration::Pallet::<T>::active_system_token_config();
+		let BaseSystemTokenDetail { base_currency, base_weight, base_decimals } = base_system_token_detail;
 		let SystemTokenMetadata { decimals, .. } =
 			Metadata::<T>::get(original).ok_or(Error::<T>::MetadataNotFound)?;
 		let exponents: i32 = (base_decimals as i32) - (decimals as i32);
@@ -600,9 +531,7 @@ where
 		} else {
 			F64::from_i32(1)
 		};
-		let exchange_rate_to_base = F64::from_i32(1);
-		let base_weight: i128 = base_weight.try_into().map_err(|_| Error::<T>::ConversionError)?;
-		let f64_base_weight: F64 = F64::from_i128(base_weight);
+		let f64_base_weight: F64 = F64::from_i128(base_weight as i128);
 		let system_token_weight: SystemTokenWeightOf<T> =
 			f64_base_weight.mul(decimal_to_base).div(exchange_rate_to_base).into();
 		Ok(system_token_weight)
@@ -883,7 +812,10 @@ where
 }
 
 // XCM-related internal methods
-impl<T: Config> Pallet<T> {
+impl<T: Config> Pallet<T> 
+where
+	DestIdOf<T>: From<SystemTokenOriginIdOf<T>>
+{
 	/// **Description:**
 	///
 	/// Deregister system token for given `kind`
@@ -902,7 +834,7 @@ impl<T: Config> Pallet<T> {
 				SystemToken::<T>::remove(&original);
 				Metadata::<T>::remove(&original);
 				if let Some(para_id) = origin_id {
-					T::SystemTokenHandler::deregister_system_token(para_id, original);
+					T::SystemTokenHandler::deregister_system_token(para_id.into(), original);
 				} else {
 					// TODO: Relay Chain
 					// Fungibles::deregister()
@@ -939,7 +871,7 @@ impl<T: Config> Pallet<T> {
 			system_token_id.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
 		let weight = system_token_weight.ok_or(Error::<T>::WeightMissing)?;
 		if let Some(para_id) = origin_id {
-			T::SystemTokenHandler::register_system_token(para_id.clone(), system_token_id.clone(), weight);
+			T::SystemTokenHandler::register_system_token(para_id.into(), system_token_id.clone(), weight);
 		} else {
 			// TODO: Relay Chain
 			// T::Fungibles::register()
@@ -969,7 +901,7 @@ impl<T: Config> Pallet<T> {
 		let original_metadata =
 			Metadata::<T>::get(original).ok_or(Error::<T>::MetadataNotFound)?;
 		T::SystemTokenHandler::create_wrapped(
-			para_id.clone(),
+			para_id.clone().into(),
 			original.clone(),
 			original_metadata.currency_type,
 			original_metadata.min_balance,
@@ -979,6 +911,48 @@ impl<T: Config> Pallet<T> {
 			system_token_weight,
 		);
 		Ok(())
+	}
+
+	pub fn requested_asset_metadata(bytes: &mut Vec<u8>) {
+		if let Ok(remote_asset_metadata) = RemoteAssetMetadata::<
+				SystemTokenIdOf<T>,
+				SystemTokenBalanceOf<T>,
+			>::decode(&mut &bytes[..]) {
+			let RemoteAssetMetadata {
+				asset_id,
+				name,
+				symbol,
+				currency_type,
+				decimals,
+				min_balance,
+			} = remote_asset_metadata;
+			if let Ok((origin_id, pallet_id, asset_id)) = asset_id.id()
+			{
+				let system_token_id =
+					T::SystemTokenId::convert_back(origin_id, pallet_id, asset_id);
+				Metadata::<T>::insert(
+					system_token_id,
+					SystemTokenMetadata::new(
+						currency_type.clone(),
+						name,
+						symbol,
+						decimals,
+						min_balance,
+					),
+				);
+				RequestFiatList::<T>::mutate(|request_fiat| {
+					if !request_fiat.contains(&currency_type) {
+						request_fiat.push(currency_type);
+					}
+				});
+			} else {
+				log::error!("❌ Failed to convert to SystemTokenId ❌");
+				return
+			}
+		} else {
+			log::error!("❌ Failed to decode RemoteAssetMetadata ❌");
+			return
+		}
 	}
 }
 
@@ -997,9 +971,8 @@ pub mod types {
 	>>::SystemTokenWeight;
 	pub type SystemTokenBalanceOf<T> =
 		<<T as Config>::Fungibles as Inspect<<T as frame_system::Config>::AccountId>>::Balance;
-	pub type VoteWeightOf<T> = <<T as Config>::InfraCore as TaaV>::Weight;
 	pub type BoundedStringOf<T> = BoundedVec<u8, <T as Config>::StringLimit>;
-	pub type DestIdOf<T> = <<T as Config>::InfraCore as SystemTokenInterface>::DestId;
+	pub type DestIdOf<T> = <<T as Config>::SystemTokenHandler as SystemTokenInterface>::DestId;
 
 	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, TypeInfo)]
 	pub enum SystemTokenType<SystemTokenId, ParaId> {
@@ -1165,7 +1138,7 @@ pub mod types {
 
 pub mod traits {
 	
-	use super::Fiat;
+	use super::*;
 	use frame_support::Parameter;
 	use sp_runtime::traits::AtLeast32BitUnsigned;
 
@@ -1182,12 +1155,6 @@ pub mod traits {
 		/// Type of destination id(e.g para_id)
 		type DestId: Parameter;
 	
-		/// Update fee table for `dest_id` Runtime
-		fn update_fee_table(dest_id: Self::DestId, pallet_name: Vec<u8>, call_name: Vec<u8>, fee: Self::Balance);
-		/// Update fee rate for `dest_id` Runtime
-		fn update_para_fee_rate(dest_id: Self::DestId, fee_rate: Self::Balance);
-		/// Set runtime state for `dest_id` Runtime
-		fn update_runtime_state(dest_id: Self::DestId);
 		/// Register `Original` System Token for `dest_id` Runtime(e.g `set_sufficient=true`)
 		fn register_system_token(dest_id: Self::DestId, asset_id: Self::Location, system_token_weight: Self::SystemTokenWeight);
 		/// Deregister `Original/Wrapped` System Token for `dest_id` Runtime
@@ -1204,84 +1171,4 @@ pub mod traits {
 			system_token_weight: Self::SystemTokenWeight,
 		);
 	}
-}
-
-mod impl_traits {
-	use super::*;
-
-	// impl<T: Config>
-	// 	SystemTokenInterface<
-	// 		SystemTokenIdOf<T>,
-	// 		SystemTokenBalanceOf<T>,
-	// 		RemoteAssetMetadata<SystemTokenIdOf<T>, SystemTokenBalanceOf<T>>,
-	// 		VoteWeightOf<T>,
-	// 	> for Pallet<T>
-	// {
-	// 	fn adjusted_weight(
-	// 		original: &SystemTokenIdOf<T>,
-	// 		vote_weight: VoteWeightOf<T>,
-	// 	) -> VoteWeightOf<T> {
-	// 		impl_me!
-	// 		if let Some(p) = <SystemTokenProperties<T>>::get(original) {
-	// 			if let Ok(infra_system_config) = T::InfraCore::system_token_config() {
-	// 				let system_token_weight = {
-	// 					let w: u128 =
-	// 						p.system_token_weight.map_or(infra_system_config.base_weight(), |w| w);
-	// 					let system_token_weight = F64::from_i128(w as i128);
-	// 					system_token_weight
-	// 				};
-	// 				let converted_base_weight =
-	// 					F64::from_i128(infra_system_config.base_weight() as i128);
-
-	// 				// Since the base_weight cannot be zero, this division is guaranteed to be safe.
-	// 				return vote_weight.mul(system_token_weight).div(converted_base_weight)
-	// 			}
-	// 			return vote_weight
-	// 		}
-	// 		vote_weight
-	// 	}
-	// 	fn requested_asset_metadata(
-	// 		para_id: SystemTokenOriginIdOf<T>,
-	// 		maybe_requested_asset: Option<Vec<u8>>,
-	// 	) {
-	// 		if let Some(mut bytes) = maybe_requested_asset {
-	// 			if let Ok(remote_asset_metadata) = RemoteAssetMetadata::<
-	// 				SystemTokenIdOf<T>,
-	// 				SystemTokenBalanceOf<T>,
-	// 			>::decode(&mut bytes[..])
-	// 			.map_err(|_| Error::<T>::ErrorConvertToRemoteAssetMetadata)
-	// 			{
-	// 				let RemoteAssetMetadata {
-	// 					asset_id,
-	// 					name,
-	// 					symbol,
-	// 					currency_type,
-	// 					decimals,
-	// 					min_balance,
-	// 				} = remote_asset_metadata;
-	// 				if let Ok((origin_id, pallet_id, asset_id)) =
-	// 					asset_id.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)
-	// 				{
-	// 					let system_token_id =
-	// 						T::SystemTokenId::convert_back(origin_id, pallet_id, asset_id);
-	// 					Metadata::<T>::insert(
-	// 						system_token_id,
-	// 						SystemTokenMetadata::new(
-	// 							currency_type.clone(),
-	// 							name,
-	// 							symbol,
-	// 							decimals,
-	// 							min_balance,
-	// 						),
-	// 					);
-	// 					RequestFiatList::<T>::mutate(|request_fiat| {
-	// 						if !request_fiat.contains(&currency_type) {
-	// 							request_fiat.push(currency_type);
-	// 						}
-	// 					});
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// }
 }

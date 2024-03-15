@@ -39,6 +39,42 @@ impl<Location, Balance> RewardInterface<Location, Balance> for () {
 	fn distribute_reward(_session_index: SessionIndex) {}
 }
 
+impl<T: Config> TaaV for Pallet<T> {
+	type Error = sp_runtime::DispatchError;
+
+	fn process_vote(bytes: &mut Vec<u8>) -> Result<(), Self::Error> {
+		// Try decode
+		let vote = PotVote::<T::AccountId, T::Score>::decode(&mut &bytes[..]).map_err(|_| Error::<T>::ErrorDecode)?;
+		log::info!("🥶🥶 Processing Vote: {:?}", vote);
+		let PotVote { candidate, weight } = vote;
+		if SeedTrustValidatorPool::<T>::get().contains(&candidate) {
+			return Ok(())
+		}
+		// @Hugo
+		// let block_time_weight: F64 = {
+		// 	let current_block_number: u128 = relay_parent_number.saturated_into();
+		// 	// pow = ln(2) * current block number / BLOCKS_PER_YEAR
+		// 	let pow: F64 = F64::from_i128(2).ln() *
+		// 		F64::from_i128(current_block_number as i128).div(BLOCKS_PER_YEAR);
+		// 	// block_time_weight = 2 ^ (current block number / BLOCKS_PER_YEAR) = exp ^ (pow)
+		// 	let block_time_weight = pow.exp();
+		// 	block_time_weight
+		// };
+		PotValidatorPool::<T>::mutate(|voting_status| {
+			voting_status.add_vote(&candidate, weight.clone());
+		});
+		// @Sirius
+		// T::RewardInterface::aggregate_reward (
+		// 	session_index,
+		// 	system_token_id.para_id, -> DestId in RewardInterface
+		// 	original, -> `AssetId` in PotVote
+		// 	adjusted_weight,
+		// );
+		Self::deposit_event(Event::<T>::Voted { who: candidate, amount: weight });
+		Ok(())
+	}
+}
+
 /// Means for interacting with a specialized version of the `session` trait.
 pub trait SessionInterface<AccountId> {
 	/// Disable the validator at the given index, returns `false` if the validator was already

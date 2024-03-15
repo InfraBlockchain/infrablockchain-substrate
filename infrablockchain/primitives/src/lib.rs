@@ -53,7 +53,7 @@ pub use v6::{
 	RuntimeMetricLabelValues, RuntimeMetricLabels, RuntimeMetricOp, RuntimeMetricUpdate,
 	ScheduledCore, ScrapedOnChainVotes, SessionIndex, SessionInfo, Signature, Signed,
 	SignedAvailabilityBitfield, SignedAvailabilityBitfields, SignedStatement, SigningContext, Slot,
-	SystemTokenConfig, UncheckedSigned, UncheckedSignedAvailabilityBitfield,
+	SystemConfig, UncheckedSigned, UncheckedSignedAvailabilityBitfield,
 	UncheckedSignedAvailabilityBitfields, UncheckedSignedStatement, UpgradeGoAhead,
 	UpgradeRestriction, UpwardMessage, ValidDisputeStatementKind, ValidationCode,
 	ValidationCodeHash, ValidatorId, ValidatorIndex, ValidatorSignature, ValidityAttestation,

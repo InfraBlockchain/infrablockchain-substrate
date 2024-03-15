@@ -46,7 +46,7 @@ use primitives::{
 };
 use scale_info::TypeInfo;
 use softfloat::F64;
-use sp_runtime::{traits::One, DispatchError, SaturatedConversion, Saturating};
+use sp_runtime::{traits::One, DispatchError, SaturatedConversion, Saturating, types::infra_core::TaaV};
 #[cfg(feature = "std")]
 use sp_std::fmt;
 use sp_std::{
@@ -277,6 +277,8 @@ pub mod pallet {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		type DisputesHandler: disputes::DisputesHandler<BlockNumberFor<Self>>;
 		type RewardValidators: RewardValidators;
+		/// Type for handling `Transaction-as-a-Vote`
+		type VotingHandler: TaaV;
 		/// The system message queue.
 		///
 		/// The message queue provides general queueing and processing functionality. Currently it
@@ -910,61 +912,21 @@ impl<T: Config> Pallet<T> {
 			commitments.horizontal_messages,
 		));
 
-		let block_time_weight: F64 = {
-			let current_block_number: u128 = relay_parent_number.saturated_into();
-			// pow = ln(2) * current block number / BLOCKS_PER_YEAR
-			let pow: F64 = F64::from_i128(2).ln() *
-				F64::from_i128(current_block_number as i128).div(BLOCKS_PER_YEAR);
-			// block_time_weight = 2 ^ (current block number / BLOCKS_PER_YEAR) = exp ^ (pow)
-			let block_time_weight = pow.exp();
-			block_time_weight
-		};
-
 		// Process
 		// 1. Handle opaque votes(system_token_manager)
 		// 2. Handle remoted_asset_metadata(system_token_manager)
-		// 3. Aggregate reward (system_token_manager)
 
-		// let mut collected_votes: Vec<(VoteAccountId, VoteWeight)> = Vec::new();
-		// let requested_asset = commitments.requested_asset;
-		// T::SystemTokenInterface::requested_asset_metadata(
-		// 	receipt.descriptor.para_id.into(),
-		// 	requested_asset,
-		// );
-		// if let Some(vote_result) = commitments.vote_result {
-		// 	let session_index = shared::Pallet::<T>::session_index();
-		// 	for vote in vote_result.clone().into_iter() {
-		// 		if let Some(original) =
-		// 			T::SystemTokenInterface::convert_to_original_system_token(&vote.system_token_id)
-		// 		{
-		// 			let PotVote { system_token_id, account_id, vote_weight } = vote;
-
-		// 			let adjusted_weight = {
-		// 				let res = block_time_weight.mul(T::SystemTokenInterface::adjusted_weight(
-		// 					&original,
-		// 					vote_weight.clone(),
-		// 				));
-
-		// 				res
-		// 			};
-
-		// 			if T::VotingInterface::update_vote_status(account_id.clone(), adjusted_weight) {
-		// 				collected_votes.push((account_id, adjusted_weight));
-		// 			}
-		// 			T::RewardInterface::aggregate_reward(
-		// 				session_index,
-		// 				system_token_id.para_id,
-		// 				original,
-		// 				adjusted_weight,
-		// 			);
-		// 		};
-		// 	}
-		// 	let converted_vote_result = convert_pot_votes(vote_result);
-		// 	Self::deposit_event(Event::<T>::VoteCollected {
-		// 		from: receipt.descriptor.para_id,
-		// 		collected: converted_vote_result,
-		// 	});
-		// };
+		if let Some(mut request_asset) = commitments.requested_asset {
+			system_token_manager::Pallet::<T>::requested_asset_metadata(&mut &request_asset[..]);
+		}
+		if let Some(votes) = commitments.vote_result {	
+			for vote in votes {
+				if let Err(e) = T::VotingHandler::process_vote(votes) {
+					log::error!("❌ Failed to process vote ❌: {:?}", e);
+					continue;
+				}
+			}
+		};
 
 		Self::deposit_event(Event::<T>::CandidateIncluded(
 			plain,

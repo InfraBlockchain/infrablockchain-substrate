@@ -2,19 +2,9 @@
 
 use crate::{
 	codec::{Decode, Encode, MaxEncodedLen},
-	scale_info::TypeInfo,
-	types::vote::*,
-	RuntimeDebug,
+	scale_info::TypeInfo, RuntimeDebug,
 };
-use bounded_collections::{BoundedVec, ConstU32};
-use sp_arithmetic::traits::Zero;
 use sp_std::prelude::*;
-
-#[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
-
-/// ParaId of Relay Chain
-pub const RELAY_CHAIN_PARA_ID: SystemTokenParaId = 0;
 
 // TODO: SystemTokenInterface
 
@@ -22,111 +12,12 @@ pub const RELAY_CHAIN_PARA_ID: SystemTokenParaId = 0;
 pub type StandardUnixTime = u64;
 /// General type of exchange rate
 pub type ExchangeRate = u64;
-/// General para id type for System Token
-pub type SystemTokenParaId = u32;
-/// General pallet id type for System Token
-pub type SystemTokenPalletId = u8;
-/// General asset id type for System Token
-pub type SystemTokenAssetId = u32;
 /// Generale weight type for System Token
 pub type SystemTokenWeight = u128;
 /// General balance type for System Token
 pub type SystemTokenBalance = u128;
 /// General decimal type for System Token
 pub type SystemTokenDecimal = u8;
-/// Bounded name for System Token
-pub type BoundedStringMetadata = BoundedVec<u8, ConstU32<20>>;
-
-/// System Token configuration for transaction fee calculation
-#[derive(
-	Encode,
-	Decode,
-	Clone,
-	PartialEq,
-	Eq,
-	Default,
-	RuntimeDebug,
-	TypeInfo,
-	MaxEncodedLen,
-	serde::Serialize,
-	serde::Deserialize,
-)]
-pub struct SystemTokenConfig<SystemTokenWeight> {
-	/// Detail of base system token
-	pub base_system_token_detail: BaseSystemTokenDetail<SystemTokenWeight>,
-	/// Scale of weight for calculating tx fee
-	pub weight_scale: SystemTokenWeight,
-}
-
-#[derive(RuntimeDebug)]
-pub enum InitError {
-	/// Base system token is not initialized
-	InvalidBaseSystemTokenDetail,
-	/// Weight scale is not initialized
-	InvalidWeightScale,
-}
-
-impl<SystemTokenWeight: Clone + PartialEq + Zero + sp_std::fmt::Debug>
-	SystemTokenConfig<SystemTokenWeight>
-{
-	/// Clone of base_currency type of `BaseSystemTokenDetail`
-	pub fn base_currency(&self) -> Fiat {
-		self.base_system_token_detail.clone().base_currency
-	}
-	/// Clone of base_weight type of `BaseSystemTokenDetail`
-	pub fn base_weight(&self) -> SystemTokenWeight {
-		self.base_system_token_detail.clone().base_weight
-	}
-	/// Clone of base_decimals type of `BaseSystemTokenDetail`
-	pub fn base_decimals(&self) -> u8 {
-		self.base_system_token_detail.clone().base_decimals
-	}
-
-	pub fn check_validity(&self) -> Result<(), InitError> {
-		if self.base_system_token_detail.base_weight == Zero::zero() {
-			return Err(InitError::InvalidBaseSystemTokenDetail)
-		}
-		if self.weight_scale == Zero::zero() {
-			return Err(InitError::InvalidWeightScale)
-		}
-		Ok(())
-	}
-
-	pub fn panic_if_not_validated(&self) {
-		if let Err(err) = self.check_validity() {
-			panic!("System configuration is not initalized: {:?}\nSCfg:\n{:#?}", err, self);
-		}
-	}
-}
-
-#[derive(
-	Encode,
-	Decode,
-	Clone,
-	PartialEq,
-	Eq,
-	Default,
-	RuntimeDebug,
-	TypeInfo,
-	MaxEncodedLen,
-	serde::Serialize,
-	serde::Deserialize,
-)]
-/// Detail of base system token
-pub struct BaseSystemTokenDetail<SystemTokenWeight> {
-	/// Currency type of base system token
-	pub base_currency: Fiat,
-	/// Weight of base system token
-	pub base_weight: SystemTokenWeight,
-	/// Decimal of base system token
-	pub base_decimals: u8,
-}
-
-impl<SystemTokenWeight> BaseSystemTokenDetail<SystemTokenWeight> {
-	pub fn new(fiat: Fiat, weight: SystemTokenWeight, decimals: u8) -> Self {
-		Self { base_currency: fiat, base_weight: weight, base_decimals: decimals }
-	}
-}
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Default, Hash))]
@@ -147,39 +38,6 @@ pub struct RemoteAssetMetadata<AssetId, Balance> {
 	/// Minimum balance of system token
 	#[codec(compact)]
 	pub min_balance: Balance,
-}
-
-/// API for interacting with local assets on Runtime
-pub trait LocalAssetProvider<Asset, Account> {
-	/// Get a list of local assets created on local chain
-	fn system_token_list() -> Vec<Asset>;
-	/// Get the most account balance of given `asset_id`
-	fn get_most_account_system_token_balance(
-		asset_ids: impl IntoIterator<Item = Asset>,
-		account: Account,
-	) -> Asset;
-}
-
-pub trait AssetMetadataProvider {
-	fn requested(byte: Vec<u8>);
-}
-
-pub trait AssetLinkInterface<AssetId> {
-	type Error;
-
-	fn link(asset_id: &AssetId, parents: u8, original: AssetId) -> Result<(), Self::Error>;
-	fn unlink(asset_id: &AssetId) -> Result<(), Self::Error>;
-}
-
-impl<AssetId> AssetLinkInterface<AssetId> for () {
-	type Error = ();
-
-	fn link(_asset_id: &AssetId, _parents: u8, _original: AssetId) -> Result<(), Self::Error> {
-		Ok(())
-	}
-	fn unlink(_asset_id: &AssetId) -> Result<(), Self::Error> {
-		Ok(())
-	}
 }
 
 #[derive(

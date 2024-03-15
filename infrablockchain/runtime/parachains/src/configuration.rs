@@ -27,9 +27,11 @@ use primitives::{
 	AsyncBackingParams, Balance, ExecutorParams, SessionIndex, LEGACY_MIN_BACKING_VOTES,
 	MAX_CODE_SIZE, MAX_HEAD_DATA_SIZE, MAX_POV_SIZE, ON_DEMAND_DEFAULT_QUEUE_MAX_SIZE,
 };
-use sp_runtime::{traits::Zero, Perbill};
+use sp_runtime::{traits::Zero, Perbill, types::{fee::*, infra_core::*, token::*, vote::*}};
 use sp_std::prelude::*;
 
+type SystemTokenBalanceOf<T> = <<T as Config>::ParaConfigHandler as ParaConfigInterface>::Balance;
+type DestIdOf<T> = <<T as Config>::ParaConfigHandler as ParaConfigInterface>::DestId;
 #[cfg(test)]
 mod tests;
 
@@ -508,6 +510,9 @@ pub mod pallet {
 	pub trait Config: frame_system::Config + shared::Config {
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
+
+		/// The configuration interface for parachain 
+		type ParaConfigHandler: ParaConfigInterface;
 	}
 
 	#[pallet::error]
@@ -522,6 +527,12 @@ pub mod pallet {
 	#[pallet::getter(fn config)]
 	pub(crate) type ActiveConfig<T: Config> =
 		StorageValue<_, HostConfiguration<BlockNumberFor<T>>, ValueQuery>;
+
+	/// System Token configuration for `InfraRelay` Runtime
+	#[pallet::storage]
+	#[pallet::getter(fn active_system_config)]
+	pub type ActiveSystemConfig<T: Config> =
+		StorageValue<_, SystemConfig, ValueQuery>;
 
 	/// Pending configuration changes.
 	///
@@ -543,13 +554,16 @@ pub mod pallet {
 	#[derive(DefaultNoBound)]
 	pub struct GenesisConfig<T: Config> {
 		pub config: HostConfiguration<BlockNumberFor<T>>,
+		pub system_config: SystemConfig,
 	}
 
 	#[pallet::genesis_build]
 	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
 			self.config.panic_if_not_consistent();
+			self.system_config.panic_if_not_validated();
 			ActiveConfig::<T>::put(&self.config);
+			ActiveSystemConfig::<T>::put(self.system_config.clone());
 		}
 	}
 
@@ -1185,6 +1199,70 @@ pub mod pallet {
 				config.minimum_backing_votes = new;
 			})
 		}
+
+		#[pallet::call_index(53)]
+		#[pallet::weight((
+			T::WeightInfo::set_config_with_u32(),
+			DispatchClass::Operational
+		))]
+		pub fn update_system_config(
+			origin: OriginFor<T>,
+			new: SystemConfig,
+		) -> DispatchResult {
+			// TODO: Use `scheudle_config_update`
+			ensure_root(origin)?;
+			ActiveSystemConfig::<T>::put(new);
+			Ok(())
+		}
+
+		#[pallet::call_index(54)]
+		#[pallet::weight((
+			T::WeightInfo::set_config_with_u32(),
+			DispatchClass::Operational
+		))]
+		pub fn update_fee_table(
+			origin: OriginFor<T>,
+			dest: DestIdOf<T>,
+			pallet_name: Vec<u8>, 
+			call_name: Vec<u8>,
+			fee: SystemTokenBalanceOf<T>,
+		) -> DispatchResult {
+			// TODO: Use `scheudle_config_update`
+			ensure_root(origin)?;
+			T::ParaConfigHandler::update_fee_table(dest, pallet_name, call_name, fee);
+			Ok(())
+		}
+
+		#[pallet::call_index(55)]
+		#[pallet::weight((
+			T::WeightInfo::set_config_with_u32(),
+			DispatchClass::Operational
+		))]
+		pub fn update_para_fee_rate(
+			origin: OriginFor<T>,
+			dest: DestIdOf<T>,
+			fee_rate: SystemTokenBalanceOf<T>
+		) -> DispatchResult {
+			// TODO: Use `scheudle_config_update`
+			ensure_root(origin)?;
+			T::ParaConfigHandler::update_para_fee_rate(dest, fee_rate);
+			Ok(())
+		}
+		
+		#[pallet::call_index(56)]
+		#[pallet::weight((
+			T::WeightInfo::set_config_with_u32(),
+			DispatchClass::Operational
+		))]
+		pub fn update_runtime_state(
+			origin: OriginFor<T>,
+			dest: DestIdOf<T>,
+		) -> DispatchResult {
+			// TODO: Use `scheudle_config_update`
+			ensure_root(origin)?;
+			T::ParaConfigHandler::update_runtime_state(dest);
+			Ok(())
+		}
 	}
 
 	#[pallet::hooks]
@@ -1374,5 +1452,42 @@ impl<T: Config> Pallet<T> {
 		<PendingConfigs<T>>::put(pending_configs);
 
 		Ok(())
+	}
+}
+
+/// Runtime configuration set by parent chain which is mostly Relay Chain
+pub trait ParaConfigInterface {
+
+	/// Destination ID type
+	type DestId: Parameter;
+	/// Balance type of System Token
+	type Balance: frame_support::traits::tokens::misc::Balance;
+
+	/// Update fee table for `dest_id` Runtime
+	fn update_fee_table(dest_id: Self::DestId, pallet_name: Vec<u8>, call_name: Vec<u8>, fee: Self::Balance);
+	/// Update fee rate for `dest_id` Runtime
+	fn update_para_fee_rate(dest_id: Self::DestId, fee_rate: Self::Balance);
+	/// Set runtime state for `dest_id` Runtime
+	fn update_runtime_state(dest_id: Self::DestId);
+}
+
+impl<T: Config> RuntimeConfigProvider<SystemTokenBalanceOf<T>> for Pallet<T> {
+	
+	type Error = ();
+
+	fn system_config() -> Result<SystemConfig, Self::Error> {
+		Ok(ActiveSystemConfig::<T>::get())
+	}
+
+	fn para_fee_rate() -> Result<SystemTokenBalanceOf<T>, Self::Error> {
+		Err(())
+	}
+
+	fn fee_for(_ext: ExtrinsicMetadata) -> Result<SystemTokenBalanceOf<T>, Self::Error> {
+		Err(())
+	}
+
+	fn runtime_state() -> Mode {
+		Mode::Normal
 	}
 }

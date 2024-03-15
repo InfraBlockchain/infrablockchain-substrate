@@ -1,50 +1,96 @@
 use super::{
 	fee::{ExtrinsicMetadata, Mode},
-	token::{Fiat, SystemTokenConfig},
+	token::Fiat,
 };
-
+use crate::*;
 use codec::{Encode, Decode};
-use softfloat::F64;
 use sp_std::vec::Vec;
 
-/// API that updates Infra-* Runtime configuration
-// TODO: Remove 'ParaId', 'SystemTokenId'
-pub trait UpdateInfraConfig<Location, Weight, Balance> {
+/// System Token configuration for transaction fee calculation
+#[derive(
+	Encode,
+	Decode,
+	Clone,
+	PartialEq,
+	Eq,
+	Default,
+	RuntimeDebug,
+	TypeInfo,
+	MaxEncodedLen,
+	serde::Serialize,
+	serde::Deserialize,
+)]
+pub struct SystemConfig {
+	/// Detail of base system token
+	pub base_system_token_detail: BaseSystemTokenDetail,
+	/// Scale of weight for calculating tx fee
+	pub weight_scale: u128,
+}
 
-	type DestId: Encode;
+#[derive(RuntimeDebug)]
+pub enum InitError {
+	/// Base system token is not initialized
+	InvalidBaseSystemTokenDetail,
+	/// Weight scale is not initialized
+	InvalidWeightScale,
+}
 
-	/// Update fee table for `dest_id` Runtime
-	fn update_fee_table(dest_id: Self::DestId, pallet_name: Vec<u8>, call_name: Vec<u8>, fee: Balance);
-	/// Update fee rate for `dest_id` Runtime
-	fn update_para_fee_rate(dest_id: Self::DestId, fee_rate: Balance);
-	/// Set runtime state for `dest_id` Runtime
-	fn update_runtime_state(dest_id: Self::DestId);
-	/// Register `Original` System Token for `dest_id` Runtime(e.g `set_sufficient=true`)
-	fn register_system_token(dest_id: Self::DestId, asset_id: Location, system_token_weight: Weight);
-	/// Deregister `Original/Wrapped` System Token for `dest_id` Runtime
-	fn deregister_system_token(dest_id: Self::DestId, asset_id: Location);
-	/// Create local asset of `Wrapped` System Token for `dest_id` Runtime
-	fn create_wrapped(
-		dest_id: Self::DestId,
-		original: Location,
-		currency_type: Fiat,
-		min_balance: Balance,
-		name: Vec<u8>,
-		symbol: Vec<u8>,
-		decimals: u8,
-		system_token_weight: Weight,
-	);
+impl SystemConfig {
+
+	pub fn check_validity(&self) -> Result<(), InitError> {
+		if self.base_system_token_detail.base_weight == 0 {
+			return Err(InitError::InvalidBaseSystemTokenDetail)
+		}
+		if self.weight_scale == 0 {
+			return Err(InitError::InvalidWeightScale)
+		}
+		Ok(())
+	}
+
+	pub fn panic_if_not_validated(&self) {
+		if let Err(err) = self.check_validity() {
+			panic!("System configuration is not initalized: {:?}\nSCfg:\n{:#?}", err, self);
+		}
+	}
+}
+#[derive(
+	Encode,
+	Decode,
+	Clone,
+	PartialEq,
+	Eq,
+	Default,
+	RuntimeDebug,
+	TypeInfo,
+	MaxEncodedLen,
+	serde::Serialize,
+	serde::Deserialize,
+)]
+/// Detail of base system token
+pub struct BaseSystemTokenDetail {
+	/// Currency type of base system token
+	pub base_currency: Fiat,
+	/// Weight of base system token
+	pub base_weight: u128,
+	/// Decimal of base system token
+	pub base_decimals: u8,
+}
+
+impl BaseSystemTokenDetail {
+	pub fn new(fiat: Fiat, base_weight: u128, decimals: u8) -> Self {
+		Self { base_currency: fiat, base_weight, base_decimals: decimals }
+	}
 }
 
 /// API for providing Infra-* Runtime configuration
-pub trait RuntimeConfigProvider<Balance, Weight> {
+pub trait RuntimeConfigProvider<Balance> {
 	/// General error type
 	type Error;
 
-	/// System Token configuration
-	fn system_token_config() -> Result<SystemTokenConfig<Weight>, Self::Error>;
+	/// System configuration
+	fn system_config() -> Result<SystemConfig, Self::Error>;
 	/// Para fee rate of Infra-* Runtime
-	fn para_fee_rate() -> Result<Weight, Self::Error>;
+	fn para_fee_rate() -> Result<Balance, Self::Error>;
 	/// Query for tx fee of `ext` extrinsic
 	fn fee_for(ext: ExtrinsicMetadata) -> Option<Balance>;
 	/// State of Infar-* Runtime
@@ -53,16 +99,9 @@ pub trait RuntimeConfigProvider<Balance, Weight> {
 
 /// Transaction-as-a-Vote
 pub trait TaaV {
-	/// Type of `vote` used for `TaaV`
-	type Vote: Decode;
-	/// Type of  `weight` for vote
-	type Weight: Into<F64>;
 	/// Error type while processing vote
 	type Error;
 
 	/// Try to decode for given opaque `vote` and process `PotVote`
 	fn process_vote(bytes: &mut Vec<u8>) -> Result<(), Self::Error>;
-
-	/// Handle vote
-	fn handle_vote(vote: Self::Vote);
 }

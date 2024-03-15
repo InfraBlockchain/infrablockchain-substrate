@@ -31,7 +31,7 @@ use application_crypto::KeyTypeId;
 use inherents::InherentIdentifier;
 use primitives::RuntimeDebug;
 use runtime_primitives::traits::{AppVerify, Header as HeaderT};
-pub use runtime_primitives::types::SystemTokenConfig;
+pub use runtime_primitives::types::SystemConfig;
 use sp_arithmetic::traits::{BaseArithmetic, Saturating};
 
 pub use runtime_primitives::traits::{BlakeTwo256, Hash as HashT};
@@ -149,7 +149,6 @@ pub mod well_known_keys {
 	use super::{HrmpChannelId, Id, WellKnownKey};
 	use hex_literal::hex;
 	use parity_scale_codec::Encode as _;
-	use runtime_primitives::types::SystemTokenParaId;
 	use sp_io::hashing::twox_64;
 	use sp_std::prelude::*;
 
@@ -208,13 +207,12 @@ pub mod well_known_keys {
 	/// Weight needs to be updated for `para_id`
 	pub fn update_system_token_weight(para_id: Id) -> Vec<u8> {
 		let prefix = hex!["8b48ccceef96f69546d630a6a9445f25262f55aa25e8eaac78e113273688c349"];
-		let system_token_para_id: SystemTokenParaId = para_id.into();
-		system_token_para_id.using_encoded(|system_token_para_id: &[u8]| {
+		para_id.using_encoded(|para_id: &[u8]| {
 			prefix
 				.as_ref()
 				.iter()
-				.chain(twox_64(system_token_para_id).iter())
-				.chain(system_token_para_id.iter())
+				.chain(twox_64(para_id).iter())
+				.chain(para_id.iter())
 				.cloned()
 				.collect()
 		})

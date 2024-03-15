@@ -16,19 +16,17 @@ pub mod types {
 	#[derive(Encode, Decode, Clone, PartialEq, Eq, sp_core::RuntimeDebug, TypeInfo)]
 	#[cfg_attr(feature = "std", derive(Default, Hash))]
 	/// Single Pot vote type
-	pub struct PotVote<AccountId, AssetId, Weight = F64> {
-		/// `asset` which is used for vote
-		pub asset: AssetId,
+	pub struct PotVote<Account, Weight = F64> {
 		/// Subject of the vote
-		pub candidate: AccountId,
-		/// Absolute amount of vote
+		pub candidate: Account,
+		/// Absolute amount of vote based on tx-fee
 		pub weight: Weight,
 	}
 
-	impl<AccountId, AssetId, Weight> PotVote<AccountId, AssetId, Weight> {
+	impl<Account, Weight> PotVote<Account, Weight> {
 		/// Create new instance of vote
-		pub fn new(asset: AssetId, candidate: AccountId, weight: Weight) -> Self {
-			Self { asset, candidate, weight }
+		pub fn new(candidate: Account, weight: Weight) -> Self {
+			Self { candidate, weight }
 		}
 	}
 }
@@ -53,7 +51,7 @@ mod tests {
 			F64::from_i128(10),
 		);
 		let bytes = vote.encode();
-		if let Ok(vote) = PotVote::<AccountId32, MockSystemTokenId, F64>::decode(&bytes) {
+		if let Ok(vote) = PotVote::<AccountId32, F64>::decode(&bytes) {
 			println!("{:?}", vote);
 		}
 	}

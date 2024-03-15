@@ -175,7 +175,7 @@ use scale_info::TypeInfo;
 use softfloat::F64;
 use sp_runtime::{
 	traits::{
-		AccountIdConversion, AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Saturating,
+		AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Saturating,
 		StaticLookup, Zero,
 	},
 	types::token::*,
@@ -262,8 +262,7 @@ pub mod pallet {
 			+ Parameter
 			+ Clone
 			+ MaybeSerializeDeserialize
-			+ MaxEncodedLen
-			+ IsType<SystemTokenAssetId>;
+			+ MaxEncodedLen;
 
 		/// Wrapper around `Self::AssetId` to use in dispatchable call signatures. Allows the use
 		/// of compact encoding in instances of the pallet, which will prevent breaking changes

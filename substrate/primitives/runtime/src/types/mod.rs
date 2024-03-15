@@ -9,4 +9,4 @@ pub mod token;
 #[allow(missing_docs)]
 pub mod vote;
 
-pub use self::{fee::*, infra_core::RuntimeConfigProvider, token::*, vote::*};
+pub use self::{fee::*, infra_core::*, token::*, vote::*};

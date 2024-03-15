@@ -66,8 +66,7 @@ pub mod pallet {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Interface that is related to transaction for Infrablockchain Runtime
-		type InfraTxInterface: RuntimeConfigProvider<SystemTokenBalanceOf<Self>, SystemTokenWeightOf<Self>>
-			+ TaaV<Vote = PotVote<Self::AccountId, SystemTokenAssetIdOf<Self>>>;
+		type InfraTxInterface: RuntimeConfigProvider<SystemTokenBalanceOf<Self>> + TaaV;
 		/// The fungibles instance used to pay for transactions in assets.
 		type Fungibles: Balanced<Self::AccountId> + InspectSystemToken<Self::AccountId>;
 		/// The actual transaction charging logic that charges the fees.
@@ -131,8 +130,8 @@ where
 			.try_into()
 			.map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::ConversionError))?;
 		let vote =
-			PotVote::new(system_token_id.clone(), candidate.clone(), F64::from_i128(to_i128));
-		T::InfraTxInterface::handle_vote(vote);
+			PotVote::new( candidate.clone(), F64::from_i128(to_i128));
+		// T::InfraTxInterface::handle_vote(vote);
 		Ok(())
 	}
 }
@@ -413,3 +412,27 @@ impl<T: Config> HandleCredit<T::AccountId, T::Fungibles> for CreditToBucket<T> {
 		let _ = <T::Fungibles as Balanced<T::AccountId>>::resolve(&dest, credit);
 	}
 }
+
+// fn adjusted_weight(
+// 			original: &SystemTokenIdOf<T>,
+// 			vote_weight: VoteWeightOf<T>,
+// 		) -> VoteWeightOf<T> {
+// 			impl_me!
+// 			if let Some(p) = <SystemTokenProperties<T>>::get(original) {
+// 				if let Ok(infra_system_config) = T::InfraCore::system_token_config() {
+// 					let system_token_weight = {
+// 						let w: u128 =
+// 							p.system_token_weight.map_or(infra_system_config.base_weight(), |w| w);
+// 						let system_token_weight = F64::from_i128(w as i128);
+// 						system_token_weight
+// 					};
+// 					let converted_base_weight =
+// 						F64::from_i128(infra_system_config.base_weight() as i128);
+
+// 					// Since the base_weight cannot be zero, this division is guaranteed to be safe.
+// 					return vote_weight.mul(system_token_weight).div(converted_base_weight)
+// 				}
+// 				return vote_weight
+// 			}
+// 			vote_weight
+// 		}

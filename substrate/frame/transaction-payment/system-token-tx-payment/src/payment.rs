@@ -96,18 +96,18 @@ pub struct TransactionFeeCharger<T, CON, HC>(PhantomData<(T, CON, HC)>);
 impl<T, CON, HC> TransactionFeeCharger<T, CON, HC>
 where
 	T: Config,
-	SystemTokenBalanceOf<T>: From<SystemTokenWeightOf<T>>,
+	SystemTokenBalanceOf<T>: From<SystemTokenWeightOf<T>> + From<u128>,
 {
 	/// Rational of transaction fee
 	/// para_fee_rate * weight_scale / base_weight
 	fn tx_fee_rational() -> Result<SystemTokenBalanceOf<T>, TransactionValidityError> {
-		let SystemTokenConfig { base_system_token_detail, weight_scale } =
-			T::InfraTxInterface::system_token_config()
+		let SystemConfig { base_system_token_detail, weight_scale } =
+			T::InfraTxInterface::system_config()
 				.map_err(|_| TransactionValidityError::from(InvalidTransaction::Payment))?;
 		let para_fee_rate = T::InfraTxInterface::para_fee_rate()
 			.map_err(|_| TransactionValidityError::from(InvalidTransaction::Payment))?;
 		let rational =
-			FixedU128::saturating_from_rational(weight_scale, base_system_token_detail.base_weight)
+			FixedU128::saturating_from_rational::<SystemTokenBalanceOf<T>, SystemTokenBalanceOf<T>>(weight_scale.into(), base_system_token_detail.base_weight.into())
 				.saturating_mul_int(para_fee_rate);
 		Ok(rational.into())
 	}
@@ -121,7 +121,7 @@ where
 	CON: ConversionToAssetBalance<BalanceOf<T>, SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>>,
 	HC: HandleCredit<T::AccountId, T::Fungibles>,
 	SystemTokenAssetIdOf<T>: AssetId,
-	SystemTokenBalanceOf<T>: From<BalanceOf<T>> + From<SystemTokenWeightOf<T>>,
+	SystemTokenBalanceOf<T>: From<BalanceOf<T>> + From<SystemTokenWeightOf<T>> + From<u128>,
 {
 	type Balance = BalanceOf<T>;
 	type AssetId = SystemTokenAssetIdOf<T>;

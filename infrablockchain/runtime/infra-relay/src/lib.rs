@@ -24,7 +24,7 @@ use pallet_transaction_payment::CurrencyAdapter;
 use runtime_common::{
 	auctions, crowdloan, impl_runtime_weights, impls::DealWithFees,
 	paras_registrar, paras_sudo_wrapper, prod_or_fast, slots, BlockHashCount, BlockLength,
-	SlowAdjustingFeeUpdate, infra_relay_core
+	SlowAdjustingFeeUpdate
 };
 
 use runtime_parachains::{
@@ -32,6 +32,7 @@ use runtime_parachains::{
 	assigner_on_demand as parachains_assigner_on_demand,
 	assigner_parachains as parachains_assigner_parachains,
 	configuration as parachains_configuration,
+	configuration::ParaConfigInterface,
 	disputes as parachains_disputes,
 	disputes::slashing as parachains_slashing,
 	dmp as parachains_dmp,
@@ -47,7 +48,7 @@ use runtime_parachains::{
 	session_info as parachains_session_info,
 	shared as parachains_shared,
 	system_token_manager,
-	system_token_manager::SystemTokenInterface;
+	system_token_manager::SystemTokenInterface,
 	// validator_reward_manager,
 	// system_token_aggregator
 };
@@ -116,10 +117,8 @@ use infra_relay_runtime_constants::{currency::*, fee::*, system_parachain::ASSET
 // Weights used in the runtime.
 mod weights;
 
-mod system_token;
-use system_token::SystemTokenHandler;
-
-mod policy;
+mod infra;
+use infra::{SystemTokenHandler, ParaConfigHandler};
 
 // XCM
 pub mod xcm_config;
@@ -403,14 +402,6 @@ impl pallet_system_token_tx_payment::Config for Runtime {
 	>;
 	type BootstrapCallFilter = BootstrapCallFilter;
 	type PalletId = FeeTreasuryId;
-}
-
-impl infra_relay_core::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type Voting = ValidatorElection;
-	type SystemTokenInterface = SystemTokenManager;
-	type Fungibles = OriginalAndWrappedAssets;
-	type XcmRouter = XcmRouter;
 }
 
 parameter_types! {
@@ -1089,6 +1080,7 @@ impl parachains_origin::Config for Runtime {}
 
 impl parachains_configuration::Config for Runtime {
 	type WeightInfo = weights::runtime_parachains_configuration::WeightInfo<Runtime>;
+	type ParaConfigHandler = ParaConfigHandler;
 }
 
 impl parachains_shared::Config for Runtime {}
@@ -1108,6 +1100,7 @@ impl parachains_inclusion::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type DisputesHandler = ParasDisputes;
 	type RewardValidators = RewardValidators;
+	type VotingHandler = ValidatorElection;
 	type MessageQueue = MessageQueue;
 	type WeightInfo = weights::runtime_parachains_inclusion::WeightInfo<Runtime>;
 }
@@ -1136,9 +1129,9 @@ parameter_types! {
 impl system_token_manager::Config for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeEvent = RuntimeEvent;
-	type SystemTokenId = MultiLocation;
-	type InfraCore = InfraRelayCore;
 	type Fungibles = OriginalAndWrappedAssets;
+	type SystemTokenId = MultiLocation;
+	type SystemTokenHandler = SystemTokenHandler;
 	type StringLimit = StringLimit;
 	type MaxSystemTokens = MaxSystemTokens;
 	type MaxOriginalUsedParaIds = MaxOriginalUsedParaIds;
@@ -1459,7 +1452,6 @@ construct_runtime! {
 		AssetRate: pallet_asset_rate::{Pallet, Call, Storage, Event<T>} = 39,
 
 		// InfraBlockchain Support
-		InfraRelayCore: infra_relay_core::{Pallet, Call, Config<T>, Storage, Event<T>} = 20,
 		SystemTokenManager: system_token_manager::{Pallet, Call, Storage, Event<T>} = 21,
 		OriginalAssets: pallet_assets::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>} = 22,
 		WrappedAssets: pallet_assets::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>} = 23,

@@ -71,8 +71,6 @@ pub mod pallet {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Type that interacts with local asset
 		type Fungibles: InspectSystemToken<Self::AccountId>;
-		/// Type that interacts with Parachain System
-		type ParachainSystem: AssetMetadataProvider; // CollectVote
 		/// Active request period for registering System Token
 		#[pallet::constant]
 		type ActiveRequestPeriod: Get<BlockNumberFor<Self>>;
@@ -85,10 +83,10 @@ pub mod pallet {
 	pub type ParaCoreAdmin<T: Config> = StorageValue<_, T::AccountId>;
 
 	#[pallet::storage]
-	pub type RCSystemConfig<T: Config> = StorageValue<_, SystemTokenConfig<SystemTokenWeightOf<T>>>;
+	pub type RCSystemConfig<T: Config> = StorageValue<_, SystemConfig>>;
 
 	#[pallet::storage]
-	pub type ParaFeeRate<T: Config> = StorageValue<_, SystemTokenWeightOf<T>>;
+	pub type ParaFeeRate<T: Config> = StorageValue<_, SystemTokenBalanceOf<T>>;
 
 	#[pallet::storage]
 	pub(super) type RuntimeState<T: Config> = StorageValue<_, Mode, ValueQuery>;
@@ -189,7 +187,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			pallet_name: Vec<u8>,
 			call_name: Vec<u8>,
-			fee: SystemTokenBalance,
+			fee: SystemTokenBalanceOf<T>,
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
 			let extrinsic_metadata = ExtrinsicMetadata::new(pallet_name, call_name);
@@ -205,7 +203,7 @@ pub mod pallet {
 		#[pallet::call_index(2)]
 		pub fn update_para_fee_rate(
 			origin: OriginFor<T>,
-			fee_rate: SystemTokenWeight,
+			fee_rate: SystemTokenBalanceOf<T>,
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
 			ParaFeeRate::<T>::put(fee_rate);
@@ -238,8 +236,8 @@ pub mod pallet {
 		#[pallet::call_index(4)]
 		pub fn register_system_token(
 			origin: OriginFor<T>,
-			asset_id: SystemTokenAssetId,
-			system_token_weight: SystemTokenWeight,
+			asset_id: SystemTokenAssetIdOf<T>,
+			system_token_weight: SystemTokenWeightOf<T>,
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
 			Self::check_valid_register()?;
@@ -370,18 +368,20 @@ impl<T: Config> Pallet<T> {
 
 impl<T: Config> RuntimeConfigProvider<SystemTokenBalanceOf<T>, SystemTokenWeightOf<T>>
 	for Pallet<T>
+where
+	SystemTokenBalanceOf<T>: From<u128>
 {
 	type Error = DispatchError;
 
-	fn system_token_config() -> Result<SystemTokenConfig<SystemTokenWeightOf<T>>, Self::Error> {
+	fn system_token_config() -> Result<SystemConfig, Self::Error> {
 		Ok(RCSystemConfig::<T>::get().ok_or(Error::<T>::NotInitiated)?)
 	}
 
-	fn para_fee_rate() -> Result<SystemTokenWeightOf<T>, Self::Error> {
-		let base_weight = RCSystemConfig::<T>::get().ok_or(Error::<T>::NotInitiated)?.base_weight();
+	fn para_fee_rate() -> Result<SystemTokenBalanceOf<T>, Self::Error> {
+		let base_weight = RCSystemConfig::<T>::get().ok_or(Error::<T>::NotInitiated)?.base_weight;
 		Ok(ParaFeeRate::<T>::try_mutate_exists(
-			|maybe_para_fee_rate| -> Result<SystemTokenWeightOf<T>, DispatchError> {
-				let pfr = maybe_para_fee_rate.take().map_or(base_weight, |pfr| pfr);
+			|maybe_para_fee_rate| -> Result<SystemTokenBalanceOf<T>, DispatchError> {
+				let pfr = maybe_para_fee_rate.take().map_or(base_weight.into(), |pfr| pfr);
 				*maybe_para_fee_rate = Some(pfr);
 				Ok(pfr)
 			},
@@ -397,23 +397,8 @@ impl<T: Config> RuntimeConfigProvider<SystemTokenBalanceOf<T>, SystemTokenWeight
 	}
 }
 
-impl<T: Config> TaaV for Pallet<T> {
-	type Vote = PotVote<T::AccountId, SystemTokenAssetIdOf<T>>;
-	type Weight = F64;
-	type Error = DispatchError;
-
-	fn process_vote(_bytes: &mut Vec<u8>) -> Result<(), Self::Error> {
-		// We are not processing vote here
-		Ok(())
-	}
-
-	fn handle_vote(vote: Self::Vote) {
-		cumulus_pallet_parachain_system::Pallet::<T>::handle_vote(vote.encode());
-	}
-}
-
-impl<T: Config> UpdateRCConfig for Pallet<T> {
-	fn update_system_config(system_token_config: SystemTokenConfig<SystemTokenWeightOf<T>>) {
+impl<T: Config> UpdateRCConfig<SystemTokenAssetIdOf<T>, SystemTokenWeightOf<T>> for Pallet<T> {
+	fn update_system_config(system_config: SystemConfig) {
 		RCSystemConfig::<T>::put(system_token_config);
 	}
 
@@ -425,5 +410,14 @@ impl<T: Config> UpdateRCConfig for Pallet<T> {
 			// 	TODO: Handle Error
 			// }
 		}
+	}
+}
+
+impl<T: Config> TaaV for Pallet<T> {
+	type Error = ();
+
+	fn process_vote(bytes: &mut Vec<u8>) -> Result<(), Self::Error> {
+		cumulus_pallet_parachain_system::Pallet::<T>::handle_vote(bytes); 
+		Ok(())
 	}
 }
