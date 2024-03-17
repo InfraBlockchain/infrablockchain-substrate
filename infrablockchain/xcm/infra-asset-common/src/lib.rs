@@ -200,7 +200,7 @@ pub type AssetIdForTrustBackedAssetsConvert<TrustBackedAssetsPalletLocation> =
 		TrustBackedAssetsPalletLocation,
 		AssetIdForTrustBackedAssets,
 		JustTry,
-		xcm::v3::Location,
+		xcm::v3::MultiLocation,
 	>;
 
 /// [`MatchedConvertedConcreteId`] converter dedicated for `TrustBackedAssets`

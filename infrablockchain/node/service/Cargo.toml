@@ -107,11 +107,9 @@ node-network-protocol = { path = "../network/protocol" }
 
 # Runtimes
 infra-relay-runtime = { path = "../../runtime/infra-relay", optional = true }
-rococo-runtime = { path = "../../runtime/rococo", optional = true }
 
 # Runtime Constants
 infra-relay-runtime-constants = { path = "../../runtime/infra-relay/constants", optional = true }
-rococo-runtime-constants = { path = "../../runtime/rococo/constants", optional = true }
 
 
 # Subsystems
@@ -181,7 +179,6 @@ full-node = [
 ]
 
 # Configure the native runtimes to use.
-rococo-native = [ "rococo-runtime", "rococo-runtime-constants" ]
 infra-relay-native = [ "infra-relay-runtime", "infra-relay-runtime-constants" ]
 
 runtime-benchmarks = [
@@ -196,7 +193,6 @@ runtime-benchmarks = [
 	"primitives/runtime-benchmarks",
 	"runtime-parachains/runtime-benchmarks",
 	"polkadot-test-client/runtime-benchmarks",
-	"rococo-runtime?/runtime-benchmarks",
 	"sc-client-db/runtime-benchmarks",
 	"service/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
@@ -211,15 +207,12 @@ try-runtime = [
 	"runtime-parachains/try-runtime",
 	"sp-runtime/try-runtime",
 	"infra-relay-runtime?/try-runtime",
-	"rococo-runtime?/try-runtime",
 ]
 fast-runtime = [
 	"infra-relay-runtime?/fast-runtime",
-	"rococo-runtime?/fast-runtime",
 ]
 
 malus = [ "full-node" ]
 runtime-metrics = [
 	"runtime-parachains/runtime-metrics",
-	"rococo-runtime?/runtime-metrics",
 ]

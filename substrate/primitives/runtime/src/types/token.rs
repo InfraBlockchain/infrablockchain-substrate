@@ -23,7 +23,6 @@ pub type SystemTokenDecimal = u8;
 #[cfg_attr(feature = "std", derive(Default, Hash))]
 pub struct RemoteAssetMetadata<AssetId, Balance> {
 	/// General asset id on Runtime(e.g `MultiLocation`)
-	#[codec(compact)]
 	pub asset_id: AssetId,
 	/// Human readable name of System Token. Accept unbounded 'Vec<u8>' because it would be checked
 	/// `bounded` when initiated

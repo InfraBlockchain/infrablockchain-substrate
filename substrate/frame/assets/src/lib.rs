@@ -245,8 +245,7 @@ pub mod pallet {
 			+ Copy
 			+ MaybeSerializeDeserialize
 			+ MaxEncodedLen
-			+ TypeInfo
-			+ IsType<SystemTokenBalance>;
+			+ TypeInfo;
 
 		/// The units in which we record weight of System Token
 		type SystemTokenWeight: Balance + From<F64> + TryInto<i128>;

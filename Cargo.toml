@@ -144,8 +144,6 @@ members = [
 	"infrablockchain/runtime/common/slot_range_helper",
 	"infrablockchain/runtime/metrics",
 	"infrablockchain/runtime/parachains",
-	"infrablockchain/runtime/rococo",
-	"infrablockchain/runtime/rococo/constants",
 	"infrablockchain/runtime/test-runtime",
 	"infrablockchain/runtime/test-runtime/constants",
 	"infrablockchain/runtime/infra-relay",

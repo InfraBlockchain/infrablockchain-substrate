@@ -28,8 +28,7 @@ sp-io = { path = "../../../substrate/primitives/io", default-features = false }
 sp-runtime = { path = "../../../substrate/primitives/runtime", default-features = false }
 sp-std = { path = "../../../substrate/primitives/std", default-features = false }
 
-# Polkadot
-rococo-runtime-constants = { path = "../../../infrablockchain/runtime/rococo/constants", default-features = false}
+# InfraBlockchain
 infrablockchain-core-primitives = { path = "../../../infrablockchain/core-primitives", default-features = false}
 primitives = { path = "../../../infrablockchain/primitives", default-features = false}
 xcm = { package = "staging-xcm", path = "../../../infrablockchain/xcm", default-features = false}
@@ -63,7 +62,6 @@ std = [
 	"pallet-collator-selection/std",
 	"infrablockchain-core-primitives/std",
 	"primitives/std",
-	"rococo-runtime-constants/std",
 	"sp-consensus-aura/std",
 	"sp-core/std",
 	"sp-io/std",

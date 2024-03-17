@@ -68,7 +68,6 @@ substrate-state-trie-migration-rpc = { path = "../../substrate/utils/frame/rpc/s
 
 # Infr Relay
 infrablockchain-cli = { path = "../../infrablockchain/cli", features = [
-	"rococo-native",
 	"infra-relay-native",
 ] }
 primitives = { path = "../../infrablockchain/primitives" }

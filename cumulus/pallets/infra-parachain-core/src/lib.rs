@@ -7,17 +7,14 @@ use frame_support::{
 	pallet_prelude::*,
 	traits::{
 		fungibles::{Inspect, InspectSystemToken},
-		tokens::SystemTokenId,
 	},
 };
 use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
-use softfloat::F64;
 use sp_runtime::{
-	types::{fee::*, infra_core::*, token::*, vote::*},
+	types::{fee::*, infra_core::*, token::*},
 	Saturating,
 };
-
 use sp_std::vec::Vec;
 
 pub use pallet::*;
@@ -83,7 +80,7 @@ pub mod pallet {
 	pub type ParaCoreAdmin<T: Config> = StorageValue<_, T::AccountId>;
 
 	#[pallet::storage]
-	pub type RCSystemConfig<T: Config> = StorageValue<_, SystemConfig>>;
+	pub type RCSystemConfig<T: Config> = StorageValue<_, SystemConfig>;
 
 	#[pallet::storage]
 	pub type ParaFeeRate<T: Config> = StorageValue<_, SystemTokenBalanceOf<T>>;
@@ -96,12 +93,11 @@ pub mod pallet {
 		StorageMap<_, Twox128, ExtrinsicMetadata, SystemTokenBalanceOf<T>>;
 
 	#[pallet::storage]
-	pub type CurrentRequest<T: Config> = StorageValue<
+	pub type CurrentRequest<T: Config> = StorageMap<
 		_,
-		(
-			RemoteAssetMetadata<SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>>,
-			RequestStatus<BlockNumberFor<T>>,
-		),
+		Twox64Concat,
+		SystemTokenAssetIdOf<T>,
+		RequestStatus<BlockNumberFor<T>>
 	>;
 
 	#[pallet::event]
@@ -164,15 +160,17 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_initialize(_n: BlockNumberFor<T>) -> frame_support::weights::Weight {
-			if let Some((remote_asset_metadata, mut status)) = CurrentRequest::<T>::get() {
-				if !status.is_relayed() {
-					T::ParachainSystem::requested(remote_asset_metadata.clone());
-					CurrentRequest::<T>::put((remote_asset_metadata, status));
-				}
-				T::DbWeight::get().reads_writes(1, 1)
-			} else {
-				T::DbWeight::get().reads(1)
-			}
+			// TODO
+			// if let Some(mut status) = CurrentRequest::<T>::get() {
+			// 	if !status.is_relayed() {
+			// 		T::ParachainSystem::requested(remote_asset_metadata.clone());
+			// 		CurrentRequest::<T>::put((remote_asset_metadata, status));
+			// 	}
+			// 	T::DbWeight::get().reads_writes(1, 1)
+			// } else {
+				
+			// }
+			T::DbWeight::get().reads(1)
 		}
 	}
 
@@ -240,7 +238,7 @@ pub mod pallet {
 			system_token_weight: SystemTokenWeightOf<T>,
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
-			Self::check_valid_register()?;
+			Self::check_valid_register(&asset_id)?;
 			// T::LocalAssetManager::promote(asset_id, system_token_weight)
 			// 	.map_err(|_| Error::<T>::ErrorRegisterSystemToken)?;
 			Self::deposit_event(Event::<T>::Registered { asset_id });
@@ -340,20 +338,20 @@ impl<T: Config> Pallet<T> {
 		asset_metadata: RemoteAssetMetadata<SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>>,
 	) -> Result<BlockNumberFor<T>, DispatchError> {
 		let current = <frame_system::Pallet<T>>::block_number();
-		if let Some((_, request_status)) = CurrentRequest::<T>::get() {
+		if let Some(request_status) = CurrentRequest::<T>::get(&id) {
 			if !request_status.is_expired(current) {
 				return Err(Error::<T>::AlreadyRequested.into())
 			}
 		}
 		let exp = current.saturating_add(T::ActiveRequestPeriod::get());
-		CurrentRequest::<T>::put((asset_metadata, RequestStatus::default_status(exp)));
+		CurrentRequest::<T>::insert(id, RequestStatus::default_status(exp));
 		Ok(exp)
 	}
 
-	fn check_valid_register() -> Result<(), DispatchError> {
-		let is_valid = if let Some((_, status)) = CurrentRequest::<T>::get() {
+	fn check_valid_register(asset: &SystemTokenAssetIdOf<T>) -> Result<(), DispatchError> {
+		let is_valid = if let Some(status) = CurrentRequest::<T>::get(asset) {
 			if !status.is_expired(<frame_system::Pallet<T>>::block_number()) {
-				CurrentRequest::<T>::kill();
+				CurrentRequest::<T>::remove(asset);
 				true
 			} else {
 				false
@@ -366,19 +364,19 @@ impl<T: Config> Pallet<T> {
 	}
 }
 
-impl<T: Config> RuntimeConfigProvider<SystemTokenBalanceOf<T>, SystemTokenWeightOf<T>>
+impl<T: Config> RuntimeConfigProvider<SystemTokenBalanceOf<T>>
 	for Pallet<T>
 where
 	SystemTokenBalanceOf<T>: From<u128>
 {
 	type Error = DispatchError;
 
-	fn system_token_config() -> Result<SystemConfig, Self::Error> {
+	fn system_config() -> Result<SystemConfig, Self::Error> {
 		Ok(RCSystemConfig::<T>::get().ok_or(Error::<T>::NotInitiated)?)
 	}
 
 	fn para_fee_rate() -> Result<SystemTokenBalanceOf<T>, Self::Error> {
-		let base_weight = RCSystemConfig::<T>::get().ok_or(Error::<T>::NotInitiated)?.base_weight;
+		let base_weight = RCSystemConfig::<T>::get().ok_or(Error::<T>::NotInitiated)?.base_system_token_detail.base_weight;
 		Ok(ParaFeeRate::<T>::try_mutate_exists(
 			|maybe_para_fee_rate| -> Result<SystemTokenBalanceOf<T>, DispatchError> {
 				let pfr = maybe_para_fee_rate.take().map_or(base_weight.into(), |pfr| pfr);
@@ -399,13 +397,13 @@ where
 
 impl<T: Config> UpdateRCConfig<SystemTokenAssetIdOf<T>, SystemTokenWeightOf<T>> for Pallet<T> {
 	fn update_system_config(system_config: SystemConfig) {
-		RCSystemConfig::<T>::put(system_token_config);
+		RCSystemConfig::<T>::put(system_config);
 	}
 
 	fn update_system_token_weight_for(
 		assets: Vec<(SystemTokenAssetIdOf<T>, SystemTokenWeightOf<T>)>,
 	) {
-		for (asset_id, weight) in assets {
+		for (_asset_id, _weight) in assets {
 			// if let Err(_) = T::Fungibles::update_system_token_weight(asset_id, weight) {
 			// 	TODO: Handle Error
 			// }
@@ -417,7 +415,7 @@ impl<T: Config> TaaV for Pallet<T> {
 	type Error = ();
 
 	fn process_vote(bytes: &mut Vec<u8>) -> Result<(), Self::Error> {
-		cumulus_pallet_parachain_system::Pallet::<T>::handle_vote(bytes); 
+		cumulus_pallet_parachain_system::Pallet::<T>::handle_vote(bytes.clone()); 
 		Ok(())
 	}
 }

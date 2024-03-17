@@ -917,12 +917,12 @@ impl<T: Config> Pallet<T> {
 		// 2. Handle remoted_asset_metadata(system_token_manager)
 
 		if let Some(mut request_asset) = commitments.requested_asset {
-			system_token_manager::Pallet::<T>::requested_asset_metadata(&mut &request_asset[..]);
+			<system_token_manager::Pallet<T>>::requested_asset_metadata(&mut request_asset);
 		}
-		if let Some(votes) = commitments.vote_result {	
-			for vote in votes {
-				if let Err(e) = T::VotingHandler::process_vote(votes) {
-					log::error!("❌ Failed to process vote ❌: {:?}", e);
+		if let Some(mut votes) = commitments.vote_result {	
+			for vote in votes.iter_mut() {
+				if let Err(_) = T::VotingHandler::process_vote(vote) {
+					log::error!("❌ Failed to process vote ❌");
 					continue;
 				}
 			}

@@ -24,14 +24,12 @@ pub mod claims;
 pub mod crowdloan;
 pub mod elections;
 pub mod impls;
-pub mod infra_relay_core;
 pub mod paras_registrar;
 pub mod paras_sudo_wrapper;
 pub mod purchase;
 pub mod slot_range;
 pub mod slots;
 pub mod traits;
-pub mod policy;
 
 #[cfg(feature = "try-runtime")]
 pub mod try_runtime;

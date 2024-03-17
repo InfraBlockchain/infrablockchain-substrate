@@ -13,6 +13,7 @@ softfloat = { path = "../../../substrate/primitives/softfloat", default-features
 # Primitives
 sp-runtime = { path = "../../../substrate/primitives/runtime", default-features = false}
 sp-std = { path = "../../../substrate/primitives/std", default-features = false}
+sp-core = { path = "../../../substrate/primitives/core", default-features = false}
 
 # FRAME 
 frame-support = { path = "../../../substrate/frame/support", default-features = false}
@@ -40,6 +41,7 @@ std = [
 	"primitives/std",
 	"sp-runtime/std",
 	"sp-std/std",
+	"sp-core/std",
     "cumulus-pallet-parachain-system/std",
     "cumulus-pallet-xcm/std",
 ]

@@ -82,7 +82,7 @@ use telemetry::TelemetryWorker;
 #[cfg(feature = "full-node")]
 use telemetry::{Telemetry, TelemetryWorkerHandle};
 
-pub use chain_spec::{GenericChainSpec, InfraRelayChainSpec, RococoChainSpec};
+pub use chain_spec::{GenericChainSpec, InfraRelayChainSpec};
 pub use consensus_common::{Proposal, SelectChain};
 use frame_benchmarking_cli::SUBSTRATE_REFERENCE_HARDWARE;
 use mmr_gadget::MmrGadget;
@@ -104,9 +104,6 @@ pub use sp_runtime::{
 
 #[cfg(feature = "infra-relay-native")]
 pub use {infra_relay_runtime, infra_relay_runtime_constants};
-
-#[cfg(feature = "rococo-native")]
-pub use {rococo_runtime, rococo_runtime_constants};
 
 pub use fake_runtime_api::{GetLastTimestamp, RuntimeApi};
 
@@ -258,8 +255,6 @@ pub enum Error {
 pub enum Chain {
 	/// InfraRelayChain
 	InfraRelay,
-	/// Rococo or one of its derivations.
-	Rococo,
 	/// Unknown chain?
 	Unknown,
 }
@@ -268,9 +263,6 @@ pub enum Chain {
 pub trait IdentifyVariant {
 	/// Returns if this is a configuration for the `Infra Relay` network.
 	fn is_infra_relay(&self) -> bool;
-
-	/// Returns if this is a configuration for the `Rococo` network.
-	fn is_rococo(&self) -> bool;
 
 	/// Returns true if this configuration is for a development network.
 	fn is_dev(&self) -> bool;
@@ -283,17 +275,12 @@ impl IdentifyVariant for Box<dyn ChainSpec> {
 	fn is_infra_relay(&self) -> bool {
 		self.id().starts_with("infra-relay") || self.id().starts_with("")
 	}
-	fn is_rococo(&self) -> bool {
-		self.id().starts_with("rococo") || self.id().starts_with("rco")
-	}
 	fn is_dev(&self) -> bool {
 		self.id().ends_with("dev")
 	}
 	fn identify_chain(&self) -> Chain {
 		if self.is_infra_relay() {
 			Chain::InfraRelay
-		} else if self.is_rococo() {
-			Chain::Rococo
 		} else {
 			Chain::Unknown
 		}
@@ -699,7 +686,7 @@ pub fn new_full<OverseerGenerator: OverseerGen>(
 	let backoff_authoring_blocks = {
 		let mut backoff = sc_consensus_slots::BackoffAuthoringOnFinalizedHeadLagging::default();
 
-		if config.chain_spec.is_rococo() {
+		if config.chain_spec.is_dev() {
 			// it's a testnet that's in flux, finality has stalled sometimes due
 			// to operational issues and it's annoying to slow down block
 			// production to 1 block per hour.
@@ -1280,7 +1267,7 @@ pub fn new_chain_ops(
 {
 	config.keystore = service::config::KeystoreConfig::InMemory;
 
-	if config.chain_spec.is_rococo() {
+	if config.chain_spec.is_dev() {
 		chain_ops!(config, jaeger_agent, None)
 	} else {
 		chain_ops!(config, jaeger_agent, None)

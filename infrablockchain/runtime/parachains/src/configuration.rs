@@ -28,6 +28,7 @@ use primitives::{
 	MAX_CODE_SIZE, MAX_HEAD_DATA_SIZE, MAX_POV_SIZE, ON_DEMAND_DEFAULT_QUEUE_MAX_SIZE,
 };
 use sp_runtime::{traits::Zero, Perbill, types::{fee::*, infra_core::*, token::*, vote::*}};
+use sp_arithmetic::traits::AtLeast32BitUnsigned;
 use sp_std::prelude::*;
 
 type SystemTokenBalanceOf<T> = <<T as Config>::ParaConfigHandler as ParaConfigInterface>::Balance;
@@ -1461,7 +1462,7 @@ pub trait ParaConfigInterface {
 	/// Destination ID type
 	type DestId: Parameter;
 	/// Balance type of System Token
-	type Balance: frame_support::traits::tokens::misc::Balance;
+	type Balance: Parameter + AtLeast32BitUnsigned;
 
 	/// Update fee table for `dest_id` Runtime
 	fn update_fee_table(dest_id: Self::DestId, pallet_name: Vec<u8>, call_name: Vec<u8>, fee: Self::Balance);
@@ -1471,7 +1472,10 @@ pub trait ParaConfigInterface {
 	fn update_runtime_state(dest_id: Self::DestId);
 }
 
-impl<T: Config> RuntimeConfigProvider<SystemTokenBalanceOf<T>> for Pallet<T> {
+impl<T: Config> RuntimeConfigProvider<SystemTokenBalanceOf<T>> for Pallet<T> 
+where
+	SystemTokenBalanceOf<T>: From<u128>
+{
 	
 	type Error = ();
 
@@ -1480,11 +1484,11 @@ impl<T: Config> RuntimeConfigProvider<SystemTokenBalanceOf<T>> for Pallet<T> {
 	}
 
 	fn para_fee_rate() -> Result<SystemTokenBalanceOf<T>, Self::Error> {
-		Err(())
+		Ok(ActiveSystemConfig::<T>::get().base_system_token_detail.base_weight.into())
 	}
 
-	fn fee_for(_ext: ExtrinsicMetadata) -> Result<SystemTokenBalanceOf<T>, Self::Error> {
-		Err(())
+	fn fee_for(_ext: ExtrinsicMetadata) -> Option<SystemTokenBalanceOf<T>> {
+		None
 	}
 
 	fn runtime_state() -> Mode {

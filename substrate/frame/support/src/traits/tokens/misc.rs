@@ -25,6 +25,7 @@ use sp_runtime::{
 	ArithmeticError, DispatchError, TokenError,
 };
 use sp_std::fmt::Debug;
+use crate::Parameter;
 
 /// The origin of funds to be used for a deposit operation.
 #[derive(Copy, Clone, RuntimeDebug, Eq, PartialEq)]
@@ -227,9 +228,9 @@ pub trait SystemTokenId: AssetId {
 	/// Id for general token index(e.g `u32`)
 	type AssetId: AssetId;
 	/// Id for token pallet id(e.g `u8`)
-	type PalletId: AssetId;
+	type PalletId: Parameter;
 	/// Id for token origin(e.g `u32`)
-	type OriginId: AssetId;
+	type OriginId: Parameter;
 	/// Error type
 	type Error: FullCodec + Debug;
 
