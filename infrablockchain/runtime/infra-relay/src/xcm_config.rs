@@ -19,7 +19,7 @@
 use super::{
 	parachains_origin, system_token_manager, AccountId, AllPalletsWithSystem, Authorship, Balance,
 	Balances, OriginalAssets, ParaId, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
-	ValidatorCollective, WeightToFee, WrappedAssets, XcmPallet,
+	ValidatorCollective, WeightToFee, WrappedAssets, XcmPallet, WrappedAssetsInstance, OriginalAssetsInstance
 };
 use frame_support::{
 	match_types, parameter_types,
@@ -117,7 +117,7 @@ pub type LocalIssuedFungiblesTransactor = FungiblesAdapter<
 >;
 
 /// Means for transacting assets on this chain.
-pub type AssetTransactors = (ForeignFungiblesTransactor, LocalIssuedFungiblesTransactor);
+pub type AssetTransactors = (LocalIssuedFungiblesTransactor, ForeignFungiblesTransactor);
 
 parameter_types! {
 	/// The infrablockspace network ID. This is named.
@@ -187,6 +187,23 @@ pub type Barrier = (
 	// Subscriptions for version tracking are OK.
 	AllowSubscriptionsFrom<Everything>,
 );
+
+/// Multiplier used for dedicated `TakeFirstAssetTrader` with `Assets` instance.
+pub type AssetFeeAsEDMultiplierFeeCharger = AssetFeeAsExistentialDepositMultiplier<
+	Runtime,
+	WeightToFee,
+	pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto, OriginalAssetsInstance>,
+	OriginalAssetsInstance,
+>;
+
+/// Multiplier used for dedicated `TakeFirstAssetTrader` with `ForeignAssets` instance.
+pub type WrappedAssetFeeAsEDMultiplierFeeCharger =
+	AssetFeeAsExistentialDepositMultiplier<
+		Runtime,
+		WeightToFee,
+		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto, WrappedAssetsInstance>,
+		WrappedAssetsInstance,
+	>;
 
 /// A call filter for the XCM Transact instruction. This is a temporary measure until we
 /// properly account for proof size weights.
@@ -316,16 +333,29 @@ impl xcm_executor::Config for XcmConfig {
 	type UniversalLocation = UniversalLocation;
 	type Barrier = Barrier;
 	type Weigher = FixedWeightBounds<BaseXcmWeight, RuntimeCall, MaxInstructions>;
-	// The weight trader piggybacks on the existing transaction-fee conversion logic.
-	// TODO: change me!
 	type Trader = (
+		// This trader allows to pay with `is_sufficient=true` "Trust Backed" assets from dedicated
+		// `pallet_assets` instance - `Assets`.
 		cumulus_primitives_utility::TakeFirstAssetTrader<
 			AccountId,
-			AssetFeeAsExistentialDepositMultiplierFeeCharger,
-			ForeignAssetsConvertedConcreteId,
+			AssetFeeAsEDMultiplierFeeCharger,
+			TrustBackedAssetsConvertedConcreteId,
 			OriginalAssets,
 			cumulus_primitives_utility::XcmFeesTo32ByteAccount<
 				LocalIssuedFungiblesTransactor,
+				AccountId,
+				XcmAssetFeesReceiver,
+			>,
+		>,
+		// This trader allows to pay with `is_sufficient=true` "Foreign" assets from dedicated
+		// `pallet_assets` instance - `ForeignAssets`.
+		cumulus_primitives_utility::TakeFirstAssetTrader<
+			AccountId,
+			WrappedAssetFeeAsEDMultiplierFeeCharger,
+			ForeignAssetsConvertedConcreteId,
+			WrappedAssets,
+			cumulus_primitives_utility::XcmFeesTo32ByteAccount<
+				ForeignFungiblesTransactor,
 				AccountId,
 				XcmAssetFeesReceiver,
 			>,

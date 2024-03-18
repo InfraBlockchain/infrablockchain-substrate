@@ -315,6 +315,7 @@ members = [
 	"substrate/frame/remark",
 	"substrate/frame/root-offences",
 	"substrate/frame/root-testing",
+	"substrate/frame/system-token-conversion",
 	"substrate/frame/safe-mode",
 	"substrate/frame/salary",
 	"substrate/frame/scheduler",

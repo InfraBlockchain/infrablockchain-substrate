@@ -1,7 +1,9 @@
 
 use super::*;
 use xcm::latest::prelude::*;
+use parity_scale_codec::{Codec, Decode, Encode};
 
+#[derive(Encode, Decode)]
 pub enum ParachainRuntimePallets {
 	#[codec(index = 2)]
 	InfraParaCore(ParachainCalls),
@@ -24,7 +26,7 @@ pub enum ParachainCalls {
 }
 
 /// Main actor for handling policy of paracahain configuration
-struct ParaConfigHandler;
+pub struct ParaConfigHandler;
 
 impl ParaConfigInterface for ParaConfigHandler {
     type DestId = u32;
@@ -32,21 +34,21 @@ impl ParaConfigInterface for ParaConfigHandler {
 
     fn update_fee_table(dest_id: Self::DestId, pallet_name: Vec<u8>, call_name: Vec<u8>, fee: Self::Balance) {
         let set_fee_table_call = ParachainRuntimePallets::InfraParaCore(
-            ParachainConfigCalls::UpdateFeeTable(pallet_name, call_name, fee),
+            ParachainCalls::UpdateFeeTable(pallet_name, call_name, fee),
         );
         send_xcm_for(set_fee_table_call.encode(), dest_id);
     }
     
     fn update_para_fee_rate(dest_id: Self::DestId, fee_rate: Self::Balance) {
         let set_fee_rate_call = ParachainRuntimePallets::InfraParaCore(
-            ParachainConfigCalls::UpdateParaFeeRate(fee_rate),
+            ParachainCalls::UpdateParaFeeRate(fee_rate),
         );
         send_xcm_for(set_fee_rate_call.encode(), dest_id);
     }
     
     fn update_runtime_state(dest_id: Self::DestId) {
         let set_runtime_state_call = ParachainRuntimePallets::InfraParaCore(
-            ParachainConfigCalls::UpdateRuntimeState,
+            ParachainCalls::UpdateRuntimeState,
         );
         send_xcm_for(set_runtime_state_call.encode(), dest_id);
     }
@@ -66,17 +68,14 @@ impl SystemTokenInterface for SystemTokenHandler {
         system_token_weight: Self::SystemTokenWeight,
     ) {
         let register_call = ParachainRuntimePallets::InfraParaCore(
-            ParachainConfigCalls::RegisterSystemToken(system_token_id, system_token_weight),
+            ParachainCalls::RegisterSystemToken(system_token_id, system_token_weight),
         );
         send_xcm_for(register_call.encode(), dest_id);
-        Self::update_runtime_state(dest_id);
-        // TODO: For Relay Chain
-        // Self::do_update_runtime_state();
     }
 
     fn deregister_system_token(dest_id: Self::DestId, system_token_id: Self::Location) {
         let deregister_call = ParachainRuntimePallets::InfraParaCore(
-            ParachainConfigCalls::DeregisterSystemToken(system_token_id),
+            ParachainCalls::DeregisterSystemToken(system_token_id),
         );
         send_xcm_for(deregister_call.encode(), dest_id);
     }
@@ -92,7 +91,7 @@ impl SystemTokenInterface for SystemTokenHandler {
         system_token_weight: Self::SystemTokenWeight,
     ) {
         let create_call = ParachainRuntimePallets::InfraParaCore(
-            ParachainConfigCalls::CreateWrappedLocal(
+            ParachainCalls::CreateWrappedLocal(
                 original,
                 currency_type,
                 min_balance,
@@ -119,6 +118,7 @@ pub(super) fn send_xcm_for(call: Vec<u8>, dest_id: u32) {
 		]);
 
 		match XcmPallet::send_xcm(
+            Here,
 			MultiLocation::new(0, X1(Parachain(dest_id))),
 			message.clone(),
 		) {

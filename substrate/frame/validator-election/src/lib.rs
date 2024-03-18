@@ -22,13 +22,14 @@ pub mod migrations;
 pub mod impls;
 pub use impls::*;
 
-use codec::{Decode, Encode, MaxEncodedLen, Codec};
-use frame_support::traits::{tokens::fungibles::*, EstimateNextNewSession, Get};
+use codec::{Decode, Encode, MaxEncodedLen, Codec, FullCodec};
+use frame_support::{traits::{tokens::fungibles::*, EstimateNextNewSession, Get}, Parameter};
 pub use pallet::*;
 use scale_info::TypeInfo;
-use sp_arithmetic::traits::Saturating;
-use sp_runtime::{RuntimeDebug, types::{infra_core::TaaV, vote::PotVote}};
+use sp_arithmetic::traits::{Saturating, AtLeast32BitUnsigned};
+use sp_runtime::{RuntimeDebug, types::{infra_core::TaaV, vote::PotVote}, traits::Member};
 use softfloat::F64;
+use sp_std::fmt::Debug;
 
 #[cfg(test)]
 mod tests;
@@ -187,7 +188,19 @@ pub mod pallet {
 		type SessionsPerEra: Get<SessionIndex>;
 
 		/// Associated type for vote weight
-		type Score: Balance + Into<F64>;
+		type Score: Member
+			+ Parameter
+			+ AtLeast32BitUnsigned
+			+ FullCodec 
+			+ Copy 
+			+ Default 
+			+ Debug 
+			+ scale_info::TypeInfo 
+			+ MaxEncodedLen 
+			+ Send 
+			+ Sync 
+			+ MaybeSerializeDeserialize 
+			+ Into<F64>;
 
 		/// Something that can estimate the next session change, accurately or as a best effort
 		/// guess.

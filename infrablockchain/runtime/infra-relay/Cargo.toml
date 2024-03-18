@@ -23,6 +23,8 @@ hex-literal = { version = "0.4.1", optional = true }
 
 # Infra
 pallet-validator-election = { path = "../../../substrate/frame/validator-election", default-features = false }
+pallet-system-token-tx-payment = { path = "../../../substrate/frame/transaction-payment/system-token-tx-payment", default-features = false }
+pallet-system-token-conversion = { path = "../../../substrate/frame/system-token-conversion", default-features = false }
 
 # Primitives
 authority-discovery-primitives = { package = "sp-authority-discovery", path = "../../../substrate/primitives/authority-discovery", default-features = false }
@@ -53,7 +55,6 @@ pallet-bounties = { path = "../../../substrate/frame/bounties", default-features
 pallet-child-bounties = { path = "../../../substrate/frame/child-bounties", default-features = false }
 pallet-transaction-payment = { path = "../../../substrate/frame/transaction-payment", default-features = false }
 pallet-transaction-payment-rpc-runtime-api = { path = "../../../substrate/frame/transaction-payment/rpc/runtime-api", default-features = false }
-pallet-system-token-tx-payment = { path = "../../../substrate/frame/transaction-payment/system-token-tx-payment", default-features = false }
 pallet-collective = { path = "../../../substrate/frame/collective", default-features = false }
 pallet-democracy = { path = "../../../substrate/frame/democracy", default-features = false }
 pallet-elections-phragmen = { path = "../../../substrate/frame/elections-phragmen", default-features = false }
@@ -172,6 +173,8 @@ std = [
 	"pallet-vesting/std",
 	"pallet-utility/std",
 	"pallet-validator-election/std",
+	"pallet-system-token-conversion/std",
+	"pallet-sudo/std",
 	"sp-runtime/std",
 	"frame-system/std",
 	"frame-system-rpc-runtime-api/std",

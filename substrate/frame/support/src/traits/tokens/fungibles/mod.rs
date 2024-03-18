@@ -21,12 +21,13 @@ pub mod approvals;
 mod enumerable;
 pub mod freeze;
 pub mod hold;
-mod imbalance;
+pub(crate) mod imbalance;
 mod lifetime;
 pub mod metadata;
 mod regular;
 pub mod roles;
 pub mod system_token;
+mod union_of;
 
 pub use enumerable::Inspect as InspectEnumerable;
 pub use freeze::{Inspect as InspectFreeze, Mutate as MutateFreeze};
@@ -34,7 +35,7 @@ pub use hold::{
 	Balanced as BalancedHold, Inspect as InspectHold, Mutate as MutateHold,
 	Unbalanced as UnbalancedHold,
 };
-pub use imbalance::{split_no_refund, Credit, Debt, HandleImbalanceDrop, Imbalance};
+pub use imbalance::{Credit, Debt, HandleImbalanceDrop, Imbalance};
 pub use lifetime::{Create, Destroy};
 pub use regular::{
 	Balanced, DecreaseIssuance, Dust, IncreaseIssuance, Inspect, Mutate, Unbalanced,
@@ -43,3 +44,4 @@ pub use system_token::{
 	Enumerate as EnumerateSystemToken, Inspect as InspectSystemToken, Manage as ManageSystemToken,
 	Metadata as InspectSystemTokenMetadata,
 };
+pub use union_of::UnionOf;

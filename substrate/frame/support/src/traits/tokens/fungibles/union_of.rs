@@ -20,9 +20,9 @@
 use frame_support::traits::{
 	tokens::{
 		fungibles, fungibles::imbalance, AssetId, DepositConsequence, Fortitude, Precision,
-		Preservation, Provenance, Restriction, WithdrawConsequence,
+		Preservation, Provenance, Restriction, WithdrawConsequence, misc::ConversionToAssetBalance
 	},
-	AccountTouch,
+	AccountTouch, 
 };
 use sp_runtime::{
 	traits::Convert,
@@ -899,6 +899,64 @@ impl<
 			Left(a) => <Left as AccountTouch<Left::AssetId, AccountId>>::touch(a, who, depositor),
 			Right(a) =>
 				<Right as AccountTouch<Right::AssetId, AccountId>>::touch(a, who, depositor),
+		}
+	}
+}
+
+impl<
+		Left: fungibles::InspectSystemToken<AccountId>,
+		Right: fungibles::InspectSystemToken<AccountId, Balance = Left::Balance, SystemTokenWeight = Left::SystemTokenWeight, Fiat = Left::Fiat>,
+		Criterion: Convert<AssetKind, Either<Left::AssetId, Right::AssetId>>,
+		AssetKind: AssetId,
+		AccountId,
+	> fungibles::InspectSystemToken<AccountId> for UnionOf<Left, Right, Criterion, AssetKind, AccountId> {
+	
+	type SystemTokenWeight = Left::SystemTokenWeight;
+	type Fiat = Left::Fiat;
+
+	fn balance(who: &AccountId, maybe_asset: Option<AssetKind>) -> Option<(AssetKind, Self::Balance)> {
+		if let Some(asset) = maybe_asset {
+			match Criterion::convert(asset.clone()) {
+				Left(a) => {
+					if let Some((_, balance)) = <Left as fungibles::InspectSystemToken<AccountId>>::balance(who, Some(a)) {
+						Some((asset, balance))
+					} else {
+						None
+					}
+				},
+				Right(a) => {
+					if let Some((_, balance)) = <Right as fungibles::InspectSystemToken<AccountId>>::balance(who, Some(a)) {
+						Some((asset, balance))
+					} else {
+						None
+					}
+				},
+			}
+		} else {
+			None
+		}
+	}
+
+	fn fiat(asset: AssetKind) -> Result<Self::Fiat, sp_runtime::DispatchError> {
+		match Criterion::convert(asset) {
+			Left(a) => <Left as fungibles::InspectSystemToken<AccountId>>::fiat(a),
+			Right(a) => <Right as fungibles::InspectSystemToken<AccountId>>::fiat(a),
+		}
+	}
+
+	fn is_system_token(asset: &Self::AssetId) -> bool {
+		match Criterion::convert(asset.clone()) {
+			Left(a) => <Left as fungibles::InspectSystemToken<AccountId>>::is_system_token(&a),
+			Right(a) => <Right as fungibles::InspectSystemToken<AccountId>>::is_system_token(&a),
+		}
+	}
+
+	fn system_token_weight(
+			asset: Self::AssetId,
+		) -> Result<Self::SystemTokenWeight, sp_runtime::DispatchError> {
+		match Criterion::convert(asset) {
+			Left(a) => <Left as fungibles::InspectSystemToken<AccountId>>::system_token_weight(a),
+			Right(a) => <Right as fungibles::InspectSystemToken<AccountId>>::system_token_weight(a),
 		}
 	}
 }

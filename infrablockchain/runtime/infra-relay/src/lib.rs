@@ -59,8 +59,8 @@ use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{
 		tokens::{
-			fungibles::{Balanced, Credit},
-			pay::PayAssetFromAccount,
+			fungibles::{self, Balanced, Credit},
+			pay::PayAssetFromAccount, ConversionToAssetBalance
 		},
 		AsEnsureOriginWithArg, ConstU128, ConstU32, EitherOfDiverse, InstanceFilter,
 		KeyOwnerProofSystem, LockIdentifier, PrivilegeCmp, ProcessMessage, ProcessMessageError,
@@ -122,8 +122,8 @@ use infra::{SystemTokenHandler, ParaConfigHandler};
 
 // XCM
 pub mod xcm_config;
-use infra_asset_common::{AssetIdForTrustBackedAssets, AssetIdForTrustBackedAssetsConvert};
-use xcm_config::{TrustBackedAssetsPalletLocation, XcmRouter};
+use infra_asset_common::{AssetIdForTrustBackedAssets, AssetIdForTrustBackedAssetsConvert, local_and_foreign_assets::{LocalFromLeft, TargetFromLeft},};
+use xcm_config::{OriginalAssetsPalletLocation, XcmRouter};
 
 impl_runtime_weights!(infra_relay_runtime_constants);
 
@@ -357,11 +357,12 @@ parameter_types! {
 	pub const FeeTreasuryId: PalletId = PalletId(*b"infrapid");
 }
 
+// TOOD: OriginalAndWrapped
 pub struct CreditToBucket;
-impl HandleCredit<AccountId, Assets> for CreditToBucket {
-	fn handle_credit(credit: Credit<AccountId, Assets>) {
+impl HandleCredit<AccountId, OriginalAndWrappedAssets> for CreditToBucket {
+	fn handle_credit(credit: Credit<AccountId, OriginalAndWrappedAssets>) {
 		let dest = FeeTreasuryId::get().into_account_truncating();
-		let _ = <Assets as Balanced<AccountId>>::resolve(&dest, credit);
+		let _ = <OriginalAndWrappedAssets as Balanced<AccountId>>::resolve(&dest, credit);
 	}
 }
 
@@ -378,8 +379,7 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 			RuntimeCall::Democracy(pallet_democracy::Call::external_propose_majority {
 				..
 			}) |
-			RuntimeCall::Preimage(pallet_preimage::Call::note_preimage { .. }) |
-			RuntimeCall::InfraRelayCore(..) => true,
+			RuntimeCall::Preimage(pallet_preimage::Call::note_preimage { .. }) => true,
 			_ => false,
 		}
 	}
@@ -391,17 +391,27 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 	}
 }
 
+// TODO: Custom Transaction Fee charger
 impl pallet_system_token_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type InfraTxInterface = InfraRelayCore;
+	type SystemConfig = Configuration;
+	type VotingHandler = ValidatorElection;
 	type Fungibles = OriginalAndWrappedAssets;
 	type OnChargeSystemToken = TransactionFeeCharger<
 		Runtime,
-		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
+		SystemTokenConversion,
 		CreditToBucket,
 	>;
 	type BootstrapCallFilter = BootstrapCallFilter;
 	type PalletId = FeeTreasuryId;
+}
+
+impl pallet_system_token_conversion::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Balance = SystemTokenBalance;
+	type AssetKind = MultiLocation;
+	type Fungibles = OriginalAndWrappedAssets;
+	type SystemConfig = Configuration;
 }
 
 parameter_types! {
@@ -701,10 +711,10 @@ impl pallet_treasury::Config for Runtime {
 	type BurnDestination = ();
 	type SpendFunds = Bounties;
 	type MaxApprovals = MaxApprovals;
-	type AssetKind = u32;
+	type AssetKind = MultiLocation;
 	type Beneficiary = AccountId;
 	type BeneficiaryLookup = Indices;
-	type Paymaster = PayAssetFromAccount<Assets, TreasuryAccount>;
+	type Paymaster = PayAssetFromAccount<OriginalAndWrappedAssets, TreasuryAccount>;
 	type BalanceConverter = AssetRate;
 	type PayoutPeriod = SpendPayoutPeriod;
 	#[cfg(feature = "runtime-benchmarks")]
@@ -717,7 +727,7 @@ impl pallet_asset_rate::Config for Runtime {
 	type RemoveOrigin = AuthorityOrigin;
 	type UpdateOrigin = AuthorityOrigin;
 	type Currency = Balances;
-	type AssetKind = u32;
+	type AssetKind = MultiLocation;
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = weights::pallet_asset_rate::WeightInfo<Runtime>;
 	#[cfg(feature = "runtime-benchmarks")]
@@ -1114,7 +1124,8 @@ parameter_types! {
 impl pallet_validator_election::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type SessionsPerEra = SessionsPerEra;
-	type Score = VoteWeight;
+	type Score = SystemTokenWeight;
+	// TODO: type ConvertWeight = (); 
 	type NextNewSession = Session;
 	type SessionInterface = Self;
 	type CollectiveInterface = Council;
@@ -1368,7 +1379,7 @@ parameter_types! {
 }
 
 pub type OriginalAssetsInstance = pallet_assets::Instance1;
-type OriginalAssetsCall = pallet_assets::Call<Runtime, TrustBackedAssetsInstance>;
+type OriginalAssetsCall = pallet_assets::Call<Runtime, OriginalAssetsInstance>;
 impl pallet_assets::Config<OriginalAssetsInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
@@ -1396,7 +1407,7 @@ impl pallet_assets::Config<WrappedAssetsInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
 	type AssetId = xcm::v3::MultiLocation;
-	type AssetIdParameter = parity_scale_codec::Compact<xcm::v3::MultiLocation>;
+	type AssetIdParameter = xcm::v3::MultiLocation;
 	type SystemTokenWeight = SystemTokenWeight;
 	type Currency = Balances;
 	type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
@@ -1419,7 +1430,7 @@ pub type OriginalAndWrappedAssets = fungibles::UnionOf<
 	OriginalAssets,
 	WrappedAssets,
 	LocalFromLeft<
-		AssetIdForTrustBackedAssetsConvert<TrustBackedAssetsPalletLocation>,
+		AssetIdForTrustBackedAssetsConvert<OriginalAssetsPalletLocation>,
 		AssetIdForTrustBackedAssets,
 		xcm::v3::MultiLocation,
 	>,
@@ -1455,6 +1466,7 @@ construct_runtime! {
 		SystemTokenManager: system_token_manager::{Pallet, Call, Storage, Event<T>} = 21,
 		OriginalAssets: pallet_assets::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>} = 22,
 		WrappedAssets: pallet_assets::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>} = 23,
+		SystemTokenConversion: pallet_system_token_conversion::{Pallet, Event<T>} = 24,
 		// ValidatorRewardManager: validator_reward_manager::{Pallet, Call, Storage, Event<T>} = 22,
 		// SystemTokenAggregator: system_token_aggregator = 25,
 
@@ -1475,7 +1487,7 @@ construct_runtime! {
 		Offences: pallet_offences::{Pallet, Storage, Event} = 8,
 		Historical: session_historical::{Pallet} = 33,
 		// This should be above Session Pallet
-		ValidatorElection: pallet_validator_election::{Pallet, Call, Storage, Config<T>, Event<T>} = 23,
+		ValidatorElection: pallet_validator_election::{Pallet, Call, Storage, Config<T>, Event<T>} = 25,
 		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 9,
 		Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config<T>, Event, ValidateUnsigned} = 11,
 		ImOnline: pallet_im_online::{Pallet, Call, Storage, Event<T>, ValidateUnsigned, Config<T>} = 12,

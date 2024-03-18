@@ -98,10 +98,6 @@ pub fn infra_relay_config() -> Result<InfraRelayChainSpec, String> {
 	InfraRelayChainSpec::from_json_bytes(&include_bytes!("../chain-specs/polkadot.json")[..])
 }
 
-pub fn rococo_config() -> Result<RococoChainSpec, String> {
-	RococoChainSpec::from_json_bytes(&include_bytes!("../chain-specs/rococo.json")[..])
-}
-
 /// The default parachains host configuration.
 #[cfg(any(feature = "infra-relay-native"))]
 fn default_parachains_host_configuration(
@@ -142,10 +138,10 @@ fn default_parachains_host_configuration(
 }
 
 #[cfg(any(feature = "infra-relay-native"))]
-fn default_infra_relay_system_configuration() -> primitives::InfraSystemConfig {
+fn default_infra_relay_system_configuration() -> primitives::SystemConfig {
 	use sp_runtime::types::{BaseSystemTokenDetail, Fiat};
 
-	primitives::InfraSystemConfig {
+	primitives::SystemConfig {
 		base_system_token_detail: BaseSystemTokenDetail {
 			base_currency: Fiat::USD,
 			base_weight: 1_000_000,
@@ -213,7 +209,6 @@ fn infra_relay_staging_testnet_config_genesis(
 				.chain(initial_authorities.iter().map(|x| (x.0.clone(), STASH)))
 				.collect(),
 		},
-		assets: Default::default(),
 		indices: infra_relay::IndicesConfig { indices: vec![] },
 		session: infra_relay::SessionConfig {
 			keys: initial_authorities
@@ -262,6 +257,7 @@ fn infra_relay_staging_testnet_config_genesis(
 		hrmp: Default::default(),
 		configuration: infra_relay::ConfigurationConfig {
 			config: default_parachains_host_configuration(),
+			system_config: default_infra_relay_system_configuration(),
 		},
 		paras: Default::default(),
 		xcm_pallet: Default::default(),
@@ -270,10 +266,6 @@ fn infra_relay_staging_testnet_config_genesis(
 			total_validator_slots: 2,
 			seed_trust_slots: 2,
 			..Default::default()
-		},
-		infra_relay_core: infra_relay::InfraRelayCoreConfig {
-			system_config: default_infra_relay_system_configuration(),
-			_phantom: Default::default(),
 		},
 		..Default::default()
 	}
@@ -408,7 +400,6 @@ pub fn infra_relay_testnet_genesis(
 		balances: infra_relay::BalancesConfig {
 			balances: endowed_accounts.iter().map(|k| (k.clone(), ENDOWMENT)).collect(),
 		},
-		assets: Default::default(),
 		session: infra_relay::SessionConfig {
 			keys: initial_authorities
 				.iter()
@@ -453,6 +444,7 @@ pub fn infra_relay_testnet_genesis(
 		hrmp: Default::default(),
 		configuration: infra_relay::ConfigurationConfig {
 			config: default_parachains_host_configuration(),
+			system_config: default_infra_relay_system_configuration(),
 		},
 		paras: Default::default(),
 		xcm_pallet: Default::default(),
@@ -461,10 +453,6 @@ pub fn infra_relay_testnet_genesis(
 			total_validator_slots: 2,
 			seed_trust_slots: 2,
 			..Default::default()
-		},
-		infra_relay_core: infra_relay::InfraRelayCoreConfig {
-			system_config: default_infra_relay_system_configuration(),
-			_phantom: Default::default(),
 		},
 		..Default::default()
 	}

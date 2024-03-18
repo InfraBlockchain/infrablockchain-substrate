@@ -345,7 +345,6 @@ where
 		let mut asset = Asset::<T, I>::get(asset_id).ok_or(ConversionError::AssetMissing)?;
 		// only sufficient assets have a min balance with reliable value
 		ensure!(asset.is_sufficient, ConversionError::AssetNotSufficient);
-		ensure!(asset.system_token_weight.is_some(), ConversionError::WeightMissing);
 		let system_token_weight =
 			asset.system_token_weight.take().ok_or(ConversionError::WeightMissing)?;
 

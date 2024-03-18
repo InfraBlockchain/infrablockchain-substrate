@@ -151,6 +151,17 @@ pub type ConvertedConcreteAssetId<A, B, C, O> = ConvertedConcreteId<A, B, C, O>;
 #[deprecated = "Use `ConvertedAbstractId` instead"]
 pub type ConvertedAbstractAssetId<A, B, C, O> = ConvertedAbstractId<A, B, C, O>;
 
+pub struct V3LocationConverter;
+impl MaybeEquivalence<xcm::v3::MultiLocation, xcm::v3::MultiLocation> for V3LocationConverter {
+	fn convert(old: &xcm::v3::MultiLocation) -> Option<xcm::v3::MultiLocation> {
+		(*old).clone().try_into().ok()
+	}
+
+	fn convert_back(new: &xcm::v3::MultiLocation) -> Option<xcm::v3::MultiLocation> {
+		(*new).try_into().ok()
+	}
+}
+
 pub struct MatchedConvertedConcreteId<AssetId, Balance, MatchAssetId, ConvertAssetId, ConvertOther>(
 	PhantomData<(AssetId, Balance, MatchAssetId, ConvertAssetId, ConvertOther)>,
 );

@@ -27,7 +27,7 @@ use frame_support::{
 	},
 	unsigned::TransactionValidityError,
 };
-
+use pallet_system_token_conversion::SystemTokenConversion;
 use sp_runtime::{
 	traits::{DispatchInfoOf, One, PostDispatchInfoOf},
 	transaction_validity::InvalidTransaction,
@@ -102,9 +102,9 @@ where
 	/// para_fee_rate * weight_scale / base_weight
 	fn tx_fee_rational() -> Result<SystemTokenBalanceOf<T>, TransactionValidityError> {
 		let SystemConfig { base_system_token_detail, weight_scale } =
-			T::InfraTxInterface::system_config()
+			T::SystemConfig::system_config()
 				.map_err(|_| TransactionValidityError::from(InvalidTransaction::Payment))?;
-		let para_fee_rate = T::InfraTxInterface::para_fee_rate()
+		let para_fee_rate = T::SystemConfig::para_fee_rate()
 			.map_err(|_| TransactionValidityError::from(InvalidTransaction::Payment))?;
 		let rational =
 			FixedU128::saturating_from_rational::<SystemTokenBalanceOf<T>, SystemTokenBalanceOf<T>>(weight_scale.into(), base_system_token_detail.base_weight.into())
@@ -118,7 +118,7 @@ where
 impl<T, CON, HC> OnChargeSystemToken<T> for TransactionFeeCharger<T, CON, HC>
 where
 	T: Config,
-	CON: ConversionToAssetBalance<BalanceOf<T>, SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>>,
+	CON: SystemTokenConversion<AssetKind=SystemTokenAssetIdOf<T>, Balance=BalanceOf<T>>,
 	HC: HandleCredit<T::AccountId, T::Fungibles>,
 	SystemTokenAssetIdOf<T>: AssetId,
 	SystemTokenBalanceOf<T>: From<BalanceOf<T>> + From<SystemTokenWeightOf<T>> + From<u128>,
@@ -146,15 +146,13 @@ where
 				.ok_or(TransactionValidityError::from(InvalidTransaction::Payment))?;
 		let min_converted_fee = if fee.is_zero() { Zero::zero() } else { One::one() };
 		// CON::to_asset_balance => fee / system_token_weight
-		let mut converted_fee = CON::to_asset_balance(fee, asset_id.clone())
+		let converted_fee = CON::to_system_token_balance(asset_id.clone(), fee)
 			.map_err(|_| TransactionValidityError::from(InvalidTransaction::Payment))?
 			.max(min_converted_fee);
-		let tx_rational = Self::tx_fee_rational()?;
-		converted_fee = converted_fee * tx_rational;
 		let can_withdraw = <T::Fungibles as Inspect<T::AccountId>>::can_withdraw(
 			asset_id.clone(),
 			who,
-			converted_fee,
+			converted_fee.into(),
 		);
 		if !matches!(can_withdraw, WithdrawConsequence::Success) {
 			return Err(InvalidTransaction::Payment.into())
@@ -162,7 +160,7 @@ where
 		<T::Fungibles as Balanced<T::AccountId>>::withdraw(
 			asset_id,
 			who,
-			converted_fee,
+			converted_fee.into(),
 			Exact,
 			Protect,
 			Polite,
@@ -187,19 +185,19 @@ where
 	) -> Result<(SystemTokenBalanceOf<T>, SystemTokenBalanceOf<T>), TransactionValidityError> {
 		let min_converted_fee = if corrected_fee.is_zero() { Zero::zero() } else { One::one() };
 		// Convert the corrected fee and tip into the asset used for payment.
-		let converted_fee = CON::to_asset_balance(corrected_fee, paid.asset())
+		let converted_fee = CON::to_system_token_balance(paid.asset(), corrected_fee)
 			.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })?
 			.max(min_converted_fee);
-		let converted_tip = CON::to_asset_balance(tip, paid.asset())
+		let converted_tip = CON::to_system_token_balance(paid.asset(), tip)
 			.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })?;
 
 		// Calculate how much refund we should return.
 		let (final_fee, refund) = if refundable {
 			// Split the paid amount into final fee and refund when refundable.
-			paid.split(converted_fee)
+			paid.split(converted_fee.into())
 		} else {
 			// When not refundable, split without any refund.
-			paid.split_no_refund(converted_fee)
+			paid.split_no_refund(converted_fee.into())
 		};
 
 		// Refund to the account that paid the fees. If this fails, the account might have dropped
@@ -208,6 +206,6 @@ where
 		let _ = <T::Fungibles as Balanced<T::AccountId>>::resolve(who, refund);
 		// Handle the final fee, e.g. by transferring to the block author or burning.
 		HC::handle_credit(final_fee);
-		Ok((final_fee_amount, converted_tip))
+		Ok((final_fee_amount, converted_tip.into()))
 	}
 }

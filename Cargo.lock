@@ -6172,6 +6172,7 @@ dependencies = [
  "pallet-session",
  "pallet-session-benchmarking",
  "pallet-sudo",
+ "pallet-system-token-conversion",
  "pallet-system-token-tx-payment",
  "pallet-timestamp",
  "pallet-tips",
@@ -11344,6 +11345,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-system-token-conversion"
+version = "0.4.0-dev"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std 8.0.0",
+]
+
+[[package]]
 name = "pallet-system-token-oracle"
 version = "0.1.0"
 dependencies = [
@@ -11373,6 +11392,7 @@ dependencies = [
  "pallet-assets",
  "pallet-authorship",
  "pallet-balances",
+ "pallet-system-token-conversion",
  "pallet-transaction-payment",
  "parity-scale-codec",
  "scale-info",

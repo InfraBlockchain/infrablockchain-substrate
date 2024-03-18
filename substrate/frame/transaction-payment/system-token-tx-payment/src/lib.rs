@@ -66,7 +66,9 @@ pub mod pallet {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Interface that is related to transaction for Infrablockchain Runtime
-		type InfraTxInterface: RuntimeConfigProvider<SystemTokenBalanceOf<Self>> + TaaV;
+		type SystemConfig: RuntimeConfigProvider<SystemTokenBalanceOf<Self>>;
+		/// Type that handles vote 
+		type VotingHandler: TaaV;
 		/// The fungibles instance used to pay for transactions in assets.
 		type Fungibles: Balanced<Self::AccountId> + InspectSystemToken<Self::AccountId>;
 		/// The actual transaction charging logic that charges the fees.
@@ -112,7 +114,7 @@ where
 	SystemTokenWeightOf<T>: From<SystemTokenBalanceOf<T>>,
 {
 	fn check_bootstrap_and_filter(call: &T::RuntimeCall) -> Result<bool, TransactionValidityError> {
-		match (T::InfraTxInterface::runtime_state(), T::BootstrapCallFilter::contains(call)) {
+		match (T::SystemConfig::runtime_state(), T::BootstrapCallFilter::contains(call)) {
 			(Mode::Bootstrap, false) =>
 				Err(TransactionValidityError::Invalid(InvalidTransaction::InvalidBootstrappingCall)),
 			(Mode::Bootstrap, true) => Ok(true),
@@ -131,7 +133,7 @@ where
 			.map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::ConversionError))?;
 		let vote =
 			PotVote::new( candidate.clone(), F64::from_i128(to_i128));
-		// T::InfraTxInterface::handle_vote(vote);
+		// T::VotingHandler::handle_vote(vote);
 		Ok(())
 	}
 }
@@ -335,7 +337,7 @@ where
 					let actual_fee: BalanceOf<T> =
 						// `fee` will be calculated based on the 'fee table'.
 						// The fee will be directly applied to the `final_fee` without any refunds.
-						if let Some(fee) = T::InfraTxInterface::fee_for(ext_metadata) {
+						if let Some(fee) = T::SystemConfig::fee_for(ext_metadata) {
 							refundable = false;
 							fee.into()
 						} else {

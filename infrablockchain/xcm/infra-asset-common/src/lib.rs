@@ -18,6 +18,8 @@
 pub mod fungible_conversion;
 pub mod matching;
 pub mod runtime_api;
+pub mod local_and_foreign_assets;
+
 use crate::matching::{Equals, LocalLocationPattern, ParentLocation, StartsWith};
 use sp_runtime::traits::Zero;
 
@@ -27,7 +29,7 @@ use frame_support::traits::{
 };
 use sp_std::marker::PhantomData;
 use xcm::prelude::MultiLocation;
-use xcm_builder::{AsPrefixedGeneralIndex, MatchedConvertedConcreteId};
+use xcm_builder::{AsPrefixedGeneralIndex, MatchedConvertedConcreteId, V3LocationConverter};
 use xcm_executor::traits::{JustTry, Properties};
 
 use frame_support::{
@@ -225,6 +227,15 @@ pub type MultiLocationConvertedConcreteId<MultiLocationFilter, AssetConverter, B
 		xcm_primitives::AsAssetMultiLocation<AssetIdForTrustBackedAssets, AssetConverter>,
 		JustTry,
 	>;
+
+/// [`MatchedConvertedConcreteId`] converter dedicated for storing `AssetId` as `Location`.
+pub type LocationConvertedConcreteId<LocationFilter, Balance> = MatchedConvertedConcreteId<
+	xcm::v3::MultiLocation,
+	Balance,
+	LocationFilter,
+	V3LocationConverter,
+	JustTry,
+>;
 
 /// [`MatchedConvertedConcreteId`] converter dedicated for storing `ForeignAssets` with `AssetId` as
 /// `Location`.

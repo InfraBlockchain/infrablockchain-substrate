@@ -50,8 +50,8 @@ impl<Network: Get<NetworkId>> Contains<MultiLocation>
 }
 
 frame_support::parameter_types! {
-	pub LocalLocationPattern: Location = Location::new(0, Here);
-	pub ParentLocation: Location = Location::parent();
+	pub LocalLocationPattern: MultiLocation = MultiLocation::new(0, Here);
+	pub ParentLocation: MultiLocation = MultiLocation::parent();
 }
 
 /// Accepts an asset if it is from the origin.
