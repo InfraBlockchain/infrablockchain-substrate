@@ -17,22 +17,22 @@
 
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
+use softfloat::F64;
 use crate::{configuration, ensure_parachain, paras, Origin as ParachainOrigin, ParaId};
 use frame_support::storage::KeyPrefixIterator;
 pub use frame_support::{
 	traits::{
 		tokens::{
-			fungibles::{Inspect, InspectSystemToken},
+			fungibles::{Inspect, InspectSystemToken, ManageSystemToken},
 			Balance, SystemTokenId, AssetId
 		},
 		UnixTime, Get
 	},
-	Parameter, BoundedVec
+	Parameter, BoundedVec, PalletId
 };
 use frame_system::pallet_prelude::*;
 pub use pallet::*;
-use softfloat::F64;
-use sp_runtime::{types::{infra_core::*, token::*}, traits::{Zero, AtLeast32BitUnsigned, Member}, RuntimeDebug};
+use sp_runtime::{types::{infra_core::*, token::*}, traits::{Zero, AtLeast32BitUnsigned, AccountIdConversion}, RuntimeDebug};
 use sp_std::prelude::*;
 use types::*;
 pub use traits::SystemTokenInterface;
@@ -50,7 +50,8 @@ pub mod pallet {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Local fungibles module
-		type Fungibles: InspectSystemToken<Self::AccountId>;
+		type Fungibles: InspectSystemToken<Self::AccountId, AssetId=Self::SystemTokenId>
+			+ ManageSystemToken<Self::AccountId>;
 		/// Id of System Token
 		type SystemTokenId: SystemTokenId;
 		/// Type for handling System Token related calls 
@@ -72,6 +73,8 @@ pub mod pallet {
 		/// The ParaId of the asset hub system parachain.
 		#[pallet::constant]
 		type AssetHubId: Get<u32>;
+		/// Id for `SystemTokenManager` 
+		type PalletId: Get<PalletId>;
 	}
 
 	#[pallet::event]
@@ -446,10 +449,14 @@ pub mod pallet {
 }
 
 // System token related interal methods
-impl<T: Config> Pallet<T>
-where
-	SystemTokenWeightOf<T>: From<F64>,
-{
+impl<T: Config> Pallet<T> {
+	/// The account ID of SystemTokenManager.
+	///
+	/// This actually does computation. If you need to keep using it, then make sure you cache the
+	/// value and only call this once.
+	pub fn account_id() -> T::AccountId {
+		T::PalletId::get().into_account_truncating()
+	}
 	/// Extend system token metadata for this runtime
 	pub fn extend_metadata(
 		metadata: &mut SystemTokenMetadata<
@@ -487,7 +494,7 @@ where
 
 	fn do_update_system_token_weight(currency: &Fiat) -> frame_support::pallet_prelude::DispatchResult {
 		let os = Self::fiat_for_originals(currency);
-		let mut k_v: Vec<(SystemTokenOriginIdOf<T>, T::SystemTokenId)> = Default::default();
+		let mut para_ids: Vec<SystemTokenOriginIdOf<T>> = Default::default();
 		for o in os {
 			let mut system_token_detail =
 				SystemToken::<T>::get(&o).ok_or(Error::<T>::SystemTokenNotRegistered)?;
@@ -495,30 +502,28 @@ where
 			system_token_detail.update_weight(updated_sys_weight);
 			let (origin_id, _, _) = o.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
 			if let Some(para_id) = origin_id {
-				k_v.push((para_id, o.clone()))
+				para_ids.push(para_id)
 			}
 			if let Some(ws) = FiatForOriginal::<T>::get(currency, &o) {
 				for w in ws {
-					k_v.push((w, o.clone()));
+					para_ids.push(w);
 				}
 			}
-			for (para_id, original) in k_v {
+			for para_id in para_ids {
 				// TODO: Update for Relay Chain
 				UpdateExchangeRates::<T>::try_mutate(para_id, |maybe_updated| -> frame_support::pallet_prelude::DispatchResult {
-					let mut updated = maybe_updated.take().unwrap_or_default();
 					let wrapped =
-						original.wrapped().map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
-					updated = vec![(wrapped, updated_sys_weight)];
-					*maybe_updated = Some(updated);
+						o.wrapped().map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+					*maybe_updated = Some(vec![(wrapped, updated_sys_weight)]);
 					Ok(())
 				})?;
 			}
-			k_v = Default::default();
+			para_ids = Default::default();
 		}
 		Ok(())
 	}
 
-	/// Calculate `original` system token weight based on `FORMULA`
+	/// Calcuƒlate `original` system token weight based on `FORMULA`
 	///
 	/// `FORMULA` = `BASE_WEIGHT` * `DECIMAL_RELATIVE_TO_BASE` / `EXCHANGE_RATE_RELATIVE_TO_BASE`
 	fn calc_system_token_weight(
@@ -530,7 +535,7 @@ where
 		let SystemTokenMetadata { decimals, .. } =
 			Metadata::<T>::get(original).ok_or(Error::<T>::MetadataNotFound)?;
 		let exponents: i32 = (base_decimals as i32) - (decimals as i32);
-		let decimal_to_base: F64 = F64::from_i32(10).powi(exponents);
+		let decimal_to_base = F64::from_i32(10).powi(exponents);
 		let exchange_rate_to_base: F64 = if *currency != base_currency {
 			ExchangeRates::<T>::get(currency)
 				.ok_or(Error::<T>::ExchangeRateNotRequested)?
@@ -697,8 +702,13 @@ where
 				para_id,
 			})
 		} else {
-			// TODO: Relay Chain
-			// T::Fungibles::touch(original)
+			// Relay Chain
+			let SystemTokenMetadata { currency_type, name, symbol, decimals, min_balance, .. } = system_token_metadata;
+			let owner = Self::account_id();
+			let wrapped = original.wrapped().map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+			if let Err(_) = T::Fungibles::touch(owner, wrapped, currency_type, min_balance, name, symbol, decimals, system_token_weight) {
+				log::error!("Error creating wrapped System Token, {:?}", original.clone());
+			}
 		}
 		Ok(())
 	}

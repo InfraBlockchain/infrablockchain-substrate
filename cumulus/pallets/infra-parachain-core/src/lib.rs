@@ -5,9 +5,7 @@ use cumulus_pallet_xcm::{ensure_relay, Origin};
 use cumulus_primitives_core::UpdateRCConfig;
 use frame_support::{
 	pallet_prelude::*,
-	traits::{
-		fungibles::{Inspect, InspectSystemToken},
-	},
+	traits::fungibles::{Inspect, InspectSystemToken, InspectSystemTokenMetadata, ManageSystemToken},
 };
 use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
@@ -67,7 +65,9 @@ pub mod pallet {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Type that interacts with local asset
-		type Fungibles: InspectSystemToken<Self::AccountId>;
+		type Fungibles: InspectSystemToken<Self::AccountId> 
+			+ InspectSystemTokenMetadata<Self::AccountId>
+			+ ManageSystemToken<Self::AccountId>;
 		/// Active request period for registering System Token
 		#[pallet::constant]
 		type ActiveRequestPeriod: Get<BlockNumberFor<Self>>;
@@ -77,7 +77,7 @@ pub mod pallet {
 	pub struct Pallet<T>(_);
 
 	#[pallet::storage]
-	pub type ParaCoreAdmin<T: Config> = StorageValue<_, T::AccountId>;
+	pub type Admin<T: Config> = StorageValue<_, T::AccountId>;
 
 	#[pallet::storage]
 	pub type RCSystemConfig<T: Config> = StorageValue<_, SystemConfig>;
@@ -93,7 +93,7 @@ pub mod pallet {
 		StorageMap<_, Twox128, ExtrinsicMetadata, SystemTokenBalanceOf<T>>;
 
 	#[pallet::storage]
-	pub type CurrentRequest<T: Config> = StorageMap<
+	pub type RequestQueue<T: Config> = StorageMap<
 		_,
 		Twox64Concat,
 		SystemTokenAssetIdOf<T>,
@@ -114,7 +114,7 @@ pub mod pallet {
 		/// Bootstrap has been ended by Relay-chain governance.
 		BootstrapEnded,
 		/// Origin of this pallet has been set by Relay-chain governance.
-		ParaCoreAdminUpdated { who: T::AccountId },
+		AdminUpdated { who: T::AccountId },
 		/// System Token registration has been requested
 		RegisterRequested { asset_id: SystemTokenAssetIdOf<T>, exp: BlockNumberFor<T> },
 		/// Wrapped local asset has been created
@@ -250,7 +250,7 @@ pub mod pallet {
 		///
 		/// Parameters
 		/// - `asset_id`: AssetId of `wrapped` System Token
-		/// - `system_token_id`: SystemTokenId of `original` System Token
+		/// - `system_token_id`: SystemTokenId of wrapped `original` System Token
 		/// - `system_token_weight`: Weight of `wrapped` System Token. Need for `AssetLink`
 		///
 		/// Origin
@@ -258,6 +258,7 @@ pub mod pallet {
 		#[pallet::call_index(5)]
 		pub fn create_wrapped_local(
 			origin: OriginFor<T>,
+			owner: T::AccountId,
 			original: SystemTokenAssetIdOf<T>,
 			currency_type: Fiat,
 			min_balance: SystemTokenBalanceOf<T>,
@@ -265,19 +266,19 @@ pub mod pallet {
 			symbol: Vec<u8>,
 			decimals: u8,
 			system_token_weight: SystemTokenWeightOf<T>,
-			asset_link_parent: u8,
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
-			// T::Fungibles::create_wrapped_local(
-			// 	asset_id,
-			// 	currency_type,
-			// 	min_balance,
-			// 	name,
-			// 	symbol,
-			// 	decimals,
-			// 	system_token_weight,
-			// )
-			// .map_err(|_| Error::<T>::ErrorCreateWrappedLocalAsset)?;
+			T::Fungibles::touch(
+				owner,
+				asset_id,
+				currency_type,
+				min_balance,
+				name,
+				symbol,
+				decimals,
+				system_token_weight,
+			)
+			.map_err(|_| Error::<T>::ErrorCreateWrappedLocalAsset)?;
 			Self::deposit_event(Event::<T>::WrappedCreated { asset_id: original });
 			Ok(())
 		}
@@ -286,14 +287,10 @@ pub mod pallet {
 		pub fn deregister_system_token(
 			origin: OriginFor<T>,
 			asset_id: SystemTokenAssetIdOf<T>,
-			is_unlink: bool,
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
-			// T::LocalAssetManager::demote(asset_id)
-			// 	.map_err(|_| Error::<T>::ErrorDeregisterSystemToken)?;
-			// if is_unlink {
-			// 	T::AssetLink::unlink(&asset_id).map_err(|_| Error::<T>::ErrorUnlinkAsset)?;
-			// }
+			T::Fungibles::deregister(asset_id)
+				.map_err(|_| Error::<T>::ErrorDeregisterSystemToken)?;
 			Self::deposit_event(Event::<T>::Deregistered { asset_id });
 			Ok(())
 		}
@@ -303,55 +300,55 @@ pub mod pallet {
 		/// It can call extrinsic which is not allowed to call by other origin(e.g
 		/// `request_register_system_token`)
 		#[pallet::call_index(7)]
-		pub fn set_para_core_admin(origin: OriginFor<T>, who: T::AccountId) -> DispatchResult {
+		pub fn set_admin(origin: OriginFor<T>, who: T::AccountId) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
-			ParaCoreAdmin::<T>::put(&who);
-			Self::deposit_event(Event::<T>::ParaCoreAdminUpdated { who });
+			Admin::<T>::put(&who);
+			Self::deposit_event(Event::<T>::AdminUpdated { who });
 			Ok(())
 		}
 
 		/// Request to register System Token
 		///
-		/// If succeed, request will be queued in `RequestQueue`
+		/// If succeed, request will be queued in `CurrentRequest`
 		#[pallet::call_index(8)]
 		pub fn request_register_system_token(
 			origin: OriginFor<T>,
 			asset_id: SystemTokenAssetIdOf<T>,
 		) -> DispatchResult {
 			if let Some(acc) = ensure_signed_or_root(origin)? {
-				ensure!(ParaCoreAdmin::<T>::get() == Some(acc), Error::<T>::NoPermission);
+				ensure!(Admin::<T>::get() == Some(acc), Error::<T>::NoPermission);
 			}
-			// let remote_asset_metadata = T::LocalAssetManager::get_metadata(asset_id)
-			// 	.map_err(|_| Error::<T>::ErrorOnGetMetadata)?;
-			// T::LocalAssetManager::request_register(asset_id)
-			// 	.map_err(|_| Error::<T>::ErrorOnRequestRegister)?;
-			// let exp = Self::do_request(asset_id, remote_asset_metadata)?;
-			// Self::deposit_event(Event::<T>::RegisterRequested { asset_id, exp });
+			let system_token_metadata = T::Fungibles::system_token_metadata(asset_id).map_err(|_| Error::<T>::ErrorOnGetMetadata)?;
+			T::Fungibles::request_register(asset_id)
+				.map_err(|_| Error::<T>::ErrorOnRequestRegister)?;
+			let exp = Self::do_request(asset_id, remote_asset_metadata)?;
+			Self::deposit_event(Event::<T>::RegisterRequested { asset_id, exp });
 			Ok(())
 		}
 	}
 }
 
 impl<T: Config> Pallet<T> {
+	/// Put requested _asset_metadata_  on `CurrentRequest` and calculate expired block numbe
 	fn do_request(
 		id: SystemTokenAssetIdOf<T>,
 		asset_metadata: RemoteAssetMetadata<SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>>,
 	) -> Result<BlockNumberFor<T>, DispatchError> {
 		let current = <frame_system::Pallet<T>>::block_number();
-		if let Some(request_status) = CurrentRequest::<T>::get(&id) {
+		if let Some(request_status) = RequestQueue::<T>::get(&id) {
 			if !request_status.is_expired(current) {
 				return Err(Error::<T>::AlreadyRequested.into())
 			}
 		}
 		let exp = current.saturating_add(T::ActiveRequestPeriod::get());
-		CurrentRequest::<T>::insert(id, RequestStatus::default_status(exp));
+		RequestQueue::<T>::insert(id, RequestStatus::default_status(exp));
 		Ok(exp)
 	}
 
 	fn check_valid_register(asset: &SystemTokenAssetIdOf<T>) -> Result<(), DispatchError> {
-		let is_valid = if let Some(status) = CurrentRequest::<T>::get(asset) {
+		let is_valid = if let Some(status) = RequestQueue::<T>::get(asset) {
 			if !status.is_expired(<frame_system::Pallet<T>>::block_number()) {
-				CurrentRequest::<T>::remove(asset);
+				RequestQueue::<T>::remove(asset);
 				true
 			} else {
 				false
@@ -403,10 +400,10 @@ impl<T: Config> UpdateRCConfig<SystemTokenAssetIdOf<T>, SystemTokenWeightOf<T>> 
 	fn update_system_token_weight_for(
 		assets: Vec<(SystemTokenAssetIdOf<T>, SystemTokenWeightOf<T>)>,
 	) {
-		for (_asset_id, _weight) in assets {
-			// if let Err(_) = T::Fungibles::update_system_token_weight(asset_id, weight) {
-			// 	TODO: Handle Error
-			// }
+		for (asset_id, weight) in assets {
+			if let Err(_) = T::Fungibles::update_system_token_weight(asset_id, weight) {
+				log::error!("❌❌❌ Error on updating System Token Weight, {:?}", asset_id)
+			}
 		}
 	}
 }

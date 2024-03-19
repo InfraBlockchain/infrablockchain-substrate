@@ -3084,6 +3084,7 @@ dependencies = [
  "cumulus-primitives-core",
  "frame-support",
  "frame-system",
+ "log",
  "pallet-assets",
  "parity-scale-codec",
  "primitives",

@@ -20,15 +20,14 @@
 use frame_support::traits::{
 	tokens::{
 		fungibles, fungibles::imbalance, AssetId, DepositConsequence, Fortitude, Precision,
-		Preservation, Provenance, Restriction, WithdrawConsequence, misc::ConversionToAssetBalance
+		Preservation, Provenance, Restriction, WithdrawConsequence,
 	},
 	AccountTouch, 
 };
 use sp_runtime::{
-	traits::Convert,
-	DispatchError, DispatchResult, Either,
-	Either::{Left, Right},
+	traits::Convert, types::Fiat, DispatchError, DispatchResult, Either::{self, Left, Right}
 };
+use sp_std::vec::Vec;
 
 /// Type to combine two `fungibles::*` implementations into one union `fungibles::*` implementation.
 ///
@@ -904,15 +903,43 @@ impl<
 }
 
 impl<
+		Left: fungibles::metadata::Inspect<AccountId>,
+		Right: fungibles::metadata::Inspect<AccountId, Balance = Left::Balance>,
+		Criterion: Convert<AssetKind, Either<Left::AssetId, Right::AssetId>>,
+		AssetKind: AssetId,
+		AccountId,
+	> fungibles::metadata::Inspect<AccountId> for UnionOf<Left, Right, Criterion, AssetKind, AccountId> {
+		fn name(asset: Self::AssetId) -> Vec<u8> {
+			match Criterion::convert(asset) {
+				Left(a) => <Left as fungibles::metadata::Inspect<AccountId>>::name(a),
+				Right(a) => <Right as fungibles::metadata::Inspect<AccountId>>::name(a),
+			}
+		}
+
+		fn symbol(asset: Self::AssetId) -> Vec<u8> {
+			match Criterion::convert(asset) {
+				Left(a) => <Left as fungibles::metadata::Inspect<AccountId>>::symbol(a),
+				Right(a) => <Right as fungibles::metadata::Inspect<AccountId>>::symbol(a),
+			}
+		}
+
+		fn decimals(asset: Self::AssetId) -> u8 {
+			match Criterion::convert(asset) {
+				Left(a) => <Left as fungibles::metadata::Inspect<AccountId>>::decimals(a),
+				Right(a) => <Right as fungibles::metadata::Inspect<AccountId>>::decimals(a),
+			}
+		}
+}
+
+impl<
 		Left: fungibles::InspectSystemToken<AccountId>,
-		Right: fungibles::InspectSystemToken<AccountId, Balance = Left::Balance, SystemTokenWeight = Left::SystemTokenWeight, Fiat = Left::Fiat>,
+		Right: fungibles::InspectSystemToken<AccountId, Balance = Left::Balance, SystemTokenWeight = Left::SystemTokenWeight>,
 		Criterion: Convert<AssetKind, Either<Left::AssetId, Right::AssetId>>,
 		AssetKind: AssetId,
 		AccountId,
 	> fungibles::InspectSystemToken<AccountId> for UnionOf<Left, Right, Criterion, AssetKind, AccountId> {
 	
 	type SystemTokenWeight = Left::SystemTokenWeight;
-	type Fiat = Left::Fiat;
 
 	fn balance(who: &AccountId, maybe_asset: Option<AssetKind>) -> Option<(AssetKind, Self::Balance)> {
 		if let Some(asset) = maybe_asset {
@@ -937,7 +964,7 @@ impl<
 		}
 	}
 
-	fn fiat(asset: AssetKind) -> Result<Self::Fiat, sp_runtime::DispatchError> {
+	fn fiat(asset: AssetKind) -> Result<Fiat, sp_runtime::DispatchError> {
 		match Criterion::convert(asset) {
 			Left(a) => <Left as fungibles::InspectSystemToken<AccountId>>::fiat(a),
 			Right(a) => <Right as fungibles::InspectSystemToken<AccountId>>::fiat(a),
@@ -960,3 +987,72 @@ impl<
 		}
 	}
 }
+
+impl<
+		Left: fungibles::ManageSystemToken<AccountId>,
+		Right: fungibles::ManageSystemToken<AccountId, Balance = Left::Balance, SystemTokenWeight = Left::SystemTokenWeight>,
+		Criterion: Convert<AssetKind, Either<Left::AssetId, Right::AssetId>>,
+		AssetKind: AssetId,
+		AccountId,
+	> fungibles::ManageSystemToken<AccountId> for UnionOf<Left, Right, Criterion, AssetKind, AccountId> {
+	fn register(asset: Self::AssetId, system_token_weight: Self::SystemTokenWeight) -> Result<(), DispatchError> {
+		match Criterion::convert(asset) {
+			Left(a) => <Left as fungibles::ManageSystemToken<AccountId>>::register(a, system_token_weight),
+			Right(a) => <Right as fungibles::ManageSystemToken<AccountId>>::register(a, system_token_weight),
+		}
+	}
+
+	fn deregister(asset: Self::AssetId) -> Result<(), DispatchError> {
+		match Criterion::convert(asset) {
+			Left(a) => <Left as fungibles::ManageSystemToken<AccountId>>::deregister(a),
+			Right(a) => <Right as fungibles::ManageSystemToken<AccountId>>::deregister(a),
+		}
+	}
+
+	fn request_register(asset: Self::AssetId) -> Result<(), DispatchError> {
+		match Criterion::convert(asset) {
+			Left(a) => <Left as fungibles::ManageSystemToken<AccountId>>::request_register(a),
+			Right(a) => <Right as fungibles::ManageSystemToken<AccountId>>::request_register(a),
+		}
+	}
+
+	fn touch(
+			owner: AccountId,
+			asset: Self::AssetId,
+			currency_type: Fiat,
+			min_balance: Self::Balance,
+			name: Vec<u8>,
+			symbol: Vec<u8>,
+			decimals: u8,
+			system_token_weight: Self::SystemTokenWeight,
+		) -> Result<(), DispatchError> {
+		match Criterion::convert(asset) {
+			Left(a) => <Left as fungibles::ManageSystemToken<AccountId>>::touch(owner, a, currency_type, min_balance, name, symbol, decimals, system_token_weight),
+			Right(a) => <Right as fungibles::ManageSystemToken<AccountId>>::touch(owner, a, currency_type, min_balance, name, symbol, decimals, system_token_weight),
+		}
+	}
+
+	fn update_system_token_weight(asset: Self::AssetId, system_token_weight: Self::SystemTokenWeight) -> Result<(), DispatchError> {
+		match Criterion::convert(asset) {
+			Left(a) => <Left as fungibles::ManageSystemToken<AccountId>>::update_system_token_weight(a, system_token_weight),
+			Right(a) => <Right as fungibles::ManageSystemToken<AccountId>>::update_system_token_weight(a, system_token_weight),
+		}
+	}
+}
+
+impl<
+		Left: fungibles::InspectSystemTokenMetadata<AccountId>,
+		Right: fungibles::InspectSystemTokenMetadata<AccountId, Balance = Left::Balance>,
+		Criterion: Convert<AssetKind, Either<Left::AssetId, Right::AssetId>>,
+		AssetKind: AssetId,
+		AccountId,
+	> fungibles::InspectSystemTokenMetadata<AccountId> for UnionOf<Left, Right, Criterion, AssetKind, AccountId> {
+	fn inner(asset: Self::AssetId) -> Result<(Fiat, Self::Balance), DispatchError> {
+		match Criterion::convert(asset) {
+			Left(a) => <Left as fungibles::InspectSystemTokenMetadata<AccountId>>::inner(a),
+			Right(a) => <Right as fungibles::InspectSystemTokenMetadata<AccountId>>::inner(a),
+		}
+	}
+}
+
+

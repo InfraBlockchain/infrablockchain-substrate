@@ -1,7 +1,7 @@
 
 use super::*;
 use xcm::latest::prelude::*;
-use parity_scale_codec::{Codec, Decode, Encode};
+use parity_scale_codec::{Decode, Encode};
 
 #[derive(Encode, Decode)]
 pub enum ParachainRuntimePallets {

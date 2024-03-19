@@ -184,7 +184,7 @@ pub fn make_candidate(
 		processed_downward_messages: 0,
 		hrmp_watermark: relay_parent_number,
 		vote_result: None,
-		requested_assets: None,
+		requested_asset: None,
 	};
 
 	let mut candidate =

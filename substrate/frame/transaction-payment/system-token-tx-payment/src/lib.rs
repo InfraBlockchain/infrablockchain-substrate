@@ -41,7 +41,6 @@ use frame_support::{
 };
 use pallet_transaction_payment::OnChargeTransaction;
 use scale_info::TypeInfo;
-use softfloat::F64;
 use sp_runtime::{
 	traits::{
 		AccountIdConversion, DispatchInfoOf, Dispatchable, PostDispatchInfoOf, SignedExtension,
@@ -49,7 +48,7 @@ use sp_runtime::{
 	},
 	transaction_validity::{TransactionValidity, TransactionValidityError, ValidTransaction},
 	types::{fee::*, infra_core::*, token::*, vote::PotVote},
-	FixedPointNumber, FixedPointOperand, FixedU128,
+	FixedPointOperand,
 };
 
 use sp_std::prelude::*;
@@ -111,7 +110,7 @@ pub mod pallet {
 
 impl<T: Config> Pallet<T>
 where
-	SystemTokenWeightOf<T>: From<SystemTokenBalanceOf<T>>,
+	SystemTokenWeightOf<T>: From<SystemTokenBalanceOf<T>> + TryInto<i128>,
 {
 	fn check_bootstrap_and_filter(call: &T::RuntimeCall) -> Result<bool, TransactionValidityError> {
 		match (T::SystemConfig::runtime_state(), T::BootstrapCallFilter::contains(call)) {
@@ -241,7 +240,7 @@ where
 	SystemTokenBalanceOf<T>: Send + Sync + FixedPointOperand,
 	BalanceOf<T>: From<SystemTokenBalance>,
 	SystemTokenAssetIdOf<T>: Send + Sync + IsType<ChargeSystemTokenAssetIdOf<T>>,
-	SystemTokenWeightOf<T>: From<SystemTokenBalanceOf<T>>,
+	SystemTokenWeightOf<T>: From<SystemTokenBalanceOf<T>> + TryInto<i128>,
 	BalanceOf<T>: Send
 		+ Sync
 		+ From<u64>

@@ -60,7 +60,7 @@ use frame_support::{
 	traits::{
 		tokens::{
 			fungibles::{self, Balanced, Credit},
-			pay::PayAssetFromAccount, ConversionToAssetBalance
+			pay::PayAssetFromAccount,
 		},
 		AsEnsureOriginWithArg, ConstU128, ConstU32, EitherOfDiverse, InstanceFilter,
 		KeyOwnerProofSystem, LockIdentifier, PrivilegeCmp, ProcessMessage, ProcessMessageError,
@@ -88,12 +88,11 @@ use sp_mmr_primitives as mmr;
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{
-		AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto,
-		Extrinsic as ExtrinsicT, OpaqueKeys, SaturatedConversion, TryConvertInto as JustTry,
-		Verify,
+		AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT,
+		Extrinsic as ExtrinsicT, OpaqueKeys, SaturatedConversion, Verify,
 	},
 	transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
-	types::{token::*, vote::*},
+	types::token::*,
 	ApplyExtrinsicResult, FixedU128, KeyTypeId, Perbill, Percent, Permill,
 };
 
@@ -122,8 +121,8 @@ use infra::{SystemTokenHandler, ParaConfigHandler};
 
 // XCM
 pub mod xcm_config;
-use infra_asset_common::{AssetIdForTrustBackedAssets, AssetIdForTrustBackedAssetsConvert, local_and_foreign_assets::{LocalFromLeft, TargetFromLeft},};
-use xcm_config::{OriginalAssetsPalletLocation, XcmRouter};
+use infra_asset_common::{AssetIdForTrustBackedAssets, AssetIdForTrustBackedAssetsConvert, local_and_foreign_assets::LocalFromLeft,};
+use xcm_config::OriginalAssetsPalletLocation;
 
 impl_runtime_weights!(infra_relay_runtime_constants);
 
@@ -285,20 +284,14 @@ parameter_types! {
 impl pallet_babe::Config for Runtime {
 	type EpochDuration = EpochDuration;
 	type ExpectedBlockTime = ExpectedBlockTime;
-
 	// session module is the trigger
 	type EpochChangeTrigger = pallet_babe::ExternalTrigger;
-
 	type DisabledValidators = Session;
-
 	type WeightInfo = ();
-
 	type MaxAuthorities = MaxAuthorities;
 	type MaxNominators = MaxNominatorRewardedPerValidator;
-
 	type KeyOwnerProof =
 		<Historical as KeyOwnerProofSystem<(KeyTypeId, pallet_babe::AuthorityId)>>::Proof;
-
 	type EquivocationReportSystem =
 		pallet_babe::EquivocationReportSystem<Self, Offences, Historical, ReportLongevity>;
 }
@@ -379,7 +372,11 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 			RuntimeCall::Democracy(pallet_democracy::Call::external_propose_majority {
 				..
 			}) |
-			RuntimeCall::Preimage(pallet_preimage::Call::note_preimage { .. }) => true,
+			RuntimeCall::Preimage(pallet_preimage::Call::note_preimage { .. }) |
+			RuntimeCall::OriginalAssets(
+				OriginalAssetsCall::create { .. } | 
+				OriginalAssetsCall::mint { .. } 
+			) => true,
 			_ => false,
 		}
 	}
@@ -1136,6 +1133,7 @@ parameter_types! {
 	pub const MaxOriginalUsedParaIds: u32 = 10;
 	pub const MaxSystemTokens: u32 = 10;
 	pub const AssetHubId: u32 = ASSET_HUB_ID;
+	pub const SystemTokenManagerId: PalletId = PalletId(*b"systoken");
 }
 
 impl system_token_manager::Config for Runtime {
@@ -1148,6 +1146,7 @@ impl system_token_manager::Config for Runtime {
 	type MaxSystemTokens = MaxSystemTokens;
 	type MaxOriginalUsedParaIds = MaxOriginalUsedParaIds;
 	type AssetHubId = AssetHubId;
+	type PalletId = SystemTokenManagerId;
 }
 
 // impl validator_reward_manager::Config for Runtime {

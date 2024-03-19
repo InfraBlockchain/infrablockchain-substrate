@@ -38,7 +38,7 @@ mod tests {
 	use super::*;
 	use sp_core::crypto::AccountId32;
 
-	#[derive(Encode, Decode)]
+	#[derive(Encode, Decode, Debug)]
 	pub struct MockSystemTokenId {
 		para_id: Option<u32>,
 		pallet_id: u8,
@@ -53,8 +53,20 @@ mod tests {
 			10i128,
 		);
 		let bytes = vote.encode();
-		if let Ok(vote) = PotVote::<AccountId32, MockSystemTokenId, i128>::decode(&bytes) {
+		if let Ok(vote) = PotVote::<AccountId32, MockSystemTokenId, i128>::decode(&mut &bytes[..]) {
 			println!("{:?}", vote);
+		}
+
+		let vote = PotVote::new(
+			AccountId32::new([0; 32]),
+			MockSystemTokenId { para_id: Some(1), pallet_id: 1, asset_id: 1 },
+			10u64,
+		);
+		let bytes = vote.encode();
+		if let Ok(vote) = PotVote::<AccountId32, MockSystemTokenId, i128>::decode(&mut &bytes[..]) {
+			println!("{:?}", vote);
+		} else {
+			println!("Error on Decoding!");
 		}
 	}
 }

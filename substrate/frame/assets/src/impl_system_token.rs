@@ -1,15 +1,14 @@
-use sp_runtime::types::RemoteAssetMetadata;
+
 use sp_std::vec::Vec;
 
 use super::{
-	fungibles::{EnumerateSystemToken, InspectSystemToken, InspectSystemTokenMetadata},
+	DispatchError, Fiat,
+	fungibles::{EnumerateSystemToken, InspectSystemToken, InspectSystemTokenMetadata, ManageSystemToken},
 	pallet::*,
-	AssetDetails, AssetMetadata, BoundedVec, DispatchError, Fiat,
 };
 
 impl<T: Config<I>, I: 'static> InspectSystemToken<T::AccountId> for Pallet<T, I> {
 	type SystemTokenWeight = T::SystemTokenWeight;
-	type Fiat = Fiat;
 
 	fn is_system_token(asset: &Self::AssetId) -> bool {
 		if let Some(ad) = Asset::<T, I>::get(asset) {
@@ -30,7 +29,7 @@ impl<T: Config<I>, I: 'static> InspectSystemToken<T::AccountId> for Pallet<T, I>
 		ad.system_token_weight.ok_or(Error::<T, I>::IncorrectStatus.into())
 	}
 
-	fn fiat(asset: Self::AssetId) -> Result<Self::Fiat, DispatchError> {
+	fn fiat(asset: Self::AssetId) -> Result<Fiat, DispatchError> {
 		let ad = Asset::<T, I>::get(asset).ok_or(Error::<T, I>::Unknown)?;
 		ad.currency_type.ok_or(Error::<T, I>::IncorrectStatus.into())
 	}
@@ -53,5 +52,45 @@ impl<T: Config<I>, I: 'static> EnumerateSystemToken<T::AccountId> for Pallet<T, 
 			.map(|(i, b)| (i.clone(), b.clone()))
 			.collect::<Vec<_>>()
 			.into_iter()
+	}
+}
+
+impl<T: Config<I>, I: 'static> ManageSystemToken<T::AccountId> for Pallet<T, I> {
+	fn register(asset: Self::AssetId, system_token_weight: Self::SystemTokenWeight) -> Result<(), DispatchError>{
+		Self::do_register(asset, system_token_weight)
+	}
+
+	fn deregister(asset: Self::AssetId) -> Result<(), DispatchError> {
+		Self::do_deregister(asset)
+	}
+
+	fn update_system_token_weight(asset: Self::AssetId, system_token_weight: Self::SystemTokenWeight) -> Result<(), DispatchError> {
+		Self::do_update_system_token_weight(asset, system_token_weight)
+	}
+
+	fn request_register(asset: Self::AssetId) -> Result<(), DispatchError> {
+		Self::do_request_register(asset)
+	}
+
+	fn touch(
+		owner: T::AccountId,
+		asset: Self::AssetId,
+		currency_type: Fiat,
+		min_balance: Self::Balance,
+		name: Vec<u8>,
+		symbol: Vec<u8>,
+		decimals: u8,
+		system_token_weight: Self::SystemTokenWeight,
+	) -> Result<(), DispatchError> {
+		Self::do_create_wrapped_local(owner, asset, currency_type, min_balance, name, symbol, decimals, system_token_weight)
+	}
+}
+
+impl<T: Config<I>, I: 'static> InspectSystemTokenMetadata<T::AccountId> for Pallet<T, I> {
+	fn inner(asset: Self::AssetId) -> Result<(Fiat, Self::Balance), DispatchError> {
+		let asset_detail = Asset::<T, I>::get(&asset).ok_or(Error::<T, I>::InvalidRequest)?;
+		let currency_type = asset_detail.clone().currency_type.take().ok_or(Error::<T, I>::InvalidRequest)?;
+		let min_balance = asset_detail.clone().min_balance;
+		Ok((currency_type, min_balance))
 	}
 }

@@ -27,7 +27,7 @@ use frame_support::{
 };
 use infra_asset_common::{
 	matching::{StartsWith, StartsWithExplicitGlobalConsensus},
-	AssetFeeAsExistentialDepositMultiplier, AssetIdForTrustBackedAssetsConvert,
+	AssetFeeAsExistentialDepositMultiplier,
 };
 use parachain_primitives::primitives::Sibling;
 use runtime_common::{paras_registrar, xcm_sender};
@@ -38,11 +38,10 @@ use xcm_builder::{
 	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowSubscriptionsFrom,
 	AllowTopLevelPaidExecutionFrom, BackingToPlurality, ChildParachainAsNative,
 	ChildParachainConvertsVia, FixedWeightBounds, FungiblesAdapter, LocalMint, NoChecking,
-	NonLocalMint, ParentIsPreset, SiblingParachainConvertsVia, SignedAccountId32AsNative,
+	ParentIsPreset, SiblingParachainConvertsVia, SignedAccountId32AsNative,
 	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
 };
 use xcm_executor::traits::WithOriginFilter;
-use xcm_primitives::TrappistDropAssets;
 pub type AssetId = u32;
 
 pub type AssetFeeAsExistentialDepositMultiplierFeeCharger = AssetFeeAsExistentialDepositMultiplier<

@@ -981,7 +981,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	/// Do set metadata
 	pub(super) fn do_set_metadata(
 		id: T::AssetId,
-		currency_type: Option<Fiat>,
 		from: &T::AccountId,
 		name: Vec<u8>,
 		symbol: Vec<u8>,
@@ -1075,88 +1074,85 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		)
 	}
 
-	// pub fn try_promote(
-	// 	asset_id: SystemTokenAssetId,
-	// 	system_token_weight: SystemTokenWeight,
-	// ) -> DispatchResult {
-	// 	let id: T::AssetId = asset_id.into();
-	// 	Asset::<T, I>::try_mutate_exists(id, |maybe_detail| -> DispatchResult {
-	// 		let mut asset_detail = maybe_detail.take().ok_or(Error::<T, I>::Unknown)?;
-	// 		ensure!(asset_detail.status == AssetStatus::Requested, Error::<T, I>::IncorrectStatus);
-	// 		asset_detail.is_sufficient = true;
-	// 		asset_detail.status = AssetStatus::Live;
-	// 		asset_detail.system_token_weight = Some(system_token_weight);
-	// 		*maybe_detail = Some(asset_detail);
-	// 		Ok(())
-	// 	})?;
-	// 	Ok(())
-	// }
+	pub fn do_register(
+		asset_id: T::AssetId,
+		system_token_weight: T::SystemTokenWeight,
+	) -> DispatchResult {
+		Asset::<T, I>::try_mutate_exists(asset_id, |maybe_detail| -> DispatchResult {
+			let mut asset_detail = maybe_detail.take().ok_or(Error::<T, I>::Unknown)?;
+			ensure!(asset_detail.status == AssetStatus::Requested, Error::<T, I>::IncorrectStatus);
+			asset_detail.is_sufficient = true;
+			asset_detail.status = AssetStatus::Live;
+			asset_detail.system_token_weight = Some(system_token_weight);
+			*maybe_detail = Some(asset_detail);
+			Ok(())
+		})?;
+		Ok(())
+	}
 
-	// pub fn try_create_wrapped_local(
-	// 	asset_id: SystemTokenAssetId,
-	// 	currency_type: Fiat,
-	// 	owner: T::AccountId,
-	// 	min_balance: SystemTokenBalance,
-	// 	name: Vec<u8>,
-	// 	symbol: Vec<u8>,
-	// 	decimals: u8,
-	// 	system_token_weight: Option<SystemTokenWeight>,
-	// ) -> DispatchResult {
-	// 	let id: T::AssetId = asset_id.into();
-	// 	ensure!(!Asset::<T, I>::contains_key(&id), Error::<T, I>::InUse);
-	// 	Self::do_force_create(
-	// 		id.clone(),
-	// 		&owner,
-	// 		true,
-	// 		min_balance.into(),
-	// 		Some(AssetStatus::Live),
-	// 		system_token_weight,
-	// 	)?;
-	// 	Self::do_set_metadata(id, Some(currency_type), &owner, name, symbol, decimals)?;
-	// 	Ok(())
-	// }
+	pub fn do_create_wrapped_local(
+		owner: T::AccountId,
+		asset_id: T::AssetId,
+		currency_type: Fiat,
+		min_balance: T::Balance,
+		name: Vec<u8>,
+		symbol: Vec<u8>,
+		decimals: u8,
+		system_token_weight: T::SystemTokenWeight,
+	) -> DispatchResult {
+		let id: T::AssetId = asset_id.into();
+		ensure!(!Asset::<T, I>::contains_key(&id), Error::<T, I>::InUse);
+		Self::do_force_create(
+			id.clone(),
+			&owner,
+			true,
+			min_balance.into(),
+			Some(AssetStatus::Live),
+			Some(currency_type.clone()),
+			Some(system_token_weight)
+		)?;
+		Self::do_set_metadata(id, &owner, name, symbol, decimals)?;
+		Ok(())
+	}
 
-	// pub fn try_update_system_token_weight(
-	// 	asset_id: SystemTokenAssetId,
-	// 	system_token_weight: SystemTokenWeight,
-	// ) -> DispatchResult {
-	// 	let id: T::AssetId = asset_id.into();
-	// 	Asset::<T, I>::try_mutate_exists(&id, |maybe_detail| -> DispatchResult {
-	// 		let mut asset_detail = maybe_detail.take().ok_or(Error::<T, I>::Unknown)?;
-	// 		asset_detail.system_token_weight = Some(system_token_weight);
-	// 		*maybe_detail = Some(asset_detail);
-	// 		Ok(())
-	// 	})?;
+	pub fn do_update_system_token_weight(
+		asset_id: T::AssetId,
+		system_token_weight: T::SystemTokenWeight,
+	) -> DispatchResult {
+		Asset::<T, I>::try_mutate_exists(&asset_id, |maybe_detail| -> DispatchResult {
+			let mut asset_detail = maybe_detail.take().ok_or(Error::<T, I>::Unknown)?;
+			asset_detail.system_token_weight = Some(system_token_weight);
+			*maybe_detail = Some(asset_detail);
+			Ok(())
+		})?;
 
-	// 	Ok(())
-	// }
+		Ok(())
+	}
 
-	// pub fn try_demote(asset_id: SystemTokenAssetId) -> DispatchResult {
-	// 	let id: T::AssetId = asset_id.into();
-	// 	Asset::<T, I>::try_mutate_exists(id, |maybe_detail| -> DispatchResult {
-	// 		let mut asset_detail = maybe_detail.take().ok_or(Error::<T, I>::Unknown)?;
-	// 		asset_detail.is_sufficient = false;
-	// 		*maybe_detail = Some(asset_detail);
+	pub fn do_deregister(asset_id: T::AssetId) -> DispatchResult {
+		Asset::<T, I>::try_mutate_exists(asset_id, |maybe_detail| -> DispatchResult {
+			let mut asset_detail = maybe_detail.take().ok_or(Error::<T, I>::Unknown)?;
+			asset_detail.is_sufficient = false;
+			*maybe_detail = Some(asset_detail);
 
-	// 		Ok(())
-	// 	})?;
-	// 	Ok(())
-	// }
+			Ok(())
+		})?;
+		Ok(())
+	}
 
-	// pub fn try_request_register(asset_id: SystemTokenAssetId) -> DispatchResult {
-	// 	let id: T::AssetId = asset_id.into();
-	// 	Asset::<T, I>::try_mutate_exists(id.clone(), |maybe_detail| -> DispatchResult {
-	// 		let mut asset_detail = maybe_detail.take().ok_or(Error::<T, I>::Unknown)?;
-	// 		ensure!(!asset_detail.is_sufficient, Error::<T, I>::IncorrectStatus);
-	// 		ensure!(asset_detail.status == AssetStatus::InActive, Error::<T, I>::IncorrectStatus);
-	// 		let issuer = asset_detail.clone().issuer;
-	// 		let min_balance = asset_detail.min_balance;
-	// 		// TODO: Better way
-	// 		ensure!(Self::balance(id, issuer) >= min_balance, Error::<T, I>::InvalidRequest);
-	// 		asset_detail.status = AssetStatus::Requested;
-	// 		*maybe_detail = Some(asset_detail);
-	// 		Ok(())
-	// 	})?;
-	// 	Ok(())
-	// }
+	pub fn do_request_register(asset_id: T::AssetId) -> DispatchResult {
+		Asset::<T, I>::try_mutate_exists(asset_id.clone(), |maybe_detail| -> DispatchResult {
+			let mut asset_detail = maybe_detail.take().ok_or(Error::<T, I>::Unknown)?;
+			ensure!(!asset_detail.is_sufficient, Error::<T, I>::IncorrectStatus);
+			ensure!(asset_detail.status == AssetStatus::InActive, Error::<T, I>::IncorrectStatus);
+			let issuer = asset_detail.clone().issuer;
+			let min_balance = asset_detail.min_balance;
+			// TODO: Better way
+			ensure!(Self::balance(asset_id, issuer) >= min_balance, Error::<T, I>::InvalidRequest);
+			asset_detail.status = AssetStatus::Requested;
+			*maybe_detail = Some(asset_detail);
+			Ok(())
+		})?;
+		Ok(())
+	}
 }
