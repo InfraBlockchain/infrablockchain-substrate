@@ -16,17 +16,19 @@ pub mod types {
 	#[derive(Encode, Decode, Clone, PartialEq, Eq, sp_core::RuntimeDebug, TypeInfo)]
 	#[cfg_attr(feature = "std", derive(Default, Hash))]
 	/// Single Pot vote type
-	pub struct PotVote<Account, Weight = F64> {
+	pub struct PotVote<Account, AssetId, Amount> {
 		/// Subject of the vote
 		pub candidate: Account,
+		/// Asset used in vote
+		pub asset_id: AssetId,
 		/// Absolute amount of vote based on tx-fee
-		pub weight: Weight,
+		pub amount: Amount,
 	}
 
-	impl<Account, Weight> PotVote<Account, Weight> {
+	impl<Account, AssetId, Amount> PotVote<Account, AssetId, Amount> {
 		/// Create new instance of vote
-		pub fn new(candidate: Account, weight: Weight) -> Self {
-			Self { candidate, weight }
+		pub fn new(candidate: Account, asset_id: AssetId, amount: Amount) -> Self {
+			Self { candidate, asset_id, amount }
 		}
 	}
 }
@@ -46,12 +48,12 @@ mod tests {
 	#[test]
 	fn decode_works() {
 		let vote = PotVote::new(
-			MockSystemTokenId { para_id: Some(1), pallet_id: 1, asset_id: 1 },
 			AccountId32::new([0; 32]),
-			F64::from_i128(10),
+			MockSystemTokenId { para_id: Some(1), pallet_id: 1, asset_id: 1 },
+			10i128,
 		);
 		let bytes = vote.encode();
-		if let Ok(vote) = PotVote::<AccountId32, F64>::decode(&bytes) {
+		if let Ok(vote) = PotVote::<AccountId32, MockSystemTokenId, i128>::decode(&bytes) {
 			println!("{:?}", vote);
 		}
 	}

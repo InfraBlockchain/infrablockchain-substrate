@@ -70,7 +70,7 @@ impl F64 {
 
 	pub const fn from_i32(a: i32) -> Self {
 		crate::conv::i32_to_f64(a)
-	}
+	} 
 
 	pub const fn to_i32(self) -> i32 {
 		crate::conv::f64_to_i32(self)

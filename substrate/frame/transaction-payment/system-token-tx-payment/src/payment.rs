@@ -93,26 +93,6 @@ impl<A, B: Balanced<A>> HandleCredit<A, B> for () {
 /// The credit handler is given the complete fee in terms of the asset used for the transaction.
 pub struct TransactionFeeCharger<T, CON, HC>(PhantomData<(T, CON, HC)>);
 
-impl<T, CON, HC> TransactionFeeCharger<T, CON, HC>
-where
-	T: Config,
-	SystemTokenBalanceOf<T>: From<SystemTokenWeightOf<T>> + From<u128>,
-{
-	/// Rational of transaction fee
-	/// para_fee_rate * weight_scale / base_weight
-	fn tx_fee_rational() -> Result<SystemTokenBalanceOf<T>, TransactionValidityError> {
-		let SystemConfig { base_system_token_detail, weight_scale } =
-			T::SystemConfig::system_config()
-				.map_err(|_| TransactionValidityError::from(InvalidTransaction::Payment))?;
-		let para_fee_rate = T::SystemConfig::para_fee_rate()
-			.map_err(|_| TransactionValidityError::from(InvalidTransaction::Payment))?;
-		let rational =
-			FixedU128::saturating_from_rational::<SystemTokenBalanceOf<T>, SystemTokenBalanceOf<T>>(weight_scale.into(), base_system_token_detail.base_weight.into())
-				.saturating_mul_int(para_fee_rate);
-		Ok(rational.into())
-	}
-}
-
 /// Default implementation for a runtime instantiating this pallet, a balance to asset converter and
 /// a credit handler.
 impl<T, CON, HC> OnChargeSystemToken<T> for TransactionFeeCharger<T, CON, HC>

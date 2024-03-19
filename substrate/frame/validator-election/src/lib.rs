@@ -22,14 +22,13 @@ pub mod migrations;
 pub mod impls;
 pub use impls::*;
 
-use codec::{Decode, Encode, MaxEncodedLen, Codec, FullCodec};
-use frame_support::{traits::{tokens::fungibles::*, EstimateNextNewSession, Get}, Parameter};
+use codec::{Decode, Encode, MaxEncodedLen};
+use frame_support::{traits::{EstimateNextNewSession, Get, tokens::fungibles::{InspectSystemToken, Inspect}}, Parameter};
 pub use pallet::*;
 use scale_info::TypeInfo;
-use sp_arithmetic::traits::{Saturating, AtLeast32BitUnsigned};
+use sp_arithmetic::traits::{Saturating, AtLeast32Bit};
 use sp_runtime::{RuntimeDebug, types::{infra_core::TaaV, vote::PotVote}, traits::Member};
 use softfloat::F64;
-use sp_std::fmt::Debug;
 
 #[cfg(test)]
 mod tests;
@@ -44,6 +43,8 @@ pub type SessionIndex = u32;
 
 /// Counter for the number of eras that have passed.
 pub type EraIndex = u32;
+
+pub type SystemTokenAssetIdOf<T> = <<T as Config>::Fungibles as Inspect<<T as frame_system::Config>::AccountId>>::AssetId;
 
 pub(crate) const LOG_TARGET: &str = "runtime::voting-manager";
 // syntactic sugar for logging.
@@ -119,7 +120,7 @@ impl Default for Forcing {
 #[derive(Encode, Decode, Clone, PartialEq, RuntimeDebug, TypeInfo)]
 #[scale_info(skip_type_params(T))]
 pub struct VotingStatus<T: Config> {
-	pub status: Vec<(T::AccountId, T::Score)>,
+	pub status: Vec<(T::AccountId, T::HigherPrecisionScore)>,
 }
 
 impl<T: Config> Default for VotingStatus<T> {
@@ -133,12 +134,13 @@ impl<T: Config> VotingStatus<T> {
 	pub fn add_vote(&mut self, who: &T::AccountId, vote_weight: T::Score) {
 		for s in self.status.iter_mut() {
 			if &s.0 == who {
-				let current_vote_weight = s.1;
-				s.1 = current_vote_weight.saturating_add(vote_weight);
+				let current_vote_weight: T::Score = s.1.clone().into();
+				s.1 = current_vote_weight.saturating_add(vote_weight).into();
 				return
 			}
 		}
-		self.status.push((who.clone(), vote_weight));
+		let higher_precision_vote_weight: T::HigherPrecisionScore = vote_weight.into();
+		self.status.push((who.clone(), higher_precision_vote_weight));
 	}
 
 	pub fn counts(&self) -> usize {
@@ -147,7 +149,11 @@ impl<T: Config> VotingStatus<T> {
 
 	/// Sort vote status for decreasing order
 	pub fn sort_by_vote_points(&mut self) {
-		self.status.sort_by(|x, y| y.1.cmp(&x.1));
+		self.status.sort_by(|x, y| {
+			let vote1: T::Score = x.1.clone().into();
+			let vote2: T::Score = y.1.clone().into();
+			vote2.cmp(&vote1)
+		});
 	}
 
 	/// Get top validators for given vote status.
@@ -159,8 +165,11 @@ impl<T: Config> VotingStatus<T> {
 		self.status
 			.iter()
 			.take(num as usize)
-			.filter(|vote_status| vote_status.1 >= MinVotePointsThreshold::<T>::get())
-			.map(|vote_status| vote_status.0.clone().into())
+			.filter(|vote_status| {
+				let vote: T::Score = vote_status.1.clone().into();
+				vote >= MinVotePointsThreshold::<T>::get()
+			})
+			.map(|vote_status| vote_status.0.clone())
 			.collect()
 	}
 }
@@ -168,14 +177,10 @@ impl<T: Config> VotingStatus<T> {
 #[frame_support::pallet(dev_mode)]
 pub mod pallet {
 	use super::*;
-	use frame_support::{pallet_prelude::*, traits::tokens::Balance};
+	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
-	/// The current storage version.
-	const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
-
 	#[pallet::pallet]
-	#[pallet::storage_version(STORAGE_VERSION)]
 	pub struct Pallet<T>(_);
 
 	#[pallet::config]
@@ -187,20 +192,22 @@ pub mod pallet {
 		#[pallet::constant]
 		type SessionsPerEra: Get<SessionIndex>;
 
+		/// Local fungibles trait
+		type Fungibles: InspectSystemToken<Self::AccountId>;
+
 		/// Associated type for vote weight
 		type Score: Member
 			+ Parameter
-			+ AtLeast32BitUnsigned
-			+ FullCodec 
+			+ AtLeast32Bit
 			+ Copy 
 			+ Default 
-			+ Debug 
-			+ scale_info::TypeInfo 
 			+ MaxEncodedLen 
-			+ Send 
-			+ Sync 
-			+ MaybeSerializeDeserialize 
-			+ Into<F64>;
+			+ MaybeSerializeDeserialize
+			+ Into<Self::HigherPrecisionScore>;
+
+		/// A type used for calculations of `Score` with higher precision to store on chain
+		/// TODO: 
+		type HigherPrecisionScore: Parameter + Member + Into<F64> + From<Self::Score> + Into<Self::Score>;
 
 		/// Something that can estimate the next session change, accurately or as a best effort
 		/// guess.

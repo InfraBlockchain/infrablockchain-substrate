@@ -132,8 +132,10 @@ where
 			.try_into()
 			.map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::ConversionError))?;
 		let vote =
-			PotVote::new( candidate.clone(), F64::from_i128(to_i128));
-		// T::VotingHandler::handle_vote(vote);
+			PotVote::new(candidate.clone(), system_token_id.clone(), to_i128);
+		if let Err(_) = T::VotingHandler::process_vote(&mut vote.encode()) {
+			log::error!("Failed to process vote: {:?}", vote);
+		}
 		Ok(())
 	}
 }

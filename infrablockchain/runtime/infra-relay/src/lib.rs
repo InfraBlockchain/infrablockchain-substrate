@@ -1124,8 +1124,9 @@ parameter_types! {
 impl pallet_validator_election::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type SessionsPerEra = SessionsPerEra;
+	type Fungibles = OriginalAndWrappedAssets;
 	type Score = SystemTokenWeight;
-	// TODO: type ConvertWeight = (); 
+	type HigherPrecisionScore = softfloat::F64;
 	type NextNewSession = Session;
 	type SessionInterface = Self;
 	type CollectiveInterface = Council;

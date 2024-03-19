@@ -6195,6 +6195,7 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "smallvec",
+ "softfloat",
  "sp-api",
  "sp-arithmetic",
  "sp-authority-discovery",

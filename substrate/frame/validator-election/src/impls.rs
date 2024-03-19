@@ -1,6 +1,6 @@
-use frame_system::pallet_prelude::BlockNumberFor;
 
 use crate::*;
+use frame_system::pallet_prelude::BlockNumberFor;
 
 pub trait CollectiveInterface<AccountId> {
 	fn set_new_members(new: Vec<AccountId>);
@@ -44,9 +44,9 @@ impl<T: Config> TaaV for Pallet<T> {
 
 	fn process_vote(bytes: &mut Vec<u8>) -> Result<(), Self::Error> {
 		// Try decode
-		let vote = PotVote::<T::AccountId, T::Score>::decode(&mut &bytes[..]).map_err(|_| Error::<T>::ErrorDecode)?;
+		let vote = PotVote::<T::AccountId, SystemTokenAssetIdOf<T>, T::Score>::decode(&mut &bytes[..]).map_err(|_| Error::<T>::ErrorDecode)?;
 		log::info!("🥶🥶 Processing Vote: {:?}", vote);
-		let PotVote { candidate, weight } = vote;
+		let PotVote { candidate, asset_id, amount } = vote;
 		if SeedTrustValidatorPool::<T>::get().contains(&candidate) {
 			return Ok(())
 		}
@@ -61,7 +61,7 @@ impl<T: Config> TaaV for Pallet<T> {
 		// 	block_time_weight
 		// };
 		PotValidatorPool::<T>::mutate(|voting_status| {
-			voting_status.add_vote(&candidate, weight.clone());
+			voting_status.add_vote(&candidate, amount.clone());
 		});
 		// @Sirius
 		// T::RewardInterface::aggregate_reward (
@@ -70,7 +70,7 @@ impl<T: Config> TaaV for Pallet<T> {
 		// 	original, -> `AssetId` in PotVote
 		// 	adjusted_weight,
 		// );
-		Self::deposit_event(Event::<T>::Voted { who: candidate, amount: weight });
+		Self::deposit_event(Event::<T>::Voted { who: candidate, amount });
 		Ok(())
 	}
 }
@@ -112,41 +112,6 @@ impl<AccountId> SessionInterface<AccountId> for () {
 	}
 	fn prune_historical_up_to(_: SessionIndex) {
 		()
-	}
-}
-
-/// Interface for Proof-of-Transaction
-pub trait PotInterface<Account> {
-	/// Actual weight type for `proof-of-transaction`
-	type VoteWeight: frame_support::Parameter + Into<F64>;
-
-	/// Update the vote status for the given account.
-	fn vote(who: Account, weight: Self::VoteWeight) -> bool;
-}
-
-impl<T: Config, Account: Clone> PotInterface<Account> for Pallet<T>
-where
-	T::AccountId: From<Account>,
-{
-	type VoteWeight = T::Score;
-
-	fn vote(who: Account, weight: Self::VoteWeight) -> bool {
-		// Return if vote candidate is in SeedTrustValidatorPool
-		if SeedTrustValidatorPool::<T>::get().contains(&who.clone().into()) {
-			return false
-		}
-		PotValidatorPool::<T>::mutate(|voting_status| {
-			voting_status.add_vote(&who.into(), weight);
-		});
-		true
-	}
-}
-
-impl<Account> PotInterface<Account> for () {
-	type VoteWeight = F64;
-
-	fn vote(_: Account, _: Self::VoteWeight) -> bool {
-		false
 	}
 }
 
