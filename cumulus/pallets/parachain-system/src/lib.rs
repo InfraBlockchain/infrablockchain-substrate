@@ -52,7 +52,7 @@ use sp_runtime::{
 		InvalidTransaction, TransactionLongevity, TransactionSource, TransactionValidity,
 		ValidTransaction,
 	},
-	types::{token::*, vote::*},
+	types::token::*,
 	DispatchError, RuntimeDebug,
 };
 use sp_std::{cmp, collections::btree_map::BTreeMap, prelude::*};
@@ -1498,12 +1498,16 @@ impl<T: Config> frame_system::SetCode<T> for ParachainSetCode<T> {
 
 /// Something deals with infra- stuff
 impl<T: Config> Pallet<T> {
-	pub fn handle_vote(bytes: Vec<u8>) {
+	pub fn relay_vote(bytes: Vec<u8>) {
 		PotVotes::<T>::mutate(|maybe_votes| {
 			let mut votes = maybe_votes.take().map_or_else(Vec::new, |v| v);
 			votes.push(bytes);
 			*maybe_votes = Some(votes);
 		});
+	}
+
+	pub fn relay_request_asset(bytes: Vec<u8>) {
+		RequestedAsset::<T>::put(bytes);
 	}
 }
 

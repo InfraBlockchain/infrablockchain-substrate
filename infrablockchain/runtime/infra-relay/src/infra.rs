@@ -11,6 +11,8 @@ pub enum ParachainRuntimePallets {
 
 #[derive(Encode, Decode)]
 pub enum ParachainCalls {
+    #[codec(index = 0)]
+    SetAdmin(AccountId),
     #[codec(index = 1)]
 	UpdateFeeTable(Vec<u8>, Vec<u8>, SystemTokenBalance),
 	#[codec(index = 2)]
@@ -20,7 +22,7 @@ pub enum ParachainCalls {
 	#[codec(index = 4)]
 	RegisterSystemToken(MultiLocation, SystemTokenWeight),
 	#[codec(index = 5)]
-	CreateWrappedLocal(MultiLocation, Fiat, Balance, Vec<u8>, Vec<u8>, u8, SystemTokenWeight),
+	CreateWrapped(AccountId, MultiLocation, Fiat, Balance, Vec<u8>, Vec<u8>, u8, SystemTokenWeight),
 	#[codec(index = 6)]
 	DeregisterSystemToken(MultiLocation),
 }
@@ -29,8 +31,16 @@ pub enum ParachainCalls {
 pub struct ParaConfigHandler;
 
 impl ParaConfigInterface for ParaConfigHandler {
+    type AccountId = AccountId;
     type DestId = u32;
     type Balance = SystemTokenBalance;
+
+    fn set_admin(dest_id: Self::DestId, who: Self::AccountId) {
+        let set_admin_call = ParachainRuntimePallets::InfraParaCore(
+            ParachainCalls::SetAdmin(who),
+        );
+        send_xcm_for(set_admin_call.encode(), dest_id);
+    }
 
     fn update_fee_table(dest_id: Self::DestId, pallet_name: Vec<u8>, call_name: Vec<u8>, fee: Self::Balance) {
         let set_fee_table_call = ParachainRuntimePallets::InfraParaCore(
@@ -57,6 +67,7 @@ impl ParaConfigInterface for ParaConfigHandler {
 /// Main actor for handling System Token related calls
 pub struct SystemTokenHandler;
 impl SystemTokenInterface for SystemTokenHandler {
+    type AccountId = AccountId;
     type Location = MultiLocation;
     type Balance = SystemTokenBalance;
     type SystemTokenWeight = SystemTokenWeight;
@@ -82,6 +93,7 @@ impl SystemTokenInterface for SystemTokenHandler {
 
     fn create_wrapped(
         dest_id: Self::DestId,
+        owner: Self::AccountId,
         original: Self::Location,
         currency_type: Fiat,
         min_balance: Self::Balance,
@@ -91,7 +103,8 @@ impl SystemTokenInterface for SystemTokenHandler {
         system_token_weight: Self::SystemTokenWeight,
     ) {
         let create_call = ParachainRuntimePallets::InfraParaCore(
-            ParachainCalls::CreateWrappedLocal(
+            ParachainCalls::CreateWrapped(
+                owner,
                 original,
                 currency_type,
                 min_balance,

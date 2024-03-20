@@ -513,7 +513,7 @@ pub mod pallet {
 		type WeightInfo: WeightInfo;
 
 		/// The configuration interface for parachain 
-		type ParaConfigHandler: ParaConfigInterface;
+		type ParaConfigHandler: ParaConfigInterface<AccountId=Self::AccountId>;
 	}
 
 	#[pallet::error]
@@ -1201,6 +1201,7 @@ pub mod pallet {
 			})
 		}
 
+		// TODO: Benchmark weight!
 		#[pallet::call_index(53)]
 		#[pallet::weight((
 			T::WeightInfo::set_config_with_u32(),
@@ -1216,6 +1217,7 @@ pub mod pallet {
 			Ok(())
 		}
 
+		// TODO: Benchmark weight!
 		#[pallet::call_index(54)]
 		#[pallet::weight((
 			T::WeightInfo::set_config_with_u32(),
@@ -1234,6 +1236,7 @@ pub mod pallet {
 			Ok(())
 		}
 
+		// TODO: Benchmark weight!
 		#[pallet::call_index(55)]
 		#[pallet::weight((
 			T::WeightInfo::set_config_with_u32(),
@@ -1250,6 +1253,7 @@ pub mod pallet {
 			Ok(())
 		}
 		
+		// TODO: Benchmark weight!
 		#[pallet::call_index(56)]
 		#[pallet::weight((
 			T::WeightInfo::set_config_with_u32(),
@@ -1262,6 +1266,22 @@ pub mod pallet {
 			// TODO: Use `scheudle_config_update`
 			ensure_root(origin)?;
 			T::ParaConfigHandler::update_runtime_state(dest);
+			Ok(())
+		}
+
+		// TODO: Benchmark weight!
+		#[pallet::call_index(57)]
+		#[pallet::weight((
+			T::WeightInfo::set_config_with_u32(),
+			DispatchClass::Operational
+		))]
+		pub fn set_admin(
+			origin: OriginFor<T>,
+			dest: DestIdOf<T>,
+			who: T::AccountId,
+		) -> DispatchResult {
+			ensure_root(origin)?;
+			T::ParaConfigHandler::set_admin(dest, who);
 			Ok(())
 		}
 	}
@@ -1459,11 +1479,15 @@ impl<T: Config> Pallet<T> {
 /// Runtime configuration set by parent chain which is mostly Relay Chain
 pub trait ParaConfigInterface {
 
+	/// InfraBlockchain AccountId type
+	type AccountId: Parameter; 
 	/// Destination ID type
 	type DestId: Parameter;
 	/// Balance type of System Token
 	type Balance: Parameter + AtLeast32BitUnsigned;
 
+	/// Set admin for InfraParaCore of `dest_id` Runtime 
+	fn set_admin(dest_id: Self::DestId, who: Self::AccountId);
 	/// Update fee table for `dest_id` Runtime
 	fn update_fee_table(dest_id: Self::DestId, pallet_name: Vec<u8>, call_name: Vec<u8>, fee: Self::Balance);
 	/// Update fee rate for `dest_id` Runtime

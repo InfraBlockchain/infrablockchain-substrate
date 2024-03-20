@@ -39,14 +39,6 @@ where
 		Self { exp, is_relay: false }
 	}
 
-	fn is_relayed(&mut self) -> bool {
-		let temp = self.is_relay;
-		if !self.is_relay {
-			self.is_relay = true;
-		}
-		temp
-	}
-
 	fn is_expired(self, current: BlockNumber) -> bool {
 		current >= self.exp
 	}
@@ -93,10 +85,14 @@ pub mod pallet {
 		StorageMap<_, Twox128, ExtrinsicMetadata, SystemTokenBalanceOf<T>>;
 
 	#[pallet::storage]
-	pub type RequestQueue<T: Config> = StorageMap<
+	pub type RequestQueue<T: Config> = StorageValue<
 		_,
-		Twox64Concat,
-		SystemTokenAssetIdOf<T>,
+		SystemTokenAssetIdOf<T>
+	>;
+
+	#[pallet::storage]
+	pub type ActiveRequestStatus<T: Config> = StorageValue<
+		_,
 		RequestStatus<BlockNumberFor<T>>
 	>;
 
@@ -139,10 +135,6 @@ pub mod pallet {
 		ErrorDeregisterSystemToken,
 		/// Error occured while creating wrapped local asset
 		ErrorCreateWrappedLocalAsset,
-		/// Error occured while linking asset
-		ErrorLinkAsset,
-		/// Error occured while unlinking asset
-		ErrorUnlinkAsset,
 		/// No permission to call this function
 		NoPermission,
 		/// Error occured while getting metadata
@@ -159,23 +151,34 @@ pub mod pallet {
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		fn on_initialize(_n: BlockNumberFor<T>) -> frame_support::weights::Weight {
-			// TODO
-			// if let Some(mut status) = CurrentRequest::<T>::get() {
-			// 	if !status.is_relayed() {
-			// 		T::ParachainSystem::requested(remote_asset_metadata.clone());
-			// 		CurrentRequest::<T>::put((remote_asset_metadata, status));
-			// 	}
-			// 	T::DbWeight::get().reads_writes(1, 1)
-			// } else {
-				
-			// }
-			T::DbWeight::get().reads(1)
+		fn on_initialize(n: BlockNumberFor<T>) -> frame_support::weights::Weight {
+			if let Some(status) = ActiveRequestStatus::<T>::get() {
+				if status.is_expired(n) {
+					ActiveRequestStatus::<T>::kill();
+					RequestQueue::<T>::kill();
+				}
+				T::DbWeight::get().reads_writes(1, 2)
+			} else {
+				T::DbWeight::get().reads(1)	
+			}
 		}
 	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+
+		/// Priviliged origin governed by Relay-chain
+		///
+		/// It can call extrinsic which is not allowed to call by other origin(e.g
+		/// `request_register_system_token`)
+		#[pallet::call_index(0)]
+		pub fn set_admin(origin: OriginFor<T>, who: T::AccountId) -> DispatchResult {
+			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
+			Admin::<T>::put(&who);
+			Self::deposit_event(Event::<T>::AdminUpdated { who });
+			Ok(())
+		}
+
 		/// Fee table for Runtime will be set by Relay-chain governance
 		///
 		/// Origin
@@ -234,14 +237,13 @@ pub mod pallet {
 		#[pallet::call_index(4)]
 		pub fn register_system_token(
 			origin: OriginFor<T>,
-			asset_id: SystemTokenAssetIdOf<T>,
+			original: SystemTokenAssetIdOf<T>,
 			system_token_weight: SystemTokenWeightOf<T>,
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
-			Self::check_valid_register(&asset_id)?;
-			// T::LocalAssetManager::promote(asset_id, system_token_weight)
-			// 	.map_err(|_| Error::<T>::ErrorRegisterSystemToken)?;
-			Self::deposit_event(Event::<T>::Registered { asset_id });
+			T::Fungibles::register(original.clone(), system_token_weight)
+				.map_err(|_| Error::<T>::ErrorRegisterSystemToken)?;
+			Self::deposit_event(Event::<T>::Registered { asset_id: original });
 			Ok(())
 		}
 
@@ -256,10 +258,10 @@ pub mod pallet {
 		/// Origin
 		/// Relay-chain governance
 		#[pallet::call_index(5)]
-		pub fn create_wrapped_local(
+		pub fn create_wrapped(
 			origin: OriginFor<T>,
 			owner: T::AccountId,
-			original: SystemTokenAssetIdOf<T>,
+			wrapped_original: SystemTokenAssetIdOf<T>,
 			currency_type: Fiat,
 			min_balance: SystemTokenBalanceOf<T>,
 			name: Vec<u8>,
@@ -270,7 +272,7 @@ pub mod pallet {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
 			T::Fungibles::touch(
 				owner,
-				asset_id,
+				wrapped_original.clone(),
 				currency_type,
 				min_balance,
 				name,
@@ -279,7 +281,7 @@ pub mod pallet {
 				system_token_weight,
 			)
 			.map_err(|_| Error::<T>::ErrorCreateWrappedLocalAsset)?;
-			Self::deposit_event(Event::<T>::WrappedCreated { asset_id: original });
+			Self::deposit_event(Event::<T>::WrappedCreated { asset_id: wrapped_original });
 			Ok(())
 		}
 
@@ -289,21 +291,9 @@ pub mod pallet {
 			asset_id: SystemTokenAssetIdOf<T>,
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
-			T::Fungibles::deregister(asset_id)
+			T::Fungibles::deregister(asset_id.clone())
 				.map_err(|_| Error::<T>::ErrorDeregisterSystemToken)?;
 			Self::deposit_event(Event::<T>::Deregistered { asset_id });
-			Ok(())
-		}
-
-		/// Priviliged origin governed by Relay-chain
-		///
-		/// It can call extrinsic which is not allowed to call by other origin(e.g
-		/// `request_register_system_token`)
-		#[pallet::call_index(7)]
-		pub fn set_admin(origin: OriginFor<T>, who: T::AccountId) -> DispatchResult {
-			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
-			Admin::<T>::put(&who);
-			Self::deposit_event(Event::<T>::AdminUpdated { who });
 			Ok(())
 		}
 
@@ -313,16 +303,13 @@ pub mod pallet {
 		#[pallet::call_index(8)]
 		pub fn request_register_system_token(
 			origin: OriginFor<T>,
-			asset_id: SystemTokenAssetIdOf<T>,
+			original: SystemTokenAssetIdOf<T>,
 		) -> DispatchResult {
 			if let Some(acc) = ensure_signed_or_root(origin)? {
 				ensure!(Admin::<T>::get() == Some(acc), Error::<T>::NoPermission);
 			}
-			let system_token_metadata = T::Fungibles::system_token_metadata(asset_id).map_err(|_| Error::<T>::ErrorOnGetMetadata)?;
-			T::Fungibles::request_register(asset_id)
-				.map_err(|_| Error::<T>::ErrorOnRequestRegister)?;
-			let exp = Self::do_request(asset_id, remote_asset_metadata)?;
-			Self::deposit_event(Event::<T>::RegisterRequested { asset_id, exp });
+			let exp = Self::do_request(&original)?;
+			Self::deposit_event(Event::<T>::RegisterRequested { asset_id: original, exp });
 			Ok(())
 		}
 	}
@@ -331,24 +318,26 @@ pub mod pallet {
 impl<T: Config> Pallet<T> {
 	/// Put requested _asset_metadata_  on `CurrentRequest` and calculate expired block numbe
 	fn do_request(
-		id: SystemTokenAssetIdOf<T>,
-		asset_metadata: RemoteAssetMetadata<SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>>,
+		original: &SystemTokenAssetIdOf<T>,
 	) -> Result<BlockNumberFor<T>, DispatchError> {
 		let current = <frame_system::Pallet<T>>::block_number();
-		if let Some(request_status) = RequestQueue::<T>::get(&id) {
-			if !request_status.is_expired(current) {
-				return Err(Error::<T>::AlreadyRequested.into())
-			}
-		}
+		Self::check_valid_register()?;
+		let system_token_metadata = T::Fungibles::system_token_metadata(original.clone()).map_err(|_| Error::<T>::ErrorOnGetMetadata)?;
+		T::Fungibles::request_register(original.clone())
+				.map_err(|_| Error::<T>::ErrorOnRequestRegister)?;
+		<cumulus_pallet_parachain_system::Pallet<T>>::relay_request_asset(system_token_metadata.encode());
 		let exp = current.saturating_add(T::ActiveRequestPeriod::get());
-		RequestQueue::<T>::insert(id, RequestStatus::default_status(exp));
+		let request_status = RequestStatus::default_status(exp);
+		ActiveRequestStatus::<T>::put(request_status);
+		RequestQueue::<T>::put(original);
 		Ok(exp)
 	}
 
-	fn check_valid_register(asset: &SystemTokenAssetIdOf<T>) -> Result<(), DispatchError> {
-		let is_valid = if let Some(status) = RequestQueue::<T>::get(asset) {
+	fn check_valid_register() -> Result<(), DispatchError> {
+		let is_valid = if let Some(status) = ActiveRequestStatus::<T>::get() {
 			if !status.is_expired(<frame_system::Pallet<T>>::block_number()) {
-				RequestQueue::<T>::remove(asset);
+				ActiveRequestStatus::<T>::kill();
+				RequestQueue::<T>::kill();
 				true
 			} else {
 				false
@@ -401,7 +390,7 @@ impl<T: Config> UpdateRCConfig<SystemTokenAssetIdOf<T>, SystemTokenWeightOf<T>> 
 		assets: Vec<(SystemTokenAssetIdOf<T>, SystemTokenWeightOf<T>)>,
 	) {
 		for (asset_id, weight) in assets {
-			if let Err(_) = T::Fungibles::update_system_token_weight(asset_id, weight) {
+			if let Err(_) = T::Fungibles::update_system_token_weight(asset_id.clone(), weight) {
 				log::error!("❌❌❌ Error on updating System Token Weight, {:?}", asset_id)
 			}
 		}
@@ -412,7 +401,7 @@ impl<T: Config> TaaV for Pallet<T> {
 	type Error = ();
 
 	fn process_vote(bytes: &mut Vec<u8>) -> Result<(), Self::Error> {
-		cumulus_pallet_parachain_system::Pallet::<T>::handle_vote(bytes.clone()); 
+		<cumulus_pallet_parachain_system::Pallet<T>>::relay_vote(bytes.clone()); 
 		Ok(())
 	}
 }

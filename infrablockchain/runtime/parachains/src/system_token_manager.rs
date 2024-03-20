@@ -56,6 +56,7 @@ pub mod pallet {
 		type SystemTokenId: SystemTokenId;
 		/// Type for handling System Token related calls 
 		type SystemTokenHandler: SystemTokenInterface<
+			AccountId=Self::AccountId,
 			Location=Self::SystemTokenId,
 			Balance=SystemTokenBalanceOf<Self>,
 			SystemTokenWeight=SystemTokenWeightOf<Self>,
@@ -81,41 +82,13 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Register a new `original` system token.
-		OriginalSystemTokenRegistered { original: T::SystemTokenId },
+		SystemTokenRegistered { original: T::SystemTokenId, wrapped: Option<SystemTokenOriginIdOf<T>> },
 		/// Deregister the `original` system token.
-		OriginalSystemTokenDeregistered { original: T::SystemTokenId },
-		/// Register a `wrapped` system token to an `original` system token.
-		WrappedSystemTokenRegistered {
-			original: T::SystemTokenId,
-			para_id: SystemTokenOriginIdOf<T>,
-		},
-		/// Deregister a `wrapped` system token to an `original` system token.
-		WrappedSystemTokenDeregistered {
-			original: T::SystemTokenId,
-			para_id: SystemTokenOriginIdOf<T>,
-		},
-		/// Update the fee rate of the parachain. The default value is 1_000.
-		SetParaFeeRate { para_id: SystemTokenOriginIdOf<T>, para_fee_rate: SystemTokenBalanceOf<T> },
-		/// Update the fee table of the parachain
-		SetFeeTable {
-			para_call_metadata:
-				ParaCallMetadata<SystemTokenOriginIdOf<T>, SystemTokenPalletIdOf<T>>,
-			fee: SystemTokenBalanceOf<T>,
-		},
+		SystemTokenDeregistered { kind: DeregisterKind<T::SystemTokenId, SystemTokenOriginIdOf<T>> },
 		/// Suspend a `original` system token.
-		OriginalSystemTokenSuspended { original: T::SystemTokenId },
+		SystemTokenSuspended { original: T::SystemTokenId, wrapped: Option<SystemTokenOriginIdOf<T>> },
 		/// Unsuspend the `original` system token.
-		OriginalSystemTokenUnsuspended { original: T::SystemTokenId },
-		/// Suspend a `wrapped` system token.
-		WrappedSystemTokenSuspended {
-			original: T::SystemTokenId,
-			para_id: SystemTokenOriginIdOf<T>,
-		},
-		/// Unsuspend the `wrapped` system token.
-		WrappedSystemTokenUnsuspended {
-			original: T::SystemTokenId,
-			para_id: SystemTokenOriginIdOf<T>,
-		},
+		SystemTokenUnsuspended { original: T::SystemTokenId, wrapped: Option<SystemTokenOriginIdOf<T>> },
 		/// Update exchange rates for given fiat currencies
 		ExchangeRateUpdated { at: StandardUnixTime, updated: Vec<(Fiat, ExchangeRate)> },
 	}
@@ -168,7 +141,11 @@ pub mod pallet {
 		/// Error occured while converting to some types
 		ConversionError,
 		/// Invalid System Token Weight(e.g `0`)
-		InvalidSystemTokenWeight
+		InvalidSystemTokenWeight,
+		/// Error occurred while registering system token
+		ErrorRegisterSystemToken,
+		/// Error occurred while deregistering system token
+		ErrorDeregisterSystemToken,
 	}
 
 	#[pallet::pallet]
@@ -340,8 +317,8 @@ pub mod pallet {
 					(original, Some(para_id))
 				},
 			};
-			Self::do_register_wrapped(&original, maybe_para_id)?;
-			Self::deposit_event(Event::<T>::OriginalSystemTokenRegistered { original });
+			Self::do_register_wrapped(&original, maybe_para_id.clone())?;
+			Self::deposit_event(Event::<T>::SystemTokenRegistered { original, wrapped: maybe_para_id });
 
 			Ok(())
 		}
@@ -361,7 +338,8 @@ pub mod pallet {
 			kind: DeregisterKind<T::SystemTokenId, SystemTokenOriginIdOf<T>>,
 		) -> DispatchResult {
 			ensure_root(origin)?;
-			Self::do_deregister_system_token(kind)?;
+			Self::do_deregister_system_token(kind.clone())?;
+			Self::deposit_event(Event::<T>::SystemTokenDeregistered { kind });
 			Ok(())
 		}
 
@@ -384,16 +362,13 @@ pub mod pallet {
 			match system_token_type {
 				SystemTokenType::Original(system_token_id) => {
 					Self::suspend_all(&system_token_id)?;
-					Self::deposit_event(Event::<T>::OriginalSystemTokenSuspended {
+					Self::deposit_event(Event::<T>::SystemTokenSuspended {
 						original: system_token_id,
+						wrapped: None,
 					});
 				},
 				SystemTokenType::Wrapped { original, para_id } => {
 					Self::suspend(&original, &para_id, false)?;
-					Self::deposit_event(Event::<T>::WrappedSystemTokenSuspended {
-						original,
-						para_id,
-					});
 				},
 			}
 
@@ -418,16 +393,13 @@ pub mod pallet {
 			match system_token_type {
 				SystemTokenType::Original(system_token_id) => {
 					Self::unsuspend_all(&system_token_id)?;
-					Self::deposit_event(Event::<T>::OriginalSystemTokenUnsuspended {
+					Self::deposit_event(Event::<T>::SystemTokenUnsuspended {
 						original: system_token_id,
+						wrapped: None,
 					});
 				},
 				SystemTokenType::Wrapped { original, para_id } => {
 					Self::unsuspend(&original, &para_id, false)?;
-					Self::deposit_event(Event::<T>::WrappedSystemTokenUnsuspended {
-						original,
-						para_id,
-					});
 				},
 			}
 
@@ -697,9 +669,9 @@ impl<T: Config> Pallet<T> {
 					Ok(())
 				},
 			)?;
-			Self::deposit_event(Event::<T>::WrappedSystemTokenRegistered {
+			Self::deposit_event(Event::<T>::SystemTokenRegistered {
 				original: original.clone(),
-				para_id,
+				wrapped: Some(para_id.clone()),
 			})
 		} else {
 			// Relay Chain
@@ -849,10 +821,10 @@ impl<T: Config> Pallet<T> {
 				SystemToken::<T>::remove(&original);
 				Metadata::<T>::remove(&original);
 				if let Some(para_id) = origin_id {
-					T::SystemTokenHandler::deregister_system_token(para_id.into(), original);
+					T::SystemTokenHandler::deregister_system_token(para_id.into(), original.clone());
 				} else {
-					// TODO: Relay Chain
-					// Fungibles::deregister()
+					// Relay Chain
+					T::Fungibles::deregister(original.clone()).map_err(|_| Error::<T>::ErrorDeregisterSystemToken)?;
 				}
 			},
 			DeregisterKind::Specific { original, wrapped } => {
@@ -865,8 +837,9 @@ impl<T: Config> Pallet<T> {
 					);
 					Self::remove_system_token_for_para_id(&original, &para_id)?;
 				} else {
-					// TODO: Relay Chain
-					// Fungibles::deregister()
+					// Relay Chain
+					let wrapped_original = original.wrapped().map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+					T::Fungibles::deregister(wrapped_original).map_err(|_| Error::<T>::ErrorDeregisterSystemToken)?;
 				}
 			},
 		}
@@ -888,8 +861,8 @@ impl<T: Config> Pallet<T> {
 		if let Some(para_id) = origin_id {
 			T::SystemTokenHandler::register_system_token(para_id.into(), system_token_id.clone(), weight);
 		} else {
-			// TODO: Relay Chain
-			// T::Fungibles::register()
+			// Relay Chain
+			T::Fungibles::register(system_token_id.clone(), weight).map_err(|_| Error::<T>::ErrorRegisterSystemToken)?;
 		}
 		Ok(())
 	}
@@ -915,8 +888,10 @@ impl<T: Config> Pallet<T> {
 	) -> frame_support::pallet_prelude::DispatchResult {
 		let original_metadata =
 			Metadata::<T>::get(original).ok_or(Error::<T>::MetadataNotFound)?;
+		let owner = Self::account_id();
 		T::SystemTokenHandler::create_wrapped(
 			para_id.clone().into(),
+			owner,
 			original.clone(),
 			original_metadata.currency_type,
 			original_metadata.min_balance,
@@ -1153,6 +1128,8 @@ pub mod traits {
 	/// Generally implemented by the Relay-chain
 	pub trait SystemTokenInterface {
 
+		/// AccountId type for InfraBlockchain
+		type AccountId: Parameter;
 		/// Location for asset
 		type Location: Parameter;
 		/// Type of System Token balance
@@ -1169,6 +1146,7 @@ pub mod traits {
 		/// Create local asset of `Wrapped` System Token for `dest_id` Runtime
 		fn create_wrapped(
 			dest_id: Self::DestId,
+			owner: Self::AccountId,
 			original: Self::Location,
 			currency_type: Fiat,
 			min_balance: Self::Balance,
