@@ -180,7 +180,10 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 				pallet_assets::Call::set_metadata { .. } |
 				pallet_assets::Call::mint { .. },
 			) |
-			RuntimeCall::InfraXcm(pallet_xcm::Call::limited_teleport_assets { .. }) => true,
+			RuntimeCall::InfraXcm(pallet_xcm::Call::limited_teleport_assets { .. }) |
+			RuntimeCall::InfraParaCore(
+				cumulus_pallet_infra_parachain_core::Call::request_register_system_token { .. },
+			) => true,
 			_ => false,
 		}
 	}
@@ -545,7 +548,7 @@ construct_runtime!(
 
 		// The main stage
 		URAuth: pallet_urauth::{Pallet, Call, Storage, Config<T>, Event<T>} = 5,
-		DataMarket: pallet_data_market::{Pallet, Call, Storage, Event<T>} = 6,
+		DataMarket: pallet_data_market::{Pallet, Call, Storage, Event<T>, Config<T>} = 6,
 
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,

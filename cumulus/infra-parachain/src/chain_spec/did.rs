@@ -61,6 +61,7 @@ pub fn did_development_config() -> DidChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
 				],
+				Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
 				DID_PARACHAIN_ID.into(),
 			)
 		},
@@ -112,6 +113,7 @@ pub fn did_local_config() -> DidChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
+				Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
 				DID_PARACHAIN_ID.into(),
 			)
 		},
@@ -167,6 +169,7 @@ pub fn did_config() -> DidChainSpec {
 					),
 				],
 				vec![],
+				Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
 				DID_PARACHAIN_ID.into(),
 			)
 		},
@@ -182,6 +185,7 @@ pub fn did_config() -> DidChainSpec {
 fn did_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
+	root_key: Option<AccountId>,
 	id: ParaId,
 ) -> did_runtime::RuntimeGenesisConfig {
 	did_runtime::RuntimeGenesisConfig {
@@ -227,5 +231,6 @@ fn did_genesis(
 			..Default::default()
 		},
 		did_module: Default::default(),
+		sudo: did_runtime::SudoConfig { key: root_key },
 	}
 }

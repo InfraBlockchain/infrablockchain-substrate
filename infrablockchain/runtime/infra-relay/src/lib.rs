@@ -91,7 +91,7 @@ use sp_runtime::{
 		Extrinsic as ExtrinsicT, OpaqueKeys, SaturatedConversion, Verify,
 	},
 	transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
-	types::token::*,
+  types::token::*,
 	ApplyExtrinsicResult, FixedU128, KeyTypeId, Perbill, Percent, Permill,
 };
 
