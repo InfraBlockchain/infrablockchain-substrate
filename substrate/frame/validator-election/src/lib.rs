@@ -23,12 +23,22 @@ pub mod impls;
 pub use impls::*;
 
 use codec::{Decode, Encode, MaxEncodedLen};
-use frame_support::{traits::{EstimateNextNewSession, Get, tokens::fungibles::{InspectSystemToken, Inspect}}, Parameter};
+use frame_support::{
+	traits::{
+		tokens::fungibles::{Inspect, InspectSystemToken},
+		EstimateNextNewSession, Get,
+	},
+	Parameter,
+};
 pub use pallet::*;
 use scale_info::TypeInfo;
-use sp_arithmetic::traits::{Saturating, AtLeast32Bit};
-use sp_runtime::{RuntimeDebug, types::{infra_core::TaaV, vote::PotVote}, traits::Member};
 use softfloat::F64;
+use sp_arithmetic::traits::{AtLeast32Bit, Saturating};
+use sp_runtime::{
+	traits::Member,
+	types::{infra_core::TaaV, vote::PotVote},
+	RuntimeDebug,
+};
 
 #[cfg(test)]
 mod tests;
@@ -44,7 +54,8 @@ pub type SessionIndex = u32;
 /// Counter for the number of eras that have passed.
 pub type EraIndex = u32;
 
-pub type SystemTokenAssetIdOf<T> = <<T as Config>::Fungibles as Inspect<<T as frame_system::Config>::AccountId>>::AssetId;
+pub type SystemTokenAssetIdOf<T> =
+	<<T as Config>::Fungibles as Inspect<<T as frame_system::Config>::AccountId>>::AssetId;
 
 pub(crate) const LOG_TARGET: &str = "runtime::voting-manager";
 // syntactic sugar for logging.
@@ -199,15 +210,19 @@ pub mod pallet {
 		type Score: Member
 			+ Parameter
 			+ AtLeast32Bit
-			+ Copy 
-			+ Default 
-			+ MaxEncodedLen 
+			+ Copy
+			+ Default
+			+ MaxEncodedLen
 			+ MaybeSerializeDeserialize
 			+ Into<Self::HigherPrecisionScore>;
 
 		/// A type used for calculations of `Score` with higher precision to store on chain
-		/// TODO: 
-		type HigherPrecisionScore: Parameter + Member + Into<F64> + From<Self::Score> + Into<Self::Score>;
+		/// TODO:
+		type HigherPrecisionScore: Parameter
+			+ Member
+			+ Into<F64>
+			+ From<Self::Score>
+			+ Into<Self::Score>;
 
 		/// Something that can estimate the next session change, accurately or as a best effort
 		/// guess.
@@ -308,7 +323,7 @@ pub mod pallet {
 		/// New number of Seed Trust slots should be provided
 		SeedTrustSlotsShouldBeProvided,
 		/// Error occured while decoding types mostly `PotVote`
-		ErrorDecode
+		ErrorDecode,
 	}
 
 	/// The current era index.

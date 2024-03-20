@@ -46,7 +46,9 @@ use primitives::{
 };
 use scale_info::TypeInfo;
 use softfloat::F64;
-use sp_runtime::{traits::One, DispatchError, SaturatedConversion, Saturating, types::infra_core::TaaV};
+use sp_runtime::{
+	traits::One, types::infra_core::TaaV, DispatchError, SaturatedConversion, Saturating,
+};
 #[cfg(feature = "std")]
 use sp_std::fmt;
 use sp_std::{
@@ -919,7 +921,7 @@ impl<T: Config> Pallet<T> {
 		if let Some(mut request_asset) = commitments.requested_asset {
 			<system_token_manager::Pallet<T>>::requested_asset_metadata(&mut request_asset);
 		}
-		if let Some(mut votes) = commitments.vote_result {	
+		if let Some(mut votes) = commitments.vote_result {
 			for vote in votes.iter_mut() {
 				if let Err(_) = T::VotingHandler::process_vote(vote) {
 					log::error!("❌ Failed to process vote ❌");

@@ -30,9 +30,9 @@
 use codec::{Decode, Encode, MaxEncodedLen};
 use cumulus_primitives_core::{
 	relay_chain, AbridgedHostConfiguration, ChannelStatus, CollationInfo, DmpMessageHandler,
-	GetChannelInfo, InboundDownwardMessage, InboundHrmpMessage, MessageSendError,
+	GetChannelInfo, InboundDownwardMessage, InboundHrmpMessage, MessageSendError, MultiLocation,
 	OutboundHrmpMessage, ParaId, PersistedValidationData, UpdateRCConfig, UpwardMessage,
-	UpwardMessageSender, XcmpMessageHandler, XcmpMessageSource, MultiLocation
+	UpwardMessageSender, XcmpMessageHandler, XcmpMessageSource,
 };
 use cumulus_primitives_parachain_inherent::{MessageQueueChain, ParachainInherentData};
 use frame_support::{

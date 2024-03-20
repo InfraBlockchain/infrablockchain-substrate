@@ -66,7 +66,7 @@ pub mod pallet {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Interface that is related to transaction for Infrablockchain Runtime
 		type SystemConfig: RuntimeConfigProvider<SystemTokenBalanceOf<Self>>;
-		/// Type that handles vote 
+		/// Type that handles vote
 		type VotingHandler: TaaV;
 		/// The fungibles instance used to pay for transactions in assets.
 		type Fungibles: Balanced<Self::AccountId> + InspectSystemToken<Self::AccountId>;
@@ -130,8 +130,7 @@ where
 		let to_i128: i128 = balance_to_weight
 			.try_into()
 			.map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::ConversionError))?;
-		let vote =
-			PotVote::new(candidate.clone(), system_token_id.clone(), to_i128);
+		let vote = PotVote::new(candidate.clone(), system_token_id.clone(), to_i128);
 		if let Err(_) = T::VotingHandler::process_vote(&mut vote.encode()) {
 			log::error!("Failed to process vote: {:?}", vote);
 		}

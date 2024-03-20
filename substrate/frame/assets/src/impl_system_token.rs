@@ -1,10 +1,11 @@
-
 use sp_std::vec::Vec;
 
 use super::{
-	DispatchError, Fiat,
-	fungibles::{EnumerateSystemToken, InspectSystemToken, InspectSystemTokenMetadata, ManageSystemToken},
+	fungibles::{
+		EnumerateSystemToken, InspectSystemToken, InspectSystemTokenMetadata, ManageSystemToken,
+	},
 	pallet::*,
+	DispatchError, Fiat,
 };
 
 impl<T: Config<I>, I: 'static> InspectSystemToken<T::AccountId> for Pallet<T, I> {
@@ -56,7 +57,10 @@ impl<T: Config<I>, I: 'static> EnumerateSystemToken<T::AccountId> for Pallet<T, 
 }
 
 impl<T: Config<I>, I: 'static> ManageSystemToken<T::AccountId> for Pallet<T, I> {
-	fn register(asset: Self::AssetId, system_token_weight: Self::SystemTokenWeight) -> Result<(), DispatchError>{
+	fn register(
+		asset: Self::AssetId,
+		system_token_weight: Self::SystemTokenWeight,
+	) -> Result<(), DispatchError> {
 		Self::do_register(asset, system_token_weight)
 	}
 
@@ -64,7 +68,10 @@ impl<T: Config<I>, I: 'static> ManageSystemToken<T::AccountId> for Pallet<T, I> 
 		Self::do_deregister(asset)
 	}
 
-	fn update_system_token_weight(asset: Self::AssetId, system_token_weight: Self::SystemTokenWeight) -> Result<(), DispatchError> {
+	fn update_system_token_weight(
+		asset: Self::AssetId,
+		system_token_weight: Self::SystemTokenWeight,
+	) -> Result<(), DispatchError> {
 		Self::do_update_system_token_weight(asset, system_token_weight)
 	}
 
@@ -82,14 +89,24 @@ impl<T: Config<I>, I: 'static> ManageSystemToken<T::AccountId> for Pallet<T, I> 
 		decimals: u8,
 		system_token_weight: Self::SystemTokenWeight,
 	) -> Result<(), DispatchError> {
-		Self::do_create_wrapped_local(owner, asset, currency_type, min_balance, name, symbol, decimals, system_token_weight)
+		Self::do_create_wrapped_local(
+			owner,
+			asset,
+			currency_type,
+			min_balance,
+			name,
+			symbol,
+			decimals,
+			system_token_weight,
+		)
 	}
 }
 
 impl<T: Config<I>, I: 'static> InspectSystemTokenMetadata<T::AccountId> for Pallet<T, I> {
 	fn inner(asset: Self::AssetId) -> Result<(Fiat, Self::Balance), DispatchError> {
 		let asset_detail = Asset::<T, I>::get(&asset).ok_or(Error::<T, I>::InvalidRequest)?;
-		let currency_type = asset_detail.clone().currency_type.take().ok_or(Error::<T, I>::InvalidRequest)?;
+		let currency_type =
+			asset_detail.clone().currency_type.take().ok_or(Error::<T, I>::InvalidRequest)?;
 		let min_balance = asset_detail.clone().min_balance;
 		Ok((currency_type, min_balance))
 	}

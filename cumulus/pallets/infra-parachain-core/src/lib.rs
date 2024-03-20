@@ -5,7 +5,9 @@ use cumulus_pallet_xcm::{ensure_relay, Origin};
 use cumulus_primitives_core::UpdateRCConfig;
 use frame_support::{
 	pallet_prelude::*,
-	traits::fungibles::{Inspect, InspectSystemToken, InspectSystemTokenMetadata, ManageSystemToken},
+	traits::fungibles::{
+		Inspect, InspectSystemToken, InspectSystemTokenMetadata, ManageSystemToken,
+	},
 };
 use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
@@ -57,7 +59,7 @@ pub mod pallet {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Type that interacts with local asset
-		type Fungibles: InspectSystemToken<Self::AccountId> 
+		type Fungibles: InspectSystemToken<Self::AccountId>
 			+ InspectSystemTokenMetadata<Self::AccountId>
 			+ ManageSystemToken<Self::AccountId>;
 		/// Active request period for registering System Token
@@ -85,16 +87,10 @@ pub mod pallet {
 		StorageMap<_, Twox128, ExtrinsicMetadata, SystemTokenBalanceOf<T>>;
 
 	#[pallet::storage]
-	pub type RequestQueue<T: Config> = StorageValue<
-		_,
-		SystemTokenAssetIdOf<T>
-	>;
+	pub type RequestQueue<T: Config> = StorageValue<_, SystemTokenAssetIdOf<T>>;
 
 	#[pallet::storage]
-	pub type ActiveRequestStatus<T: Config> = StorageValue<
-		_,
-		RequestStatus<BlockNumberFor<T>>
-	>;
+	pub type ActiveRequestStatus<T: Config> = StorageValue<_, RequestStatus<BlockNumberFor<T>>>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -159,14 +155,13 @@ pub mod pallet {
 				}
 				T::DbWeight::get().reads_writes(1, 2)
 			} else {
-				T::DbWeight::get().reads(1)	
+				T::DbWeight::get().reads(1)
 			}
 		}
 	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-
 		/// Priviliged origin governed by Relay-chain
 		///
 		/// It can call extrinsic which is not allowed to call by other origin(e.g
@@ -317,15 +312,16 @@ pub mod pallet {
 
 impl<T: Config> Pallet<T> {
 	/// Put requested _asset_metadata_  on `CurrentRequest` and calculate expired block numbe
-	fn do_request(
-		original: &SystemTokenAssetIdOf<T>,
-	) -> Result<BlockNumberFor<T>, DispatchError> {
+	fn do_request(original: &SystemTokenAssetIdOf<T>) -> Result<BlockNumberFor<T>, DispatchError> {
 		let current = <frame_system::Pallet<T>>::block_number();
 		Self::check_valid_register()?;
-		let system_token_metadata = T::Fungibles::system_token_metadata(original.clone()).map_err(|_| Error::<T>::ErrorOnGetMetadata)?;
+		let system_token_metadata = T::Fungibles::system_token_metadata(original.clone())
+			.map_err(|_| Error::<T>::ErrorOnGetMetadata)?;
 		T::Fungibles::request_register(original.clone())
-				.map_err(|_| Error::<T>::ErrorOnRequestRegister)?;
-		<cumulus_pallet_parachain_system::Pallet<T>>::relay_request_asset(system_token_metadata.encode());
+			.map_err(|_| Error::<T>::ErrorOnRequestRegister)?;
+		<cumulus_pallet_parachain_system::Pallet<T>>::relay_request_asset(
+			system_token_metadata.encode(),
+		);
 		let exp = current.saturating_add(T::ActiveRequestPeriod::get());
 		let request_status = RequestStatus::default_status(exp);
 		ActiveRequestStatus::<T>::put(request_status);
@@ -350,10 +346,9 @@ impl<T: Config> Pallet<T> {
 	}
 }
 
-impl<T: Config> RuntimeConfigProvider<SystemTokenBalanceOf<T>>
-	for Pallet<T>
+impl<T: Config> RuntimeConfigProvider<SystemTokenBalanceOf<T>> for Pallet<T>
 where
-	SystemTokenBalanceOf<T>: From<u128>
+	SystemTokenBalanceOf<T>: From<u128>,
 {
 	type Error = DispatchError;
 
@@ -362,7 +357,10 @@ where
 	}
 
 	fn para_fee_rate() -> Result<SystemTokenBalanceOf<T>, Self::Error> {
-		let base_weight = RCSystemConfig::<T>::get().ok_or(Error::<T>::NotInitiated)?.base_system_token_detail.base_weight;
+		let base_weight = RCSystemConfig::<T>::get()
+			.ok_or(Error::<T>::NotInitiated)?
+			.base_system_token_detail
+			.base_weight;
 		Ok(ParaFeeRate::<T>::try_mutate_exists(
 			|maybe_para_fee_rate| -> Result<SystemTokenBalanceOf<T>, DispatchError> {
 				let pfr = maybe_para_fee_rate.take().map_or(base_weight.into(), |pfr| pfr);
@@ -401,7 +399,7 @@ impl<T: Config> TaaV for Pallet<T> {
 	type Error = ();
 
 	fn process_vote(bytes: &mut Vec<u8>) -> Result<(), Self::Error> {
-		<cumulus_pallet_parachain_system::Pallet<T>>::relay_vote(bytes.clone()); 
+		<cumulus_pallet_parachain_system::Pallet<T>>::relay_vote(bytes.clone());
 		Ok(())
 	}
 }

@@ -16,9 +16,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub mod fungible_conversion;
+pub mod local_and_foreign_assets;
 pub mod matching;
 pub mod runtime_api;
-pub mod local_and_foreign_assets;
 
 use crate::matching::{Equals, LocalLocationPattern, ParentLocation, StartsWith};
 use sp_runtime::traits::Zero;

@@ -18,8 +18,9 @@
 
 use super::{
 	parachains_origin, system_token_manager, AccountId, AllPalletsWithSystem, Authorship, Balance,
-	Balances, OriginalAssets, ParaId, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
-	ValidatorCollective, WeightToFee, WrappedAssets, XcmPallet, WrappedAssetsInstance, OriginalAssetsInstance
+	Balances, OriginalAssets, OriginalAssetsInstance, ParaId, Runtime, RuntimeCall, RuntimeEvent,
+	RuntimeOrigin, ValidatorCollective, WeightToFee, WrappedAssets, WrappedAssetsInstance,
+	XcmPallet,
 };
 use frame_support::{
 	match_types, parameter_types,
@@ -38,8 +39,8 @@ use xcm_builder::{
 	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowSubscriptionsFrom,
 	AllowTopLevelPaidExecutionFrom, BackingToPlurality, ChildParachainAsNative,
 	ChildParachainConvertsVia, FixedWeightBounds, FungiblesAdapter, LocalMint, NoChecking,
-	ParentIsPreset, SiblingParachainConvertsVia, SignedAccountId32AsNative,
-	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
+	ParentIsPreset, SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
+	SovereignSignedViaLocation, TakeWeightCredit,
 };
 use xcm_executor::traits::WithOriginFilter;
 pub type AssetId = u32;
@@ -196,13 +197,12 @@ pub type AssetFeeAsEDMultiplierFeeCharger = AssetFeeAsExistentialDepositMultipli
 >;
 
 /// Multiplier used for dedicated `TakeFirstAssetTrader` with `ForeignAssets` instance.
-pub type WrappedAssetFeeAsEDMultiplierFeeCharger =
-	AssetFeeAsExistentialDepositMultiplier<
-		Runtime,
-		WeightToFee,
-		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto, WrappedAssetsInstance>,
-		WrappedAssetsInstance,
-	>;
+pub type WrappedAssetFeeAsEDMultiplierFeeCharger = AssetFeeAsExistentialDepositMultiplier<
+	Runtime,
+	WeightToFee,
+	pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto, WrappedAssetsInstance>,
+	WrappedAssetsInstance,
+>;
 
 /// A call filter for the XCM Transact instruction. This is a temporary measure until we
 /// properly account for proof size weights.

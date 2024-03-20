@@ -98,7 +98,7 @@ pub struct TransactionFeeCharger<T, CON, HC>(PhantomData<(T, CON, HC)>);
 impl<T, CON, HC> OnChargeSystemToken<T> for TransactionFeeCharger<T, CON, HC>
 where
 	T: Config,
-	CON: SystemTokenConversion<AssetKind=SystemTokenAssetIdOf<T>, Balance=BalanceOf<T>>,
+	CON: SystemTokenConversion<AssetKind = SystemTokenAssetIdOf<T>, Balance = BalanceOf<T>>,
 	HC: HandleCredit<T::AccountId, T::Fungibles>,
 	SystemTokenAssetIdOf<T>: AssetId,
 	SystemTokenBalanceOf<T>: From<BalanceOf<T>> + From<SystemTokenWeightOf<T>> + From<u128>,

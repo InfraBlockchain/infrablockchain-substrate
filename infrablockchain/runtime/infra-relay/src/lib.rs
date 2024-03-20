@@ -22,9 +22,8 @@
 
 use pallet_transaction_payment::CurrencyAdapter;
 use runtime_common::{
-	auctions, crowdloan, impl_runtime_weights, impls::DealWithFees,
-	paras_registrar, paras_sudo_wrapper, prod_or_fast, slots, BlockHashCount, BlockLength,
-	SlowAdjustingFeeUpdate
+	auctions, crowdloan, impl_runtime_weights, impls::DealWithFees, paras_registrar,
+	paras_sudo_wrapper, prod_or_fast, slots, BlockHashCount, BlockLength, SlowAdjustingFeeUpdate,
 };
 
 use runtime_parachains::{
@@ -117,11 +116,14 @@ use infra_relay_runtime_constants::{currency::*, fee::*, system_parachain::ASSET
 mod weights;
 
 mod infra;
-use infra::{SystemTokenHandler, ParaConfigHandler};
+use infra::{ParaConfigHandler, SystemTokenHandler};
 
 // XCM
 pub mod xcm_config;
-use infra_asset_common::{AssetIdForTrustBackedAssets, AssetIdForTrustBackedAssetsConvert, local_and_foreign_assets::LocalFromLeft,};
+use infra_asset_common::{
+	local_and_foreign_assets::LocalFromLeft, AssetIdForTrustBackedAssets,
+	AssetIdForTrustBackedAssetsConvert,
+};
 use xcm_config::OriginalAssetsPalletLocation;
 
 impl_runtime_weights!(infra_relay_runtime_constants);
@@ -374,8 +376,7 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 			}) |
 			RuntimeCall::Preimage(pallet_preimage::Call::note_preimage { .. }) |
 			RuntimeCall::OriginalAssets(
-				OriginalAssetsCall::create { .. } | 
-				OriginalAssetsCall::mint { .. } 
+				OriginalAssetsCall::create { .. } | OriginalAssetsCall::mint { .. },
 			) => true,
 			_ => false,
 		}
@@ -394,11 +395,8 @@ impl pallet_system_token_tx_payment::Config for Runtime {
 	type SystemConfig = Configuration;
 	type VotingHandler = ValidatorElection;
 	type Fungibles = OriginalAndWrappedAssets;
-	type OnChargeSystemToken = TransactionFeeCharger<
-		Runtime,
-		SystemTokenConversion,
-		CreditToBucket,
-	>;
+	type OnChargeSystemToken =
+		TransactionFeeCharger<Runtime, SystemTokenConversion, CreditToBucket>;
 	type BootstrapCallFilter = BootstrapCallFilter;
 	type PalletId = FeeTreasuryId;
 }

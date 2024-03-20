@@ -174,10 +174,7 @@ use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
 use softfloat::F64;
 use sp_runtime::{
-	traits::{
-		AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Saturating,
-		StaticLookup, Zero,
-	},
+	traits::{AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Saturating, StaticLookup, Zero},
 	types::token::*,
 	ArithmeticError, DispatchError, TokenError,
 };
@@ -257,11 +254,7 @@ pub mod pallet {
 		type RemoveItemsLimit: Get<u32>;
 
 		/// Identifier for the class of asset.
-		type AssetId: Member
-			+ Parameter
-			+ Clone
-			+ MaybeSerializeDeserialize
-			+ MaxEncodedLen;
+		type AssetId: Member + Parameter + Clone + MaybeSerializeDeserialize + MaxEncodedLen;
 
 		/// Wrapper around `Self::AssetId` to use in dispatchable call signatures. Allows the use
 		/// of compact encoding in instances of the pallet, which will prevent breaking changes

@@ -1,5 +1,8 @@
 use softfloat::F64;
-use sp_runtime::{types::{Fiat, RemoteAssetMetadata}, DispatchError};
+use sp_runtime::{
+	types::{Fiat, RemoteAssetMetadata},
+	DispatchError,
+};
 use sp_std::vec::Vec;
 
 use crate::traits::tokens::Balance;
@@ -30,11 +33,17 @@ pub trait Inspect<AccountId>: super::Inspect<AccountId> {
 /// Interface for managing System Token
 pub trait Manage<AccountId>: super::InspectSystemToken<AccountId> {
 	/// Register as System Token
-	fn register(asset: Self::AssetId, system_token_weight: Self::SystemTokenWeight) -> Result<(), DispatchError>;
+	fn register(
+		asset: Self::AssetId,
+		system_token_weight: Self::SystemTokenWeight,
+	) -> Result<(), DispatchError>;
 	/// Deregister as System Token
 	fn deregister(asset: Self::AssetId) -> Result<(), DispatchError>;
 	/// Update weight of System Token based on exchange rate
-	fn update_system_token_weight(asset: Self::AssetId, system_token_weight: Self::SystemTokenWeight) -> Result<(), DispatchError>;
+	fn update_system_token_weight(
+		asset: Self::AssetId,
+		system_token_weight: Self::SystemTokenWeight,
+	) -> Result<(), DispatchError>;
 	/// Request register System Token
 	fn request_register(asset: Self::AssetId) -> Result<(), DispatchError>;
 	/// Create `Wrapped` asset
@@ -56,16 +65,17 @@ pub trait Enumerate<AccountId>: super::InspectEnumerable<AccountId> {
 	fn system_token_ids() -> impl IntoIterator<Item = Self::AssetId>;
 	/// Returns all System Tokens of 'who'
 	fn system_token_account_balances(
-		who: &AccountId
+		who: &AccountId,
 	) -> impl IntoIterator<Item = (Self::AssetId, Self::Balance)>;
 }
 
 /// Interface for inspecting System Token Metadata
 pub trait Metadata<AccountId>: metadata::Inspect<AccountId> {
-	
 	fn inner(asset: Self::AssetId) -> Result<(Fiat, Self::Balance), DispatchError>;
-	
-	fn system_token_metadata(asset: Self::AssetId) -> Result<RemoteAssetMetadata<Self::AssetId, Self::Balance>, DispatchError> {
+
+	fn system_token_metadata(
+		asset: Self::AssetId,
+	) -> Result<RemoteAssetMetadata<Self::AssetId, Self::Balance>, DispatchError> {
 		let name = Self::name(asset.clone());
 		let symbol = Self::symbol(asset.clone());
 		let decimals = Self::decimals(asset.clone());
@@ -76,7 +86,7 @@ pub trait Metadata<AccountId>: metadata::Inspect<AccountId> {
 			symbol,
 			currency_type,
 			decimals,
-			min_balance
+			min_balance,
 		})
 	}
 }

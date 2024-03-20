@@ -5,7 +5,7 @@ use frame_support::{
 	traits::{fungibles::Inspect, Currency},
 	weights::Weight,
 };
-use sp_runtime::{traits::MaybeEquivalence};
+use sp_runtime::traits::MaybeEquivalence;
 use sp_std::{borrow::Borrow, marker::PhantomData, prelude::*, vec::Vec};
 use xcm::{
 	latest::{AssetId::Concrete, Fungibility::Fungible, MultiAsset, MultiLocation},

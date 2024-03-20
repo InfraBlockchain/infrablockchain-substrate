@@ -18,13 +18,10 @@
 
 use codec::{Decode, Encode};
 use cumulus_primitives_core::{
-	relay_chain, AbridgedHostConfiguration, AbridgedHrmpChannel, ParaId, MultiLocation
+	relay_chain, AbridgedHostConfiguration, AbridgedHrmpChannel, MultiLocation, ParaId,
 };
 use scale_info::TypeInfo;
-use sp_runtime::{
-	traits::HashingFor,
-	types::SystemTokenWeight,
-};
+use sp_runtime::{traits::HashingFor, types::SystemTokenWeight};
 use sp_state_machine::{Backend, TrieBackend, TrieBackendBuilder};
 use sp_std::vec::Vec;
 use sp_trie::{HashDBT, MemoryDB, StorageProof, EMPTY_PREFIX};
@@ -296,9 +293,7 @@ impl RelayChainStateProof {
 		.map_err(Error::UpdateSystemTokenWeight)
 	}
 
-	pub fn read_infra_system_config(
-		&self,
-	) -> Result<relay_chain::SystemConfig, Error> {
+	pub fn read_infra_system_config(&self) -> Result<relay_chain::SystemConfig, Error> {
 		read_entry(&self.trie_backend, relay_chain::well_known_keys::SYSTEM_CONFIG, None)
 			.map_err(Error::UpdatedInfraSystemConfig)
 	}

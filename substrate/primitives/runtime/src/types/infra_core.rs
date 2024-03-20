@@ -3,7 +3,7 @@ use super::{
 	token::Fiat,
 };
 use crate::*;
-use codec::{Encode, Decode};
+use codec::{Decode, Encode};
 use sp_std::vec::Vec;
 
 /// System Token configuration for transaction fee calculation
@@ -36,7 +36,6 @@ pub enum InitError {
 }
 
 impl SystemConfig {
-
 	pub fn check_validity(&self) -> Result<(), InitError> {
 		if self.base_system_token_detail.base_weight == 0 {
 			return Err(InitError::InvalidBaseSystemTokenDetail)

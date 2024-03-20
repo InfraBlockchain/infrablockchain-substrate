@@ -1109,7 +1109,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			min_balance.into(),
 			Some(AssetStatus::Live),
 			Some(currency_type.clone()),
-			Some(system_token_weight)
+			Some(system_token_weight),
 		)?;
 		Self::do_set_metadata(id, &owner, name, symbol, decimals)?;
 		Ok(())

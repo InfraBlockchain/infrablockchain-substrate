@@ -1,4 +1,3 @@
-
 use crate::*;
 use frame_system::pallet_prelude::BlockNumberFor;
 
@@ -44,7 +43,9 @@ impl<T: Config> TaaV for Pallet<T> {
 
 	fn process_vote(bytes: &mut Vec<u8>) -> Result<(), Self::Error> {
 		// Try decode
-		let vote = PotVote::<T::AccountId, SystemTokenAssetIdOf<T>, T::Score>::decode(&mut &bytes[..]).map_err(|_| Error::<T>::ErrorDecode)?;
+		let vote =
+			PotVote::<T::AccountId, SystemTokenAssetIdOf<T>, T::Score>::decode(&mut &bytes[..])
+				.map_err(|_| Error::<T>::ErrorDecode)?;
 		log::info!("🥶🥶 Processing Vote: {:?}", vote);
 		let PotVote { candidate, asset_id, amount } = vote;
 		if SeedTrustValidatorPool::<T>::get().contains(&candidate) {

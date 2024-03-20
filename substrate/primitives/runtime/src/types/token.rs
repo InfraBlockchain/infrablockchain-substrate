@@ -2,7 +2,8 @@
 
 use crate::{
 	codec::{Decode, Encode, MaxEncodedLen},
-	scale_info::TypeInfo, RuntimeDebug,
+	scale_info::TypeInfo,
+	RuntimeDebug,
 };
 use sp_std::prelude::*;
 

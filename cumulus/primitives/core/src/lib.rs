@@ -21,10 +21,7 @@
 use codec::{Decode, Encode};
 use parachain_primitives::primitives::HeadData;
 use scale_info::TypeInfo;
-use sp_runtime::{
-	types::SystemConfig,
-	RuntimeDebug,
-};
+use sp_runtime::{types::SystemConfig, RuntimeDebug};
 use sp_std::prelude::*;
 
 pub use infrablockchain_core_primitives::{InboundDownwardMessage, OpaquePotVote};

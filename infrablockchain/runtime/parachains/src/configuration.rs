@@ -27,8 +27,12 @@ use primitives::{
 	AsyncBackingParams, Balance, ExecutorParams, SessionIndex, LEGACY_MIN_BACKING_VOTES,
 	MAX_CODE_SIZE, MAX_HEAD_DATA_SIZE, MAX_POV_SIZE, ON_DEMAND_DEFAULT_QUEUE_MAX_SIZE,
 };
-use sp_runtime::{traits::Zero, Perbill, types::{fee::*, infra_core::*, token::*, vote::*}};
 use sp_arithmetic::traits::AtLeast32BitUnsigned;
+use sp_runtime::{
+	traits::Zero,
+	types::{fee::*, infra_core::*, token::*, vote::*},
+	Perbill,
+};
 use sp_std::prelude::*;
 
 type SystemTokenBalanceOf<T> = <<T as Config>::ParaConfigHandler as ParaConfigInterface>::Balance;
@@ -512,8 +516,8 @@ pub mod pallet {
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
 
-		/// The configuration interface for parachain 
-		type ParaConfigHandler: ParaConfigInterface<AccountId=Self::AccountId>;
+		/// The configuration interface for parachain
+		type ParaConfigHandler: ParaConfigInterface<AccountId = Self::AccountId>;
 	}
 
 	#[pallet::error]
@@ -532,8 +536,7 @@ pub mod pallet {
 	/// System Token configuration for `InfraRelay` Runtime
 	#[pallet::storage]
 	#[pallet::getter(fn active_system_config)]
-	pub type ActiveSystemConfig<T: Config> =
-		StorageValue<_, SystemConfig, ValueQuery>;
+	pub type ActiveSystemConfig<T: Config> = StorageValue<_, SystemConfig, ValueQuery>;
 
 	/// Pending configuration changes.
 	///
@@ -1207,10 +1210,7 @@ pub mod pallet {
 			T::WeightInfo::set_config_with_u32(),
 			DispatchClass::Operational
 		))]
-		pub fn update_system_config(
-			origin: OriginFor<T>,
-			new: SystemConfig,
-		) -> DispatchResult {
+		pub fn update_system_config(origin: OriginFor<T>, new: SystemConfig) -> DispatchResult {
 			// TODO: Use `scheudle_config_update`
 			ensure_root(origin)?;
 			ActiveSystemConfig::<T>::put(new);
@@ -1226,7 +1226,7 @@ pub mod pallet {
 		pub fn update_fee_table(
 			origin: OriginFor<T>,
 			dest: DestIdOf<T>,
-			pallet_name: Vec<u8>, 
+			pallet_name: Vec<u8>,
 			call_name: Vec<u8>,
 			fee: SystemTokenBalanceOf<T>,
 		) -> DispatchResult {
@@ -1245,24 +1245,21 @@ pub mod pallet {
 		pub fn update_para_fee_rate(
 			origin: OriginFor<T>,
 			dest: DestIdOf<T>,
-			fee_rate: SystemTokenBalanceOf<T>
+			fee_rate: SystemTokenBalanceOf<T>,
 		) -> DispatchResult {
 			// TODO: Use `scheudle_config_update`
 			ensure_root(origin)?;
 			T::ParaConfigHandler::update_para_fee_rate(dest, fee_rate);
 			Ok(())
 		}
-		
+
 		// TODO: Benchmark weight!
 		#[pallet::call_index(56)]
 		#[pallet::weight((
 			T::WeightInfo::set_config_with_u32(),
 			DispatchClass::Operational
 		))]
-		pub fn update_runtime_state(
-			origin: OriginFor<T>,
-			dest: DestIdOf<T>,
-		) -> DispatchResult {
+		pub fn update_runtime_state(origin: OriginFor<T>, dest: DestIdOf<T>) -> DispatchResult {
 			// TODO: Use `scheudle_config_update`
 			ensure_root(origin)?;
 			T::ParaConfigHandler::update_runtime_state(dest);
@@ -1478,29 +1475,32 @@ impl<T: Config> Pallet<T> {
 
 /// Runtime configuration set by parent chain which is mostly Relay Chain
 pub trait ParaConfigInterface {
-
 	/// InfraBlockchain AccountId type
-	type AccountId: Parameter; 
+	type AccountId: Parameter;
 	/// Destination ID type
 	type DestId: Parameter;
 	/// Balance type of System Token
 	type Balance: Parameter + AtLeast32BitUnsigned;
 
-	/// Set admin for InfraParaCore of `dest_id` Runtime 
+	/// Set admin for InfraParaCore of `dest_id` Runtime
 	fn set_admin(dest_id: Self::DestId, who: Self::AccountId);
 	/// Update fee table for `dest_id` Runtime
-	fn update_fee_table(dest_id: Self::DestId, pallet_name: Vec<u8>, call_name: Vec<u8>, fee: Self::Balance);
+	fn update_fee_table(
+		dest_id: Self::DestId,
+		pallet_name: Vec<u8>,
+		call_name: Vec<u8>,
+		fee: Self::Balance,
+	);
 	/// Update fee rate for `dest_id` Runtime
 	fn update_para_fee_rate(dest_id: Self::DestId, fee_rate: Self::Balance);
 	/// Set runtime state for `dest_id` Runtime
 	fn update_runtime_state(dest_id: Self::DestId);
 }
 
-impl<T: Config> RuntimeConfigProvider<SystemTokenBalanceOf<T>> for Pallet<T> 
+impl<T: Config> RuntimeConfigProvider<SystemTokenBalanceOf<T>> for Pallet<T>
 where
-	SystemTokenBalanceOf<T>: From<u128>
+	SystemTokenBalanceOf<T>: From<u128>,
 {
-	
 	type Error = ();
 
 	fn system_config() -> Result<SystemConfig, Self::Error> {
