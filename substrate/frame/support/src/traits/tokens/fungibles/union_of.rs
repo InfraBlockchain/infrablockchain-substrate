@@ -1095,6 +1095,20 @@ impl<
 				),
 		}
 	}
+
+	fn suspend(asset: Self::AssetId) -> Result<(), DispatchError> {
+		match Criterion::convert(asset) {
+			Left(a) => <Left as fungibles::ManageSystemToken<AccountId>>::suspend(a),
+			Right(a) => <Right as fungibles::ManageSystemToken<AccountId>>::suspend(a),
+		}
+	}
+
+	fn unsuspend(asset: Self::AssetId) -> Result<(), DispatchError> {
+		match Criterion::convert(asset) {
+			Left(a) => <Left as fungibles::ManageSystemToken<AccountId>>::unsuspend(a),
+			Right(a) => <Right as fungibles::ManageSystemToken<AccountId>>::unsuspend(a),
+		}
+	}
 }
 
 impl<

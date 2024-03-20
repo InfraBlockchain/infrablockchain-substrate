@@ -135,14 +135,14 @@ impl SystemTokenId for MultiLocation {
 		}
 	}
 
-	fn wrapped(&self) -> Result<Self, Self::Error> {
+	fn wrapped(&self, level: u8) -> Result<Self, Self::Error> {
 		match self.interior {
 			Junctions::X3(
 				Junction::Parachain(para_id),
 				Junction::PalletInstance(pallet_id),
 				Junction::GeneralIndex(asset_id),
 			) => Ok(Self {
-				parents: 1,
+				parents: level,
 				interior: Junctions::X3(
 					Junction::Parachain(para_id),
 					Junction::PalletInstance(pallet_id),
@@ -153,7 +153,7 @@ impl SystemTokenId for MultiLocation {
 				Junction::PalletInstance(pallet_id),
 				Junction::GeneralIndex(asset_id),
 			) => Ok(Self {
-				parents: 1,
+				parents: level,
 				interior: Junctions::X2(
 					Junction::PalletInstance(pallet_id),
 					Junction::GeneralIndex(asset_id),
@@ -161,6 +161,10 @@ impl SystemTokenId for MultiLocation {
 			}),
 			_ => Err(SystemTokenIdError::ConvertToWrappedError),
 		}
+	}
+
+	fn is_same_origin(&self, other: Option<Self::OriginId>) -> bool {
+		self.id().map(|(origin_id, _, _)| origin_id == other).unwrap_or(false)
 	}
 }
 

@@ -57,6 +57,10 @@ pub trait Manage<AccountId>: super::InspectSystemToken<AccountId> {
 		decimals: u8,
 		system_token_weight: Self::SystemTokenWeight,
 	) -> Result<(), DispatchError>;
+	/// Suspend System Token for given asset
+	fn suspend(asset: Self::AssetId) -> Result<(), DispatchError>;
+	/// Unsuspend System Token for given asset
+	fn unsuspend(asset: Self::AssetId) -> Result<(), DispatchError>;
 }
 
 /// Interface for enumerating System Token

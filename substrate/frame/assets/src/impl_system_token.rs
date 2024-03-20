@@ -100,6 +100,14 @@ impl<T: Config<I>, I: 'static> ManageSystemToken<T::AccountId> for Pallet<T, I> 
 			system_token_weight,
 		)
 	}
+
+	fn suspend(asset: Self::AssetId) -> Result<(), DispatchError> {
+		Self::do_suspend(asset)
+	}
+
+	fn unsuspend(asset: Self::AssetId) -> Result<(), DispatchError> {
+		Self::do_unsuspend(asset)
+	}
 }
 
 impl<T: Config<I>, I: 'static> InspectSystemTokenMetadata<T::AccountId> for Pallet<T, I> {

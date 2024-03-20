@@ -1155,4 +1155,26 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		})?;
 		Ok(())
 	}
+
+	pub fn do_suspend(asset_id: T::AssetId) -> DispatchResult {
+		Asset::<T, I>::try_mutate_exists(asset_id, |maybe_detail| -> DispatchResult {
+			let mut asset_detail = maybe_detail.take().ok_or(Error::<T, I>::Unknown)?;
+			ensure!(asset_detail.status == AssetStatus::Live, Error::<T, I>::IncorrectStatus);
+			asset_detail.status = AssetStatus::Suspend;
+			*maybe_detail = Some(asset_detail);
+			Ok(())
+		})?;
+		Ok(())
+	}
+
+	pub fn do_unsuspend(asset_id: T::AssetId) -> DispatchResult {
+		Asset::<T, I>::try_mutate_exists(asset_id, |maybe_detail| -> DispatchResult {
+			let mut asset_detail = maybe_detail.take().ok_or(Error::<T, I>::Unknown)?;
+			ensure!(asset_detail.status == AssetStatus::Suspend, Error::<T, I>::IncorrectStatus);
+			asset_detail.status = AssetStatus::Live;
+			*maybe_detail = Some(asset_detail);
+			Ok(())
+		})?;
+		Ok(())
+	}
 }

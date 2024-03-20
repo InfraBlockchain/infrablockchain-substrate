@@ -233,6 +233,11 @@ pub mod pallet {
 
 		/// Interface for interacting with validator collective pallet
 		type CollectiveInterface: CollectiveInterface<Self::AccountId>;
+
+		// F64::from_i128(5_256_000)(e.g 10 blocks/min * 60 min/hours* 24 hours/day * 365 days/year)
+		/// The number of blocks per year
+		#[pallet::constant]
+		type BlocksPerYear: Get<BlockNumberFor<Self>>;
 	}
 
 	#[pallet::genesis_config]

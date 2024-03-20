@@ -111,6 +111,10 @@ pub mod pallet {
 		RegisterRequested { asset_id: SystemTokenAssetIdOf<T>, exp: BlockNumberFor<T> },
 		/// Wrapped local asset has been created
 		WrappedCreated { asset_id: SystemTokenAssetIdOf<T> },
+		/// System Token has been suspended by Relay-chain governance
+		Suspended { asset_id: SystemTokenAssetIdOf<T> },
+		/// System Token has been unsuspended by Relay-chain governance
+		Unsuspended { asset_id: SystemTokenAssetIdOf<T> },
 	}
 
 	#[pallet::error]
@@ -131,6 +135,10 @@ pub mod pallet {
 		ErrorDeregisterSystemToken,
 		/// Error occured while creating wrapped local asset
 		ErrorCreateWrappedLocalAsset,
+		/// Error occured while suspending System Token
+		ErrorSuspendSystemToken,
+		/// Error occured while unsuspending System Token
+		ErrorUnsuspendSystemToken,
 		/// No permission to call this function
 		NoPermission,
 		/// Error occured while getting metadata
@@ -292,10 +300,34 @@ pub mod pallet {
 			Ok(())
 		}
 
+		#[pallet::call_index(7)]
+		pub fn suspend_system_token(
+			origin: OriginFor<T>,
+			asset_id: SystemTokenAssetIdOf<T>,
+		) -> DispatchResult {
+			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
+			T::Fungibles::suspend(asset_id.clone())
+				.map_err(|_| Error::<T>::ErrorSuspendSystemToken)?;
+			Self::deposit_event(Event::<T>::Suspended { asset_id });
+			Ok(())
+		}
+
+		#[pallet::call_index(8)]
+		pub fn unsuspend_system_token(
+			origin: OriginFor<T>,
+			asset_id: SystemTokenAssetIdOf<T>,
+		) -> DispatchResult {
+			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
+			T::Fungibles::unsuspend(asset_id.clone())
+				.map_err(|_| Error::<T>::ErrorUnsuspendSystemToken)?;
+			Self::deposit_event(Event::<T>::Unsuspended { asset_id });
+			Ok(())
+		}
+
 		/// Request to register System Token
 		///
 		/// If succeed, request will be queued in `CurrentRequest`
-		#[pallet::call_index(8)]
+		#[pallet::call_index(9)]
 		pub fn request_register_system_token(
 			origin: OriginFor<T>,
 			original: SystemTokenAssetIdOf<T>,

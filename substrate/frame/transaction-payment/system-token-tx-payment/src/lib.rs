@@ -43,8 +43,7 @@ use pallet_transaction_payment::OnChargeTransaction;
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{
-		AccountIdConversion, DispatchInfoOf, Dispatchable, PostDispatchInfoOf, SignedExtension,
-		Zero,
+		AccountIdConversion, DispatchInfoOf, Dispatchable, PostDispatchInfoOf, Saturating, SignedExtension, Zero
 	},
 	transaction_validity::{TransactionValidity, TransactionValidityError, ValidTransaction},
 	types::{fee::*, infra_core::*, token::*, vote::PotVote},
@@ -126,13 +125,15 @@ where
 		system_token_id: &SystemTokenAssetIdOf<T>,
 		converted_fee: SystemTokenBalanceOf<T>,
 	) -> Result<(), TransactionValidityError> {
+		let system_token_weight = T::Fungibles::system_token_weight(system_token_id.clone()).map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::SystemTokenMissing))?;
 		let balance_to_weight: SystemTokenWeightOf<T> = converted_fee.into();
-		let to_i128: i128 = balance_to_weight
+		let vote_amount = balance_to_weight.saturating_mul(system_token_weight);
+		let to_i128: i128 = vote_amount
 			.try_into()
 			.map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::ConversionError))?;
-		let vote = PotVote::new(candidate.clone(), system_token_id.clone(), to_i128);
-		if let Err(_) = T::VotingHandler::process_vote(&mut vote.encode()) {
-			log::error!("Failed to process vote: {:?}", vote);
+		let pot_vote = PotVote::new(candidate.clone(), system_token_id.clone(), to_i128);
+		if let Err(_) = T::VotingHandler::process_vote(&mut pot_vote.encode()) {
+			log::error!("Failed to process vote: {:?}", pot_vote);
 		}
 		Ok(())
 	}

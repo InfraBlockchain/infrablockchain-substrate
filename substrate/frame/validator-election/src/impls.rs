@@ -22,19 +22,24 @@ impl<T: Config> SessionAlert<BlockNumberFor<T>> for Pallet<T> {
 
 /// Something that handles fee reward
 pub trait RewardInterface<Location, Balance> {
-	/// Fee will be aggregated on certain account for current session
-	fn aggregate_reward(session_index: SessionIndex, system_token_id: Location, amount: Balance);
+	
+	/// Infrablockchain AccountId type
+	type AccountId: Parameter;
+	/// Infrablockchain Balance type
+	type Balance: Parameter;
+	/// Id for destination to distribute reward
+	type DestId: Parameter;
+
 	/// Fee will be distributed to the validators for current session
 	fn distribute_reward(session_index: SessionIndex);
 }
 
 impl<Location, Balance> RewardInterface<Location, Balance> for () {
-	fn aggregate_reward(
-		_session_index: SessionIndex,
-		_system_token_id: Location,
-		_amount: Balance,
-	) {
-	}
+
+	type AccountId = ();
+	type Balance = u64;
+	type DestId = ();
+	
 	fn distribute_reward(_session_index: SessionIndex) {}
 }
 
@@ -47,30 +52,20 @@ impl<T: Config> TaaV for Pallet<T> {
 			PotVote::<T::AccountId, SystemTokenAssetIdOf<T>, T::Score>::decode(&mut &bytes[..])
 				.map_err(|_| Error::<T>::ErrorDecode)?;
 		log::info!("🥶🥶 Processing Vote: {:?}", vote);
-		let PotVote { candidate, asset_id, amount } = vote;
+		let PotVote { candidate, asset_id, mut amount } = vote;
 		if SeedTrustValidatorPool::<T>::get().contains(&candidate) {
 			return Ok(())
 		}
-		// @Hugo
-		// let block_time_weight: F64 = {
-		// 	let current_block_number: u128 = relay_parent_number.saturated_into();
-		// 	// pow = ln(2) * current block number / BLOCKS_PER_YEAR
-		// 	let pow: F64 = F64::from_i128(2).ln() *
-		// 		F64::from_i128(current_block_number as i128).div(BLOCKS_PER_YEAR);
-		// 	// block_time_weight = 2 ^ (current block number / BLOCKS_PER_YEAR) = exp ^ (pow)
-		// 	let block_time_weight = pow.exp();
-		// 	block_time_weight
-		// };
+
+		// TODO 
+		Self::adjust_amount(&mut amount);
+
 		PotValidatorPool::<T>::mutate(|voting_status| {
 			voting_status.add_vote(&candidate, amount.clone());
 		});
-		// @Sirius
-		// T::RewardInterface::aggregate_reward (
-		// 	session_index,
-		// 	system_token_id.para_id, -> DestId in RewardInterface
-		// 	original, -> `AssetId` in PotVote
-		// 	adjusted_weight,
-		// );
+	
+		// TODO
+		Self::aggregate_reward(asset_id, amount.clone());
 		Self::deposit_event(Event::<T>::Voted { who: candidate, amount });
 		Ok(())
 	}
@@ -160,6 +155,31 @@ impl<T: Config> pallet_session::SessionManager<T::AccountId> for Pallet<T> {
 }
 
 impl<T: Config> Pallet<T> {
+
+	/// **Process**
+	/// 
+	/// 1. Adjust based on `SystemTokenWeight`
+	/// 2. Adjust absed on `BlockTimeWeight`
+	fn adjust_amount(
+		amount: &mut T::Score
+	) {
+		// impl me!
+		// let current = <frame_system::Pallet<T>>::block_number();
+		// let blocks_per_year = T::BlocksPerYear::get();
+		// // Will change to HigherPrecisionScore when trait is implemented 
+		// let pow: F64 = F64::from_i128(2).ln() * F64::from_i128(current as i128).div(blocks_per_year);
+		// let block_time_weight = pow.exp();
+		// block_time_weight.mul(amount)
+	}
+
+	fn aggregate_reward(
+		asset_id: SystemTokenAssetIdOf<T>,
+		amount: T::Score
+	) {
+			// impl me!
+			// @SIRIUS
+	}
+
 	fn handle_new_session(
 		session_index: SessionIndex,
 		is_genesis: bool,

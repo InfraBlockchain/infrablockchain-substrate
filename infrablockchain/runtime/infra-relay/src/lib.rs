@@ -277,6 +277,7 @@ impl pallet_preimage::Config for Runtime {
 
 parameter_types! {
 	pub EpochDuration: u64 = EpochDurationInSlots::get() as u64;
+	pub const BondingDuration: u32 = 28;
 	pub const ExpectedBlockTime: Moment = MILLISECS_PER_BLOCK;
 	pub ReportLongevity: u64 =
 		BondingDuration::get() as u64 * SessionsPerEra::get() as u64 * EpochDuration::get();
@@ -1112,8 +1113,7 @@ impl parachains_inclusion::Config for Runtime {
 
 parameter_types! {
 	pub const SessionsPerEra: u32 = 3;
-	// Should be removed.
-	pub const BondingDuration: u32 = 28;
+	pub const BlocksPerYear: BlockNumber = YEAR;
 }
 
 impl pallet_validator_election::Config for Runtime {
@@ -1125,6 +1125,7 @@ impl pallet_validator_election::Config for Runtime {
 	type NextNewSession = Session;
 	type SessionInterface = Self;
 	type CollectiveInterface = Council;
+	type BlocksPerYear = BlocksPerYear;
 }
 
 parameter_types! {

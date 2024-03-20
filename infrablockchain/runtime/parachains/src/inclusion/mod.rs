@@ -917,7 +917,6 @@ impl<T: Config> Pallet<T> {
 		// Process
 		// 1. Handle opaque votes(system_token_manager)
 		// 2. Handle remoted_asset_metadata(system_token_manager)
-
 		if let Some(mut request_asset) = commitments.requested_asset {
 			<system_token_manager::Pallet<T>>::requested_asset_metadata(&mut request_asset);
 		}
@@ -925,7 +924,7 @@ impl<T: Config> Pallet<T> {
 			for vote in votes.iter_mut() {
 				if let Err(_) = T::VotingHandler::process_vote(vote) {
 					log::error!("❌ Failed to process vote ❌");
-					continue;
+					continue
 				}
 			}
 		};
