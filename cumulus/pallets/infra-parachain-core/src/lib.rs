@@ -426,12 +426,3 @@ impl<T: Config> UpdateRCConfig<SystemTokenAssetIdOf<T>, SystemTokenWeightOf<T>> 
 		}
 	}
 }
-
-impl<T: Config> TaaV for Pallet<T> {
-	type Error = ();
-
-	fn process_vote(bytes: &mut Vec<u8>) -> Result<(), Self::Error> {
-		<cumulus_pallet_parachain_system::Pallet<T>>::relay_vote(bytes.clone());
-		Ok(())
-	}
-}

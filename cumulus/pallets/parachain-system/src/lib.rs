@@ -1496,6 +1496,15 @@ impl<T: Config> frame_system::SetCode<T> for ParachainSetCode<T> {
 	}
 }
 
+impl<T: Config> sp_runtime::types::infra_core::TaaV for Pallet<T> {
+	type Error = ();
+
+	fn process_vote(bytes: &mut Vec<u8>) -> Result<(), Self::Error> {
+		Self::relay_vote(bytes.clone());
+		Ok(())
+	}
+}
+
 /// Something deals with infra- stuff
 impl<T: Config> Pallet<T> {
 	pub fn relay_vote(bytes: Vec<u8>) {
