@@ -285,7 +285,7 @@ where
 		} else {
 			None
 		};
-			
+
 		let requested_asset = collation_info.requested_asset;
 
 		let collation = Collation {

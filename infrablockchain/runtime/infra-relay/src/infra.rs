@@ -24,10 +24,10 @@ pub enum ParachainCalls {
 	CreateWrapped(AccountId, MultiLocation, Fiat, Balance, Vec<u8>, Vec<u8>, u8, SystemTokenWeight),
 	#[codec(index = 6)]
 	DeregisterSystemToken(MultiLocation),
-    #[codec(index = 7)]
-    SuspendSystemToken(MultiLocation),
-    #[codec(index = 8)]
-    UnsuspendSystemToken(MultiLocation),
+	#[codec(index = 7)]
+	SuspendSystemToken(MultiLocation),
+	#[codec(index = 8)]
+	UnsuspendSystemToken(MultiLocation),
 }
 
 /// Main actor for handling policy of paracahain configuration
@@ -119,15 +119,17 @@ impl SystemTokenInterface for SystemTokenHandler {
 		send_xcm_for(create_call.encode(), dest_id);
 	}
 
-    fn suspend_system_token(dest_id: Self::DestId, asset_id: Self::Location) {
-        let suspend_call = ParachainRuntimePallets::InfraParaCore(ParachainCalls::SuspendSystemToken(asset_id));
+	fn suspend_system_token(dest_id: Self::DestId, asset_id: Self::Location) {
+		let suspend_call =
+			ParachainRuntimePallets::InfraParaCore(ParachainCalls::SuspendSystemToken(asset_id));
 		send_xcm_for(suspend_call.encode(), dest_id);
-    }
+	}
 
-    fn unsuspend_system_token(dest_id: Self::DestId, asset_id: Self::Location) {
-        let unsuspend_call = ParachainRuntimePallets::InfraParaCore(ParachainCalls::UnsuspendSystemToken(asset_id));
+	fn unsuspend_system_token(dest_id: Self::DestId, asset_id: Self::Location) {
+		let unsuspend_call =
+			ParachainRuntimePallets::InfraParaCore(ParachainCalls::UnsuspendSystemToken(asset_id));
 		send_xcm_for(unsuspend_call.encode(), dest_id);
-    }
+	}
 }
 
 pub(super) fn send_xcm_for(call: Vec<u8>, dest_id: u32) {

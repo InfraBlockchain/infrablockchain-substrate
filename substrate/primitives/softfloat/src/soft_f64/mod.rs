@@ -84,6 +84,14 @@ impl F64 {
 		crate::conv::f64_to_i128(self)
 	}
 
+	pub const fn from_u128(a: u128) -> Self {
+		crate::conv::u128_to_f64(a)
+	}
+
+	pub const fn to_u128(self) -> u128 {
+		crate::conv::f64_to_u128(self)
+	}
+
 	pub const fn from_bits(a: u64) -> Self {
 		Self(Bits64(a))
 	}
@@ -175,81 +183,56 @@ impl F64 {
 	}
 }
 
-impl From<F64> for usize {
-	fn from(x: F64) -> Self {
-		x.to_i32() as usize
+// i32 <=> F64
+impl From<i32> for F64 {
+	fn from(x: i32) -> Self {
+		Self::from_i32(x)
 	}
 }
 
-impl From<F64> for u8 {
+impl From<F64> for i32 {
 	fn from(x: F64) -> Self {
-		x.to_i32() as u8
+		F64::to_i32(x)
 	}
 }
 
-impl From<F64> for u16 {
-	fn from(x: F64) -> Self {
-		x.to_i32() as u16
+// i128 <=> F64
+impl From<i128> for F64 {
+	fn from(x: i128) -> Self {
+		Self::from_i128(x)
 	}
 }
 
-impl From<F64> for u32 {
+impl From<F64> for i128 {
 	fn from(x: F64) -> Self {
-		x.to_i32() as u32
+		F64::to_i128(x)
+	}
+}
+
+// u64 <=> F64
+impl From<u64> for F64 {
+	fn from(x: u64) -> Self {
+		let a = x as u128;
+		Self::from_u128(a)
 	}
 }
 
 impl From<F64> for u64 {
 	fn from(x: F64) -> Self {
-		x.to_i32() as u64
+		F64::to_u128(x) as u64
+	}
+}
+
+// u128 <=> F64
+impl From<u128> for F64 {
+	fn from(x: u128) -> Self {
+		Self::from_u128(x)
 	}
 }
 
 impl From<F64> for u128 {
 	fn from(x: F64) -> Self {
-		x.to_i32() as u128
-	}
-}
-
-impl From<usize> for F64 {
-	fn from(x: usize) -> Self {
-		let a = x as i32;
-		Self::from_i32(a)
-	}
-}
-
-impl From<u8> for F64 {
-	fn from(x: u8) -> Self {
-		let a = x as i32;
-		Self::from_i32(a)
-	}
-}
-
-impl From<u16> for F64 {
-	fn from(x: u16) -> Self {
-		let a = x as i32;
-		Self::from_i32(a)
-	}
-}
-
-impl From<u32> for F64 {
-	fn from(x: u32) -> Self {
-		let a = x as i32;
-		Self::from_i32(a)
-	}
-}
-
-impl From<u64> for F64 {
-	fn from(x: u64) -> Self {
-		let a = x as i32;
-		Self::from_i32(a)
-	}
-}
-
-impl From<u128> for F64 {
-	fn from(x: u128) -> Self {
-		let a = x as i32;
-		Self::from_i32(a)
+		F64::to_u128(x)
 	}
 }
 

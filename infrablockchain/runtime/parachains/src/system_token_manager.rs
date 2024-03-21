@@ -15,13 +15,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
-use scale_info::TypeInfo;
-use softfloat::F64;
 use crate::{configuration, ensure_parachain, paras, Origin as ParachainOrigin, ParaId};
-use frame_system::pallet_prelude::*;
 pub use frame_support::{
 	pallet_prelude::*,
+	storage::KeyPrefixIterator,
 	traits::{
 		tokens::{
 			fungibles::{Inspect, InspectSystemToken, ManageSystemToken},
@@ -29,9 +26,12 @@ pub use frame_support::{
 		},
 		Get, UnixTime,
 	},
-	storage::KeyPrefixIterator,
 	BoundedVec, PalletId, Parameter,
 };
+use frame_system::pallet_prelude::*;
+use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
+use scale_info::TypeInfo;
+use softfloat::F64;
 
 pub use pallet::*;
 use sp_runtime::{
@@ -159,7 +159,7 @@ pub mod pallet {
 		/// Error occurred while unsuspending system token
 		ErrorUnsuspendSystemToken,
 		/// Error occurred while updating system token weight
-		ErrorUpdateSystemTokenWeight
+		ErrorUpdateSystemTokenWeight,
 	}
 
 	#[pallet::pallet]
@@ -457,12 +457,10 @@ impl<T: Config> Pallet<T> {
 		FiatForOriginal::<T>::iter_key_prefix(currency)
 	}
 
-	fn do_update_system_token_weight(
-		currency: &Fiat,
-	) -> DispatchResult {
+	fn do_update_system_token_weight(currency: &Fiat) -> DispatchResult {
 		let os = Self::fiat_for_originals(currency);
 		let mut para_ids: Vec<SystemTokenOriginIdOf<T>> = Default::default();
-		for o in os {	
+		for o in os {
 			let mut is_rc_original: bool = false;
 			let mut system_token_detail =
 				SystemToken::<T>::get(&o).ok_or(Error::<T>::SystemTokenNotRegistered)?;
@@ -475,7 +473,8 @@ impl<T: Config> Pallet<T> {
 			} else {
 				// Original System Token for RC
 				is_rc_original = true;
-				T::Fungibles::update_system_token_weight(o.clone(), updated_sys_weight).map_err(|_| Error::<T>::ErrorUpdateSystemTokenWeight)?;
+				T::Fungibles::update_system_token_weight(o.clone(), updated_sys_weight)
+					.map_err(|_| Error::<T>::ErrorUpdateSystemTokenWeight)?;
 			}
 			system_token_detail.update_weight(updated_sys_weight);
 			if let Some(ws) = FiatForOriginal::<T>::get(currency, &o) {
@@ -484,19 +483,18 @@ impl<T: Config> Pallet<T> {
 				}
 			}
 			for para_id in para_ids {
-				UpdateExchangeRates::<T>::try_mutate(
-					para_id,
-					|maybe_updated| -> DispatchResult {
-						let wrapped = o.wrapped(1).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
-						*maybe_updated = Some(vec![(wrapped, updated_sys_weight)]);
-						Ok(())
-					},
-				)?;
+				UpdateExchangeRates::<T>::try_mutate(para_id, |maybe_updated| -> DispatchResult {
+					let wrapped = o.wrapped(1).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+					*maybe_updated = Some(vec![(wrapped, updated_sys_weight)]);
+					Ok(())
+				})?;
 			}
-			// Handle for Relay Chain wrapped 
+			// Handle for Relay Chain wrapped
 			if !is_rc_original {
-				let wrapped_original = o.wrapped(0).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
-				T::Fungibles::update_system_token_weight(wrapped_original, updated_sys_weight).map_err(|_| Error::<T>::ErrorUpdateSystemTokenWeight)?;
+				let wrapped_original =
+					o.wrapped(0).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+				T::Fungibles::update_system_token_weight(wrapped_original, updated_sys_weight)
+					.map_err(|_| Error::<T>::ErrorUpdateSystemTokenWeight)?;
 			}
 			para_ids = Default::default();
 		}
@@ -657,10 +655,7 @@ impl<T: Config> Pallet<T> {
 		let mut system_token_detail =
 			SystemToken::<T>::get(original).ok_or(Error::<T>::SystemTokenNotRegistered)?;
 		let system_token_weight = system_token_detail.weight();
-		ensure!(
-			system_token_weight.ne(&Zero::zero()),
-			Error::<T>::InvalidSystemTokenWeight
-		);
+		ensure!(system_token_weight.ne(&Zero::zero()), Error::<T>::InvalidSystemTokenWeight);
 		let system_token_metadata =
 			Metadata::<T>::get(original).ok_or(Error::<T>::SystemTokenNotRegistered)?;
 		if let Some(para_id) = maybe_para_id {
@@ -712,81 +707,105 @@ impl<T: Config> Pallet<T> {
 	}
 
 	fn do_suspend_system_token(
-		kind: MutateKind<T::SystemTokenId, SystemTokenOriginIdOf<T>>
+		kind: MutateKind<T::SystemTokenId, SystemTokenOriginIdOf<T>>,
 	) -> Result<(), DispatchError> {
 		let mut para_ids: Vec<SystemTokenOriginIdOf<T>> = Default::default();
 		match kind {
 			MutateKind::All(original) => {
-				let (maybe_para_id, _, _) = original.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
+				let (maybe_para_id, _, _) =
+					original.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
 				if let Some(para_id) = maybe_para_id {
 					// Original System Token for Parachains
 					para_ids.push(para_id);
 					// We do suspend for Relay Chain first
-					let wrapped_original = original.wrapped(0).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
-					T::Fungibles::suspend(wrapped_original).map_err(|_| Error::<T>::ErrorSuspendSystemToken)?;
+					let wrapped_original =
+						original.wrapped(0).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+					T::Fungibles::suspend(wrapped_original)
+						.map_err(|_| Error::<T>::ErrorSuspendSystemToken)?;
 				} else {
 					// Original System Token for RC
-					T::Fungibles::suspend(original.clone()).map_err(|_| Error::<T>::ErrorSuspendSystemToken)?;
+					T::Fungibles::suspend(original.clone())
+						.map_err(|_| Error::<T>::ErrorSuspendSystemToken)?;
 				}
-				let wrapped_original = original.wrapped(1).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+				let wrapped_original =
+					original.wrapped(1).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
 				let original_used_para_ids = Self::list_all_para_ids_for(&original)?;
 				para_ids.extend(original_used_para_ids);
 				for para_id in para_ids {
-					T::SystemTokenHandler::suspend_system_token(para_id.into(), wrapped_original.clone());
+					T::SystemTokenHandler::suspend_system_token(
+						para_id.into(),
+						wrapped_original.clone(),
+					);
 				}
 			},
 			MutateKind::Wrapped { original, wrapped } => {
 				ensure!(original.is_same_origin(wrapped.clone()), Error::<T>::BadAccess);
-				let (maybe_para_id, _, _) = original.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
+				let (maybe_para_id, _, _) =
+					original.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
 				if let Some(para_id) = maybe_para_id {
-					let wrapped_original = original.wrapped(1).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+					let wrapped_original =
+						original.wrapped(1).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
 					T::SystemTokenHandler::suspend_system_token(para_id.into(), wrapped_original);
 				} else {
 					// Relay Chain
-					let wrapped_original = original.wrapped(0).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
-					T::Fungibles::suspend(wrapped_original).map_err(|_| Error::<T>::ErrorSuspendSystemToken)?;
+					let wrapped_original =
+						original.wrapped(0).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+					T::Fungibles::suspend(wrapped_original)
+						.map_err(|_| Error::<T>::ErrorSuspendSystemToken)?;
 				}
-			}
+			},
 		}
 		Ok(())
 	}
 
 	fn do_unsuspend_system_token(
-		kind: MutateKind<T::SystemTokenId, SystemTokenOriginIdOf<T>>
+		kind: MutateKind<T::SystemTokenId, SystemTokenOriginIdOf<T>>,
 	) -> Result<(), DispatchError> {
 		let mut para_ids: Vec<SystemTokenOriginIdOf<T>> = Default::default();
 		match kind {
 			MutateKind::All(original) => {
-				let (maybe_para_id, _, _) = original.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
+				let (maybe_para_id, _, _) =
+					original.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
 				if let Some(para_id) = maybe_para_id {
 					// Original System Token for Parachains
 					para_ids.push(para_id);
 					// We do suspend for Relay Chain first
-					let wrapped_original = original.wrapped(0).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
-					T::Fungibles::unsuspend(wrapped_original).map_err(|_| Error::<T>::ErrorUnsuspendSystemToken)?;
+					let wrapped_original =
+						original.wrapped(0).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+					T::Fungibles::unsuspend(wrapped_original)
+						.map_err(|_| Error::<T>::ErrorUnsuspendSystemToken)?;
 				} else {
 					// Original System Token for RC
-					T::Fungibles::unsuspend(original.clone()).map_err(|_| Error::<T>::ErrorUnsuspendSystemToken)?;
+					T::Fungibles::unsuspend(original.clone())
+						.map_err(|_| Error::<T>::ErrorUnsuspendSystemToken)?;
 				}
-				let wrapped_original = original.wrapped(1).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+				let wrapped_original =
+					original.wrapped(1).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
 				let original_used_para_ids = Self::list_all_para_ids_for(&original)?;
 				para_ids.extend(original_used_para_ids);
 				for para_id in para_ids {
-					T::SystemTokenHandler::unsuspend_system_token(para_id.into(), wrapped_original.clone());
+					T::SystemTokenHandler::unsuspend_system_token(
+						para_id.into(),
+						wrapped_original.clone(),
+					);
 				}
 			},
 			MutateKind::Wrapped { original, wrapped } => {
 				ensure!(original.is_same_origin(wrapped.clone()), Error::<T>::BadAccess);
-				let (maybe_para_id, _, _) = original.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
+				let (maybe_para_id, _, _) =
+					original.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
 				if let Some(para_id) = maybe_para_id {
-					let wrapped_original = original.wrapped(1).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+					let wrapped_original =
+						original.wrapped(1).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
 					T::SystemTokenHandler::unsuspend_system_token(para_id.into(), wrapped_original);
 				} else {
 					// Relay Chain
-					let wrapped_original = original.wrapped(0).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
-					T::Fungibles::unsuspend(wrapped_original).map_err(|_| Error::<T>::ErrorUnsuspendSystemToken)?;
+					let wrapped_original =
+						original.wrapped(0).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+					T::Fungibles::unsuspend(wrapped_original)
+						.map_err(|_| Error::<T>::ErrorUnsuspendSystemToken)?;
 				}
-			}
+			},
 		}
 		Ok(())
 	}

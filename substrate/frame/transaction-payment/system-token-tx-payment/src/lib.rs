@@ -43,7 +43,8 @@ use pallet_transaction_payment::OnChargeTransaction;
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{
-		AccountIdConversion, DispatchInfoOf, Dispatchable, PostDispatchInfoOf, Saturating, SignedExtension, Zero
+		AccountIdConversion, DispatchInfoOf, Dispatchable, PostDispatchInfoOf, Saturating,
+		SignedExtension, Zero,
 	},
 	transaction_validity::{TransactionValidity, TransactionValidityError, ValidTransaction},
 	types::{fee::*, infra_core::*, token::*, vote::PotVote},
@@ -125,7 +126,10 @@ where
 		system_token_id: &SystemTokenAssetIdOf<T>,
 		converted_fee: SystemTokenBalanceOf<T>,
 	) -> Result<(), TransactionValidityError> {
-		let system_token_weight = T::Fungibles::system_token_weight(system_token_id.clone()).map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::SystemTokenMissing))?;
+		let system_token_weight = T::Fungibles::system_token_weight(system_token_id.clone())
+			.map_err(|_| {
+				TransactionValidityError::Invalid(InvalidTransaction::SystemTokenMissing)
+			})?;
 		let balance_to_weight: SystemTokenWeightOf<T> = converted_fee.into();
 		let vote_amount = balance_to_weight.saturating_mul(system_token_weight);
 		let to_i128: i128 = vote_amount

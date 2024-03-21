@@ -22,7 +22,6 @@ impl<T: Config> SessionAlert<BlockNumberFor<T>> for Pallet<T> {
 
 /// Something that handles fee reward
 pub trait RewardInterface<Location, Balance> {
-	
 	/// Infrablockchain AccountId type
 	type AccountId: Parameter;
 	/// Infrablockchain Balance type
@@ -35,11 +34,10 @@ pub trait RewardInterface<Location, Balance> {
 }
 
 impl<Location, Balance> RewardInterface<Location, Balance> for () {
-
 	type AccountId = ();
 	type Balance = u64;
 	type DestId = ();
-	
+
 	fn distribute_reward(_session_index: SessionIndex) {}
 }
 
@@ -57,13 +55,13 @@ impl<T: Config> TaaV for Pallet<T> {
 			return Ok(())
 		}
 
-		// TODO 
+		// TODO
 		Self::adjust_amount(&mut amount);
 
 		PotValidatorPool::<T>::mutate(|voting_status| {
 			voting_status.add_vote(&candidate, amount.clone());
 		});
-	
+
 		// TODO
 		Self::aggregate_reward(asset_id, amount.clone());
 		Self::deposit_event(Event::<T>::Voted { who: candidate, amount });
@@ -155,29 +153,23 @@ impl<T: Config> pallet_session::SessionManager<T::AccountId> for Pallet<T> {
 }
 
 impl<T: Config> Pallet<T> {
-
 	/// **Process**
-	/// 
+	///
 	/// 1. Adjust based on `SystemTokenWeight`
 	/// 2. Adjust absed on `BlockTimeWeight`
-	fn adjust_amount(
-		amount: &mut T::Score
-	) {
+	fn adjust_amount(amount: &mut T::Score) {
 		// impl me!
 		// let current = <frame_system::Pallet<T>>::block_number();
 		// let blocks_per_year = T::BlocksPerYear::get();
-		// // Will change to HigherPrecisionScore when trait is implemented 
-		// let pow: F64 = F64::from_i128(2).ln() * F64::from_i128(current as i128).div(blocks_per_year);
-		// let block_time_weight = pow.exp();
+		// // Will change to HigherPrecisionScore when trait is implemented
+		// let pow: F64 = F64::from_i128(2).ln() * F64::from_i128(current as
+		// i128).div(blocks_per_year); let block_time_weight = pow.exp();
 		// block_time_weight.mul(amount)
 	}
 
-	fn aggregate_reward(
-		asset_id: SystemTokenAssetIdOf<T>,
-		amount: T::Score
-	) {
-			// impl me!
-			// @SIRIUS
+	fn aggregate_reward(asset_id: SystemTokenAssetIdOf<T>, amount: T::Score) {
+		// impl me!
+		// @SIRIUS
 	}
 
 	fn handle_new_session(

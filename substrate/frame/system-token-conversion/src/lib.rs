@@ -61,7 +61,8 @@ pub trait SystemTokenConversion {
 	///
 	/// ### Formula
 	///
-	/// - fee: weight_scale * para_fee_rate * balance / system_token_weight * base_system_token_weight
+	/// - fee: weight_scale * para_fee_rate * balance / system_token_weight *
+	///   base_system_token_weight
 	/// - vote: fee * system_token_weight
 	fn to_system_token_balance(
 		asset: Self::AssetKind,
@@ -89,8 +90,7 @@ impl<T: Config> SystemTokenConversion for Pallet<T> {
 		let n = balance.saturating_mul(para_fee_rate);
 		let d = base_weight.saturating_mul(system_token_weight.into());
 		let converted_fee =
-			FixedU128::saturating_from_rational(n, d)
-				.saturating_mul_int(weight_scale.into());
+			FixedU128::saturating_from_rational(n, d).saturating_mul_int(weight_scale.into());
 		Ok(converted_fee)
 	}
 }
