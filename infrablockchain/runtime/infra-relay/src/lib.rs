@@ -121,8 +121,8 @@ use infra::{ParaConfigHandler, SystemTokenHandler};
 // XCM
 pub mod xcm_config;
 use infra_asset_common::{
-	local_and_foreign_assets::LocalFromLeft, AssetIdForTrustBackedAssets,
-	AssetIdForTrustBackedAssetsConvert,
+	local_and_foreign_assets::LocalFromLeft, AssetIdForOriginalAssets,
+	AssetIdForOriginalAssetsConvert
 };
 use xcm_config::OriginalAssetsPalletLocation;
 
@@ -355,10 +355,10 @@ parameter_types! {
 
 // TOOD: OriginalAndWrapped
 pub struct CreditToBucket;
-impl HandleCredit<AccountId, OriginalAndWrappedAssets> for CreditToBucket {
-	fn handle_credit(credit: Credit<AccountId, OriginalAndWrappedAssets>) {
+impl HandleCredit<AccountId, OriginalAndForeignAssets> for CreditToBucket {
+	fn handle_credit(credit: Credit<AccountId, OriginalAndForeignAssets>) {
 		let dest = FeeTreasuryId::get().into_account_truncating();
-		let _ = <OriginalAndWrappedAssets as Balanced<AccountId>>::resolve(&dest, credit);
+		let _ = <OriginalAndForeignAssets as Balanced<AccountId>>::resolve(&dest, credit);
 	}
 }
 
@@ -395,7 +395,7 @@ impl pallet_system_token_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type SystemConfig = Configuration;
 	type VotingHandler = ValidatorElection;
-	type Fungibles = OriginalAndWrappedAssets;
+	type Fungibles = OriginalAndForeignAssets;
 	type OnChargeSystemToken =
 		TransactionFeeCharger<Runtime, SystemTokenConversion, CreditToBucket>;
 	type BootstrapCallFilter = BootstrapCallFilter;
@@ -406,7 +406,7 @@ impl pallet_system_token_conversion::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = SystemTokenBalance;
 	type AssetKind = MultiLocation;
-	type Fungibles = OriginalAndWrappedAssets;
+	type Fungibles = OriginalAndForeignAssets;
 	type SystemConfig = Configuration;
 }
 
@@ -710,7 +710,7 @@ impl pallet_treasury::Config for Runtime {
 	type AssetKind = MultiLocation;
 	type Beneficiary = AccountId;
 	type BeneficiaryLookup = Indices;
-	type Paymaster = PayAssetFromAccount<OriginalAndWrappedAssets, TreasuryAccount>;
+	type Paymaster = PayAssetFromAccount<OriginalAndForeignAssets, TreasuryAccount>;
 	type BalanceConverter = AssetRate;
 	type PayoutPeriod = SpendPayoutPeriod;
 	#[cfg(feature = "runtime-benchmarks")]
@@ -1119,7 +1119,7 @@ parameter_types! {
 impl pallet_validator_election::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type SessionsPerEra = SessionsPerEra;
-	type Fungibles = OriginalAndWrappedAssets;
+	type Fungibles = OriginalAndForeignAssets;
 	type Score = SystemTokenWeight;
 	type HigherPrecisionScore = softfloat::F64;
 	type NextNewSession = Session;
@@ -1138,7 +1138,7 @@ parameter_types! {
 impl system_token_manager::Config for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeEvent = RuntimeEvent;
-	type Fungibles = OriginalAndWrappedAssets;
+	type Fungibles = OriginalAndForeignAssets;
 	type SystemTokenId = MultiLocation;
 	type SystemTokenHandler = SystemTokenHandler;
 	type StringLimit = StringLimit;
@@ -1382,8 +1382,8 @@ type OriginalAssetsCall = pallet_assets::Call<Runtime, OriginalAssetsInstance>;
 impl pallet_assets::Config<OriginalAssetsInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
-	type AssetId = AssetIdForTrustBackedAssets;
-	type AssetIdParameter = parity_scale_codec::Compact<AssetIdForTrustBackedAssets>;
+	type AssetId = AssetIdForOriginalAssets;
+	type AssetIdParameter = parity_scale_codec::Compact<AssetIdForOriginalAssets>;
 	type SystemTokenWeight = SystemTokenWeight;
 	type Currency = Balances;
 	type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
@@ -1401,8 +1401,8 @@ impl pallet_assets::Config<OriginalAssetsInstance> for Runtime {
 	type RemoveItemsLimit = ConstU32<1000>;
 }
 
-pub type WrappedAssetsInstance = pallet_assets::Instance2;
-impl pallet_assets::Config<WrappedAssetsInstance> for Runtime {
+pub type ForeignAssetsInstance = pallet_assets::Instance2;
+impl pallet_assets::Config<ForeignAssetsInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
 	type AssetId = xcm::v3::MultiLocation;
@@ -1425,12 +1425,12 @@ impl pallet_assets::Config<WrappedAssetsInstance> for Runtime {
 }
 
 /// Union fungibles implementation for `Assets` and `ForeignAssets`.
-pub type OriginalAndWrappedAssets = fungibles::UnionOf<
+pub type OriginalAndForeignAssets = fungibles::UnionOf<
 	OriginalAssets,
-	WrappedAssets,
+	ForeignAssets,
 	LocalFromLeft<
-		AssetIdForTrustBackedAssetsConvert<OriginalAssetsPalletLocation>,
-		AssetIdForTrustBackedAssets,
+		AssetIdForOriginalAssetsConvert<OriginalAssetsPalletLocation, ()>,
+		AssetIdForOriginalAssets,
 		xcm::v3::MultiLocation,
 	>,
 	xcm::v3::MultiLocation,
@@ -1464,7 +1464,7 @@ construct_runtime! {
 		// InfraBlockchain Support
 		SystemTokenManager: system_token_manager::{Pallet, Call, Storage, Event<T>} = 21,
 		OriginalAssets: pallet_assets::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>} = 22,
-		WrappedAssets: pallet_assets::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>} = 23,
+		ForeignAssets: pallet_assets::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>} = 23,
 		SystemTokenConversion: pallet_system_token_conversion::{Pallet, Event<T>} = 24,
 		// ValidatorRewardManager: validator_reward_manager::{Pallet, Call, Storage, Event<T>} = 22,
 		// SystemTokenAggregator: system_token_aggregator = 25,

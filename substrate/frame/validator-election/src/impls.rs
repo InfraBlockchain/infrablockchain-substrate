@@ -155,18 +155,17 @@ impl<T: Config> pallet_session::SessionManager<T::AccountId> for Pallet<T> {
 impl<T: Config> Pallet<T> {
 	/// **Process**
 	///
-	/// 1. Adjust based on `SystemTokenWeight`
 	/// 2. Adjust absed on `BlockTimeWeight`
 	fn adjust_amount(amount: &mut T::Score) {
 		// impl me!
-		// let current = <frame_system::Pallet<T>>::block_number();
+		// let current: BlockNumberFor<T> = <frame_system::Pallet<T>>::block_number();
 		// let blocks_per_year = T::BlocksPerYear::get();
 		// // Will change to HigherPrecisionScore when trait is implemented
 		// let pow: F64 = F64::from_i128(2).ln() * F64::from_i128(current as
 		// i128).div(blocks_per_year); let block_time_weight = pow.exp();
 		// block_time_weight.mul(amount)
 	}
-
+	
 	fn aggregate_reward(asset_id: SystemTokenAssetIdOf<T>, amount: T::Score) {
 		// impl me!
 		// @SIRIUS

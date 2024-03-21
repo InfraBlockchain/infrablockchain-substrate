@@ -19,7 +19,7 @@
 use super::{
 	parachains_origin, system_token_manager, AccountId, AllPalletsWithSystem, Authorship, Balance,
 	Balances, OriginalAssets, OriginalAssetsInstance, ParaId, Runtime, RuntimeCall, RuntimeEvent,
-	RuntimeOrigin, ValidatorCollective, WeightToFee, WrappedAssets, WrappedAssetsInstance,
+	RuntimeOrigin, ValidatorCollective, WeightToFee, ForeignAssets, ForeignAssetsInstance,
 	XcmPallet,
 };
 use frame_support::{
@@ -82,7 +82,7 @@ pub type ForeignAssetsConvertedConcreteId = infra_asset_common::ForeignAssetsCon
 /// Means for transacting foreign assets from different global consensus.
 pub type ForeignFungiblesTransactor = FungiblesAdapter<
 	// Use this fungibles implementation:
-	WrappedAssets,
+	ForeignAssets,
 	// Use this currency when it is a fungible asset matching the given location or name:
 	ForeignAssetsConvertedConcreteId,
 	// Convert an XCM MultiLocation into a local account id:
@@ -129,7 +129,7 @@ parameter_types! {
 	pub OriginalAssetsPalletLocation: MultiLocation =
 		PalletInstance(<OriginalAssets as PalletInfoAccess>::index() as u8).into();
 	pub WrappedAssetsPalletLocation: MultiLocation =
-		PalletInstance(<WrappedAssets as PalletInfoAccess>::index() as u8).into();
+		PalletInstance(<ForeignAssets as PalletInfoAccess>::index() as u8).into();
 	pub UniversalLocationNetworkId: NetworkId = UniversalLocation::get().global_consensus().unwrap();
 	pub const RelayNetwork: Option<NetworkId> = Some(NetworkId::InfraRelay);
 	pub XcmAssetFeesReceiver: Option<AccountId> = Authorship::author();
@@ -200,8 +200,8 @@ pub type AssetFeeAsEDMultiplierFeeCharger = AssetFeeAsExistentialDepositMultipli
 pub type WrappedAssetFeeAsEDMultiplierFeeCharger = AssetFeeAsExistentialDepositMultiplier<
 	Runtime,
 	WeightToFee,
-	pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto, WrappedAssetsInstance>,
-	WrappedAssetsInstance,
+	pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto, ForeignAssetsInstance>,
+	ForeignAssetsInstance,
 >;
 
 /// A call filter for the XCM Transact instruction. This is a temporary measure until we
@@ -352,7 +352,7 @@ impl xcm_executor::Config for XcmConfig {
 			AccountId,
 			WrappedAssetFeeAsEDMultiplierFeeCharger,
 			ForeignAssetsConvertedConcreteId,
-			WrappedAssets,
+			ForeignAssets,
 			cumulus_primitives_utility::XcmFeesTo32ByteAccount<
 				ForeignFungiblesTransactor,
 				AccountId,

@@ -524,6 +524,8 @@ pub mod pallet {
 	pub enum Error<T> {
 		/// The new value for a configuration parameter is invalid.
 		InvalidNewValue,
+		/// The bootstrap has already ended.
+		AlreadyEndedBootstrap,
 	}
 
 	/// The active configuration for the current session.
@@ -553,6 +555,9 @@ pub mod pallet {
 	/// is meant to be used only as the last resort.
 	#[pallet::storage]
 	pub(crate) type BypassConsistencyCheck<T: Config> = StorageValue<_, bool, ValueQuery>;
+
+	#[pallet::storage]
+	pub(crate) type RuntimeState<T: Config> = StorageValue<_, Mode, ValueQuery>;
 
 	#[pallet::genesis_config]
 	#[derive(DefaultNoBound)]
@@ -1281,6 +1286,25 @@ pub mod pallet {
 			T::ParaConfigHandler::set_admin(dest, who);
 			Ok(())
 		}
+
+		#[pallet::call_index(58)]
+		#[pallet::weight((
+			T::WeightInfo::set_config_with_u32(),
+			DispatchClass::Operational
+		))]
+		pub fn end_bootstrap(
+			origin: OriginFor<T>,
+		) -> DispatchResult {
+			ensure_root(origin)?;
+			RuntimeState::<T>::try_mutate(|s| -> DispatchResult {
+				if *s == Mode::Normal {
+					return Err(Error::<T>::AlreadyEndedBootstrap.into());
+				}
+				*s = Mode::Normal;
+				Ok(())
+			})?;
+			Ok(())
+		}
 	}
 
 	#[pallet::hooks]
@@ -1306,6 +1330,7 @@ pub struct SessionChangeOutcome<BlockNumber> {
 }
 
 impl<T: Config> Pallet<T> {
+
 	/// Called by the initializer to initialize the configuration pallet.
 	pub(crate) fn initializer_initialize(_now: BlockNumberFor<T>) -> Weight {
 		Weight::zero()
@@ -1516,6 +1541,6 @@ where
 	}
 
 	fn runtime_state() -> Mode {
-		Mode::Normal
+		RuntimeState::<T>::get()
 	}
 }
