@@ -43,7 +43,7 @@ pallet-utility = { path = "../../../../../substrate/frame/utility", default-feat
 pallet-sudo = { path = "../../../../../substrate/frame/sudo", default-features = false }
 pallet-system-token-oracle = { path = "../../../../../substrate/frame/oracle", default-features = false }
 pallet-system-token-tx-payment = { path = "../../../../../substrate/frame/transaction-payment/system-token-tx-payment", default-features = false }
-
+pallet-system-token-conversion = { path = "../../../../../substrate/frame/system-token-conversion", default-features = false }
 
 # Primitivs
 sp-api = { path = "../../../../../substrate/primitives/api", default-features = false }
@@ -75,6 +75,7 @@ xcm-executor = { package = "staging-xcm-executor", path = "../../../../../infrab
 pallet-xcm = { path = "../../../../../infrablockchain/xcm/pallet-xcm", default-features = false }
 pallet-xcm-benchmarks = { path = "../../../../../infrablockchain/xcm/pallet-xcm-benchmarks", default-features = false, optional = true }
 xcm-primitives = { path = "../../../../../infrablockchain/xcm/xcm-primitives", default-features = false }
+infra-asset-common = { path = "../../../../../infrablockchain/xcm/infra-asset-common", default-features = false }
 
 # Cumulus
 cumulus-pallet-infra-parachain-core = { path = "../../../../pallets/infra-parachain-core", default-features = false }
@@ -156,6 +157,7 @@ std = [
 	"frame-support/std",
 	"frame-system-rpc-runtime-api/std",
 	"frame-system/std",
+	"pallet-system-token-conversion/std",
 	"pallet-system-token-tx-payment/std",
 	"pallet-system-token-oracle/std",
 	"pallet-assets/std",
@@ -191,6 +193,7 @@ std = [
 	"sp-version/std",
 	"xcm-builder/std",
 	"xcm-executor/std",
+	"infra-asset-common/std",
 	"xcm/std",
 	"cumulus-pallet-aura-ext/std",
 	"cumulus-pallet-dmp-queue/std",

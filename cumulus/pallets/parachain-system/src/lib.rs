@@ -595,7 +595,7 @@ pub mod pallet {
 			);
 			<UpgradeGoAhead<T>>::put(upgrade_go_ahead_signal);
 			let infra_system_config = relay_state_proof
-				.read_infra_system_config()
+				.read_active_system_config()
 				.expect("Error on reading infra system config in relay chain state proof");
 			T::UpdateRCConfig::update_system_config(infra_system_config);
 

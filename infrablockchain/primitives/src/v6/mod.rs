@@ -201,8 +201,8 @@ pub mod well_known_keys {
 		&hex!["06de3d8a54d27e44a9d5ce189618f22db4b49d95320d9021994c850f25b8e385"];
 
 	/// The currently active system configuration for InfraBlockchain
-	pub const SYSTEM_CONFIG: &[u8] =
-		&hex!["c1b1962c8d78658bd8ffce50b52608924749b1555450acbdc9c90fdcafcce80c"];
+	pub const ACTIVE_SYSTEM_CONFIG: &[u8] =
+		&hex!["06de3d8a54d27e44a9d5ce189618f22d4749b1555450acbdc9c90fdcafcce80c"];
 
 	/// Weight needs to be updated for `para_id`
 	pub fn update_system_token_weight(para_id: Id) -> Vec<u8> {

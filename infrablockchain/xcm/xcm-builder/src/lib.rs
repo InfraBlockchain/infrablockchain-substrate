@@ -38,6 +38,9 @@ pub use location_conversion::{
 	SiblingParachainConvertsVia,
 };
 
+mod matches_location;
+pub use matches_location::{StartsWith, StartsWithExplicitGlobalConsensus};
+
 mod origin_conversion;
 pub use origin_conversion::{
 	BackingToPlurality, ChildParachainAsNative, ChildSystemParachainAsSuperuser, EnsureXcmOrigin,

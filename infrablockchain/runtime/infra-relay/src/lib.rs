@@ -353,7 +353,6 @@ parameter_types! {
 	pub const FeeTreasuryId: PalletId = PalletId(*b"infrapid");
 }
 
-// TOOD: OriginalAndWrapped
 pub struct CreditToBucket;
 impl HandleCredit<AccountId, OriginalAndForeignAssets> for CreditToBucket {
 	fn handle_credit(credit: Credit<AccountId, OriginalAndForeignAssets>) {
@@ -376,9 +375,17 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 				..
 			}) |
 			RuntimeCall::Preimage(pallet_preimage::Call::note_preimage { .. }) |
-			RuntimeCall::OriginalAssets(
+			RuntimeCall::Assets(
 				OriginalAssetsCall::create { .. } | OriginalAssetsCall::mint { .. },
-			) => true,
+			) |
+			RuntimeCall::Configuration(
+				parachains_configuration::Call::end_bootstrap { .. } |
+				parachains_configuration::Call::set_admin { .. } |
+				parachains_configuration::Call::update_para_fee_rate { .. } |
+				parachains_configuration::Call::update_fee_table { .. } |
+				parachains_configuration::Call::update_runtime_state { .. }
+			)
+			=> true,
 			_ => false,
 		}
 	}
@@ -390,7 +397,6 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 	}
 }
 
-// TODO: Custom Transaction Fee charger
 impl pallet_system_token_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type SystemConfig = Configuration;
@@ -1426,7 +1432,7 @@ impl pallet_assets::Config<ForeignAssetsInstance> for Runtime {
 
 /// Union fungibles implementation for `Assets` and `ForeignAssets`.
 pub type OriginalAndForeignAssets = fungibles::UnionOf<
-	OriginalAssets,
+	Assets,
 	ForeignAssets,
 	LocalFromLeft<
 		AssetIdForOriginalAssetsConvert<OriginalAssetsPalletLocation, ()>,
@@ -1463,7 +1469,7 @@ construct_runtime! {
 
 		// InfraBlockchain Support
 		SystemTokenManager: system_token_manager::{Pallet, Call, Storage, Event<T>} = 21,
-		OriginalAssets: pallet_assets::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>} = 22,
+		Assets: pallet_assets::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>} = 22,
 		ForeignAssets: pallet_assets::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>} = 23,
 		SystemTokenConversion: pallet_system_token_conversion::{Pallet, Event<T>} = 24,
 		// ValidatorRewardManager: validator_reward_manager::{Pallet, Call, Storage, Event<T>} = 22,

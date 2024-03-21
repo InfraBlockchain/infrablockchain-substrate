@@ -22,7 +22,7 @@ use crate::{
 use cumulus_primitives_core::ParaId;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use log::info;
-use parachains_common::types::AuraId;
+use parachains_common::AuraId;
 use sc_cli::{
 	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
 	NetworkParams, Result, SharedParams, SubstrateCli,
@@ -39,9 +39,6 @@ enum Runtime {
 	#[default]
 	Default,
 	AssetHubInfra,
-	ContractsInfra,
-	URAuth,
-	DidInfra,
 }
 
 trait RuntimeResolver {
@@ -77,12 +74,6 @@ fn runtime(id: &str) -> Runtime {
 
 	if id.starts_with("asset-hub-infra") {
 		Runtime::AssetHubInfra
-	} else if id.starts_with("contracts-hub-infra") {
-		Runtime::ContractsInfra
-	} else if id.starts_with("did-hub-infra") {
-		Runtime::DidInfra
-	} else if id.starts_with("newnal-infra") {
-		Runtime::URAuth
 	} else {
 		log::warn!("No specific runtime was recognized for ChainSpec's id: '{}', so Runtime::default() will be used", id);
 		Runtime::default()
@@ -100,19 +91,6 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		"asset-hub-infra" => Box::new(chain_spec::asset_hubs::AssetHubChainSpec::from_json_bytes(
 			&include_bytes!("../chain-specs/asset-hub-polkadot.json")[..],
 		)?),
-		"contracts-hub-infra-dev" =>
-			Box::new(chain_spec::contracts::contracts_infra_development_config()),
-		"contracts-hub-infra-local" =>
-			Box::new(chain_spec::contracts::contracts_infra_local_config()),
-		"contracts-hub-infra" => Box::new(chain_spec::contracts::contracts_infra_config()),
-		// ToDo: chain-spec file for `ContractsInfra`
-		"did-hub-infra-dev" => Box::new(chain_spec::did::did_development_config()),
-		"did-hub-infra-local" => Box::new(chain_spec::did::did_local_config()),
-		"did-hub-infra" => Box::new(chain_spec::did::did_config()),
-		// ToDo: chain-spec file for `DidInfra`
-		"newnal-infra-dev" => Box::new(chain_spec::newnal::newnal_development_config()),
-		"newnal-infra-local" => Box::new(chain_spec::newnal::newnal_local_config()),
-		"newnal-infra" => Box::new(chain_spec::newnal::newnal_config()),
 		// ToDo: chain-spec file for `URAuth`
 		// -- Fallback (generic chainspec)
 		"" => {
@@ -126,11 +104,6 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 			match path.runtime() {
 				Runtime::AssetHubInfra =>
 					Box::new(chain_spec::asset_hubs::AssetHubChainSpec::from_json_file(path)?),
-				Runtime::ContractsInfra =>
-					Box::new(chain_spec::contracts::ContractsInfraChainSpec::from_json_file(path)?),
-				Runtime::URAuth =>
-					Box::new(chain_spec::newnal::NewnalChainSpec::from_json_file(path)?),
-				Runtime::DidInfra => Box::new(chain_spec::did::DidChainSpec::from_json_file(path)?),
 				Runtime::Default =>
 					Box::new(chain_spec::asset_hubs::AssetHubChainSpec::from_json_file(path)?),
 			}
@@ -254,27 +227,6 @@ macro_rules! construct_partials {
 				)?;
 				$code
 			},
-			Runtime::ContractsInfra => {
-				let $partials = new_partial::<contracts_infra_runtime::RuntimeApi, _>(
-					&$config,
-					crate::service::aura_build_import_queue::<_, AuraId>,
-				)?;
-				$code
-			},
-			Runtime::URAuth => {
-				let $partials = new_partial::<newnal_runtime::RuntimeApi, _>(
-					&$config,
-					crate::service::aura_build_import_queue::<_, AuraId>,
-				)?;
-				$code
-			},
-			Runtime::DidInfra => {
-				let $partials = new_partial::<did_runtime::RuntimeApi, _>(
-					&$config,
-					crate::service::aura_build_import_queue::<_, AuraId>,
-				)?;
-				$code
-			},
 			Runtime::Default => {
 				let $partials = new_partial::<asset_hub_runtime::RuntimeApi, _>(
 					&$config,
@@ -293,36 +245,6 @@ macro_rules! construct_async_run {
 			Runtime::AssetHubInfra => {
 				runner.async_run(|$config| {
 					let $components = new_partial::<asset_hub_runtime::RuntimeApi, _>(
-						&$config,
-						crate::service::aura_build_import_queue::<_, AuraId>,
-					)?;
-					let task_manager = $components.task_manager;
-					{ $( $code )* }.map(|v| (v, task_manager))
-				})
-			},
-			Runtime::ContractsInfra => {
-				runner.async_run(|$config| {
-					let $components = new_partial::<contracts_infra_runtime::RuntimeApi, _>(
-						&$config,
-						crate::service::aura_build_import_queue::<_, AuraId>,
-					)?;
-					let task_manager = $components.task_manager;
-					{ $( $code )* }.map(|v| (v, task_manager))
-				})
-			},
-			Runtime::URAuth => {
-				runner.async_run(|$config| {
-					let $components = new_partial::<newnal_runtime::RuntimeApi, _>(
-						&$config,
-						crate::service::aura_build_import_queue::<_, AuraId>,
-					)?;
-					let task_manager = $components.task_manager;
-					{ $( $code )* }.map(|v| (v, task_manager))
-				})
-			},
-			Runtime::DidInfra => {
-				runner.async_run(|$config| {
-					let $components = new_partial::<did_runtime::RuntimeApi, _>(
 						&$config,
 						crate::service::aura_build_import_queue::<_, AuraId>,
 					)?;
@@ -518,27 +440,6 @@ pub fn run() -> Result<()> {
 				info!("Is collating: {}", if config.role.is_authority() { "yes" } else { "no" });
 				match config.chain_spec.runtime() {
 					Runtime::AssetHubInfra => crate::service::start_generic_aura_node::<
-						asset_hub_runtime::RuntimeApi,
-						AuraId,
-					>(config, infra_relay_config, collator_options, id, hwbench)
-					.await
-					.map(|r| r.0)
-					.map_err(Into::into),
-					Runtime::ContractsInfra => crate::service::start_generic_aura_node::<
-						contracts_infra_runtime::RuntimeApi,
-						AuraId,
-					>(config, infra_relay_config, collator_options, id, hwbench)
-					.await
-					.map(|r| r.0)
-					.map_err(Into::into),
-					Runtime::URAuth => crate::service::start_generic_aura_node::<
-						newnal_runtime::RuntimeApi,
-						AuraId,
-					>(config, infra_relay_config, collator_options, id, hwbench)
-					.await
-					.map(|r| r.0)
-					.map_err(Into::into),
-					Runtime::DidInfra => crate::service::start_generic_aura_node::<
 						asset_hub_runtime::RuntimeApi,
 						AuraId,
 					>(config, infra_relay_config, collator_options, id, hwbench)

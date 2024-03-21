@@ -32,7 +32,6 @@ use sp_externalities::{set_and_run_with_externalities, Externalities};
 use sp_io::KillStorageResult;
 use sp_runtime::{
 	traits::{Block as BlockT, Extrinsic, HashingFor, Header as HeaderT},
-	types::token::BoundedRequestedAssets,
 };
 use sp_std::prelude::*;
 use sp_trie::MemoryDB;
@@ -213,9 +212,8 @@ where
 				head_data
 			};
 
-		let vote_result = if let Some(res) = crate::CollectedPotVotes::<PSC>::get() {
-			let vote_result = res.votes();
-			Some(vote_result)
+		let vote_result = if let Some(res) = crate::PotVotes::<PSC>::get() {
+			Some(res.try_into().expect("Number of votes should not be greater than `MAX_VOTES_NUM`"))
 		} else {
 			None
 		};

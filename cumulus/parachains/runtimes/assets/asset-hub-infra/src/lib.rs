@@ -65,10 +65,10 @@ use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{
-		AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, TryConvertInto as JustTry,
+		AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, TryConvertInto as JustTry, AccountIdConversion
 	},
 	transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
-	types::SystemTokenWeight,
+	types::{SystemTokenWeight, SystemTokenBalance, ExchangeRate, Fiat, StandardUnixTime},
 	ApplyExtrinsicResult,
 };
 
@@ -83,6 +83,7 @@ use frame_support::{
 	dispatch::DispatchClass,
 	parameter_types,
 	traits::{
+		tokens::{fungibles::{self, UnionOf, Balanced, Credit}},
 		AsEnsureOriginWithArg, ConstBool, ConstU32, ConstU64, ConstU8, EitherOfDiverse,
 		InstanceFilter,
 	},
@@ -94,13 +95,20 @@ use frame_system::{
 	EnsureRoot, EnsureSigned,
 };
 
-use pallet_system_token_tx_payment::{CreditToBucket, TransactionFeeCharger};
+use pallet_system_token_tx_payment::{TransactionFeeCharger, HandleCredit};
 use parachains_common::{
-	constants::*, impls::DealWithFees, infra_relay::consensus::*, opaque::*, types::*,
+	constants::*, impls::DealWithFees, infra_relay::consensus::*, opaque::*,
+	AccountId, AssetIdForTrustBackedAssets, AuraId, Balance, BlockNumber, CollectionId, Hash,
+	ItemId, Nonce, Signature, 
 };
 use xcm_config::{
 	NativeLocation, TrustBackedAssetsConvertedConcreteId, XcmConfig,
-	XcmOriginToTransactDispatchOrigin,
+	XcmOriginToTransactDispatchOrigin, OriginalAssetsPalletLocation
+};
+
+use infra_asset_common::{
+	local_and_foreign_assets::LocalFromLeft, AssetIdForOriginalAssets,
+	AssetIdForOriginalAssetsConvert
 };
 
 #[cfg(any(feature = "std", test))]
@@ -109,7 +117,6 @@ pub use sp_runtime::BuildStorage;
 // Polkadot imports
 use pallet_xcm::{EnsureXcm, IsMajorityOfBody};
 use runtime_common::{prod_or_fast, BlockHashCount, SlowAdjustingFeeUpdate};
-use runtime_parachains::system_token_aggregator;
 use xcm::latest::BodyId;
 use xcm_executor::XcmExecutor;
 
@@ -251,9 +258,9 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 	fn contains(call: &RuntimeCall) -> bool {
 		match call {
 			RuntimeCall::Assets(
-				pallet_assets::Call::create { .. } |
-				pallet_assets::Call::set_metadata { .. } |
-				pallet_assets::Call::mint { .. },
+				OriginalAssetsCall::create { .. } |
+				OriginalAssetsCall::set_metadata { .. } |
+				OriginalAssetsCall::mint { .. },
 			) |
 			RuntimeCall::SystemTokenOracle(
 				pallet_system_token_oracle::Call::submit_exchange_rates_unsigned { .. },
@@ -277,14 +284,27 @@ impl pallet_system_token_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type SystemConfig = InfraParaCore;
 	type VotingHandler = ParachainSystem;
-	type Fungibles = Assets;
-	type OnChargeSystemToken = TransactionFeeCharger<
-		Runtime,
-		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
-		CreditToBucket<Runtime>,
-	>;
+	type Fungibles = OriginalAndForeignAssets;
+	type OnChargeSystemToken =
+		TransactionFeeCharger<Runtime, SystemTokenConversion, CreditToBucket>;
 	type BootstrapCallFilter = BootstrapCallFilter;
 	type PalletId = FeeTreasuryId;
+}
+
+pub struct CreditToBucket;
+impl HandleCredit<AccountId, OriginalAndForeignAssets> for CreditToBucket {
+	fn handle_credit(credit: Credit<AccountId, OriginalAndForeignAssets>) {
+		let dest = FeeTreasuryId::get().into_account_truncating();
+		let _ = <OriginalAndForeignAssets as Balanced<AccountId>>::resolve(&dest, credit);
+	}
+}
+
+impl pallet_system_token_conversion::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Balance = SystemTokenBalance;
+	type AssetKind = xcm::v3::MultiLocation;
+	type Fungibles = OriginalAndForeignAssets;
+	type SystemConfig = InfraParaCore;
 }
 
 parameter_types! {
@@ -302,29 +322,65 @@ parameter_types! {
 /// We allow root and the Relay Chain council to execute privileged asset operations.
 pub type RootOrigin = EnsureRoot<AccountId>;
 
-impl pallet_assets::Config for Runtime {
+pub type OriginalAssetsInstance = pallet_assets::Instance1;
+type OriginalAssetsCall = pallet_assets::Call<Runtime, OriginalAssetsInstance>;
+impl pallet_assets::Config<OriginalAssetsInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
-	type AssetId = AssetId;
-	type AssetIdParameter = codec::Compact<AssetId>;
+	type AssetId = AssetIdForOriginalAssets;
+	type AssetIdParameter = codec::Compact<AssetIdForOriginalAssets>;
 	type SystemTokenWeight = SystemTokenWeight;
 	type Currency = Balances;
-	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
+	type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
 	type ForceOrigin = RootOrigin;
 	type AssetDeposit = DepositToCreateAsset;
+	type AssetAccountDeposit = DepositToMaintainAsset;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ApprovalDeposit = ApprovalDeposit;
-	type AssetAccountDeposit = DepositToMaintainAsset;
-	type RemoveItemsLimit = frame_support::traits::ConstU32<1000>;
-	type WeightInfo = weights::pallet_assets::WeightInfo<Runtime>;
 	type StringLimit = StringLimit;
 	type Freezer = ();
 	type Extra = ();
 	type CallbackHandle = ();
-	#[cfg(feature = "runtime-benchmarks")]
-	type BenchmarkHelper = ();
+	type WeightInfo = ();
+	type RemoveItemsLimit = ConstU32<1000>;
 }
+
+pub type ForeignAssetsInstance = pallet_assets::Instance2;
+impl pallet_assets::Config<ForeignAssetsInstance> for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Balance = Balance;
+	type AssetId = xcm::v3::MultiLocation;
+	type AssetIdParameter = xcm::v3::MultiLocation;
+	type SystemTokenWeight = SystemTokenWeight;
+	type Currency = Balances;
+	type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
+	type ForceOrigin = RootOrigin; //TODO
+	type AssetDeposit = DepositToCreateAsset;
+	type AssetAccountDeposit = DepositToMaintainAsset;
+	type MetadataDepositBase = MetadataDepositBase;
+	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type ApprovalDeposit = ApprovalDeposit;
+	type StringLimit = StringLimit;
+	type Freezer = ();
+	type Extra = ();
+	type CallbackHandle = ();
+	type WeightInfo = ();
+	type RemoveItemsLimit = ConstU32<1000>;
+}
+
+/// Union fungibles implementation for `Assets` and `ForeignAssets`.
+pub type OriginalAndForeignAssets = fungibles::UnionOf<
+	Assets,
+	ForeignAssets,
+	LocalFromLeft<
+		AssetIdForOriginalAssetsConvert<OriginalAssetsPalletLocation, ()>,
+		AssetIdForOriginalAssets,
+		xcm::v3::MultiLocation,
+	>,
+	xcm::v3::MultiLocation,
+	AccountId,
+>;
 
 parameter_types! {
 	// One storage item; key size is 32; value is size 4+4+16+32 bytes = 56 bytes.
@@ -535,7 +591,7 @@ parameter_types! {
 impl cumulus_pallet_infra_parachain_core::Config for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeEvent = RuntimeEvent;
-	type Fungibles = Assets;
+	type Fungibles = OriginalAndForeignAssets;
 	type ActiveRequestPeriod = ActiveRequestPeriod;
 }
 
@@ -733,10 +789,12 @@ construct_runtime!(
 		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>} = 42,
 
 		// The main stage.
-		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>, Config<T>} = 50,
-		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
+		Assets: pallet_assets::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>} = 50,
+		ForeignAssets: pallet_assets::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>} = 51,
+		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 52,
 		// SystemTokenAggregator: system_token_aggregator = 54,
 		SystemTokenOracle: pallet_system_token_oracle::{Pallet, Call, Storage, ValidateUnsigned} = 55,
+		SystemTokenConversion: pallet_system_token_conversion::{Pallet, Event<T>} = 56,
 
 		Sudo: pallet_sudo::{Pallet, Call, Storage, Config<T>, Event<T>} = 99,
 	}
@@ -962,7 +1020,7 @@ impl_runtime_apis! {
 				},
 				// collect pallet_assets (TrustBackedAssets)
 				convert::<_, _, _, _, TrustBackedAssetsConvertedConcreteId>(
-					Assets::account_balances(account)
+					Assets::account_balances(&account)
 						.iter()
 						.filter(|(_, balance)| balance > &0)
 				)?,

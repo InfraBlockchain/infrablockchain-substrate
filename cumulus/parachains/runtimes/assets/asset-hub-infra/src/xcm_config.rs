@@ -14,11 +14,14 @@
 // limitations under the License.
 
 use super::{
-	AccountId, AllPalletsWithSystem, Assets, Authorship, Balance, Balances, InfraXcm,
+	AccountId, AllPalletsWithSystem, Assets, ForeignAssets, ForeignAssetsInstance, OriginalAssetsInstance, Authorship, Balance, Balances, InfraXcm,
 	ParachainInfo, ParachainSystem, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, WeightToFee,
 	XcmpQueue,
 };
-use assets_common::matching::{StartsWith, StartsWithExplicitGlobalConsensus};
+use infra_asset_common::{
+	matching::{StartsWith, StartsWithExplicitGlobalConsensus},
+	AssetFeeAsExistentialDepositMultiplier, 
+};
 use frame_support::{
 	match_types, parameter_types,
 	traits::{ConstU32, Contains, Everything, Nothing, PalletInfoAccess},
@@ -26,7 +29,6 @@ use frame_support::{
 
 use pallet_xcm::XcmPassthrough;
 use parachain_primitives::primitives::Sibling;
-use parachains_common::xcm_config::AssetFeeAsExistentialDepositMultiplier;
 use sp_runtime::traits::ConvertInto;
 use xcm::latest::prelude::*;
 use xcm_builder::{
@@ -35,7 +37,7 @@ use xcm_builder::{
 	LocalMint, NonLocalMint, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
 	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
 	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, WeightInfoBounds,
-	WithUniqueTopic,
+	WithUniqueTopic, NoChecking
 };
 use xcm_executor::{traits::WithOriginFilter, XcmExecutor};
 
@@ -46,7 +48,7 @@ parameter_types! {
 	pub UniversalLocation: InteriorMultiLocation =
 		X2(GlobalConsensus(RelayNetwork::get().unwrap()), Parachain(ParachainInfo::parachain_id().into()));
 	pub UniversalLocationNetworkId: NetworkId = UniversalLocation::get().global_consensus().unwrap();
-	pub TrustBackedAssetsPalletLocation: MultiLocation =
+	pub OriginalAssetsPalletLocation: MultiLocation =
 		PalletInstance(<Assets as PalletInfoAccess>::index() as u8).into();
 	pub CheckingAccount: AccountId = InfraXcm::check_account();
 }
@@ -65,7 +67,7 @@ pub type LocationToAccountId = (
 
 /// `AssetId/Balancer` converter for `TrustBackedAssets``
 pub type TrustBackedAssetsConvertedConcreteId =
-	assets_common::TrustBackedAssetsConvertedConcreteId<TrustBackedAssetsPalletLocation, Balance>;
+	infra_asset_common::TrustBackedAssetsConvertedConcreteId<OriginalAssetsPalletLocation, Balance>;
 
 /// Means for transacting assets besides the native currency on this chain.
 pub type LocalIssuedFungiblesTransactor = FungiblesAdapter<
@@ -79,16 +81,16 @@ pub type LocalIssuedFungiblesTransactor = FungiblesAdapter<
 	AccountId,
 	// We only want to allow teleports of known assets. We use non-zero issuance as an indication
 	// that this asset is known.
-	LocalMint<parachains_common::impls::NonZeroIssuance<AccountId, Assets>>,
+	LocalMint<infra_asset_common::NonZeroIssuance<AccountId, Assets>>,
 	// The account to use for tracking teleports.
 	CheckingAccount,
 >;
 
 /// `AssetId`/`Balance` converter for `ForeignAssets`.
-pub type ForeignAssetsConvertedConcreteId = assets_common::ForeignAssetsConvertedConcreteId<
+pub type ForeignAssetsConvertedConcreteId = infra_asset_common::ForeignAssetsConvertedConcreteId<
 	(
 		// Ignore `TrustBackedAssets` explicitly
-		StartsWith<TrustBackedAssetsPalletLocation>,
+		StartsWith<OriginalAssetsPalletLocation>,
 		// Ignore asset which starts explicitly with our `GlobalConsensus(NetworkId)`, means:
 		// - foreign assets from our consensus should be: `Location {parents: 1, X*(Parachain(xyz),
 		//   ..)}
@@ -102,7 +104,7 @@ pub type ForeignAssetsConvertedConcreteId = assets_common::ForeignAssetsConverte
 /// Means for transacting foreign assets from different global consensus.
 pub type ForeignFungiblesTransactor = FungiblesAdapter<
 	// Use this fungibles implementation:
-	Assets,
+	ForeignAssets,
 	// Use this currency when it is a fungible asset matching the given location or name:
 	ForeignAssetsConvertedConcreteId,
 	// Convert an XCM MultiLocation into a local account id:
@@ -110,7 +112,7 @@ pub type ForeignFungiblesTransactor = FungiblesAdapter<
 	// Our chain's account ID type (we can't get away without mentioning it explicitly):
 	AccountId,
 	// We dont need to check teleports here.
-	NonLocalMint<parachains_common::impls::AnyIssuance<AccountId, Assets>>,
+	NoChecking,
 	// The account to use for tracking teleports.
 	CheckingAccount,
 >;
@@ -274,11 +276,20 @@ pub type Barrier = (
 	AllowSubscriptionsFrom<Everything>,
 );
 
-pub type AssetFeeAsExistentialDepositMultiplierFeeCharger = AssetFeeAsExistentialDepositMultiplier<
+/// Multiplier used for dedicated `TakeFirstAssetTrader` with `Assets` instance.
+pub type AssetFeeAsEDMultiplierFeeCharger = AssetFeeAsExistentialDepositMultiplier<
 	Runtime,
 	WeightToFee,
-	pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto, ()>,
-	(),
+	pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto, OriginalAssetsInstance>,
+	OriginalAssetsInstance,
+>;
+
+/// Multiplier used for dedicated `TakeFirstAssetTrader` with `ForeignAssets` instance.
+pub type ForeignAssetFeeAsEDMultiplierFeeCharger = AssetFeeAsExistentialDepositMultiplier<
+	Runtime,
+	WeightToFee,
+	pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto, ForeignAssetsInstance>,
+	ForeignAssetsInstance,
 >;
 
 parameter_types! {
@@ -307,13 +318,28 @@ impl xcm_executor::Config for XcmConfig {
 		MaxInstructions,
 	>;
 	type Trader = (
+		// This trader allows to pay with `is_sufficient=true` "Trust Backed" assets from dedicated
+		// `pallet_assets` instance - `Assets`.
 		cumulus_primitives_utility::TakeFirstAssetTrader<
 			AccountId,
-			AssetFeeAsExistentialDepositMultiplierFeeCharger,
-			ForeignAssetsConvertedConcreteId,
+			AssetFeeAsEDMultiplierFeeCharger,
+			TrustBackedAssetsConvertedConcreteId,
 			Assets,
 			cumulus_primitives_utility::XcmFeesTo32ByteAccount<
 				LocalIssuedFungiblesTransactor,
+				AccountId,
+				XcmAssetFeesReceiver,
+			>,
+		>,
+		// This trader allows to pay with `is_sufficient=true` "Foreign" assets from dedicated
+		// `pallet_assets` instance - `ForeignAssets`.
+		cumulus_primitives_utility::TakeFirstAssetTrader<
+			AccountId,
+			ForeignAssetFeeAsEDMultiplierFeeCharger,
+			ForeignAssetsConvertedConcreteId,
+			ForeignAssets,
+			cumulus_primitives_utility::XcmFeesTo32ByteAccount<
+				ForeignFungiblesTransactor,
 				AccountId,
 				XcmAssetFeesReceiver,
 			>,
