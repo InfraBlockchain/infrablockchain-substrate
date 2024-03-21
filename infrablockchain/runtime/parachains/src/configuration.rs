@@ -1292,9 +1292,7 @@ pub mod pallet {
 			T::WeightInfo::set_config_with_u32(),
 			DispatchClass::Operational
 		))]
-		pub fn end_bootstrap(
-			origin: OriginFor<T>,
-		) -> DispatchResult {
+		pub fn end_bootstrap(origin: OriginFor<T>) -> DispatchResult {
 			ensure_root(origin)?;
 			RuntimeState::<T>::try_mutate(|s| -> DispatchResult {
 				if *s == Mode::Normal {
@@ -1330,7 +1328,6 @@ pub struct SessionChangeOutcome<BlockNumber> {
 }
 
 impl<T: Config> Pallet<T> {
-
 	/// Called by the initializer to initialize the configuration pallet.
 	pub(crate) fn initializer_initialize(_now: BlockNumberFor<T>) -> Weight {
 		Weight::zero()

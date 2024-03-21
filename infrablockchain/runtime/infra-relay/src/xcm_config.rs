@@ -18,9 +18,8 @@
 
 use super::{
 	parachains_origin, system_token_manager, AccountId, AllPalletsWithSystem, Authorship, Balance,
-	Balances, OriginalAssets, OriginalAssetsInstance, ParaId, Runtime, RuntimeCall, RuntimeEvent,
-	RuntimeOrigin, ValidatorCollective, WeightToFee, ForeignAssets, ForeignAssetsInstance,
-	XcmPallet,
+	Balances, ForeignAssets, ForeignAssetsInstance, OriginalAssets, OriginalAssetsInstance, ParaId,
+	Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, ValidatorCollective, WeightToFee, XcmPallet,
 };
 use frame_support::{
 	match_types, parameter_types,

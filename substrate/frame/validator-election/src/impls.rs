@@ -165,7 +165,7 @@ impl<T: Config> Pallet<T> {
 		// i128).div(blocks_per_year); let block_time_weight = pow.exp();
 		// block_time_weight.mul(amount)
 	}
-	
+
 	fn aggregate_reward(asset_id: SystemTokenAssetIdOf<T>, amount: T::Score) {
 		// impl me!
 		// @SIRIUS

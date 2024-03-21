@@ -525,7 +525,7 @@ impl<T: Config> Pallet<T> {
 		};
 		let f64_base_weight: F64 = F64::from_i128(base_weight as i128);
 		let system_token_weight: SystemTokenWeightOf<T> =
-			f64_base_weight.mul(decimal_to_base).div(exchange_rate_to_base).into();
+			(f64_base_weight * decimal_to_base / exchange_rate_to_base).into();
 		Ok(system_token_weight)
 	}
 

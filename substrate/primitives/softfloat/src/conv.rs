@@ -141,8 +141,8 @@ mod tests {
 	fn test_softfloat_f64_to_i32_conversion() {
 		let repeat_num = 100;
 		for i in 0..=repeat_num {
-			let value_pos: i32 = (i32::MAX / repeat_num * i);
-			let value_neg: i32 = (i32::MIN / repeat_num * i);
+			let value_pos: i32 = i32::MAX / repeat_num * i;
+			let value_neg: i32 = i32::MIN / repeat_num * i;
 			let value_pos_f64 = F64::from(value_pos);
 			let value_neg_f64 = F64::from(value_neg);
 

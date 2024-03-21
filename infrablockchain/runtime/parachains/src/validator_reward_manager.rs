@@ -242,11 +242,11 @@ impl<T: Config> Pallet<T> {
 						.iter_mut()
 						.find(|ar| ar.system_token_id == aggregated_reward.system_token_id)
 					{
-						reward.amount += aggregated_reward.amount.div(current_validators_len)
+						reward.amount += aggregated_reward.amount / current_validators_len
 					} else {
 						let new_reward = ValidatorReward::new(
 							aggregated_reward.clone().system_token_id,
-							aggregated_reward.clone().amount.div(current_validators_len),
+							aggregated_reward.clone().amount / current_validators_len,
 						);
 						rewards.push(new_reward);
 					}

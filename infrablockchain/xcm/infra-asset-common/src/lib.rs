@@ -29,7 +29,10 @@ use frame_support::traits::{
 };
 use sp_std::marker::PhantomData;
 use xcm::prelude::MultiLocation;
-use xcm_builder::{AsPrefixedOriginalSystemTokenId, AsPrefixedGeneralIndex, MatchedConvertedConcreteId, V3LocationConverter};
+use xcm_builder::{
+	AsPrefixedGeneralIndex, AsPrefixedOriginalSystemTokenId, MatchedConvertedConcreteId,
+	V3LocationConverter,
+};
 use xcm_executor::traits::{JustTry, Properties};
 
 use frame_support::{
@@ -196,7 +199,7 @@ where
 
 pub type AssetIdForOriginalAssets = u32;
 
-pub type AssetIdForOriginalAssetsConvert<OriginalAssetsPalletLocation, ParaId> = 
+pub type AssetIdForOriginalAssetsConvert<OriginalAssetsPalletLocation, ParaId> =
 	AsPrefixedOriginalSystemTokenId<
 		OriginalAssetsPalletLocation,
 		ParaId,

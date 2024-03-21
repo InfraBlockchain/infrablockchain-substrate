@@ -122,7 +122,7 @@ use infra::{ParaConfigHandler, SystemTokenHandler};
 pub mod xcm_config;
 use infra_asset_common::{
 	local_and_foreign_assets::LocalFromLeft, AssetIdForOriginalAssets,
-	AssetIdForOriginalAssetsConvert
+	AssetIdForOriginalAssetsConvert,
 };
 use xcm_config::OriginalAssetsPalletLocation;
 
