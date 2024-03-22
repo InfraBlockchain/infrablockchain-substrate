@@ -96,7 +96,8 @@ pub mod pallet {
 	// Agency list
 	#[pallet::storage]
 	#[pallet::getter(fn get_agencies)]
-	pub(super) type Agencies<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
+	pub(super) type Agencies<T: Config> =
+		StorageMap<_, Twox64Concat, T::AccountId, AnyText, OptionQuery>;
 
 	// The Config of the platform
 	#[pallet::storage]
@@ -363,15 +364,9 @@ pub mod pallet {
 		///
 		/// The dispatch origin for this call must be _Signed_.
 		#[pallet::call_index(7)]
-		pub fn register_agency(origin: OriginFor<T>) -> DispatchResult {
+		pub fn register_agency(origin: OriginFor<T>, description: AnyText) -> DispatchResult {
 			let agency = ensure_signed(origin)?;
-			Agencies::<T>::try_mutate(|list| -> DispatchResult {
-				if list.contains(&agency) {
-					return Err(Error::<T>::InvalidAgency.into())
-				}
-				list.push(agency.clone());
-				Ok(())
-			})?;
+			Agencies::<T>::insert(agency.clone(), description);
 			Self::deposit_event(Event::<T>::RegisterAgency { agency });
 			Ok(())
 		}
@@ -382,14 +377,10 @@ pub mod pallet {
 		#[pallet::call_index(8)]
 		pub fn deregister_agency(origin: OriginFor<T>) -> DispatchResult {
 			let agency = ensure_signed(origin)?;
-			Agencies::<T>::try_mutate(|list| -> DispatchResult {
-				if list.contains(&agency) {
-					list.retain(|x| x != &agency);
-				} else {
-					return Err(Error::<T>::InvalidAgency.into())
-				}
-				Ok(())
-			})?;
+			if !Self::check_agency_exist(&agency) {
+				return Err(Error::<T>::InvalidAgency.into())
+			}
+			Agencies::<T>::remove(&agency);
 			Self::deposit_event(Event::<T>::DeregisterAgency { agency });
 			Ok(())
 		}
@@ -505,15 +496,10 @@ pub mod pallet {
 		pub fn register_agency_by_admin(
 			origin: OriginFor<T>,
 			agency: T::AccountId,
+			description: AnyText,
 		) -> DispatchResult {
 			T::AdminOrigin::ensure_origin(origin)?;
-			Agencies::<T>::try_mutate(|list| -> DispatchResult {
-				if list.contains(&agency) {
-					return Err(Error::<T>::InvalidAgency.into())
-				}
-				list.push(agency.clone());
-				Ok(())
-			})?;
+			Agencies::<T>::insert(agency.clone(), description);
 			Self::deposit_event(Event::<T>::RegisterAgency { agency });
 			Ok(())
 		}
@@ -529,14 +515,10 @@ pub mod pallet {
 			agency: T::AccountId,
 		) -> DispatchResult {
 			T::AdminOrigin::ensure_origin(origin)?;
-			Agencies::<T>::try_mutate(|list| -> DispatchResult {
-				if list.contains(&agency) {
-					list.retain(|x| x != &agency);
-				} else {
-					return Err(Error::<T>::InvalidAgency.into())
-				}
-				Ok(())
-			})?;
+			if !Self::check_agency_exist(&agency) {
+				return Err(Error::<T>::InvalidAgency.into())
+			}
+			Agencies::<T>::remove(&agency);
 			Self::deposit_event(Event::<T>::DeregisterAgency { agency });
 			Ok(())
 		}
@@ -610,7 +592,7 @@ where
 	}
 
 	pub fn check_agency_exist(agency: &T::AccountId) -> bool {
-		Agencies::<T>::get().contains(agency)
+		Agencies::<T>::contains_key(agency)
 	}
 
 	pub fn do_deposit_balance(
