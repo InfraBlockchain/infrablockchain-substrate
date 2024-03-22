@@ -1,4 +1,5 @@
 use crate::*;
+use frame_support::traits::tokens::SystemTokenId;
 use frame_system::pallet_prelude::BlockNumberFor;
 
 pub trait CollectiveInterface<AccountId> {
@@ -21,24 +22,27 @@ impl<T: Config> SessionAlert<BlockNumberFor<T>> for Pallet<T> {
 }
 
 /// Something that handles fee reward
-pub trait RewardInterface<Location, Balance> {
+pub trait RewardInterface {
 	/// Infrablockchain AccountId type
 	type AccountId: Parameter;
+	/// Infrablockchain SystemTokenId type
+	type AssetKind: Parameter;
 	/// Infrablockchain Balance type
 	type Balance: Parameter;
 	/// Id for destination to distribute reward
 	type DestId: Parameter;
 
 	/// Fee will be distributed to the validators for current session
-	fn distribute_reward(session_index: SessionIndex);
+	fn distribute_reward(dest_id: Self::DestId, who: Self::AccountId, asset: Self::AssetKind, amount: Self::Balance);
 }
 
-impl<Location, Balance> RewardInterface<Location, Balance> for () {
+impl RewardInterface for () {
 	type AccountId = ();
+	type AssetKind = ();
 	type Balance = u64;
 	type DestId = ();
 
-	fn distribute_reward(_session_index: SessionIndex) {}
+	fn distribute_reward(_dest_id: Self::DestId, _who: Self::AccountId, assset: Self::AssetKind, _amount: Self::Balance) {}
 }
 
 impl<T: Config> TaaV for Pallet<T> {
@@ -148,7 +152,15 @@ impl<T: Config> pallet_session::SessionManager<T::AccountId> for Pallet<T> {
 	}
 	fn end_session(end_index: SessionIndex) {
 		log!(info, "⏰ ending session {}", end_index);
-		// T::RewardInterface::distribute_reward(end_index);
+		// if let Some(reward_info) = Reward::<T>::get() {
+		// 	for (asset, who) in reward_info.iter() {
+		// 		if let Some(para_id) = asset.id() {
+		// 			T::RewardHandler::distribute_reward(para_id.into(), who, asset);
+		// 		} else {
+		// 			T::Fungibles::accurue(asset, who)
+		// 		}
+		// 	}
+		// }
 	}
 }
 

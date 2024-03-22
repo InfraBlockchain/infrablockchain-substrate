@@ -950,7 +950,7 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	pub fn requested_asset_metadata(bytes: &mut Vec<u8>) {
+	pub fn requested_asset_metadata(para_id: ParaId, bytes: &mut Vec<u8>) {
 		if let Ok(remote_asset_metadata) = RemoteAssetMetadata::<
 			T::SystemTokenId,
 			SystemTokenBalanceOf<T>,
@@ -964,7 +964,8 @@ impl<T: Config> Pallet<T> {
 				decimals,
 				min_balance,
 			} = remote_asset_metadata;
-			if let Ok((origin_id, pallet_id, asset_id)) = asset_id.id() {
+			if let Ok((mut origin_id, pallet_id, asset_id)) = asset_id.id() {
+				// origin_id = Some(para_id.into());
 				let system_token_id =
 					T::SystemTokenId::convert_back(origin_id, pallet_id, asset_id);
 				Metadata::<T>::insert(

@@ -51,7 +51,7 @@ pub use origin_conversion::{
 
 mod asset_conversion;
 pub use asset_conversion::{
-	AsPrefixedGeneralIndex, AsPrefixedOriginalSystemTokenId, ConvertedAbstractId,
+	AsPrefixedGeneralIndex, ConvertedAbstractId,
 	ConvertedConcreteId, MatchedConvertedConcreteId, V3LocationConverter,
 };
 #[allow(deprecated)]

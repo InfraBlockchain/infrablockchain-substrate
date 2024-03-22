@@ -30,8 +30,7 @@ use frame_support::traits::{
 use sp_std::marker::PhantomData;
 use xcm::prelude::MultiLocation;
 use xcm_builder::{
-	AsPrefixedGeneralIndex, AsPrefixedOriginalSystemTokenId, MatchedConvertedConcreteId,
-	V3LocationConverter,
+	AsPrefixedGeneralIndex, MatchedConvertedConcreteId, V3LocationConverter,
 };
 use xcm_executor::traits::{JustTry, Properties};
 
@@ -197,33 +196,24 @@ where
 	}
 }
 
-pub type AssetIdForOriginalAssets = u32;
+pub type AssetIdForNativeAssets = u32;
 
-pub type AssetIdForOriginalAssetsConvert<OriginalAssetsPalletLocation, ParaId> =
-	AsPrefixedOriginalSystemTokenId<
-		OriginalAssetsPalletLocation,
-		ParaId,
-		AssetIdForOriginalAssets,
-		JustTry,
-		xcm::v3::MultiLocation,
-	>;
-
-/// `Location` vs `AssetIdForOriginalAssets` converter for `TrustBackedAssets`
-pub type OldAssetIdForOriginalAssetsConvert<TrustBackedAssetsPalletLocation> =
+/// `Location` vs `AssetIdForNativeAssets` converter for `TrustBackedAssets`
+pub type AssetIdForNativeAssetsConvert<NativeAssetsPalletLocation> =
 	AsPrefixedGeneralIndex<
-		TrustBackedAssetsPalletLocation,
-		AssetIdForOriginalAssets,
+		NativeAssetsPalletLocation,
+		AssetIdForNativeAssets,
 		JustTry,
 		xcm::v3::MultiLocation,
 	>;
 
 /// [`MatchedConvertedConcreteId`] converter dedicated for `TrustBackedAssets`
-pub type TrustBackedAssetsConvertedConcreteId<TrustBackedAssetsPalletLocation, Balance> =
+pub type NativeAssetsConvertedConcreteId<NativeAssetsPalletLocation, Balance> =
 	MatchedConvertedConcreteId<
-		AssetIdForOriginalAssets,
+		AssetIdForNativeAssets,
 		Balance,
-		StartsWith<TrustBackedAssetsPalletLocation>,
-		OldAssetIdForOriginalAssetsConvert<TrustBackedAssetsPalletLocation>,
+		StartsWith<NativeAssetsPalletLocation>,
+		AssetIdForNativeAssetsConvert<NativeAssetsPalletLocation>,
 		JustTry,
 	>;
 
@@ -233,10 +223,10 @@ pub type MultiLocationForAssetId = MultiLocation;
 /// [`MatchedConvertedConcreteId`] converter dedicated for storing `AssetId` as `MultiLocation`.
 pub type MultiLocationConvertedConcreteId<MultiLocationFilter, AssetConverter, Balance> =
 	MatchedConvertedConcreteId<
-		AssetIdForOriginalAssets,
+		AssetIdForNativeAssets,
 		Balance,
 		MultiLocationFilter,
-		xcm_primitives::AsAssetMultiLocation<AssetIdForOriginalAssets, AssetConverter>,
+		xcm_primitives::AsAssetMultiLocation<AssetIdForNativeAssets, AssetConverter>,
 		JustTry,
 	>;
 
@@ -286,7 +276,7 @@ mod tests {
 
 	#[test]
 	fn asset_id_for_trust_backed_assets_convert_works() {
-		let local_asset_id = 123456789 as AssetIdForOriginalAssets;
+		let local_asset_id = 123456789 as AssetIdForNativeAssets;
 		let expected_reverse_ref =
 			MultiLocation::new(5, X2(PalletInstance(13), GeneralIndex(local_asset_id.into())));
 

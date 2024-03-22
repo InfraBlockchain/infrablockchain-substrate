@@ -73,7 +73,7 @@ use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use pallet_session::historical as session_historical;
 use pallet_system_token_tx_payment::{HandleCredit, TransactionFeeCharger};
 use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
-use pallet_validator_election::SessionIndex;
+use pallet_validator_election::{SessionIndex, RewardInterface};
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use primitives::{
 	slashing, AccountId, AccountIndex, Balance, BlockNumber, CandidateEvent, CandidateHash,
@@ -116,15 +116,15 @@ use infra_relay_runtime_constants::{currency::*, fee::*, system_parachain::ASSET
 mod weights;
 
 mod infra;
-use infra::{ParaConfigHandler, SystemTokenHandler};
+use infra::{ParaConfigHandler, SystemTokenHandler, RewardHandler};
 
 // XCM
 pub mod xcm_config;
 use infra_asset_common::{
-	local_and_foreign_assets::LocalFromLeft, AssetIdForOriginalAssets,
-	AssetIdForOriginalAssetsConvert,
+	local_and_foreign_assets::LocalFromLeft, AssetIdForNativeAssets,
+	AssetIdForNativeAssetsConvert,
 };
-use xcm_config::OriginalAssetsPalletLocation;
+use xcm_config::NativeAssetsPalletLocation;
 
 impl_runtime_weights!(infra_relay_runtime_constants);
 
@@ -354,10 +354,10 @@ parameter_types! {
 }
 
 pub struct CreditToBucket;
-impl HandleCredit<AccountId, OriginalAndForeignAssets> for CreditToBucket {
-	fn handle_credit(credit: Credit<AccountId, OriginalAndForeignAssets>) {
+impl HandleCredit<AccountId, NativeAndForeignAssets> for CreditToBucket {
+	fn handle_credit(credit: Credit<AccountId, NativeAndForeignAssets>) {
 		let dest = FeeTreasuryId::get().into_account_truncating();
-		let _ = <OriginalAndForeignAssets as Balanced<AccountId>>::resolve(&dest, credit);
+		let _ = <NativeAndForeignAssets as Balanced<AccountId>>::resolve(&dest, credit);
 	}
 }
 
@@ -376,7 +376,7 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 			}) |
 			RuntimeCall::Preimage(pallet_preimage::Call::note_preimage { .. }) |
 			RuntimeCall::Assets(
-				OriginalAssetsCall::create { .. } | OriginalAssetsCall::mint { .. },
+				NativeAssetsCall::create { .. } | NativeAssetsCall::mint { .. },
 			) |
 			RuntimeCall::Configuration(
 				parachains_configuration::Call::end_bootstrap { .. } |
@@ -401,7 +401,7 @@ impl pallet_system_token_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type SystemConfig = Configuration;
 	type VotingHandler = ValidatorElection;
-	type Fungibles = OriginalAndForeignAssets;
+	type Fungibles = NativeAndForeignAssets;
 	type OnChargeSystemToken =
 		TransactionFeeCharger<Runtime, SystemTokenConversion, CreditToBucket>;
 	type BootstrapCallFilter = BootstrapCallFilter;
@@ -412,7 +412,7 @@ impl pallet_system_token_conversion::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = SystemTokenBalance;
 	type AssetKind = MultiLocation;
-	type Fungibles = OriginalAndForeignAssets;
+	type Fungibles = NativeAndForeignAssets;
 	type SystemConfig = Configuration;
 }
 
@@ -716,7 +716,7 @@ impl pallet_treasury::Config for Runtime {
 	type AssetKind = MultiLocation;
 	type Beneficiary = AccountId;
 	type BeneficiaryLookup = Indices;
-	type Paymaster = PayAssetFromAccount<OriginalAndForeignAssets, TreasuryAccount>;
+	type Paymaster = PayAssetFromAccount<NativeAndForeignAssets, TreasuryAccount>;
 	type BalanceConverter = AssetRate;
 	type PayoutPeriod = SpendPayoutPeriod;
 	#[cfg(feature = "runtime-benchmarks")]
@@ -1124,14 +1124,15 @@ parameter_types! {
 
 impl pallet_validator_election::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
+	type BlocksPerYear = BlocksPerYear;
 	type SessionsPerEra = SessionsPerEra;
-	type Fungibles = OriginalAndForeignAssets;
+	type RewardHandler = RewardHandler;
+	type Fungibles = NativeAndForeignAssets;
 	type Score = SystemTokenWeight;
 	type HigherPrecisionScore = softfloat::F64;
 	type NextNewSession = Session;
 	type SessionInterface = Self;
 	type CollectiveInterface = Council;
-	type BlocksPerYear = BlocksPerYear;
 }
 
 parameter_types! {
@@ -1144,7 +1145,7 @@ parameter_types! {
 impl system_token_manager::Config for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeEvent = RuntimeEvent;
-	type Fungibles = OriginalAndForeignAssets;
+	type Fungibles = NativeAndForeignAssets;
 	type SystemTokenId = MultiLocation;
 	type SystemTokenHandler = SystemTokenHandler;
 	type StringLimit = StringLimit;
@@ -1383,13 +1384,13 @@ parameter_types! {
 	pub const MetadataDepositPerByte: Balance = deposit(0, 1);
 }
 
-pub type OriginalAssetsInstance = pallet_assets::Instance1;
-type OriginalAssetsCall = pallet_assets::Call<Runtime, OriginalAssetsInstance>;
-impl pallet_assets::Config<OriginalAssetsInstance> for Runtime {
+pub type NativeAssetsInstance = pallet_assets::Instance1;
+type NativeAssetsCall = pallet_assets::Call<Runtime, NativeAssetsInstance>;
+impl pallet_assets::Config<NativeAssetsInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
-	type AssetId = AssetIdForOriginalAssets;
-	type AssetIdParameter = parity_scale_codec::Compact<AssetIdForOriginalAssets>;
+	type AssetId = AssetIdForNativeAssets;
+	type AssetIdParameter = parity_scale_codec::Compact<AssetIdForNativeAssets>;
 	type SystemTokenWeight = SystemTokenWeight;
 	type Currency = Balances;
 	type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
@@ -1431,12 +1432,12 @@ impl pallet_assets::Config<ForeignAssetsInstance> for Runtime {
 }
 
 /// Union fungibles implementation for `Assets` and `ForeignAssets`.
-pub type OriginalAndForeignAssets = fungibles::UnionOf<
+pub type NativeAndForeignAssets = fungibles::UnionOf<
 	Assets,
 	ForeignAssets,
 	LocalFromLeft<
-		AssetIdForOriginalAssetsConvert<OriginalAssetsPalletLocation, ()>,
-		AssetIdForOriginalAssets,
+		AssetIdForNativeAssetsConvert<NativeAssetsPalletLocation>,
+		AssetIdForNativeAssets,
 		xcm::v3::MultiLocation,
 	>,
 	xcm::v3::MultiLocation,

@@ -2,12 +2,12 @@
 
 use codec::Encode;
 use cumulus_pallet_xcm::{ensure_relay, Origin};
-use cumulus_primitives_core::UpdateRCConfig;
+use cumulus_primitives_core::{UpdateRCConfig, ParaId};
 use frame_support::{
 	pallet_prelude::*,
-	traits::fungibles::{
+	traits::{fungibles::{
 		Inspect, InspectSystemToken, InspectSystemTokenMetadata, ManageSystemToken,
-	},
+	}},
 };
 use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
@@ -151,6 +151,10 @@ pub mod pallet {
 		AlreadyRequested,
 		/// Register is not valid(e.g Outdated registration)
 		InvalidRegister,
+		/// Error occured while converting System Token ID
+		ErrorOnConvertSystemTokenId,
+		/// System Token is not native asset
+		NotNativeAsset
 	}
 
 	#[pallet::hooks]
@@ -331,11 +335,12 @@ pub mod pallet {
 		pub fn request_register_system_token(
 			origin: OriginFor<T>,
 			original: SystemTokenAssetIdOf<T>,
+			currency_type: Fiat,
 		) -> DispatchResult {
 			if let Some(acc) = ensure_signed_or_root(origin)? {
 				ensure!(Admin::<T>::get() == Some(acc), Error::<T>::NoPermission);
 			}
-			let exp = Self::do_request(&original)?;
+			let exp = Self::do_request(&original, currency_type)?;
 			Self::deposit_event(Event::<T>::RegisterRequested { asset_id: original, exp });
 			Ok(())
 		}
@@ -344,12 +349,12 @@ pub mod pallet {
 
 impl<T: Config> Pallet<T> {
 	/// Put requested _asset_metadata_  on `CurrentRequest` and calculate expired block numbe
-	fn do_request(original: &SystemTokenAssetIdOf<T>) -> Result<BlockNumberFor<T>, DispatchError> {
+	fn do_request(original: &SystemTokenAssetIdOf<T>, currency_type: Fiat) -> Result<BlockNumberFor<T>, DispatchError> {
 		let current = <frame_system::Pallet<T>>::block_number();
 		Self::check_valid_register()?;
-		let system_token_metadata = T::Fungibles::system_token_metadata(original.clone())
+		let system_token_metadata = T::Fungibles::system_token_metadata(original.clone(), currency_type.clone())
 			.map_err(|_| Error::<T>::ErrorOnGetMetadata)?;
-		T::Fungibles::request_register(original.clone())
+		T::Fungibles::request_register(original.clone(), currency_type)
 			.map_err(|_| Error::<T>::ErrorOnRequestRegister)?;
 		<cumulus_pallet_parachain_system::Pallet<T>>::relay_request_asset(
 			system_token_metadata.encode(),
@@ -371,7 +376,7 @@ impl<T: Config> Pallet<T> {
 				false
 			}
 		} else {
-			false
+			true
 		};
 		ensure!(is_valid, Error::<T>::InvalidRegister);
 		Ok(())

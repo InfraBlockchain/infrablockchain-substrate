@@ -45,7 +45,7 @@ pub trait Manage<AccountId>: super::InspectSystemToken<AccountId> {
 		system_token_weight: Self::SystemTokenWeight,
 	) -> Result<(), DispatchError>;
 	/// Request register System Token
-	fn request_register(asset: Self::AssetId) -> Result<(), DispatchError>;
+	fn request_register(asset: Self::AssetId, currency_type: Fiat) -> Result<(), DispatchError>;
 	/// Create `Wrapped` asset
 	fn touch(
 		owner: AccountId,
@@ -75,15 +75,16 @@ pub trait Enumerate<AccountId>: super::InspectEnumerable<AccountId> {
 
 /// Interface for inspecting System Token Metadata
 pub trait Metadata<AccountId>: metadata::Inspect<AccountId> {
-	fn inner(asset: Self::AssetId) -> Result<(Fiat, Self::Balance), DispatchError>;
+	fn inner(asset: Self::AssetId) -> Result<Self::Balance, DispatchError>;
 
 	fn system_token_metadata(
 		asset: Self::AssetId,
+		currency_type: Fiat,
 	) -> Result<RemoteAssetMetadata<Self::AssetId, Self::Balance>, DispatchError> {
 		let name = Self::name(asset.clone());
 		let symbol = Self::symbol(asset.clone());
 		let decimals = Self::decimals(asset.clone());
-		let (currency_type, min_balance) = Self::inner(asset.clone())?;
+		let min_balance = Self::inner(asset.clone())?;
 		Ok(RemoteAssetMetadata {
 			asset_id: asset,
 			name,

@@ -1037,10 +1037,10 @@ impl<
 		}
 	}
 
-	fn request_register(asset: Self::AssetId) -> Result<(), DispatchError> {
+	fn request_register(asset: Self::AssetId, currency_type: Fiat) -> Result<(), DispatchError> {
 		match Criterion::convert(asset) {
-			Left(a) => <Left as fungibles::ManageSystemToken<AccountId>>::request_register(a),
-			Right(a) => <Right as fungibles::ManageSystemToken<AccountId>>::request_register(a),
+			Left(a) => <Left as fungibles::ManageSystemToken<AccountId>>::request_register(a, currency_type),
+			Right(a) => <Right as fungibles::ManageSystemToken<AccountId>>::request_register(a, currency_type),
 		}
 	}
 
@@ -1120,7 +1120,7 @@ impl<
 	> fungibles::InspectSystemTokenMetadata<AccountId>
 	for UnionOf<Left, Right, Criterion, AssetKind, AccountId>
 {
-	fn inner(asset: Self::AssetId) -> Result<(Fiat, Self::Balance), DispatchError> {
+	fn inner(asset: Self::AssetId) -> Result<Self::Balance, DispatchError> {
 		match Criterion::convert(asset) {
 			Left(a) => <Left as fungibles::InspectSystemTokenMetadata<AccountId>>::inner(a),
 			Right(a) => <Right as fungibles::InspectSystemTokenMetadata<AccountId>>::inner(a),

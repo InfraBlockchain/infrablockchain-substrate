@@ -1140,7 +1140,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		Ok(())
 	}
 
-	pub fn do_request_register(asset_id: T::AssetId) -> DispatchResult {
+	pub fn do_request_register(asset_id: T::AssetId, currency_type: Fiat) -> DispatchResult {
 		Asset::<T, I>::try_mutate_exists(asset_id.clone(), |maybe_detail| -> DispatchResult {
 			let mut asset_detail = maybe_detail.take().ok_or(Error::<T, I>::Unknown)?;
 			ensure!(!asset_detail.is_sufficient, Error::<T, I>::IncorrectStatus);
@@ -1150,6 +1150,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			// TODO: Better way
 			ensure!(Self::balance(asset_id, issuer) >= min_balance, Error::<T, I>::InvalidRequest);
 			asset_detail.status = AssetStatus::Requested;
+			asset_detail.currency_type = Some(currency_type);
 			*maybe_detail = Some(asset_detail);
 			Ok(())
 		})?;

@@ -2214,3 +2214,15 @@ implement_fixed!(
 	"_Fixed Point 128 bits unsigned, range = \
 		[0.000000000000000000, 340282366920938463463.374607431768211455]_",
 );
+
+// Define the division precision outside the macro
+// const F64_DIV_PRECISION: u64 = 1 << 52;  52-bit significand precision for F64
+
+// implement_fixed!(
+//     F64,
+//     test_f64,
+//     u64,
+//     true, // Assuming F64 should be treated as signed for arithmetic operations
+//     F64_DIV_PRECISION, // DIV precision based on F64's 52-bit significand
+//     "A fixed point number representation using F64."
+// );

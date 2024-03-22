@@ -48,7 +48,7 @@ pub type CollectionIdForUniquesConvert<UniquesPalletLocation> =
 	AsPrefixedGeneralIndex<UniquesPalletLocation, CollectionId, JustTry>;
 
 /// [`MatchedConvertedConcreteId`] converter dedicated for `TrustBackedAssets`
-pub type TrustBackedAssetsConvertedConcreteId<TrustBackedAssetsPalletLocation, Balance> =
+pub type NativeAssetsConvertedConcreteId<TrustBackedAssetsPalletLocation, Balance> =
 	MatchedConvertedConcreteId<
 		AssetIdForTrustBackedAssets,
 		Balance,
@@ -165,7 +165,7 @@ mod tests {
 		}
 		// setup convert
 		type TrustBackedAssetsConvert =
-			TrustBackedAssetsConvertedConcreteId<TrustBackedAssetsPalletLocation, u128>;
+			NativeAssetsConvertedConcreteId<TrustBackedAssetsPalletLocation, u128>;
 
 		let test_data = vec![
 			// missing GeneralIndex

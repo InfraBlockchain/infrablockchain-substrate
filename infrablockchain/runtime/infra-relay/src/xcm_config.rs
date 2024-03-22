@@ -18,7 +18,7 @@
 
 use super::{
 	parachains_origin, system_token_manager, AccountId, AllPalletsWithSystem, Authorship, Balance,
-	Balances, Assets, OriginalAssetsInstance, ParaId, Runtime, RuntimeCall, RuntimeEvent,
+	Balances, Assets, NativeAssetsInstance, ParaId, Runtime, RuntimeCall, RuntimeEvent,
 	RuntimeOrigin, ValidatorCollective, WeightToFee, ForeignAssets, ForeignAssetsInstance,
 	XcmPallet,
 };
@@ -68,7 +68,7 @@ pub type LocationToAccountId = (
 pub type ForeignAssetsConvertedConcreteId = infra_asset_common::ForeignAssetsConvertedConcreteId<
 	(
 		// Ignore `TrustBackedAssets` explicitly
-		StartsWith<OriginalAssetsPalletLocation>,
+		StartsWith<NativeAssetsPalletLocation>,
 		// Ignore asset which starts explicitly with our `GlobalConsensus(NetworkId)`, means:
 		// - foreign assets from our consensus should be: `Location {parents: 1, X*(Parachain(xyz),
 		//   ..)}
@@ -96,15 +96,15 @@ pub type ForeignFungiblesTransactor = FungiblesAdapter<
 >;
 
 /// `AssetId/Balancer` converter for `TrustBackedAssets``
-pub type TrustBackedAssetsConvertedConcreteId =
-	infra_asset_common::TrustBackedAssetsConvertedConcreteId<OriginalAssetsPalletLocation, Balance>;
+pub type NativeAssetsConvertedConcreteId =
+	infra_asset_common::NativeAssetsConvertedConcreteId<NativeAssetsPalletLocation, Balance>;
 
 /// Means for transacting assets besides the native currency on this chain.
-pub type LocalIssuedFungiblesTransactor = FungiblesAdapter<
+pub type NativeIssuedFungiblesTransactor = FungiblesAdapter<
 	// Use this fungibles implementation:
 	Assets,
 	// Use this currency when it is a fungible asset matching the given location or name:
-	TrustBackedAssetsConvertedConcreteId,
+	NativeAssetsConvertedConcreteId,
 	// Convert an XCM MultiLocation into a local account id:
 	LocationToAccountId,
 	// Our chain's account ID type (we can't get away without mentioning it explicitly):
@@ -117,7 +117,7 @@ pub type LocalIssuedFungiblesTransactor = FungiblesAdapter<
 >;
 
 /// Means for transacting assets on this chain.
-pub type AssetTransactors = (LocalIssuedFungiblesTransactor, ForeignFungiblesTransactor);
+pub type AssetTransactors = (NativeIssuedFungiblesTransactor, ForeignFungiblesTransactor);
 
 parameter_types! {
 	/// The infrablockspace network ID. This is named.
@@ -126,7 +126,7 @@ parameter_types! {
 	pub const UniversalLocation: InteriorMultiLocation = X1(GlobalConsensus(ThisNetwork::get()));
 	/// The Checking Account, which holds any native assets that have been teleported out and not back in (yet).
 	pub CheckingAccount: AccountId = XcmPallet::check_account();
-	pub OriginalAssetsPalletLocation: MultiLocation =
+	pub NativeAssetsPalletLocation: MultiLocation =
 		PalletInstance(<Assets as PalletInfoAccess>::index() as u8).into();
 	pub ForeignAssetsPalletLocation: MultiLocation =
 		PalletInstance(<ForeignAssets as PalletInfoAccess>::index() as u8).into();
@@ -189,11 +189,11 @@ pub type Barrier = (
 );
 
 /// Multiplier used for dedicated `TakeFirstAssetTrader` with `Assets` instance.
-pub type AssetFeeAsEDMultiplierFeeCharger = AssetFeeAsExistentialDepositMultiplier<
+pub type NativeAssetFeeAsEDMultiplierFeeCharger = AssetFeeAsExistentialDepositMultiplier<
 	Runtime,
 	WeightToFee,
-	pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto, OriginalAssetsInstance>,
-	OriginalAssetsInstance,
+	pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto, NativeAssetsInstance>,
+	NativeAssetsInstance,
 >;
 
 /// Multiplier used for dedicated `TakeFirstAssetTrader` with `ForeignAssets` instance.
@@ -337,11 +337,11 @@ impl xcm_executor::Config for XcmConfig {
 		// `pallet_assets` instance - `Assets`.
 		cumulus_primitives_utility::TakeFirstAssetTrader<
 			AccountId,
-			AssetFeeAsEDMultiplierFeeCharger,
-			TrustBackedAssetsConvertedConcreteId,
+			NativeAssetFeeAsEDMultiplierFeeCharger,
+			NativeAssetsConvertedConcreteId,
 			Assets,
 			cumulus_primitives_utility::XcmFeesTo32ByteAccount<
-				LocalIssuedFungiblesTransactor,
+				NativeIssuedFungiblesTransactor,
 				AccountId,
 				XcmAssetFeesReceiver,
 			>,

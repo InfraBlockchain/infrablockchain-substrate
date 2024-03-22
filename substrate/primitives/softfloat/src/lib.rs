@@ -11,6 +11,7 @@ macro_rules! f64 {
 
 mod conv;
 mod soft_f64;
+use num_traits::Pow;
 
 pub use crate::soft_f64::F64;
 

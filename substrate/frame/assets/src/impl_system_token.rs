@@ -75,8 +75,8 @@ impl<T: Config<I>, I: 'static> ManageSystemToken<T::AccountId> for Pallet<T, I> 
 		Self::do_update_system_token_weight(asset, system_token_weight)
 	}
 
-	fn request_register(asset: Self::AssetId) -> Result<(), DispatchError> {
-		Self::do_request_register(asset)
+	fn request_register(asset: Self::AssetId, currency_type: Fiat) -> Result<(), DispatchError> {
+		Self::do_request_register(asset, currency_type)
 	}
 
 	fn touch(
@@ -111,11 +111,9 @@ impl<T: Config<I>, I: 'static> ManageSystemToken<T::AccountId> for Pallet<T, I> 
 }
 
 impl<T: Config<I>, I: 'static> InspectSystemTokenMetadata<T::AccountId> for Pallet<T, I> {
-	fn inner(asset: Self::AssetId) -> Result<(Fiat, Self::Balance), DispatchError> {
+	fn inner(asset: Self::AssetId) -> Result<Self::Balance, DispatchError> {
 		let asset_detail = Asset::<T, I>::get(&asset).ok_or(Error::<T, I>::InvalidRequest)?;
-		let currency_type =
-			asset_detail.clone().currency_type.take().ok_or(Error::<T, I>::InvalidRequest)?;
 		let min_balance = asset_detail.clone().min_balance;
-		Ok((currency_type, min_balance))
+		Ok(min_balance)
 	}
 }

@@ -102,13 +102,13 @@ use parachains_common::{
 	ItemId, Nonce, Signature, 
 };
 use xcm_config::{
-	NativeLocation, TrustBackedAssetsConvertedConcreteId, XcmConfig,
-	XcmOriginToTransactDispatchOrigin, OriginalAssetsPalletLocation
+	NativeLocation, NativeAssetsConvertedConcreteId, XcmConfig,
+	XcmOriginToTransactDispatchOrigin, NativeAssetsPalletLocation
 };
 
 use infra_asset_common::{
-	local_and_foreign_assets::LocalFromLeft, AssetIdForOriginalAssets,
-	AssetIdForOriginalAssetsConvert
+	local_and_foreign_assets::LocalFromLeft, AssetIdForNativeAssets,
+	AssetIdForNativeAssetsConvert
 };
 
 #[cfg(any(feature = "std", test))]
@@ -258,9 +258,9 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 	fn contains(call: &RuntimeCall) -> bool {
 		match call {
 			RuntimeCall::Assets(
-				OriginalAssetsCall::create { .. } |
-				OriginalAssetsCall::set_metadata { .. } |
-				OriginalAssetsCall::mint { .. },
+				NativeAssetsCall::create { .. } |
+				NativeAssetsCall::set_metadata { .. } |
+				NativeAssetsCall::mint { .. },
 			) |
 			RuntimeCall::SystemTokenOracle(
 				pallet_system_token_oracle::Call::submit_exchange_rates_unsigned { .. },
@@ -284,7 +284,7 @@ impl pallet_system_token_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type SystemConfig = InfraParaCore;
 	type VotingHandler = ParachainSystem;
-	type Fungibles = OriginalAndForeignAssets;
+	type Fungibles = NativeAndForeignAssets;
 	type OnChargeSystemToken =
 		TransactionFeeCharger<Runtime, SystemTokenConversion, CreditToBucket>;
 	type BootstrapCallFilter = BootstrapCallFilter;
@@ -292,10 +292,10 @@ impl pallet_system_token_tx_payment::Config for Runtime {
 }
 
 pub struct CreditToBucket;
-impl HandleCredit<AccountId, OriginalAndForeignAssets> for CreditToBucket {
-	fn handle_credit(credit: Credit<AccountId, OriginalAndForeignAssets>) {
+impl HandleCredit<AccountId, NativeAndForeignAssets> for CreditToBucket {
+	fn handle_credit(credit: Credit<AccountId, NativeAndForeignAssets>) {
 		let dest = FeeTreasuryId::get().into_account_truncating();
-		let _ = <OriginalAndForeignAssets as Balanced<AccountId>>::resolve(&dest, credit);
+		let _ = <NativeAndForeignAssets as Balanced<AccountId>>::resolve(&dest, credit);
 	}
 }
 
@@ -303,7 +303,7 @@ impl pallet_system_token_conversion::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = SystemTokenBalance;
 	type AssetKind = xcm::v3::MultiLocation;
-	type Fungibles = OriginalAndForeignAssets;
+	type Fungibles = NativeAndForeignAssets;
 	type SystemConfig = InfraParaCore;
 }
 
@@ -322,13 +322,13 @@ parameter_types! {
 /// We allow root and the Relay Chain council to execute privileged asset operations.
 pub type RootOrigin = EnsureRoot<AccountId>;
 
-pub type OriginalAssetsInstance = pallet_assets::Instance1;
-type OriginalAssetsCall = pallet_assets::Call<Runtime, OriginalAssetsInstance>;
-impl pallet_assets::Config<OriginalAssetsInstance> for Runtime {
+pub type NativeAssetsInstance = pallet_assets::Instance1;
+type NativeAssetsCall = pallet_assets::Call<Runtime, NativeAssetsInstance>;
+impl pallet_assets::Config<NativeAssetsInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
-	type AssetId = AssetIdForOriginalAssets;
-	type AssetIdParameter = codec::Compact<AssetIdForOriginalAssets>;
+	type AssetId = AssetIdForNativeAssets;
+	type AssetIdParameter = codec::Compact<AssetIdForNativeAssets>;
 	type SystemTokenWeight = SystemTokenWeight;
 	type Currency = Balances;
 	type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
@@ -347,6 +347,7 @@ impl pallet_assets::Config<OriginalAssetsInstance> for Runtime {
 }
 
 pub type ForeignAssetsInstance = pallet_assets::Instance2;
+type ForeignAssetsCall = pallet_assets::Call<Runtime, ForeignAssetsInstance>;
 impl pallet_assets::Config<ForeignAssetsInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
@@ -370,12 +371,12 @@ impl pallet_assets::Config<ForeignAssetsInstance> for Runtime {
 }
 
 /// Union fungibles implementation for `Assets` and `ForeignAssets`.
-pub type OriginalAndForeignAssets = fungibles::UnionOf<
+pub type NativeAndForeignAssets = fungibles::UnionOf<
 	Assets,
 	ForeignAssets,
 	LocalFromLeft<
-		AssetIdForOriginalAssetsConvert<OriginalAssetsPalletLocation, ()>,
-		AssetIdForOriginalAssets,
+		AssetIdForNativeAssetsConvert<NativeAssetsPalletLocation>,
+		AssetIdForNativeAssets,
 		xcm::v3::MultiLocation,
 	>,
 	xcm::v3::MultiLocation,
@@ -591,7 +592,7 @@ parameter_types! {
 impl cumulus_pallet_infra_parachain_core::Config for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeEvent = RuntimeEvent;
-	type Fungibles = OriginalAndForeignAssets;
+	type Fungibles = NativeAndForeignAssets;
 	type ActiveRequestPeriod = ActiveRequestPeriod;
 }
 
@@ -1019,7 +1020,7 @@ impl_runtime_apis! {
 					}
 				},
 				// collect pallet_assets (TrustBackedAssets)
-				convert::<_, _, _, _, TrustBackedAssetsConvertedConcreteId>(
+				convert::<_, _, _, _, NativeAssetsConvertedConcreteId>(
 					Assets::account_balances(&account)
 						.iter()
 						.filter(|(_, balance)| balance > &0)

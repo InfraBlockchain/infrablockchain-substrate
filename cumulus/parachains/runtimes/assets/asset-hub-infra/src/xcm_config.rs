@@ -14,9 +14,9 @@
 // limitations under the License.
 
 use super::{
-	AccountId, AllPalletsWithSystem, Assets, ForeignAssets, ForeignAssetsInstance, OriginalAssetsInstance, Authorship, Balance, Balances, InfraXcm,
+	AccountId, AllPalletsWithSystem, Assets, ForeignAssets, ForeignAssetsInstance, NativeAssetsInstance, Authorship, Balance, Balances, InfraXcm,
 	ParachainInfo, ParachainSystem, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, WeightToFee,
-	XcmpQueue,
+	XcmpQueue, NativeAssetsCall, ForeignAssetsCall 
 };
 use infra_asset_common::{
 	matching::{StartsWith, StartsWithExplicitGlobalConsensus},
@@ -48,7 +48,7 @@ parameter_types! {
 	pub UniversalLocation: InteriorMultiLocation =
 		X2(GlobalConsensus(RelayNetwork::get().unwrap()), Parachain(ParachainInfo::parachain_id().into()));
 	pub UniversalLocationNetworkId: NetworkId = UniversalLocation::get().global_consensus().unwrap();
-	pub OriginalAssetsPalletLocation: MultiLocation =
+	pub NativeAssetsPalletLocation: MultiLocation =
 		PalletInstance(<Assets as PalletInfoAccess>::index() as u8).into();
 	pub CheckingAccount: AccountId = InfraXcm::check_account();
 }
@@ -66,15 +66,15 @@ pub type LocationToAccountId = (
 );
 
 /// `AssetId/Balancer` converter for `TrustBackedAssets``
-pub type TrustBackedAssetsConvertedConcreteId =
-	infra_asset_common::TrustBackedAssetsConvertedConcreteId<OriginalAssetsPalletLocation, Balance>;
+pub type NativeAssetsConvertedConcreteId =
+	infra_asset_common::NativeAssetsConvertedConcreteId<NativeAssetsPalletLocation, Balance>;
 
 /// Means for transacting assets besides the native currency on this chain.
-pub type LocalIssuedFungiblesTransactor = FungiblesAdapter<
+pub type NativeIssuedFungiblesTransactor = FungiblesAdapter<
 	// Use this fungibles implementation:
 	Assets,
 	// Use this currency when it is a fungible asset matching the given location or name:
-	TrustBackedAssetsConvertedConcreteId,
+	NativeAssetsConvertedConcreteId,
 	// Convert an XCM MultiLocation into a local account id:
 	LocationToAccountId,
 	// Our chain's account ID type (we can't get away without mentioning it explicitly):
@@ -90,7 +90,7 @@ pub type LocalIssuedFungiblesTransactor = FungiblesAdapter<
 pub type ForeignAssetsConvertedConcreteId = infra_asset_common::ForeignAssetsConvertedConcreteId<
 	(
 		// Ignore `TrustBackedAssets` explicitly
-		StartsWith<OriginalAssetsPalletLocation>,
+		StartsWith<NativeAssetsPalletLocation>,
 		// Ignore asset which starts explicitly with our `GlobalConsensus(NetworkId)`, means:
 		// - foreign assets from our consensus should be: `Location {parents: 1, X*(Parachain(xyz),
 		//   ..)}
@@ -118,7 +118,7 @@ pub type ForeignFungiblesTransactor = FungiblesAdapter<
 >;
 
 /// Means for transacting assets on this chain.
-pub type AssetTransactors = (ForeignFungiblesTransactor, LocalIssuedFungiblesTransactor);
+pub type AssetTransactors = (NativeIssuedFungiblesTransactor, ForeignFungiblesTransactor);
 
 /// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,
 /// ready for dispatching a transaction with Xcm's `Transact`. There is an `OriginKind` which can
@@ -202,35 +202,35 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 			RuntimeCall::XcmpQueue(..) |
 			RuntimeCall::DmpQueue(..) |
 			RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. }) |
-			RuntimeCall::Assets(
-				pallet_assets::Call::force_set_metadata { .. } |
-				pallet_assets::Call::create { .. } |
-				pallet_assets::Call::force_create { .. } |
-				pallet_assets::Call::start_destroy { .. } |
-				pallet_assets::Call::destroy_accounts { .. } |
-				pallet_assets::Call::destroy_approvals { .. } |
-				pallet_assets::Call::finish_destroy { .. } |
-				pallet_assets::Call::mint { .. } |
-				pallet_assets::Call::burn { .. } |
-				pallet_assets::Call::transfer { .. } |
-				pallet_assets::Call::transfer_keep_alive { .. } |
-				pallet_assets::Call::force_transfer { .. } |
-				pallet_assets::Call::force_transfer2 { .. } |
-				pallet_assets::Call::freeze { .. } |
-				pallet_assets::Call::thaw { .. } |
-				pallet_assets::Call::freeze_asset { .. } |
-				pallet_assets::Call::thaw_asset { .. } |
-				pallet_assets::Call::transfer_ownership { .. } |
-				pallet_assets::Call::set_team { .. } |
-				pallet_assets::Call::clear_metadata { .. } |
-				pallet_assets::Call::force_clear_metadata { .. } |
-				pallet_assets::Call::force_asset_status { .. } |
-				pallet_assets::Call::approve_transfer { .. } |
-				pallet_assets::Call::cancel_approval { .. } |
-				pallet_assets::Call::force_cancel_approval { .. } |
-				pallet_assets::Call::transfer_approved { .. } |
-				pallet_assets::Call::touch { .. } |
-				pallet_assets::Call::refund { .. },
+			RuntimeCall::ForeignAssets(
+				ForeignAssetsCall::force_set_metadata { .. } |
+				ForeignAssetsCall::create { .. } |
+				ForeignAssetsCall::force_create { .. } |
+				ForeignAssetsCall::start_destroy { .. } |
+				ForeignAssetsCall::destroy_accounts { .. } |
+				ForeignAssetsCall::destroy_approvals { .. } |
+				ForeignAssetsCall::finish_destroy { .. } |
+				ForeignAssetsCall::mint { .. } |
+				ForeignAssetsCall::burn { .. } |
+				ForeignAssetsCall::transfer { .. } |
+				ForeignAssetsCall::transfer_keep_alive { .. } |
+				ForeignAssetsCall::force_transfer { .. } |
+				ForeignAssetsCall::force_transfer2 { .. } |
+				ForeignAssetsCall::freeze { .. } |
+				ForeignAssetsCall::thaw { .. } |
+				ForeignAssetsCall::freeze_asset { .. } |
+				ForeignAssetsCall::thaw_asset { .. } |
+				ForeignAssetsCall::transfer_ownership { .. } |
+				ForeignAssetsCall::set_team { .. } |
+				ForeignAssetsCall::clear_metadata { .. } |
+				ForeignAssetsCall::force_clear_metadata { .. } |
+				ForeignAssetsCall::force_asset_status { .. } |
+				ForeignAssetsCall::approve_transfer { .. } |
+				ForeignAssetsCall::cancel_approval { .. } |
+				ForeignAssetsCall::force_cancel_approval { .. } |
+				ForeignAssetsCall::transfer_approved { .. } |
+				ForeignAssetsCall::touch { .. } |
+				ForeignAssetsCall::refund { .. },
 			) |
 			RuntimeCall::Uniques(
 				pallet_uniques::Call::create { .. } |
@@ -277,11 +277,11 @@ pub type Barrier = (
 );
 
 /// Multiplier used for dedicated `TakeFirstAssetTrader` with `Assets` instance.
-pub type AssetFeeAsEDMultiplierFeeCharger = AssetFeeAsExistentialDepositMultiplier<
+pub type NativeAssetFeeAsEDMultiplierFeeCharger = AssetFeeAsExistentialDepositMultiplier<
 	Runtime,
 	WeightToFee,
-	pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto, OriginalAssetsInstance>,
-	OriginalAssetsInstance,
+	pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto, NativeAssetsInstance>,
+	NativeAssetsInstance,
 >;
 
 /// Multiplier used for dedicated `TakeFirstAssetTrader` with `ForeignAssets` instance.
@@ -322,11 +322,11 @@ impl xcm_executor::Config for XcmConfig {
 		// `pallet_assets` instance - `Assets`.
 		cumulus_primitives_utility::TakeFirstAssetTrader<
 			AccountId,
-			AssetFeeAsEDMultiplierFeeCharger,
-			TrustBackedAssetsConvertedConcreteId,
+			NativeAssetFeeAsEDMultiplierFeeCharger,
+			NativeAssetsConvertedConcreteId,
 			Assets,
 			cumulus_primitives_utility::XcmFeesTo32ByteAccount<
-				LocalIssuedFungiblesTransactor,
+				NativeIssuedFungiblesTransactor,
 				AccountId,
 				XcmAssetFeesReceiver,
 			>,

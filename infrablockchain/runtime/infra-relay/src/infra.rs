@@ -132,6 +132,18 @@ impl SystemTokenInterface for SystemTokenHandler {
 	}
 }
 
+pub struct RewardHandler;
+impl RewardInterface for RewardHandler {
+	type AccountId = AccountId;
+	type AssetKind = MultiLocation;
+	type Balance = SystemTokenBalance;
+	type DestId = u32;
+
+	fn distribute_reward(dest_id: Self::DestId, who: Self::AccountId, asset: Self::AssetKind, amount: Self::Balance) {
+		// impl me!
+	}
+}
+
 pub(super) fn send_xcm_for(call: Vec<u8>, dest_id: u32) {
 	let message = Xcm(vec![
 		Instruction::UnpaidExecution { weight_limit: WeightLimit::Unlimited, check_origin: None },

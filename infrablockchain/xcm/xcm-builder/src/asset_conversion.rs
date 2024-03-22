@@ -21,63 +21,7 @@ use sp_runtime::traits::MaybeEquivalence;
 use sp_std::{marker::PhantomData, prelude::*, result};
 use xcm::latest::prelude::*;
 use xcm_executor::traits::{Error as MatchError, MatchesFungibles, MatchesNonFungibles};
-
-/// Converter struct implementing `MaybeEquivalence` converting a numeric asset ID (must be
-/// `TryFrom/TryInto<u128>`) into a `GeneralIndex` junction, prefixed by some `Location` value.
-/// The `Location` value will typically be a `Parachain` junction.
-pub struct AsPrefixedOriginalSystemTokenId<
-	Prefix,
-	ParaId,
-	AssetId,
-	ConvertAssetId,
-	L = MultiLocation,
->(PhantomData<(Prefix, ParaId, AssetId, ConvertAssetId, L)>);
-
-impl<
-		Prefix: Get<L>,
-		ParaId: Get<u32>,
-		AssetId: Clone,
-		ConvertAssetId: MaybeEquivalence<u128, AssetId>,
-		L: SystemTokenId<AssetId = u128, PalletId = u8, OriginId = u32>
-			+ TryInto<MultiLocation>
-			+ TryFrom<MultiLocation>
-			+ Clone,
-	> MaybeEquivalence<L, AssetId>
-	for AsPrefixedOriginalSystemTokenId<Prefix, ParaId, AssetId, ConvertAssetId, L>
-{
-	fn convert(id: &L) -> Option<AssetId> {
-		let prefix = Prefix::get();
-		let latest_prefix: MultiLocation = prefix.try_into().ok()?;
-		let latest_id: MultiLocation = (*id).clone().try_into().ok()?;
-		let (maybe_origin_id, _, _) = id.id().ok()?;
-		if latest_prefix.parent_count() != latest_id.parent_count() || maybe_origin_id.is_some() {
-			return None;
-		}
-		let mut i = latest_prefix.interior.len();
-		if let Some(_) = maybe_origin_id {
-			i += 1;
-		}
-		match latest_id.interior().at(i) {
-			Some(Junction::GeneralIndex(id)) => ConvertAssetId::convert(&id),
-			_ => None,
-		}
-	}
-
-	fn convert_back(what: &AssetId) -> Option<L> {
-		// TODO: Need review
-		let prefix = Prefix::get();
-		let latest_prefix: MultiLocation = prefix.try_into().ok()?;
-		let mut pallet_id = match latest_prefix.interior {
-			Junctions::X1(PalletInstance(id)) => Some(id),
-			_ => None,
-		};
-		let pallet_id = pallet_id.take()?;
-		let para_id = ParaId::get();
-		let origin_id = if para_id == 0 { None } else { Some(para_id) };
-		let asset_id = ConvertAssetId::convert_back(what)?;
-		Some(L::convert_back(origin_id, pallet_id, asset_id))
-	}
-}
+use parachain_primitives::primitives::Id;
 
 /// Converter struct implementing `MaybeEquivalence` converting a numeric asset ID (must be
 /// `TryFrom/TryInto<u128>`) into a `GeneralIndex` junction, prefixed by some `Location` value.

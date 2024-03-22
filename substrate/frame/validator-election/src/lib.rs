@@ -202,9 +202,17 @@ pub mod pallet {
 		/// Number of sessions per era.
 		#[pallet::constant]
 		type SessionsPerEra: Get<SessionIndex>;
+		
+		// F64::from_i128(5_256_000)(e.g 10 blocks/min * 60 min/hours* 24 hours/day * 365 days/year)
+		/// The number of blocks per year
+		#[pallet::constant]
+		type BlocksPerYear: Get<BlockNumberFor<Self>>;
 
 		/// Local fungibles trait
 		type Fungibles: InspectSystemToken<Self::AccountId>;
+
+		/// Type that handles aggregated reward
+		type RewardHandler: RewardInterface;
 
 		/// Associated type for vote weight
 		type Score: Member
@@ -233,11 +241,6 @@ pub mod pallet {
 
 		/// Interface for interacting with validator collective pallet
 		type CollectiveInterface: CollectiveInterface<Self::AccountId>;
-
-		// F64::from_i128(5_256_000)(e.g 10 blocks/min * 60 min/hours* 24 hours/day * 365 days/year)
-		/// The number of blocks per year
-		#[pallet::constant]
-		type BlocksPerYear: Get<BlockNumberFor<Self>>;
 	}
 
 	#[pallet::genesis_config]
