@@ -40,6 +40,12 @@ pub struct RemoteAssetMetadata<AssetId, Balance> {
 	pub min_balance: Balance,
 }
 
+impl<AssetId, Balance> RemoteAssetMetadata<AssetId, Balance> {
+	pub fn set_asset_id(&mut self, asset_id: AssetId) {
+		self.asset_id = asset_id;
+	}
+}
+
 #[derive(
 	Clone,
 	Encode,

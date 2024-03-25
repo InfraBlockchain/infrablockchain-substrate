@@ -7,7 +7,7 @@ use frame_support::{
 	pallet_prelude::*,
 	traits::{fungibles::{
 		Inspect, InspectSystemToken, InspectSystemTokenMetadata, ManageSystemToken,
-	}},
+	}, tokens::SystemTokenId},
 };
 use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
@@ -26,6 +26,7 @@ pub type SystemTokenBalanceOf<T> =
 pub type SystemTokenWeightOf<T> = <<T as Config>::Fungibles as InspectSystemToken<
 	<T as frame_system::Config>::AccountId,
 >>::SystemTokenWeight;
+pub type SystemTokenOriginIdOf<T> = <<T as Config>::SystemTokenId as SystemTokenId>::OriginId;
 
 #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 pub struct RequestStatus<BlockNumber> {
@@ -58,6 +59,8 @@ pub mod pallet {
 			+ Into<Result<Origin, <Self as Config>::RuntimeOrigin>>;
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+		/// Type of SystemTokenId used in InfraBlockchain
+		type SystemTokenId: SystemTokenId;
 		/// Type that interacts with local asset
 		type Fungibles: InspectSystemToken<Self::AccountId>
 			+ InspectSystemTokenMetadata<Self::AccountId>
@@ -150,9 +153,9 @@ pub mod pallet {
 		/// System Token has already been requested
 		AlreadyRequested,
 		/// Register is not valid(e.g Outdated registration)
-		InvalidRegister,
+		BadRequest,
 		/// Error occured while converting System Token ID
-		ErrorOnConvertSystemTokenId,
+		ErrorConvertToSystemTokenId,
 		/// System Token is not native asset
 		NotNativeAsset
 	}
@@ -173,7 +176,11 @@ pub mod pallet {
 	}
 
 	#[pallet::call]
-	impl<T: Config> Pallet<T> {
+	impl<T: Config> Pallet<T> 
+	where
+		T::SystemTokenId: TryFrom<SystemTokenAssetIdOf<T>> + Into<SystemTokenAssetIdOf<T>>,
+		SystemTokenOriginIdOf<T>: From<ParaId>
+	{
 		/// Priviliged origin governed by Relay-chain
 		///
 		/// It can call extrinsic which is not allowed to call by other origin(e.g
@@ -250,6 +257,7 @@ pub mod pallet {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
 			T::Fungibles::register(original.clone(), system_token_weight)
 				.map_err(|_| Error::<T>::ErrorRegisterSystemToken)?;
+			Self::clear_request();
 			Self::deposit_event(Event::<T>::Registered { asset_id: original });
 			Ok(())
 		}
@@ -347,15 +355,19 @@ pub mod pallet {
 	}
 }
 
-impl<T: Config> Pallet<T> {
+impl<T: Config> Pallet<T> 
+where
+	T::SystemTokenId: TryFrom<SystemTokenAssetIdOf<T>> + Into<SystemTokenAssetIdOf<T>>,
+	SystemTokenOriginIdOf<T>: From<ParaId>
+{
 	/// Put requested _asset_metadata_  on `CurrentRequest` and calculate expired block numbe
 	fn do_request(original: &SystemTokenAssetIdOf<T>, currency_type: Fiat) -> Result<BlockNumberFor<T>, DispatchError> {
 		let current = <frame_system::Pallet<T>>::block_number();
-		Self::check_valid_register()?;
-		let system_token_metadata = T::Fungibles::system_token_metadata(original.clone(), currency_type.clone())
+		let mut system_token_metadata = T::Fungibles::system_token_metadata(original.clone(), currency_type.clone())
 			.map_err(|_| Error::<T>::ErrorOnGetMetadata)?;
 		T::Fungibles::request_register(original.clone(), currency_type)
 			.map_err(|_| Error::<T>::ErrorOnRequestRegister)?;
+		Self::check_valid_register(&mut system_token_metadata, original)?;
 		<cumulus_pallet_parachain_system::Pallet<T>>::relay_request_asset(
 			system_token_metadata.encode(),
 		);
@@ -366,20 +378,29 @@ impl<T: Config> Pallet<T> {
 		Ok(exp)
 	}
 
-	fn check_valid_register() -> Result<(), DispatchError> {
-		let is_valid = if let Some(status) = ActiveRequestStatus::<T>::get() {
+	fn check_valid_register(asset_metadata: &mut RemoteAssetMetadata<SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>>, asset: &SystemTokenAssetIdOf<T>) -> Result<(), DispatchError> {
+		let mut is_valid: bool = true;
+		let system_token_id: T::SystemTokenId = asset.clone().try_into().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
+		let origin_id = <<T as cumulus_pallet_parachain_system::Config>::SelfParaId>::get();
+		let (maybe_origin_id, pallet_id, asset_id) = system_token_id.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
+		ensure!(maybe_origin_id.is_none(), Error::<T>::BadRequest);
+		let system_token_id = T::SystemTokenId::convert_back(Some(origin_id.into()), pallet_id, asset_id);
+		asset_metadata.set_asset_id(system_token_id.into());
+		if let Some(status) = ActiveRequestStatus::<T>::get() {
 			if !status.is_expired(<frame_system::Pallet<T>>::block_number()) {
 				ActiveRequestStatus::<T>::kill();
 				RequestQueue::<T>::kill();
-				true
 			} else {
-				false
+				is_valid = false;
 			}
-		} else {
-			true
-		};
-		ensure!(is_valid, Error::<T>::InvalidRegister);
+		} 
+		ensure!(is_valid, Error::<T>::BadRequest);
 		Ok(())
+	}
+
+	fn clear_request() {
+		ActiveRequestStatus::<T>::kill();
+		RequestQueue::<T>::kill();
 	}
 }
 

@@ -1,5 +1,4 @@
 use crate::*;
-use frame_support::traits::tokens::SystemTokenId;
 use frame_system::pallet_prelude::BlockNumberFor;
 
 pub trait CollectiveInterface<AccountId> {
@@ -42,7 +41,7 @@ impl RewardInterface for () {
 	type Balance = u64;
 	type DestId = ();
 
-	fn distribute_reward(_dest_id: Self::DestId, _who: Self::AccountId, assset: Self::AssetKind, _amount: Self::Balance) {}
+	fn distribute_reward(_dest_id: Self::DestId, _who: Self::AccountId, _assset: Self::AssetKind, _amount: Self::Balance) {}
 }
 
 impl<T: Config> TaaV for Pallet<T> {
@@ -54,21 +53,19 @@ impl<T: Config> TaaV for Pallet<T> {
 			PotVote::<T::AccountId, SystemTokenAssetIdOf<T>, T::Score>::decode(&mut &bytes[..])
 				.map_err(|_| Error::<T>::ErrorDecode)?;
 		log::info!("🥶🥶 Processing Vote: {:?}", vote);
+		// TODO
 		let PotVote { candidate, asset_id, mut amount } = vote;
 		if SeedTrustValidatorPool::<T>::get().contains(&candidate) {
 			return Ok(())
 		}
-
+		Self::aggregate_reward(asset_id, amount.clone());
 		// TODO
 		Self::adjust_amount(&mut amount);
 
 		PotValidatorPool::<T>::mutate(|voting_status| {
 			voting_status.add_vote(&candidate, amount.clone());
 		});
-
-		// TODO
-		Self::aggregate_reward(asset_id, amount.clone());
-		Self::deposit_event(Event::<T>::Voted { who: candidate, amount });
+		Self::deposit_event(Event::<T>::Voted { who: candidate, amount: amount.clone() });
 		Ok(())
 	}
 }
@@ -166,21 +163,29 @@ impl<T: Config> pallet_session::SessionManager<T::AccountId> for Pallet<T> {
 
 impl<T: Config> Pallet<T> {
 	/// **Process**
-	///
+	/// 
 	/// 2. Adjust absed on `BlockTimeWeight`
 	fn adjust_amount(amount: &mut T::Score) {
 		// impl me!
-		// let current: BlockNumberFor<T> = <frame_system::Pallet<T>>::block_number();
-		// let blocks_per_year = T::BlocksPerYear::get();
-		// // Will change to HigherPrecisionScore when trait is implemented
-		// let pow: F64 = F64::from_i128(2).ln() * F64::from_i128(current as
-		// i128).div(blocks_per_year); let block_time_weight = pow.exp();
-		// block_time_weight.mul(amount)
+		let current: T::Score = <frame_system::Pallet<T>>::block_number().into();
+		let blocks_per_year: T::Score = T::BlocksPerYear::get().into();
+		let exp: F64 = F64::from(2).ln();
+		let high_preicision_current: F64 = T::HigherPrecisionScore::from(current).into();
+		let high_precision_blocks_per_year: F64 = T::HigherPrecisionScore::from(blocks_per_year).into();
+		let block_passed_rational = high_preicision_current / high_precision_blocks_per_year;
+		let block_time_weight: T::HigherPrecisionScore = exp.mul(block_passed_rational).into();
+		*amount = block_time_weight.into();
 	}
 
 	fn aggregate_reward(asset_id: SystemTokenAssetIdOf<T>, amount: T::Score) {
 		// impl me!
-		// @SIRIUS
+		for v in T::SessionInterface::validators().iter() {
+			RewardInfo::<T>::mutate_exists(v, |maybe_reward|{
+				let mut reward = maybe_reward.take().map_or(Reward::<SystemTokenAssetIdOf<T>, T::Score>::new(asset_id.clone()), |r| r); 
+				reward.add_amount(amount);
+				*maybe_reward = Some(reward);
+			});
+		}
 	}
 
 	fn handle_new_session(

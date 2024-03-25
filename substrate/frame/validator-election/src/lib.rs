@@ -25,20 +25,21 @@ pub use impls::*;
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{
 	traits::{
-		tokens::fungibles::{Inspect, InspectSystemToken},
+		tokens::{fungibles::{Inspect, InspectSystemToken}, Balance},
 		EstimateNextNewSession, Get,
 	},
 	Parameter,
 };
 pub use pallet::*;
 use scale_info::TypeInfo;
-use softfloat::F64;
-use sp_arithmetic::traits::{AtLeast32Bit, Saturating};
+use softfloat::{F64, BlockTimeWeight};
+use sp_arithmetic::traits::{AtLeast32BitUnsigned, Saturating};
 use sp_runtime::{
 	traits::Member,
 	types::{infra_core::TaaV, vote::PotVote},
 	RuntimeDebug,
 };
+use core::ops::{Mul, Div};
 
 #[cfg(test)]
 mod tests;
@@ -125,6 +126,34 @@ pub enum Forcing {
 impl Default for Forcing {
 	fn default() -> Self {
 		Forcing::NotForcing
+	}
+}
+
+#[derive(
+	Copy,
+	Clone,
+	PartialEq,
+	Eq,
+	Encode,
+	Decode,
+	RuntimeDebug,
+	TypeInfo,
+	MaxEncodedLen,
+	serde::Serialize,
+	serde::Deserialize,
+)]
+pub struct Reward<AssetId, Amount> {
+	asset: AssetId,
+	amount: Amount,
+}
+
+impl<AssetId, Amount: Balance> Reward<AssetId, Amount> {
+	pub fn new(asset: AssetId) -> Self {
+		Self { asset, amount: Default::default() }
+	}
+
+	fn add_amount(&mut self, amount: Amount) {
+		self.amount += amount;
 	}
 }
 
@@ -217,18 +246,21 @@ pub mod pallet {
 		/// Associated type for vote weight
 		type Score: Member
 			+ Parameter
-			+ AtLeast32Bit
+			+ AtLeast32BitUnsigned
 			+ Copy
 			+ Default
 			+ MaxEncodedLen
 			+ MaybeSerializeDeserialize
+			+ From<BlockNumberFor<Self>>
 			+ Into<Self::HigherPrecisionScore>;
 
 		/// A type used for calculations of `Score` with higher precision to store on chain
 		/// TODO:
-		type HigherPrecisionScore: Parameter
+		type HigherPrecisionScore: BlockTimeWeight
+			+ Parameter
 			+ Member
 			+ Into<F64>
+			+ From<F64>
 			+ From<Self::Score>
 			+ Into<Self::Score>;
 
@@ -396,6 +428,10 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn pool_status)]
 	pub type PoolStatus<T> = StorageValue<_, Pool, ValueQuery>;
+
+	/// Reward for each validator
+	#[pallet::storage]
+	pub type RewardInfo<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, Reward<SystemTokenAssetIdOf<T>, T::Score>>;
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {

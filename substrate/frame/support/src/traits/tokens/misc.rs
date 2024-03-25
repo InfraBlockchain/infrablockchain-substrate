@@ -246,7 +246,11 @@ pub trait SystemTokenId: AssetId {
 	/// Convert to `Self` in contect of `Wrapped`
 	fn wrapped(&self, level: u8) -> Result<Self, Self::Error>;
 
+	/// Check whether given `other` is the same origin as `self`
 	fn is_same_origin(&self, other: Option<Self::OriginId>) -> bool;
+
+	/// Reanchor location to its local context
+	fn reanchor_to_local(&self) -> Result<Self, Self::Error>;
 }
 
 /// Simple amalgamation trait to collect together properties for an AssetId under one roof.

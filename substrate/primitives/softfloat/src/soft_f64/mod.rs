@@ -9,7 +9,7 @@ pub mod add;
 pub mod cmp;
 pub mod copysign;
 pub mod cos;
-pub mod div;
+pub mod div; 
 pub mod exp;
 pub mod floor;
 pub mod log;

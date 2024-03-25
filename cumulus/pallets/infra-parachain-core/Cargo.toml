@@ -22,7 +22,7 @@ frame-system = { path = "../../../substrate/frame/system", default-features = fa
 pallet-assets = { path = "../../../substrate/frame/assets", default-features = false}
 
 
-# Polkadot
+# InfraBlockchain
 primitives = { path = "../../../infrablockchain/primitives", default-features = false}
 
 # Cumulus

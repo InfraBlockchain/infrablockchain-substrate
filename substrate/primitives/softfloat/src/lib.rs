@@ -19,6 +19,22 @@ const fn abs_diff(a: i32, b: i32) -> u32 {
 	a.wrapping_sub(b).wrapping_abs() as u32
 }
 
+pub trait BlockTimeWeight: Sized
+	+ Copy
+	+ core::fmt::Debug
+	+ PartialEq
+	+ PartialOrd
+	+ core::ops::Add
+	+ core::ops::Sub
+	+ core::ops::Div
+	+ core::ops::Mul
+{
+	/// Logarithm of the weight
+	fn log(self) -> Self;
+	/// Exponential of the weight
+	fn exp(self) -> Self;
+}
+
 macro_rules! impl_traits {
 	($ty:ty, $native_ty:ty, $from_native:ident, $to_native:ident) => {
 		impl From<$native_ty> for $ty {
@@ -109,6 +125,16 @@ macro_rules! impl_traits {
 		impl core::ops::DivAssign for $ty {
 			fn div_assign(&mut self, rhs: Self) {
 				*self = *self / rhs;
+			}
+		}
+
+		impl BlockTimeWeight for $ty {
+			fn log(self) -> Self {
+				Self::ln(self)
+			}
+
+			fn exp(self) -> Self {
+				Self::exp(self)
 			}
 		}
 	};

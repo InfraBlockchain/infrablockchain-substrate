@@ -918,7 +918,7 @@ impl<T: Config> Pallet<T> {
 		// 1. Handle opaque votes(system_token_manager)
 		// 2. Handle remoted_asset_metadata(system_token_manager)
 		if let Some(mut request_asset) = commitments.requested_asset {
-			<system_token_manager::Pallet<T>>::requested_asset_metadata(receipt.descriptor.para_id, &mut request_asset);
+			<system_token_manager::Pallet<T>>::requested_asset_metadata(&mut request_asset);
 		}
 		if let Some(mut votes) = commitments.vote_result {
 			for vote in votes.iter_mut() {

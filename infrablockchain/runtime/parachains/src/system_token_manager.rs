@@ -160,6 +160,8 @@ pub mod pallet {
 		ErrorUnsuspendSystemToken,
 		/// Error occurred while updating system token weight
 		ErrorUpdateSystemTokenWeight,
+		/// Error occurred while reanchoring system token id
+		ErrorReanchorSystemTokenId,
 	}
 
 	#[pallet::pallet]
@@ -609,7 +611,7 @@ impl<T: Config> Pallet<T> {
 	) -> DispatchResult {
 		let now = frame_system::Pallet::<T>::block_number();
 		let mut system_token_metadata =
-			Metadata::<T>::get(&original).ok_or(Error::<T>::NotRequested)?;
+			Metadata::<T>::get(original).ok_or(Error::<T>::NotRequested)?;
 		system_token_metadata.set_registered_at(now);
 		let currency_type = system_token_metadata.currency_type();
 		let system_token_weight = Self::calc_system_token_weight(&currency_type, original)?;
@@ -617,9 +619,10 @@ impl<T: Config> Pallet<T> {
 		let (origin_id, _, _) =
 			original.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
 		if let Some(para_id) = origin_id {
+			let original_for_para = original.reanchor_to_local().map_err(|_| Error::<T>::ErrorReanchorSystemTokenId)?;
 			T::SystemTokenHandler::register_system_token(
 				para_id.into(),
-				original.clone(),
+				original_for_para.clone(),
 				system_token_weight,
 			);
 		} else {
@@ -627,8 +630,8 @@ impl<T: Config> Pallet<T> {
 			T::Fungibles::register(original.clone(), system_token_weight)
 				.map_err(|_| Error::<T>::ErrorRegisterSystemToken)?;
 		}
-		Metadata::<T>::insert(&original, system_token_metadata);
-		SystemToken::<T>::insert(&original, SystemTokenDetail::new(system_token_weight));
+		Metadata::<T>::insert(original, system_token_metadata);
+		SystemToken::<T>::insert(original, SystemTokenDetail::new(system_token_weight));
 		Ok(())
 	}
 
@@ -950,7 +953,7 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	pub fn requested_asset_metadata(para_id: ParaId, bytes: &mut Vec<u8>) {
+	pub fn requested_asset_metadata(bytes: &mut Vec<u8>) {
 		if let Ok(remote_asset_metadata) = RemoteAssetMetadata::<
 			T::SystemTokenId,
 			SystemTokenBalanceOf<T>,
@@ -964,8 +967,7 @@ impl<T: Config> Pallet<T> {
 				decimals,
 				min_balance,
 			} = remote_asset_metadata;
-			if let Ok((mut origin_id, pallet_id, asset_id)) = asset_id.id() {
-				// origin_id = Some(para_id.into());
+			if let Ok((origin_id, pallet_id, asset_id)) = asset_id.id() {
 				let system_token_id =
 					T::SystemTokenId::convert_back(origin_id, pallet_id, asset_id);
 				Metadata::<T>::insert(

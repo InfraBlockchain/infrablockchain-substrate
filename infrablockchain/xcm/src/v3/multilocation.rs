@@ -166,6 +166,22 @@ impl SystemTokenId for MultiLocation {
 	fn is_same_origin(&self, other: Option<Self::OriginId>) -> bool {
 		self.id().map(|(origin_id, _, _)| origin_id == other).unwrap_or(false)
 	}
+
+	fn reanchor_to_local(&self) -> Result<Self, Self::Error> {
+		match self.interior {
+			Junctions::X3(Junction::Parachain(_), Junction::PalletInstance(pallet_id), Junction::GeneralIndex(asset_id)) => {
+				let interior = Junctions::X2(Junction::PalletInstance(pallet_id), Junction::GeneralIndex(asset_id));
+				Ok(
+					Self {
+						parents: self.parents,
+						interior,
+					}
+				)
+			},
+			Junctions::X2(Junction::PalletInstance(_), Junction::GeneralIndex(_)) => Ok(self.clone()),
+			_ => Err(SystemTokenIdError::ConvertToWrappedError),
+		}
+	}
 }
 
 /// A relative location which is constrained to be an interior location of the context.

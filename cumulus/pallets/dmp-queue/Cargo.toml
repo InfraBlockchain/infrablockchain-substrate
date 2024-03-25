@@ -16,7 +16,7 @@ sp-io = { path = "../../../substrate/primitives/io", default-features = false}
 sp-runtime = { path = "../../../substrate/primitives/runtime", default-features = false}
 sp-std = { path = "../../../substrate/primitives/std", default-features = false}
 
-# Polkadot
+# InfraBlockchain
 xcm = { package = "staging-xcm", path = "../../../infrablockchain/xcm", default-features = false}
 
 # Cumulus
