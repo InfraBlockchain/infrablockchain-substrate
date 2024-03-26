@@ -1263,6 +1263,8 @@ impl<T: Config> Pallet<T> {
 			.clone()
 			.reanchored(&dest, context)
 			.map_err(|_| Error::<T>::CannotReanchor)?;
+		log::info!("🙀🙀🙀🙀🙀🙀🙀 Before reanchored assets => {:?}", assets);
+		log::info!("🙀🙀🙀🙀🙀🙀🙀 Teleporting reanchored assets => {:?}", fees);
 		let max_assets = assets.len() as u32;
 		let assets: MultiAssets = assets.into();
 		let xcm = Xcm(vec![

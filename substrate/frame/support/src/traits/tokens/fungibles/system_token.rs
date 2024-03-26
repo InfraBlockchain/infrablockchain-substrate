@@ -24,28 +24,28 @@ pub trait Inspect<AccountId>: super::Inspect<AccountId> {
 	) -> Option<(Self::AssetId, Self::Balance)>;
 	/// Return `Self::SystemTokenWeight` of System Token
 	fn system_token_weight(
-		asset: Self::AssetId,
+		asset: &Self::AssetId,
 	) -> Result<Self::SystemTokenWeight, sp_runtime::DispatchError>;
 	/// Inspect currency type of System Token
-	fn fiat(asset: Self::AssetId) -> Result<Fiat, sp_runtime::DispatchError>;
+	fn fiat(asset: &Self::AssetId) -> Result<Fiat, sp_runtime::DispatchError>;
 }
 
 /// Interface for managing System Token
 pub trait Manage<AccountId>: super::InspectSystemToken<AccountId> {
 	/// Register as System Token
 	fn register(
-		asset: Self::AssetId,
+		asset: &Self::AssetId,
 		system_token_weight: Self::SystemTokenWeight,
 	) -> Result<(), DispatchError>;
 	/// Deregister as System Token
-	fn deregister(asset: Self::AssetId) -> Result<(), DispatchError>;
+	fn deregister(asset: &Self::AssetId) -> Result<(), DispatchError>;
 	/// Update weight of System Token based on exchange rate
 	fn update_system_token_weight(
-		asset: Self::AssetId,
+		asset: &Self::AssetId,
 		system_token_weight: Self::SystemTokenWeight,
 	) -> Result<(), DispatchError>;
 	/// Request register System Token
-	fn request_register(asset: Self::AssetId, currency_type: Fiat) -> Result<(), DispatchError>;
+	fn request_register(asset: &Self::AssetId, currency_type: Fiat) -> Result<(), DispatchError>;
 	/// Create `Wrapped` asset
 	fn touch(
 		owner: AccountId,
@@ -58,9 +58,9 @@ pub trait Manage<AccountId>: super::InspectSystemToken<AccountId> {
 		system_token_weight: Self::SystemTokenWeight,
 	) -> Result<(), DispatchError>;
 	/// Suspend System Token for given asset
-	fn suspend(asset: Self::AssetId) -> Result<(), DispatchError>;
+	fn suspend(asset: &Self::AssetId) -> Result<(), DispatchError>;
 	/// Unsuspend System Token for given asset
-	fn unsuspend(asset: Self::AssetId) -> Result<(), DispatchError>;
+	fn unsuspend(asset: &Self::AssetId) -> Result<(), DispatchError>;
 }
 
 /// Interface for enumerating System Token
@@ -75,18 +75,17 @@ pub trait Enumerate<AccountId>: super::InspectEnumerable<AccountId> {
 
 /// Interface for inspecting System Token Metadata
 pub trait Metadata<AccountId>: metadata::Inspect<AccountId> {
-	fn inner(asset: Self::AssetId) -> Result<Self::Balance, DispatchError>;
+	fn inner(asset: &Self::AssetId) -> Result<(Self::Balance, Fiat), DispatchError>;
 
 	fn system_token_metadata(
-		asset: Self::AssetId,
-		currency_type: Fiat,
+		asset: &Self::AssetId
 	) -> Result<RemoteAssetMetadata<Self::AssetId, Self::Balance>, DispatchError> {
-		let name = Self::name(asset.clone());
-		let symbol = Self::symbol(asset.clone());
-		let decimals = Self::decimals(asset.clone());
-		let min_balance = Self::inner(asset.clone())?;
+		let name = Self::name(asset);
+		let symbol = Self::symbol(asset);
+		let decimals = Self::decimals(asset);
+		let (min_balance, currency_type) = Self::inner(asset)?;
 		Ok(RemoteAssetMetadata {
-			asset_id: asset,
+			asset_id: asset.clone(),
 			name,
 			symbol,
 			currency_type,

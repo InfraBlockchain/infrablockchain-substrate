@@ -25,12 +25,12 @@ impl<T: Config<I>, I: 'static> InspectSystemToken<T::AccountId> for Pallet<T, I>
 		Self::system_token_balance(who, maybe_asset)
 	}
 
-	fn system_token_weight(asset: Self::AssetId) -> Result<Self::SystemTokenWeight, DispatchError> {
+	fn system_token_weight(asset: &Self::AssetId) -> Result<Self::SystemTokenWeight, DispatchError> {
 		let ad = Asset::<T, I>::get(asset).ok_or(Error::<T, I>::Unknown)?;
 		ad.system_token_weight.ok_or(Error::<T, I>::IncorrectStatus.into())
 	}
 
-	fn fiat(asset: Self::AssetId) -> Result<Fiat, DispatchError> {
+	fn fiat(asset: &Self::AssetId) -> Result<Fiat, DispatchError> {
 		let ad = Asset::<T, I>::get(asset).ok_or(Error::<T, I>::Unknown)?;
 		ad.currency_type.ok_or(Error::<T, I>::IncorrectStatus.into())
 	}
@@ -58,24 +58,24 @@ impl<T: Config<I>, I: 'static> EnumerateSystemToken<T::AccountId> for Pallet<T, 
 
 impl<T: Config<I>, I: 'static> ManageSystemToken<T::AccountId> for Pallet<T, I> {
 	fn register(
-		asset: Self::AssetId,
+		asset: &Self::AssetId,
 		system_token_weight: Self::SystemTokenWeight,
 	) -> Result<(), DispatchError> {
 		Self::do_register(asset, system_token_weight)
 	}
 
-	fn deregister(asset: Self::AssetId) -> Result<(), DispatchError> {
+	fn deregister(asset: &Self::AssetId) -> Result<(), DispatchError> {
 		Self::do_deregister(asset)
 	}
 
 	fn update_system_token_weight(
-		asset: Self::AssetId,
+		asset: &Self::AssetId,
 		system_token_weight: Self::SystemTokenWeight,
 	) -> Result<(), DispatchError> {
 		Self::do_update_system_token_weight(asset, system_token_weight)
 	}
 
-	fn request_register(asset: Self::AssetId, currency_type: Fiat) -> Result<(), DispatchError> {
+	fn request_register(asset: &Self::AssetId, currency_type: Fiat) -> Result<(), DispatchError> {
 		Self::do_request_register(asset, currency_type)
 	}
 
@@ -101,19 +101,20 @@ impl<T: Config<I>, I: 'static> ManageSystemToken<T::AccountId> for Pallet<T, I> 
 		)
 	}
 
-	fn suspend(asset: Self::AssetId) -> Result<(), DispatchError> {
+	fn suspend(asset: &Self::AssetId) -> Result<(), DispatchError> {
 		Self::do_suspend(asset)
 	}
 
-	fn unsuspend(asset: Self::AssetId) -> Result<(), DispatchError> {
+	fn unsuspend(asset: &Self::AssetId) -> Result<(), DispatchError> {
 		Self::do_unsuspend(asset)
 	}
 }
 
 impl<T: Config<I>, I: 'static> InspectSystemTokenMetadata<T::AccountId> for Pallet<T, I> {
-	fn inner(asset: Self::AssetId) -> Result<Self::Balance, DispatchError> {
-		let asset_detail = Asset::<T, I>::get(&asset).ok_or(Error::<T, I>::InvalidRequest)?;
-		let min_balance = asset_detail.clone().min_balance;
-		Ok(min_balance)
+	fn inner(asset: &Self::AssetId) -> Result<(Self::Balance, Fiat), DispatchError> {
+		let mut asset_detail = Asset::<T, I>::get(asset).ok_or(Error::<T, I>::InvalidRequest)?;
+		let min_balance = asset_detail.min_balance;
+		let currency_type = asset_detail.currency_type.take().ok_or(Error::<T,I>::InvalidRequest)?;
+		Ok((min_balance, currency_type))
 	}
 }

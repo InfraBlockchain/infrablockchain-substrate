@@ -324,9 +324,10 @@ pub mod pallet {
 			extended_metadata: Option<ExtendedMetadata>,
 		) -> DispatchResult {
 			ensure_root(origin)?;
+			let mut is_remote: bool = true;
 			let (original, maybe_para_id) = match system_token_type {
 				SystemTokenType::Original { system_token_id, mut currency_type } => {
-					Self::do_register_system_token(&system_token_id, extended_metadata, &mut currency_type)?;
+					Self::do_register_system_token(&system_token_id, extended_metadata, &mut currency_type, &mut is_remote)?;
 					(system_token_id, None)
 				},
 				SystemTokenType::Wrapped { original, maybe_para_id } => {
@@ -334,7 +335,10 @@ pub mod pallet {
 					(original, maybe_para_id)
 				},
 			};
-			Self::do_register_wrapped(&original, maybe_para_id.clone())?;
+			// If `Original` is remote, do register `Wrapped` for Relay Chain
+			if is_remote {
+				Self::do_register_wrapped(&original, maybe_para_id.clone())?;
+			}
 			Self::deposit_event(Event::<T>::SystemTokenRegistered {
 				original,
 				wrapped: maybe_para_id,
@@ -476,7 +480,7 @@ impl<T: Config> Pallet<T> {
 			} else {
 				// Original System Token for RC
 				is_rc_original = true;
-				T::Fungibles::update_system_token_weight(o.clone(), updated_sys_weight)
+				T::Fungibles::update_system_token_weight(&o, updated_sys_weight)
 					.map_err(|_| Error::<T>::ErrorUpdateSystemTokenWeight)?;
 			}
 			system_token_detail.update_weight(updated_sys_weight);
@@ -496,7 +500,7 @@ impl<T: Config> Pallet<T> {
 			if !is_rc_original {
 				let wrapped_original =
 					o.wrapped(0).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
-				T::Fungibles::update_system_token_weight(wrapped_original, updated_sys_weight)
+				T::Fungibles::update_system_token_weight(&wrapped_original, updated_sys_weight)
 					.map_err(|_| Error::<T>::ErrorUpdateSystemTokenWeight)?;
 			}
 			para_ids = Default::default();
@@ -610,6 +614,7 @@ impl<T: Config> Pallet<T> {
 		original: &T::SystemTokenId,
 		extended_metadata: Option<ExtendedMetadata>,
 		maybe_currency_type: &mut Option<Fiat>,
+		is_remote: &mut bool
 	) -> DispatchResult {
 		let (maybe_origin_id, _, _) =
 			original.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
@@ -620,10 +625,19 @@ impl<T: Config> Pallet<T> {
 			(Metadata::<T>::get(original).ok_or(Error::<T>::NotRequested)?, Some(para_id))
 		} else {
 			// Relay Chain
+			// TODO: Better Way
+			*is_remote = false;
 			let currency_type = maybe_currency_type.take().ok_or(Error::<T>::BadAccess)?;
-			T::Fungibles::request_register(original.clone(), currency_type.clone()).map_err(|_| Error::<T>::ErrorRegisterSystemToken)?;
-			let RemoteAssetMetadata { name, symbol, decimals, min_balance, currency_type, .. } = T::Fungibles::system_token_metadata(original.clone(), currency_type).map_err(|_| Error::<T>::ErrorRegisterSystemToken)?;
-			(SystemTokenMetadata::new(currency_type, name, symbol, decimals, min_balance), None)
+			T::Fungibles::request_register(original, currency_type).map_err(|_| Error::<T>::ErrorRegisterSystemToken)?;
+			let RemoteAssetMetadata { name, symbol, decimals, min_balance, currency_type, .. } = T::Fungibles::system_token_metadata(original).map_err(|_| Error::<T>::ErrorRegisterSystemToken)?;
+			let system_token_metadata = SystemTokenMetadata::new(currency_type.clone(), name, symbol, decimals, min_balance);
+			Metadata::<T>::insert(original, system_token_metadata.clone());
+			RequestFiatList::<T>::mutate(|request_fiat| {
+				if !request_fiat.contains(&currency_type) {
+					request_fiat.push(currency_type);
+				}
+			});
+			(system_token_metadata, None)
 		};
 		let now = frame_system::Pallet::<T>::block_number();
 		system_token_metadata.set_registered_at(now);
@@ -641,7 +655,7 @@ impl<T: Config> Pallet<T> {
 			);
 		} else {
 			// Relay Chain
-			T::Fungibles::register(original.clone(), system_token_weight)
+			T::Fungibles::register(original, system_token_weight)
 				.map_err(|_| Error::<T>::ErrorRegisterSystemToken)?;
 		}
 		Metadata::<T>::insert(original, system_token_metadata);
@@ -681,9 +695,7 @@ impl<T: Config> Pallet<T> {
 				Error::<T>::WrappedAlreadyRegistered
 			);
 			// Send DMP
-			let wrapped_original =
-				original.wrapped(1).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
-			Self::do_create_wrapped(&para_id, &wrapped_original, system_token_weight)?;
+			Self::do_create_wrapped(&para_id, &original, system_token_weight)?;
 			system_token_detail.register_wrapped_for(&para_id, SystemTokenStatus::Active)?;
 			Self::system_token_used_para_id(&para_id, original)?;
 			FiatForOriginal::<T>::try_mutate(
@@ -697,10 +709,7 @@ impl<T: Config> Pallet<T> {
 					Ok(())
 				},
 			)?;
-			Self::deposit_event(Event::<T>::SystemTokenRegistered {
-				original: original.clone(),
-				wrapped: Some(para_id.clone()),
-			})
+			SystemToken::<T>::insert(&original, system_token_detail);
 		} else {
 			// Relay Chain
 			let SystemTokenMetadata { currency_type, name, symbol, decimals, min_balance, .. } =
@@ -737,11 +746,11 @@ impl<T: Config> Pallet<T> {
 					// We do suspend for Relay Chain first
 					let wrapped_original =
 						original.wrapped(0).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
-					T::Fungibles::suspend(wrapped_original)
+					T::Fungibles::suspend(&wrapped_original)
 						.map_err(|_| Error::<T>::ErrorSuspendSystemToken)?;
 				} else {
 					// Original System Token for RC
-					T::Fungibles::suspend(original.clone())
+					T::Fungibles::suspend(&original)
 						.map_err(|_| Error::<T>::ErrorSuspendSystemToken)?;
 				}
 				let wrapped_original =
@@ -767,7 +776,7 @@ impl<T: Config> Pallet<T> {
 					// Relay Chain
 					let wrapped_original =
 						original.wrapped(0).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
-					T::Fungibles::suspend(wrapped_original)
+					T::Fungibles::suspend(&wrapped_original)
 						.map_err(|_| Error::<T>::ErrorSuspendSystemToken)?;
 				}
 			},
@@ -789,11 +798,11 @@ impl<T: Config> Pallet<T> {
 					// We do suspend for Relay Chain first
 					let wrapped_original =
 						original.wrapped(0).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
-					T::Fungibles::unsuspend(wrapped_original)
+					T::Fungibles::unsuspend(&wrapped_original)
 						.map_err(|_| Error::<T>::ErrorUnsuspendSystemToken)?;
 				} else {
 					// Original System Token for RC
-					T::Fungibles::unsuspend(original.clone())
+					T::Fungibles::unsuspend(&original)
 						.map_err(|_| Error::<T>::ErrorUnsuspendSystemToken)?;
 				}
 				let wrapped_original =
@@ -819,7 +828,7 @@ impl<T: Config> Pallet<T> {
 					// Relay Chain
 					let wrapped_original =
 						original.wrapped(0).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
-					T::Fungibles::unsuspend(wrapped_original)
+					T::Fungibles::unsuspend(&wrapped_original)
 						.map_err(|_| Error::<T>::ErrorUnsuspendSystemToken)?;
 				}
 			},
@@ -907,7 +916,7 @@ impl<T: Config> Pallet<T> {
 					);
 				} else {
 					// Relay Chain
-					T::Fungibles::deregister(original.clone())
+					T::Fungibles::deregister(&original)
 						.map_err(|_| Error::<T>::ErrorDeregisterSystemToken)?;
 				}
 			},
@@ -924,7 +933,7 @@ impl<T: Config> Pallet<T> {
 					// Relay Chain
 					let wrapped_original =
 						original.wrapped(0).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
-					T::Fungibles::deregister(wrapped_original)
+					T::Fungibles::deregister(&wrapped_original)
 						.map_err(|_| Error::<T>::ErrorDeregisterSystemToken)?;
 				}
 			},
@@ -952,11 +961,13 @@ impl<T: Config> Pallet<T> {
 		system_token_weight: SystemTokenWeightOf<T>,
 	) -> DispatchResult {
 		let original_metadata = Metadata::<T>::get(original).ok_or(Error::<T>::MetadataNotFound)?;
+		let wrapped_original = original.wrapped(1).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+		log::info!("😏😏😏😏 Sending wrapped => {:?}", wrapped_original);
 		let owner = Self::account_id();
 		T::SystemTokenHandler::create_wrapped(
 			para_id.clone().into(),
 			owner,
-			original.clone(),
+			wrapped_original,
 			original_metadata.currency_type,
 			original_metadata.min_balance,
 			original_metadata.name.to_vec(),
@@ -965,6 +976,31 @@ impl<T: Config> Pallet<T> {
 			system_token_weight,
 		);
 		Ok(())
+	}
+
+	pub fn handle_request(
+		original: &T::SystemTokenId,
+		currency_type: &Fiat,
+		name: Vec<u8>,
+		symbol: Vec<u8>,
+		decimals: u8,
+		min_balance: SystemTokenBalanceOf<T>,
+	) {
+		Metadata::<T>::insert(
+			original,
+			SystemTokenMetadata::new(
+				currency_type.clone(),
+				name,
+				symbol,
+				decimals,
+				min_balance,
+			),
+		);
+		RequestFiatList::<T>::mutate(|request_fiat| {
+			if !request_fiat.contains(currency_type) {
+				request_fiat.push(currency_type.clone());
+			}
+		});
 	}
 
 	pub fn requested_asset_metadata(bytes: &mut Vec<u8>) {
@@ -982,23 +1018,16 @@ impl<T: Config> Pallet<T> {
 				min_balance,
 			} = remote_asset_metadata;
 			if let Ok((origin_id, pallet_id, asset_id)) = asset_id.id() {
-				let system_token_id =
+				let original =
 					T::SystemTokenId::convert_back(origin_id, pallet_id, asset_id);
-				Metadata::<T>::insert(
-					system_token_id,
-					SystemTokenMetadata::new(
-						currency_type.clone(),
-						name,
-						symbol,
-						decimals,
-						min_balance,
-					),
+				Self::handle_request(
+					&original,
+					&currency_type,
+					name,
+					symbol,
+					decimals,
+					min_balance,
 				);
-				RequestFiatList::<T>::mutate(|request_fiat| {
-					if !request_fiat.contains(&currency_type) {
-						request_fiat.push(currency_type);
-					}
-				});
 			} else {
 				log::error!("❌ Failed to convert to SystemTokenId ❌");
 				return

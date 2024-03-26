@@ -725,20 +725,6 @@ parameter_types! {
 	pub const WeightFactor: u64 = 1;
 }
 
-// parameter_types! {
-// 	pub const AggregatedPeriod: BlockNumber = 10;
-// 	pub const IsRelay: bool = false;
-// }
-
-// impl system_token_aggregator::Config for Runtime {
-// 	type RuntimeEvent = RuntimeEvent;
-// 	type Period = AggregatedPeriod;
-// 	type LocalAssetManager = Assets;
-// 	type AssetMultiLocationGetter = AssetLink;
-// 	type SendXcm = XcmRouter;
-// 	type IsRelay = IsRelay;
-// }
-
 impl pallet_sudo::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;

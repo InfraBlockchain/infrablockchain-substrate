@@ -255,7 +255,7 @@ pub mod pallet {
 			system_token_weight: SystemTokenWeightOf<T>,
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
-			T::Fungibles::register(original.clone(), system_token_weight)
+			T::Fungibles::register(&original, system_token_weight)
 				.map_err(|_| Error::<T>::ErrorRegisterSystemToken)?;
 			Self::clear_request();
 			Self::deposit_event(Event::<T>::Registered { asset_id: original });
@@ -285,6 +285,7 @@ pub mod pallet {
 			system_token_weight: SystemTokenWeightOf<T>,
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
+			log::info!("😏😏😏😏 Wrapping {:?}", wrapped_original);
 			T::Fungibles::touch(
 				owner,
 				wrapped_original.clone(),
@@ -295,7 +296,10 @@ pub mod pallet {
 				decimals,
 				system_token_weight,
 			)
-			.map_err(|_| Error::<T>::ErrorCreateWrappedLocalAsset)?;
+			.map_err(|_| {
+				log::info!("😡😡😡😡😡 Error on creating wrapped local asset");
+				Error::<T>::ErrorCreateWrappedLocalAsset
+			})?;
 			Self::deposit_event(Event::<T>::WrappedCreated { asset_id: wrapped_original });
 			Ok(())
 		}
@@ -306,7 +310,7 @@ pub mod pallet {
 			asset_id: SystemTokenAssetIdOf<T>,
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
-			T::Fungibles::deregister(asset_id.clone())
+			T::Fungibles::deregister(&asset_id)
 				.map_err(|_| Error::<T>::ErrorDeregisterSystemToken)?;
 			Self::deposit_event(Event::<T>::Deregistered { asset_id });
 			Ok(())
@@ -318,7 +322,7 @@ pub mod pallet {
 			asset_id: SystemTokenAssetIdOf<T>,
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
-			T::Fungibles::suspend(asset_id.clone())
+			T::Fungibles::suspend(&asset_id)
 				.map_err(|_| Error::<T>::ErrorSuspendSystemToken)?;
 			Self::deposit_event(Event::<T>::Suspended { asset_id });
 			Ok(())
@@ -330,7 +334,7 @@ pub mod pallet {
 			asset_id: SystemTokenAssetIdOf<T>,
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
-			T::Fungibles::unsuspend(asset_id.clone())
+			T::Fungibles::unsuspend(&asset_id)
 				.map_err(|_| Error::<T>::ErrorUnsuspendSystemToken)?;
 			Self::deposit_event(Event::<T>::Unsuspended { asset_id });
 			Ok(())
@@ -363,10 +367,10 @@ where
 	/// Put requested _asset_metadata_  on `CurrentRequest` and calculate expired block numbe
 	fn do_request(original: &SystemTokenAssetIdOf<T>, currency_type: Fiat) -> Result<BlockNumberFor<T>, DispatchError> {
 		let current = <frame_system::Pallet<T>>::block_number();
-		let mut system_token_metadata = T::Fungibles::system_token_metadata(original.clone(), currency_type.clone())
-			.map_err(|_| Error::<T>::ErrorOnGetMetadata)?;
-		T::Fungibles::request_register(original.clone(), currency_type)
+		T::Fungibles::request_register(original, currency_type)
 			.map_err(|_| Error::<T>::ErrorOnRequestRegister)?;
+		let mut system_token_metadata = T::Fungibles::system_token_metadata(original)
+			.map_err(|_| Error::<T>::ErrorOnGetMetadata)?;
 		Self::check_valid_register(&mut system_token_metadata, original)?;
 		<cumulus_pallet_parachain_system::Pallet<T>>::relay_request_asset(
 			system_token_metadata.encode(),
@@ -446,7 +450,7 @@ impl<T: Config> UpdateRCConfig<SystemTokenAssetIdOf<T>, SystemTokenWeightOf<T>> 
 		assets: Vec<(SystemTokenAssetIdOf<T>, SystemTokenWeightOf<T>)>,
 	) {
 		for (asset_id, weight) in assets {
-			if let Err(_) = T::Fungibles::update_system_token_weight(asset_id.clone(), weight) {
+			if let Err(_) = T::Fungibles::update_system_token_weight(&asset_id, weight) {
 				log::error!("❌❌❌ Error on updating System Token Weight, {:?}", asset_id)
 			}
 		}

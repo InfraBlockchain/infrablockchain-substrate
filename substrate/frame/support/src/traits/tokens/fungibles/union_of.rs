@@ -914,24 +914,24 @@ impl<
 	> fungibles::metadata::Inspect<AccountId>
 	for UnionOf<Left, Right, Criterion, AssetKind, AccountId>
 {
-	fn name(asset: Self::AssetId) -> Vec<u8> {
-		match Criterion::convert(asset) {
-			Left(a) => <Left as fungibles::metadata::Inspect<AccountId>>::name(a),
-			Right(a) => <Right as fungibles::metadata::Inspect<AccountId>>::name(a),
+	fn name(asset: &Self::AssetId) -> Vec<u8> {
+		match Criterion::convert(asset.clone()) {
+			Left(a) => <Left as fungibles::metadata::Inspect<AccountId>>::name(&a),
+			Right(a) => <Right as fungibles::metadata::Inspect<AccountId>>::name(&a),
 		}
 	}
 
-	fn symbol(asset: Self::AssetId) -> Vec<u8> {
-		match Criterion::convert(asset) {
-			Left(a) => <Left as fungibles::metadata::Inspect<AccountId>>::symbol(a),
-			Right(a) => <Right as fungibles::metadata::Inspect<AccountId>>::symbol(a),
+	fn symbol(asset: &Self::AssetId) -> Vec<u8> {
+		match Criterion::convert(asset.clone()) {
+			Left(a) => <Left as fungibles::metadata::Inspect<AccountId>>::symbol(&a),
+			Right(a) => <Right as fungibles::metadata::Inspect<AccountId>>::symbol(&a),
 		}
 	}
 
-	fn decimals(asset: Self::AssetId) -> u8 {
-		match Criterion::convert(asset) {
-			Left(a) => <Left as fungibles::metadata::Inspect<AccountId>>::decimals(a),
-			Right(a) => <Right as fungibles::metadata::Inspect<AccountId>>::decimals(a),
+	fn decimals(asset: &Self::AssetId) -> u8 {
+		match Criterion::convert(asset.clone()) {
+			Left(a) => <Left as fungibles::metadata::Inspect<AccountId>>::decimals(&a),
+			Right(a) => <Right as fungibles::metadata::Inspect<AccountId>>::decimals(&a),
 		}
 	}
 }
@@ -981,10 +981,10 @@ impl<
 		}
 	}
 
-	fn fiat(asset: AssetKind) -> Result<Fiat, sp_runtime::DispatchError> {
-		match Criterion::convert(asset) {
-			Left(a) => <Left as fungibles::InspectSystemToken<AccountId>>::fiat(a),
-			Right(a) => <Right as fungibles::InspectSystemToken<AccountId>>::fiat(a),
+	fn fiat(asset: &Self::AssetId) -> Result<Fiat, sp_runtime::DispatchError> {
+		match Criterion::convert(asset.clone()) {
+			Left(a) => <Left as fungibles::InspectSystemToken<AccountId>>::fiat(&a),
+			Right(a) => <Right as fungibles::InspectSystemToken<AccountId>>::fiat(&a),
 		}
 	}
 
@@ -996,11 +996,11 @@ impl<
 	}
 
 	fn system_token_weight(
-		asset: Self::AssetId,
+		asset: &Self::AssetId,
 	) -> Result<Self::SystemTokenWeight, sp_runtime::DispatchError> {
-		match Criterion::convert(asset) {
-			Left(a) => <Left as fungibles::InspectSystemToken<AccountId>>::system_token_weight(a),
-			Right(a) => <Right as fungibles::InspectSystemToken<AccountId>>::system_token_weight(a),
+		match Criterion::convert(asset.clone()) {
+			Left(a) => <Left as fungibles::InspectSystemToken<AccountId>>::system_token_weight(&a),
+			Right(a) => <Right as fungibles::InspectSystemToken<AccountId>>::system_token_weight(&a),
 		}
 	}
 }
@@ -1019,28 +1019,28 @@ impl<
 	for UnionOf<Left, Right, Criterion, AssetKind, AccountId>
 {
 	fn register(
-		asset: Self::AssetId,
+		asset: &Self::AssetId,
 		system_token_weight: Self::SystemTokenWeight,
 	) -> Result<(), DispatchError> {
-		match Criterion::convert(asset) {
+		match Criterion::convert(asset.clone()) {
 			Left(a) =>
-				<Left as fungibles::ManageSystemToken<AccountId>>::register(a, system_token_weight),
+				<Left as fungibles::ManageSystemToken<AccountId>>::register(&a, system_token_weight),
 			Right(a) =>
-				<Right as fungibles::ManageSystemToken<AccountId>>::register(a, system_token_weight),
+				<Right as fungibles::ManageSystemToken<AccountId>>::register(&a, system_token_weight),
 		}
 	}
 
-	fn deregister(asset: Self::AssetId) -> Result<(), DispatchError> {
-		match Criterion::convert(asset) {
-			Left(a) => <Left as fungibles::ManageSystemToken<AccountId>>::deregister(a),
-			Right(a) => <Right as fungibles::ManageSystemToken<AccountId>>::deregister(a),
+	fn deregister(asset: &Self::AssetId) -> Result<(), DispatchError> {
+		match Criterion::convert(asset.clone()) {
+			Left(a) => <Left as fungibles::ManageSystemToken<AccountId>>::deregister(&a),
+			Right(a) => <Right as fungibles::ManageSystemToken<AccountId>>::deregister(&a),
 		}
 	}
 
-	fn request_register(asset: Self::AssetId, currency_type: Fiat) -> Result<(), DispatchError> {
-		match Criterion::convert(asset) {
-			Left(a) => <Left as fungibles::ManageSystemToken<AccountId>>::request_register(a, currency_type),
-			Right(a) => <Right as fungibles::ManageSystemToken<AccountId>>::request_register(a, currency_type),
+	fn request_register(asset: &Self::AssetId, currency_type: Fiat) -> Result<(), DispatchError> {
+		match Criterion::convert(asset.clone()) {
+			Left(a) => <Left as fungibles::ManageSystemToken<AccountId>>::request_register(&a, currency_type),
+			Right(a) => <Right as fungibles::ManageSystemToken<AccountId>>::request_register(&a, currency_type),
 		}
 	}
 
@@ -1079,34 +1079,34 @@ impl<
 	}
 
 	fn update_system_token_weight(
-		asset: Self::AssetId,
+		asset: &Self::AssetId,
 		system_token_weight: Self::SystemTokenWeight,
 	) -> Result<(), DispatchError> {
-		match Criterion::convert(asset) {
+		match Criterion::convert(asset.clone()) {
 			Left(a) =>
 				<Left as fungibles::ManageSystemToken<AccountId>>::update_system_token_weight(
-					a,
+					&a,
 					system_token_weight,
 				),
 			Right(a) =>
 				<Right as fungibles::ManageSystemToken<AccountId>>::update_system_token_weight(
-					a,
+					&a,
 					system_token_weight,
 				),
 		}
 	}
 
-	fn suspend(asset: Self::AssetId) -> Result<(), DispatchError> {
-		match Criterion::convert(asset) {
-			Left(a) => <Left as fungibles::ManageSystemToken<AccountId>>::suspend(a),
-			Right(a) => <Right as fungibles::ManageSystemToken<AccountId>>::suspend(a),
+	fn suspend(asset: &Self::AssetId) -> Result<(), DispatchError> {
+		match Criterion::convert(asset.clone()) {
+			Left(a) => <Left as fungibles::ManageSystemToken<AccountId>>::suspend(&a),
+			Right(a) => <Right as fungibles::ManageSystemToken<AccountId>>::suspend(&a),
 		}
 	}
 
-	fn unsuspend(asset: Self::AssetId) -> Result<(), DispatchError> {
-		match Criterion::convert(asset) {
-			Left(a) => <Left as fungibles::ManageSystemToken<AccountId>>::unsuspend(a),
-			Right(a) => <Right as fungibles::ManageSystemToken<AccountId>>::unsuspend(a),
+	fn unsuspend(asset: &Self::AssetId) -> Result<(), DispatchError> {
+		match Criterion::convert(asset.clone()) {
+			Left(a) => <Left as fungibles::ManageSystemToken<AccountId>>::unsuspend(&a),
+			Right(a) => <Right as fungibles::ManageSystemToken<AccountId>>::unsuspend(&a),
 		}
 	}
 }
@@ -1120,10 +1120,10 @@ impl<
 	> fungibles::InspectSystemTokenMetadata<AccountId>
 	for UnionOf<Left, Right, Criterion, AssetKind, AccountId>
 {
-	fn inner(asset: Self::AssetId) -> Result<Self::Balance, DispatchError> {
-		match Criterion::convert(asset) {
-			Left(a) => <Left as fungibles::InspectSystemTokenMetadata<AccountId>>::inner(a),
-			Right(a) => <Right as fungibles::InspectSystemTokenMetadata<AccountId>>::inner(a),
+	fn inner(asset: &Self::AssetId) -> Result<(Self::Balance, Fiat), DispatchError> {
+		match Criterion::convert(asset.clone()) {
+			Left(a) => <Left as fungibles::InspectSystemTokenMetadata<AccountId>>::inner(&a),
+			Right(a) => <Right as fungibles::InspectSystemTokenMetadata<AccountId>>::inner(&a),
 		}
 	}
 }

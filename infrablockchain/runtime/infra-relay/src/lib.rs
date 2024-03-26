@@ -1444,20 +1444,6 @@ pub type NativeAndForeignAssets = fungibles::UnionOf<
 	AccountId,
 >;
 
-// parameter_types! {
-// 	pub const Period: BlockNumber = 10;
-// 	pub const IsRelay: bool = true;
-// }
-
-// impl system_token_aggregator::Config for Runtime {
-// 	type RuntimeEvent = RuntimeEvent;
-// 	type Period = Period;
-// 	type Fungibles = Assets;
-// 	type AssetMultiLocationGetter = AssetLink;
-// 	type SendXcm = XcmRouter;
-// 	type IsRelay = IsRelay;
-// }
-
 construct_runtime! {
 	pub enum Runtime
 	{

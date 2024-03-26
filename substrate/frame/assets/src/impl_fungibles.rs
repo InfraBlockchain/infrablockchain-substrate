@@ -42,11 +42,11 @@ impl<T: Config<I>, I: 'static> fungibles::Inspect<<T as SystemConfig>::AccountId
 	}
 
 	fn balance(asset: Self::AssetId, who: &<T as SystemConfig>::AccountId) -> Self::Balance {
-		Pallet::<T, I>::balance(asset, who)
+		Pallet::<T, I>::balance(&asset, who)
 	}
 
 	fn total_balance(asset: Self::AssetId, who: &<T as SystemConfig>::AccountId) -> Self::Balance {
-		Pallet::<T, I>::balance(asset, who)
+		Pallet::<T, I>::balance(&asset, who)
 	}
 
 	fn reducible_balance(
@@ -199,15 +199,15 @@ impl<T: Config<I>, I: 'static> fungibles::Destroy<T::AccountId> for Pallet<T, I>
 impl<T: Config<I>, I: 'static> fungibles::metadata::Inspect<<T as SystemConfig>::AccountId>
 	for Pallet<T, I>
 {
-	fn name(asset: T::AssetId) -> Vec<u8> {
+	fn name(asset: &T::AssetId) -> Vec<u8> {
 		Metadata::<T, I>::get(asset).map_or(Default::default(), |m| m).name.to_vec()
 	}
 
-	fn symbol(asset: T::AssetId) -> Vec<u8> {
+	fn symbol(asset: &T::AssetId) -> Vec<u8> {
 		Metadata::<T, I>::get(asset).map_or(Default::default(), |m| m).symbol.to_vec()
 	}
 
-	fn decimals(asset: T::AssetId) -> u8 {
+	fn decimals(asset: &T::AssetId) -> u8 {
 		Metadata::<T, I>::get(asset).map_or(Default::default(), |m| m).decimals
 	}
 }

@@ -81,7 +81,7 @@ impl<T: Config> SystemTokenConversion for Pallet<T> {
 	) -> Result<Self::Balance, DispatchError> {
 		frame_support::ensure!(T::Fungibles::is_system_token(&asset), Error::<T>::NotSystemToken);
 		let system_token_weight =
-			T::Fungibles::system_token_weight(asset).map_err(|_| Error::<T>::NotSystemToken)?;
+			T::Fungibles::system_token_weight(&asset).map_err(|_| Error::<T>::NotSystemToken)?;
 		let SystemConfig { base_system_token_detail, weight_scale } =
 			T::SystemConfig::system_config().map_err(|_| Error::<T>::SystemConfigMissing)?;
 		let para_fee_rate =
