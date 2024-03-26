@@ -139,7 +139,7 @@ impl RewardInterface for RewardHandler {
 	type Balance = SystemTokenBalance;
 	type DestId = u32;
 
-	fn distribute_reward(dest_id: Self::DestId, who: Self::AccountId, asset: Self::AssetKind, amount: Self::Balance) {
+	fn distribute_reward(_dest_id: Self::DestId, _who: Self::AccountId, _asset: Self::AssetKind, _amount: Self::Balance) {
 		// impl me!
 	}
 }

@@ -482,15 +482,15 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 			},
 			ProxyType::AssetOwner => matches!(
 				c,
-				RuntimeCall::Assets(pallet_assets::Call::create { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::start_destroy { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::destroy_accounts { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::destroy_approvals { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::finish_destroy { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::transfer_ownership { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::set_team { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::set_metadata { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::clear_metadata { .. }) |
+				RuntimeCall::Assets(NativeAssetsCall::create { .. }) |
+					RuntimeCall::Assets(NativeAssetsCall::start_destroy { .. }) |
+					RuntimeCall::Assets(NativeAssetsCall::destroy_accounts { .. }) |
+					RuntimeCall::Assets(NativeAssetsCall::destroy_approvals { .. }) |
+					RuntimeCall::Assets(NativeAssetsCall::finish_destroy { .. }) |
+					RuntimeCall::Assets(NativeAssetsCall::transfer_ownership { .. }) |
+					RuntimeCall::Assets(NativeAssetsCall::set_team { .. }) |
+					RuntimeCall::Assets(NativeAssetsCall::set_metadata { .. }) |
+					RuntimeCall::Assets(NativeAssetsCall::clear_metadata { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::create { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::destroy { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::transfer_ownership { .. }) |

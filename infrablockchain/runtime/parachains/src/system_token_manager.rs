@@ -21,7 +21,7 @@ pub use frame_support::{
 	storage::KeyPrefixIterator,
 	traits::{
 		tokens::{
-			fungibles::{Inspect, InspectSystemToken, ManageSystemToken},
+			fungibles::{Inspect, InspectSystemToken, ManageSystemToken, InspectSystemTokenMetadata},
 			AssetId, Balance, SystemTokenId,
 		},
 		Get, UnixTime,
@@ -56,6 +56,7 @@ pub mod pallet {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Local fungibles module
 		type Fungibles: InspectSystemToken<Self::AccountId, AssetId = Self::SystemTokenId>
+			+ InspectSystemTokenMetadata<Self::AccountId>
 			+ ManageSystemToken<Self::AccountId>;
 		/// Id of System Token
 		type SystemTokenId: SystemTokenId;
@@ -324,13 +325,13 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_root(origin)?;
 			let (original, maybe_para_id) = match system_token_type {
-				SystemTokenType::Original(system_token_id) => {
-					Self::do_register_system_token(&system_token_id, extended_metadata)?;
+				SystemTokenType::Original { system_token_id, mut currency_type } => {
+					Self::do_register_system_token(&system_token_id, extended_metadata, &mut currency_type)?;
 					(system_token_id, None)
 				},
-				SystemTokenType::Wrapped { original, para_id } => {
+				SystemTokenType::Wrapped { original, maybe_para_id } => {
 					ensure!(extended_metadata.is_none(), Error::<T>::BadAccess);
-					(original, Some(para_id))
+					(original, maybe_para_id)
 				},
 			};
 			Self::do_register_wrapped(&original, maybe_para_id.clone())?;
@@ -608,17 +609,30 @@ impl<T: Config> Pallet<T> {
 	fn do_register_system_token(
 		original: &T::SystemTokenId,
 		extended_metadata: Option<ExtendedMetadata>,
+		maybe_currency_type: &mut Option<Fiat>,
 	) -> DispatchResult {
+		let (maybe_origin_id, _, _) =
+			original.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
+
+		// 1. Handle metadata
+		let (mut system_token_metadata, maybe_dest_id) = if let Some(para_id) = maybe_origin_id {
+			ensure!(maybe_currency_type.is_none(), Error::<T>::BadAccess);
+			(Metadata::<T>::get(original).ok_or(Error::<T>::NotRequested)?, Some(para_id))
+		} else {
+			// Relay Chain
+			let currency_type = maybe_currency_type.take().ok_or(Error::<T>::BadAccess)?;
+			T::Fungibles::request_register(original.clone(), currency_type.clone()).map_err(|_| Error::<T>::ErrorRegisterSystemToken)?;
+			let RemoteAssetMetadata { name, symbol, decimals, min_balance, currency_type, .. } = T::Fungibles::system_token_metadata(original.clone(), currency_type).map_err(|_| Error::<T>::ErrorRegisterSystemToken)?;
+			(SystemTokenMetadata::new(currency_type, name, symbol, decimals, min_balance), None)
+		};
 		let now = frame_system::Pallet::<T>::block_number();
-		let mut system_token_metadata =
-			Metadata::<T>::get(original).ok_or(Error::<T>::NotRequested)?;
 		system_token_metadata.set_registered_at(now);
 		let currency_type = system_token_metadata.currency_type();
 		let system_token_weight = Self::calc_system_token_weight(&currency_type, original)?;
 		Self::extend_metadata(&mut system_token_metadata, extended_metadata)?;
-		let (origin_id, _, _) =
-			original.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
-		if let Some(para_id) = origin_id {
+		
+		// 2. Register System Token
+		if let Some(para_id) = maybe_dest_id {
 			let original_for_para = original.reanchor_to_local().map_err(|_| Error::<T>::ErrorReanchorSystemTokenId)?;
 			T::SystemTokenHandler::register_system_token(
 				para_id.into(),
@@ -1013,8 +1027,10 @@ pub mod types {
 
 	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, TypeInfo)]
 	pub enum SystemTokenType<SystemTokenId, ParaId> {
-		Original(SystemTokenId),
-		Wrapped { original: SystemTokenId, para_id: ParaId },
+		/// Register `Original` System Token. It means Relay Chain if currency type is `Some(_)`
+		Original { system_token_id: SystemTokenId, currency_type: Option<Fiat> },
+		/// Register as `Wrapped` System Token. It means Relay Chain if para_id is `None`
+		Wrapped { original: SystemTokenId, maybe_para_id: Option<ParaId> },
 	}
 
 	#[derive(

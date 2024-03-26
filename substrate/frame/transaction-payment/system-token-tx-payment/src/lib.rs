@@ -202,6 +202,7 @@ where
 			Ok((fee, InitialPayment::Nothing))
 		} else {
 			if let Some(asset_id) = self.asset_id.clone() {
+				log::info!("😝😝😝😝 SystemTokenId => {:?}", asset_id);
 				T::OnChargeSystemToken::withdraw_fee(
 					who,
 					call,
@@ -212,15 +213,7 @@ where
 				)
 				.map(|i| (fee, InitialPayment::Asset(i.into())))
 			} else {
-				T::OnChargeSystemToken::withdraw_fee(
-					who,
-					call,
-					info,
-					None,
-					fee.into(),
-					self.tip.into(),
-				)
-				.map(|i| (fee, InitialPayment::Asset(i.into())))
+				return Err(TransactionValidityError::Invalid(InvalidTransaction::SystemTokenMissing));
 			}
 		}
 	}
