@@ -57,7 +57,7 @@ use constants::{currency::*, fee::WeightToFee};
 pub mod oracle;
 mod weights;
 pub mod xcm_config;
-use xcm_config::XcmRouter;
+use xcm_config::{XcmRouter, UniversalLocation};
 
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use sp_api::impl_runtime_apis;
@@ -83,7 +83,7 @@ use frame_support::{
 	dispatch::DispatchClass,
 	parameter_types,
 	traits::{
-		tokens::{fungibles::{self, UnionOf, Balanced, Credit}},
+		tokens::fungibles::{UnionOf, Credit, Balanced},
 		AsEnsureOriginWithArg, ConstBool, ConstU32, ConstU64, ConstU8, EitherOfDiverse,
 		InstanceFilter,
 	},
@@ -371,7 +371,7 @@ impl pallet_assets::Config<ForeignAssetsInstance> for Runtime {
 }
 
 /// Union fungibles implementation for `Assets` and `ForeignAssets`.
-pub type NativeAndForeignAssets = fungibles::UnionOf<
+pub type NativeAndForeignAssets = UnionOf<
 	Assets,
 	ForeignAssets,
 	LocalFromLeft<
@@ -593,6 +593,7 @@ impl cumulus_pallet_infra_parachain_core::Config for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeEvent = RuntimeEvent;
 	type SystemTokenId = MultiLocation;
+	type UniversalLocation = UniversalLocation;
 	type Fungibles = NativeAndForeignAssets;
 	type ActiveRequestPeriod = ActiveRequestPeriod;
 }

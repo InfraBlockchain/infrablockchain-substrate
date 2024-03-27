@@ -65,7 +65,7 @@ pub type LocationToAccountId = (
 );
 
 /// `AssetId`/`Balance` converter for `ForeignAssets`.
-pub type ForeignAssetsConvertedConcreteId = infra_asset_common::ForeignAssetsConvertedConcreteId<
+pub type ForeignAssetsConvertedConcreteId = infra_asset_common::ForeignAssetsConvertedConcreteIdForParent<
 	(
 		// Ignore `TrustBackedAssets` explicitly
 		StartsWith<NativeAssetsPalletLocation>,

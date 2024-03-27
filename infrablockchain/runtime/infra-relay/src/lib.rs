@@ -124,7 +124,7 @@ use infra_asset_common::{
 	local_and_foreign_assets::LocalFromLeft, AssetIdForNativeAssets,
 	AssetIdForNativeAssetsConvert,
 };
-use xcm_config::NativeAssetsPalletLocation;
+use xcm_config::{NativeAssetsPalletLocation, UniversalLocation};
 
 impl_runtime_weights!(infra_relay_runtime_constants);
 
@@ -1147,6 +1147,7 @@ impl system_token_manager::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Fungibles = NativeAndForeignAssets;
 	type SystemTokenId = MultiLocation;
+	type UniversalLocation = UniversalLocation;
 	type SystemTokenHandler = SystemTokenHandler;
 	type StringLimit = StringLimit;
 	type MaxSystemTokens = MaxSystemTokens;

@@ -16,13 +16,13 @@
 
 //! XCM `MultiLocation` datatype.
 
-use super::{Junction, Junctions};
+use super::{Junction, Junctions, SystemTokenId};
 use crate::{v2::MultiLocation as OldMultiLocation, VersionedMultiLocation};
 use core::{
 	convert::{TryFrom, TryInto},
 	result,
 };
-use frame_support::{traits::tokens::SystemTokenId, PalletError};
+use frame_support::PalletError;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 /// A relative path between state-bearing consensus systems.
@@ -87,6 +87,8 @@ pub enum SystemTokenIdError {
 	ConvertBackError,
 	/// Error occured while converting to `wrapped`
 	ConvertToWrappedError,
+	/// Error occured while reanchoring
+	ErrorOnReanchor,
 }
 
 impl SystemTokenId for MultiLocation {
@@ -135,53 +137,63 @@ impl SystemTokenId for MultiLocation {
 		}
 	}
 
-	fn wrapped(&self, level: u8) -> Result<Self, Self::Error> {
-		match self.interior {
-			Junctions::X3(
-				Junction::Parachain(para_id),
-				Junction::PalletInstance(pallet_id),
-				Junction::GeneralIndex(asset_id),
-			) => Ok(Self {
-				parents: level,
-				interior: Junctions::X3(
-					Junction::Parachain(para_id),
-					Junction::PalletInstance(pallet_id),
-					Junction::GeneralIndex(asset_id),
-				),
-			}),
-			Junctions::X2(
-				Junction::PalletInstance(pallet_id),
-				Junction::GeneralIndex(asset_id),
-			) => Ok(Self {
-				parents: level,
-				interior: Junctions::X2(
-					Junction::PalletInstance(pallet_id),
-					Junction::GeneralIndex(asset_id),
-				),
-			}),
-			_ => Err(SystemTokenIdError::ConvertToWrappedError),
-		}
+	fn reanchor_loc(&mut self, parents: u8, maybe_dest_id: Option<Self::OriginId>, context: &InteriorMultiLocation) -> core::result::Result<(), Self::Error> {
+		let target = if let Some(dest_id) = maybe_dest_id {
+			MultiLocation::new(parents, Junctions::X1(Junction::Parachain(dest_id)))
+		} else {
+			MultiLocation::new(parents, Junctions::Here)
+		};
+		self.reanchor(&target, context.clone()).map_err(|_| Self::Error::ErrorOnReanchor)?;
+		Ok(())
 	}
+
+	// fn wrapped(&self, level: u8) -> Result<Self, Self::Error> {
+	// 	match self.interior {
+	// 		Junctions::X3(
+	// 			Junction::Parachain(para_id),
+	// 			Junction::PalletInstance(pallet_id),
+	// 			Junction::GeneralIndex(asset_id),
+	// 		) => Ok(Self {
+	// 			parents: level,
+	// 			interior: Junctions::X3(
+	// 				Junction::Parachain(para_id),
+	// 				Junction::PalletInstance(pallet_id),
+	// 				Junction::GeneralIndex(asset_id),
+	// 			),
+	// 		}),
+	// 		Junctions::X2(
+	// 			Junction::PalletInstance(pallet_id),
+	// 			Junction::GeneralIndex(asset_id),
+	// 		) => Ok(Self {
+	// 			parents: level,
+	// 			interior: Junctions::X2(
+	// 				Junction::PalletInstance(pallet_id),
+	// 				Junction::GeneralIndex(asset_id),
+	// 			),
+	// 		}),
+	// 		_ => Err(SystemTokenIdError::ConvertToWrappedError),
+	// 	}
+	// }
 
 	fn is_same_origin(&self, other: Option<Self::OriginId>) -> bool {
 		self.id().map(|(origin_id, _, _)| origin_id == other).unwrap_or(false)
 	}
 
-	fn reanchor_to_local(&self) -> Result<Self, Self::Error> {
-		match self.interior {
-			Junctions::X3(Junction::Parachain(_), Junction::PalletInstance(pallet_id), Junction::GeneralIndex(asset_id)) => {
-				let interior = Junctions::X2(Junction::PalletInstance(pallet_id), Junction::GeneralIndex(asset_id));
-				Ok(
-					Self {
-						parents: self.parents,
-						interior,
-					}
-				)
-			},
-			Junctions::X2(Junction::PalletInstance(_), Junction::GeneralIndex(_)) => Ok(self.clone()),
-			_ => Err(SystemTokenIdError::ConvertToWrappedError),
-		}
-	}
+	// fn reanchor_to_local(&self) -> Result<Self, Self::Error> {
+	// 	match self.interior {
+	// 		Junctions::X3(Junction::Parachain(_), Junction::PalletInstance(pallet_id), Junction::GeneralIndex(asset_id)) => {
+	// 			let interior = Junctions::X2(Junction::PalletInstance(pallet_id), Junction::GeneralIndex(asset_id));
+	// 			Ok(
+	// 				Self {
+	// 					parents: self.parents,
+	// 					interior,
+	// 				}
+	// 			)
+	// 		},
+	// 		Junctions::X2(Junction::PalletInstance(_), Junction::GeneralIndex(_)) => Ok(self.clone()),
+	// 		_ => Err(SystemTokenIdError::ConvertToWrappedError),
+	// 	}
+	// }
 }
 
 /// A relative location which is constrained to be an interior location of the context.

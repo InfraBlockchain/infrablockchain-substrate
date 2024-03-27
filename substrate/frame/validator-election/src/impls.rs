@@ -167,14 +167,9 @@ impl<T: Config> Pallet<T> {
 	/// 2. Adjust absed on `BlockTimeWeight`
 	fn adjust_amount(amount: &mut T::Score) {
 		// impl me!
-		let current: T::Score = <frame_system::Pallet<T>>::block_number().into();
-		let blocks_per_year: T::Score = T::BlocksPerYear::get().into();
-		let exp: F64 = F64::from(2).ln();
-		let high_preicision_current: F64 = T::HigherPrecisionScore::from(current).into();
-		let high_precision_blocks_per_year: F64 = T::HigherPrecisionScore::from(blocks_per_year).into();
-		let block_passed_rational = high_preicision_current / high_precision_blocks_per_year;
-		let block_time_weight: T::HigherPrecisionScore = exp.mul(block_passed_rational).into();
-		*amount = block_time_weight.into();
+		let current = <frame_system::Pallet<T>>::block_number();
+		let blocks_per_year = T::BlocksPerYear::get();
+		T::HigherPrecisionScore::block_time_weight(amount, current, blocks_per_year);
 	}
 
 	fn aggregate_reward(asset_id: SystemTokenAssetIdOf<T>, amount: T::Score) {

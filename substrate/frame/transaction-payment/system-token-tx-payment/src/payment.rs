@@ -120,12 +120,10 @@ where
 		fee: Self::Balance,
 		_tip: Self::Balance,
 	) -> Result<Self::LiquidityInfo, TransactionValidityError> {
-		log::info!("🧐🧐🧐🧐🧐 Withdraw fee");
 		let (asset_id, _) =
 			<T::Fungibles as InspectSystemToken<T::AccountId>>::balance(who, asset_id)
 				.take()
 				.ok_or(TransactionValidityError::from(InvalidTransaction::Payment))?;
-		log::info!("🧐🧐🧐🧐🧐 Withdraw fee. AssetId => {:?}", asset_id);	
 		let min_converted_fee = if fee.is_zero() { Zero::zero() } else { One::one() };
 		// CON::to_asset_balance => fee / system_token_weight
 		let converted_fee = CON::to_system_token_balance(asset_id.clone(), fee)
@@ -136,7 +134,6 @@ where
 			who,
 			converted_fee.into(),
 		);
-		log::info!("🤑🤑🤑🤑🤑🤑 Withdraw fee. Withdraw? Fee? => {:?}, {:?}", can_withdraw, converted_fee);	
 		if !matches!(can_withdraw, WithdrawConsequence::Success) {
 			return Err(InvalidTransaction::Payment.into())
 		}

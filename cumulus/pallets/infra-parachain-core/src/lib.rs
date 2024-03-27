@@ -7,7 +7,7 @@ use frame_support::{
 	pallet_prelude::*,
 	traits::{fungibles::{
 		Inspect, InspectSystemToken, InspectSystemTokenMetadata, ManageSystemToken,
-	}, tokens::SystemTokenId},
+	}},
 };
 use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
@@ -18,6 +18,8 @@ use sp_runtime::{
 use sp_std::vec::Vec;
 
 pub use pallet::*;
+
+use xcm::latest::{InteriorMultiLocation, SystemTokenId};
 
 pub type SystemTokenAssetIdOf<T> =
 	<<T as Config>::Fungibles as Inspect<<T as frame_system::Config>::AccountId>>::AssetId;
@@ -59,6 +61,8 @@ pub mod pallet {
 			+ Into<Result<Origin, <Self as Config>::RuntimeOrigin>>;
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+		/// Univeral location of this network
+		type UniversalLocation: Get<InteriorMultiLocation>;
 		/// Type of SystemTokenId used in InfraBlockchain
 		type SystemTokenId: SystemTokenId;
 		/// Type that interacts with local asset
@@ -157,7 +161,9 @@ pub mod pallet {
 		/// Error occured while converting System Token ID
 		ErrorConvertToSystemTokenId,
 		/// System Token is not native asset
-		NotNativeAsset
+		NotNativeAsset,
+		/// Error occured while reanchoring
+		ErrorReanchoring
 	}
 
 	#[pallet::hooks]
@@ -179,7 +185,6 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> 
 	where
 		T::SystemTokenId: TryFrom<SystemTokenAssetIdOf<T>> + Into<SystemTokenAssetIdOf<T>>,
-		SystemTokenOriginIdOf<T>: From<ParaId>
 	{
 		/// Priviliged origin governed by Relay-chain
 		///
@@ -285,7 +290,6 @@ pub mod pallet {
 			system_token_weight: SystemTokenWeightOf<T>,
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
-			log::info!("😏😏😏😏 Wrapping {:?}", wrapped_original);
 			T::Fungibles::touch(
 				owner,
 				wrapped_original.clone(),
@@ -296,10 +300,7 @@ pub mod pallet {
 				decimals,
 				system_token_weight,
 			)
-			.map_err(|_| {
-				log::info!("😡😡😡😡😡 Error on creating wrapped local asset");
-				Error::<T>::ErrorCreateWrappedLocalAsset
-			})?;
+			.map_err(|_| Error::<T>::ErrorCreateWrappedLocalAsset)?;
 			Self::deposit_event(Event::<T>::WrappedCreated { asset_id: wrapped_original });
 			Ok(())
 		}
@@ -361,8 +362,7 @@ pub mod pallet {
 
 impl<T: Config> Pallet<T> 
 where
-	T::SystemTokenId: TryFrom<SystemTokenAssetIdOf<T>> + Into<SystemTokenAssetIdOf<T>>,
-	SystemTokenOriginIdOf<T>: From<ParaId>
+	T::SystemTokenId: TryFrom<SystemTokenAssetIdOf<T>> + Into<SystemTokenAssetIdOf<T>>
 {
 	/// Put requested _asset_metadata_  on `CurrentRequest` and calculate expired block numbe
 	fn do_request(original: &SystemTokenAssetIdOf<T>, currency_type: Fiat) -> Result<BlockNumberFor<T>, DispatchError> {
@@ -384,11 +384,11 @@ where
 
 	fn check_valid_register(asset_metadata: &mut RemoteAssetMetadata<SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>>, asset: &SystemTokenAssetIdOf<T>) -> Result<(), DispatchError> {
 		let mut is_valid: bool = true;
-		let system_token_id: T::SystemTokenId = asset.clone().try_into().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
-		let origin_id = <<T as cumulus_pallet_parachain_system::Config>::SelfParaId>::get();
-		let (maybe_origin_id, pallet_id, asset_id) = system_token_id.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
+		let context = T::UniversalLocation::get();
+		let mut system_token_id: T::SystemTokenId = asset.clone().try_into().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
+		let (maybe_origin_id, _, _) = system_token_id.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
 		ensure!(maybe_origin_id.is_none(), Error::<T>::BadRequest);
-		let system_token_id = T::SystemTokenId::convert_back(Some(origin_id.into()), pallet_id, asset_id);
+		system_token_id.reanchor_loc(1, None, &context).map_err(|_| Error::<T>::ErrorReanchoring)?;
 		asset_metadata.set_asset_id(system_token_id.into());
 		if let Some(status) = ActiveRequestStatus::<T>::get() {
 			if !status.is_expired(<frame_system::Pallet<T>>::block_number()) {

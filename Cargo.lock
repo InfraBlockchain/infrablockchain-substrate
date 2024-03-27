@@ -3007,6 +3007,7 @@ dependencies = [
  "sp-core",
  "sp-runtime",
  "sp-std 8.0.0",
+ "staging-xcm",
 ]
 
 [[package]]

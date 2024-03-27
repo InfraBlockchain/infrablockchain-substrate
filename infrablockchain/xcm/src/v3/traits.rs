@@ -18,9 +18,9 @@
 
 use crate::v2::Error as OldError;
 use core::result;
-use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
+use parity_scale_codec::{Decode, Encode, MaxEncodedLen, FullCodec};
 use scale_info::TypeInfo;
-
+use frame_support::{traits::tokens::{AssetId as LocalAssetId}, Parameter};
 pub use sp_weights::Weight;
 
 use super::*;
@@ -596,4 +596,31 @@ pub fn send_xcm<T: SendXcm>(
 	let (ticket, price) = T::validate(&mut Some(dest), &mut Some(msg))?;
 	let hash = T::deliver(ticket)?;
 	Ok((hash, price))
+}
+
+pub trait SystemTokenId: LocalAssetId {
+	/// Id for general token index(e.g `u32`)
+	type AssetId: LocalAssetId;
+	/// Id for token pallet id(e.g `u8`)
+	type PalletId: Parameter;
+	/// Id for token origin(e.g `u32`)
+	type OriginId: Parameter;
+	/// Error type
+	type Error: FullCodec + Debug;
+
+	/// Id for System Token
+	fn id(&self) -> core::result::Result<(Option<Self::OriginId>, Self::PalletId, Self::AssetId), Self::Error>;
+
+	/// Reanchor the location to the given target
+	fn reanchor_loc(&mut self, parents: u8, maybe_dest_id: Option<Self::OriginId>, context: &InteriorMultiLocation) -> core::result::Result<(), Self::Error>;
+
+	/// Convert the id back to the original type
+	fn convert_back(
+		origin_id: Option<Self::OriginId>,
+		pallet_id: Self::PalletId,
+		asset_id: Self::AssetId,
+	) -> Self;
+
+	/// Check whether given `other` is the same origin as `self`
+	fn is_same_origin(&self, other: Option<Self::OriginId>) -> bool;
 }

@@ -263,6 +263,14 @@ pub type ForeignAssetsConvertedConcreteId<AdditionalLocationExclusionFilter, Bal
 		Balance,
 	>;
 
+/// For Relay
+/// `AdditionalLocationExclusionFilter` can customize additional excluded Locations
+pub type ForeignAssetsConvertedConcreteIdForParent<AdditionalLocationExclusionFilter, Balance> =
+	LocationConvertedConcreteId<
+		EverythingBut<AdditionalLocationExclusionFilter>,
+		Balance,
+	>;
+
 #[cfg(test)]
 mod tests {
 

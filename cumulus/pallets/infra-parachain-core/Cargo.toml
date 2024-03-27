@@ -24,6 +24,7 @@ pallet-assets = { path = "../../../substrate/frame/assets", default-features = f
 
 # InfraBlockchain
 primitives = { path = "../../../infrablockchain/primitives", default-features = false}
+xcm = { package = "staging-xcm", path = "../../../infrablockchain/xcm", default-features = false}
 
 # Cumulus
 cumulus-primitives-core = { path = "../../primitives/core", default-features = false }
@@ -46,6 +47,7 @@ std = [
 	"sp-core/std",
     "cumulus-pallet-parachain-system/std",
     "cumulus-pallet-xcm/std",
+	"xcm/std",
 ]
 try-runtime = [
 	"cumulus-pallet-parachain-system/try-runtime",

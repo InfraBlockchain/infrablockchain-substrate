@@ -11,7 +11,6 @@ macro_rules! f64 {
 
 mod conv;
 mod soft_f64;
-use num_traits::Pow;
 
 pub use crate::soft_f64::F64;
 
@@ -19,7 +18,7 @@ const fn abs_diff(a: i32, b: i32) -> u32 {
 	a.wrapping_sub(b).wrapping_abs() as u32
 }
 
-pub trait BlockTimeWeight: Sized
+pub trait BlockTimeWeight<Amount, BlockNumber>: Sized
 	+ Copy
 	+ core::fmt::Debug
 	+ PartialEq
@@ -29,10 +28,10 @@ pub trait BlockTimeWeight: Sized
 	+ core::ops::Div
 	+ core::ops::Mul
 {
-	/// Logarithm of the weight
-	fn log(self) -> Self;
-	/// Exponential of the weight
-	fn exp(self) -> Self;
+	
+	fn rational(n: BlockNumber, d: BlockNumber) -> Self;
+
+	fn block_time_weight(adjusted: &mut Amount, current: BlockNumber, per_year: BlockNumber);
 }
 
 macro_rules! impl_traits {
@@ -128,13 +127,25 @@ macro_rules! impl_traits {
 			}
 		}
 
-		impl BlockTimeWeight for $ty {
-			fn log(self) -> Self {
-				Self::ln(self)
+		impl<Amount, BlockNumber> BlockTimeWeight<Amount, BlockNumber> for $ty 
+		where
+			Amount: Clone + Into<$ty> + core::ops::MulAssign,
+			BlockNumber: Into<Amount>,
+			$ty: From<i32> + Into<Amount>,
+		{
+			fn rational(n: BlockNumber, d: BlockNumber) -> $ty {
+				let n: Amount = n.into();
+				let d: Amount = d.into();
+				let n: $ty = n.into();
+				let d: $ty = d.into();
+				let exp = Self::from(2i32).ln();
+				let block_passed_rational = n/d;
+				exp * block_passed_rational
 			}
 
-			fn exp(self) -> Self {
-				Self::exp(self)
+			fn block_time_weight(adjusted: &mut Amount, current: BlockNumber, per_year: BlockNumber) {
+				let block_time_rational = Self::rational(current, per_year).exp();
+				*adjusted *= block_time_rational.into();
 			}
 		}
 	};

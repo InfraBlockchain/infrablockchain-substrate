@@ -256,7 +256,7 @@ pub mod pallet {
 
 		/// A type used for calculations of `Score` with higher precision to store on chain
 		/// TODO:
-		type HigherPrecisionScore: BlockTimeWeight
+		type HigherPrecisionScore: BlockTimeWeight<Self::Score, BlockNumberFor<Self>>
 			+ Parameter
 			+ Member
 			+ Into<F64>
