@@ -171,16 +171,13 @@ impl<T: Config> Default for VotingStatus<T> {
 
 impl<T: Config> VotingStatus<T> {
 	/// Add vote point for given vote account id and vote points.
-	pub fn add_vote(&mut self, who: &T::AccountId, vote_weight: T::Score) {
-		for s in self.status.iter_mut() {
-			if &s.0 == who {
-				let current_vote_weight: T::Score = s.1.clone().into();
-				s.1 = current_vote_weight.saturating_add(vote_weight).into();
+	pub fn add_vote(&mut self, who: &T::AccountId, vote_weight: T::HigherPrecisionScore) {
+		for (candidate, amount) in self.status.iter_mut() {
+			if candidate == who {
+				*amount += vote_weight;
 				return
 			}
 		}
-		let higher_precision_vote_weight: T::HigherPrecisionScore = vote_weight.into();
-		self.status.push((who.clone(), higher_precision_vote_weight));
 	}
 
 	pub fn counts(&self) -> usize {
@@ -283,7 +280,6 @@ pub mod pallet {
 		pub force_era: Forcing,
 		pub pool_status: Pool,
 		pub is_pot_enable_at_genesis: bool,
-		pub vote_status_at_genesis: Vec<(T::AccountId, T::Score)>,
 	}
 
 	impl<T: Config> Default for GenesisConfig<T> {
@@ -295,7 +291,6 @@ pub mod pallet {
 				seed_trust_slots: Default::default(),
 				force_era: Default::default(),
 				pool_status: Default::default(),
-				vote_status_at_genesis: Default::default(),
 			}
 		}
 	}
@@ -310,12 +305,7 @@ pub mod pallet {
 			ForceEra::<T>::put(self.force_era);
 			PoolStatus::<T>::put(self.pool_status);
 			if self.is_pot_enable_at_genesis {
-				assert!(self.vote_status_at_genesis.len() > 0, "Vote status should not be empty");
-				let mut vote_status = VotingStatus::<T>::default();
-				self.vote_status_at_genesis.clone().into_iter().for_each(|v| {
-					vote_status.add_vote(&v.0, v.1);
-				});
-				PotValidatorPool::<T>::put(vote_status);
+				// do_something
 			}
 		}
 	}
@@ -324,7 +314,7 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(crate) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Points has been added for candidate validator
-		Voted { who: T::AccountId, amount: T::Score },
+		Voted { who: T::AccountId, amount: T::HigherPrecisionScore },
 		/// Total number of validators has been changed
 		TotalValidatorSlotsChanged { new: u32 },
 		/// Number of seed trust validators has been changed

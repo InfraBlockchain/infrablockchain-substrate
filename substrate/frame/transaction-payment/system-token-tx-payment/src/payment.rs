@@ -21,7 +21,7 @@ use frame_support::{
 	traits::{
 		fungibles::{Balanced, Credit, Inspect},
 		tokens::{
-			AssetId, Balance, ConversionToAssetBalance, Fortitude::Polite, Precision::Exact,
+			AssetId, Balance, Fortitude::Polite, Precision::Exact,
 			Preservation::Protect,
 		},
 	},

@@ -43,12 +43,12 @@ use pallet_transaction_payment::OnChargeTransaction;
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{
-		AccountIdConversion, DispatchInfoOf, Dispatchable, PostDispatchInfoOf, Saturating,
+		AccountIdConversion, DispatchInfoOf, Dispatchable, PostDispatchInfoOf,
 		SignedExtension, Zero,
 	},
 	transaction_validity::{TransactionValidity, TransactionValidityError, ValidTransaction},
 	types::{fee::*, infra_core::*, token::*, vote::PotVote},
-	FixedPointOperand,
+	FixedPointOperand, FixedU128, FixedPointNumber
 };
 
 use sp_std::prelude::*;
@@ -110,7 +110,7 @@ pub mod pallet {
 
 impl<T: Config> Pallet<T>
 where
-	SystemTokenWeightOf<T>: From<SystemTokenBalanceOf<T>> + TryInto<i128>,
+	SystemTokenWeightOf<T>: TryFrom<SystemTokenBalanceOf<T>> + TryFrom<u128>
 {
 	fn check_bootstrap_and_filter(call: &T::RuntimeCall) -> Result<bool, TransactionValidityError> {
 		match (T::SystemConfig::runtime_state(), T::BootstrapCallFilter::contains(call)) {
@@ -130,12 +130,13 @@ where
 			.map_err(|_| {
 				TransactionValidityError::Invalid(InvalidTransaction::SystemTokenMissing)
 			})?;
-		let balance_to_weight: SystemTokenWeightOf<T> = converted_fee.into();
-		let vote_amount = balance_to_weight.saturating_mul(system_token_weight);
-		let to_i128: i128 = vote_amount
-			.try_into()
-			.map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::ConversionError))?;
-		let pot_vote = PotVote::new(candidate.clone(), system_token_id.clone(), to_i128);
+		let SystemConfig { base_system_token_detail, .. } =
+			T::SystemConfig::system_config().map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::Payment))?;
+		let base_weight: SystemTokenWeightOf<T> = base_system_token_detail.base_weight.try_into().map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::ConversionError))?;
+		let fee_to_weight: SystemTokenWeightOf<T> = converted_fee.try_into().map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::ConversionError))?;
+		let vote_amount = FixedU128::saturating_from_rational(system_token_weight, base_weight).saturating_mul_int(fee_to_weight);
+		// TODO: Reanchoring `SystemTokenId` targeting Relay Chain
+		let pot_vote = PotVote::new(candidate.clone(), system_token_id.clone(), vote_amount);
 		if let Err(_) = T::VotingHandler::process_vote(&mut pot_vote.encode()) {
 			log::error!("Failed to process vote: {:?}", pot_vote);
 		}
@@ -238,7 +239,7 @@ where
 	SystemTokenBalanceOf<T>: Send + Sync + FixedPointOperand,
 	BalanceOf<T>: From<SystemTokenBalance>,
 	SystemTokenAssetIdOf<T>: Send + Sync + IsType<ChargeSystemTokenAssetIdOf<T>>,
-	SystemTokenWeightOf<T>: From<SystemTokenBalanceOf<T>> + TryInto<i128>,
+	SystemTokenWeightOf<T>: TryFrom<SystemTokenBalanceOf<T>> + TryFrom<u128>,
 	BalanceOf<T>: Send
 		+ Sync
 		+ From<u64>

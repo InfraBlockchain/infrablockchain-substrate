@@ -27,11 +27,15 @@ pub trait BlockTimeWeight<Amount, BlockNumber>: Sized
 	+ core::ops::Sub
 	+ core::ops::Div
 	+ core::ops::Mul
+	+ core::ops::AddAssign
+	+ core::ops::SubAssign
+	+ core::ops::MulAssign
+	+ core::ops::DivAssign
 {
 	
 	fn rational(n: BlockNumber, d: BlockNumber) -> Self;
 
-	fn block_time_weight(adjusted: &mut Amount, current: BlockNumber, per_year: BlockNumber);
+	fn block_time_weight(adjusted: Amount, current: BlockNumber, per_year: BlockNumber) -> Self;
 }
 
 macro_rules! impl_traits {
@@ -129,9 +133,9 @@ macro_rules! impl_traits {
 
 		impl<Amount, BlockNumber> BlockTimeWeight<Amount, BlockNumber> for $ty 
 		where
-			Amount: Clone + Into<$ty> + core::ops::MulAssign,
+			Amount: Into<$ty> + Clone,
 			BlockNumber: Into<Amount>,
-			$ty: From<i32> + Into<Amount>,
+			$ty: From<i32>,
 		{
 			fn rational(n: BlockNumber, d: BlockNumber) -> $ty {
 				let n: Amount = n.into();
@@ -143,9 +147,11 @@ macro_rules! impl_traits {
 				exp * block_passed_rational
 			}
 
-			fn block_time_weight(adjusted: &mut Amount, current: BlockNumber, per_year: BlockNumber) {
+			fn block_time_weight(adjusted: Amount, current: BlockNumber, per_year: BlockNumber) -> $ty {
 				let block_time_rational = Self::rational(current, per_year).exp();
-				*adjusted *= block_time_rational.into();
+				let adjusted: $ty = adjusted.into();
+				let block_time_weight = adjusted.mul(block_time_rational);
+				block_time_weight
 			}
 		}
 	};

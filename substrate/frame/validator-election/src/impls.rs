@@ -53,19 +53,19 @@ impl<T: Config> TaaV for Pallet<T> {
 			PotVote::<T::AccountId, SystemTokenAssetIdOf<T>, T::Score>::decode(&mut &bytes[..])
 				.map_err(|_| Error::<T>::ErrorDecode)?;
 		log::info!("🥶🥶 Processing Vote: {:?}", vote);
-		// TODO
-		let PotVote { candidate, asset_id, mut amount } = vote;
+		
+		let PotVote { candidate, asset_id, amount } = vote;
 		if SeedTrustValidatorPool::<T>::get().contains(&candidate) {
 			return Ok(())
 		}
 		Self::aggregate_reward(asset_id, amount.clone());
-		// TODO
-		Self::adjust_amount(&mut amount);
+		
+		let adjusted_amount = Self::adjust_amount(amount);
 
 		PotValidatorPool::<T>::mutate(|voting_status| {
-			voting_status.add_vote(&candidate, amount.clone());
+			voting_status.add_vote(&candidate, adjusted_amount.clone());
 		});
-		Self::deposit_event(Event::<T>::Voted { who: candidate, amount: amount.clone() });
+		Self::deposit_event(Event::<T>::Voted { who: candidate, amount: adjusted_amount });
 		Ok(())
 	}
 }
@@ -165,11 +165,11 @@ impl<T: Config> Pallet<T> {
 	/// **Process**
 	/// 
 	/// 2. Adjust absed on `BlockTimeWeight`
-	fn adjust_amount(amount: &mut T::Score) {
+	fn adjust_amount(amount: T::Score) -> T::HigherPrecisionScore {
 		// impl me!
 		let current = <frame_system::Pallet<T>>::block_number();
 		let blocks_per_year = T::BlocksPerYear::get();
-		T::HigherPrecisionScore::block_time_weight(amount, current, blocks_per_year);
+		T::HigherPrecisionScore::block_time_weight(amount, current, blocks_per_year)
 	}
 
 	fn aggregate_reward(asset_id: SystemTokenAssetIdOf<T>, amount: T::Score) {

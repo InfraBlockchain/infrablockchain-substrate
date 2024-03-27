@@ -13303,6 +13303,7 @@ dependencies = [
  "pallet-session",
  "pallet-staking",
  "pallet-staking-reward-fn",
+ "pallet-system-token-conversion",
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-treasury",
