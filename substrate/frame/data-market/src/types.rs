@@ -60,7 +60,7 @@ pub struct DataDelegateContractDetail<AccountId, BlockNumber> {
 #[derive(Encode, Decode, Clone, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Hash, Debug))]
 pub struct DataDelegateContractParams<AccountId, BlockNumber> {
-	pub data_owner: AccountId,
+	pub agency: AccountId,
 	pub data_owner_minimum_fee_ratio: u32,
 	pub deligated_data: AnyText,
 	pub duration: BlockNumber,
@@ -70,14 +70,13 @@ pub struct DataDelegateContractParams<AccountId, BlockNumber> {
 #[cfg_attr(feature = "std", derive(Hash, Debug))]
 pub struct DataPurchaseContractDetail<AccountId, BlockNumber, Balance> {
 	pub data_buyer: AccountId,
-	pub data_verifier: Option<AccountId>,
+	pub data_verifier: AccountId,
 	pub effective_at: BlockNumber,
 	pub expired_at: BlockNumber,
 	pub data_purchase_info: DataPurchaseInfo<AnyText>,
-	pub system_token_id: u32,
 	pub agency: Option<AccountId>,
 	pub price_per_data: Balance,
-	pub deposit: Balance,
+	pub deposit: (u32, Balance), // (AssetId, Balance)
 	pub trade_count: Quantity,
 	pub data_trade_record: Vec<AccountId>,
 	pub signed_status: ContractSigner<AccountId>,
@@ -86,12 +85,11 @@ pub struct DataPurchaseContractDetail<AccountId, BlockNumber, Balance> {
 #[derive(Encode, Decode, Clone, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Hash, Debug))]
 pub struct DataPurchaseContractParams<AccountId, BlockNumber, Balance> {
-	pub data_verifier: Option<AccountId>,
+	pub data_verifier: AccountId,
 	pub data_purchase_info: DataPurchaseInfo<AnyText>,
-	pub system_token_id: u32,
 	pub agency: Option<AccountId>,
 	pub price_per_data: Balance,
-	pub deposit: Balance,
+	pub deposit: (u32, Balance), // (AssetId, Balance)
 	pub duration: BlockNumber,
 }
 
