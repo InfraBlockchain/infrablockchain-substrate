@@ -29,17 +29,18 @@ use futures::Future;
 use parity_scale_codec::{Decode, Encode, Error as CodecError, Input};
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 
-pub use parachain_primitives::primitives::{BlockData, HorizontalMessages, UpwardMessages};
+pub use parachain_primitives::primitives::{
+	BlockData, HorizontalMessages, PotVotesResult, UpwardMessages,
+};
 use primitives::{
 	BlakeTwo256, BlockNumber, CandidateCommitments, CandidateHash, CollatorPair,
 	CommittedCandidateReceipt, CompactStatement, EncodeAs, Hash, HashT, HeadData, Id as ParaId,
-	PersistedValidationData, SessionIndex, Signed, UncheckedSigned, ValidationCode,
-	ValidationCodeHash, ValidatorIndex, MAX_CODE_SIZE, MAX_POV_SIZE,
+	OpaqueRemoteAssetMetadata, PersistedValidationData, SessionIndex, Signed, UncheckedSigned,
+	ValidationCode, ValidationCodeHash, ValidatorIndex, MAX_CODE_SIZE, MAX_POV_SIZE,
 };
 pub use sp_consensus_babe::{
 	AllowedSlots as BabeAllowedSlots, BabeEpochConfiguration, Epoch as BabeEpoch,
 };
-use sp_runtime::types::{PotVotesResult, RemoteAssetMetadata};
 
 pub mod approval;
 
@@ -426,7 +427,7 @@ pub struct Collation<BlockNumber = primitives::BlockNumber> {
 	/// Pot Vote Result
 	pub vote_result: Option<PotVotesResult>,
 	/// Requested assets
-	pub requested_asset: Option<RemoteAssetMetadata>,
+	pub requested_asset: Option<OpaqueRemoteAssetMetadata>,
 }
 
 /// Signal that is being returned when a collation was seconded by a validator.

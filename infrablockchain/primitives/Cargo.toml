@@ -23,6 +23,7 @@ softfloat = { path = "../../substrate/primitives/softfloat", default-features = 
 application-crypto = { package = "sp-application-crypto", path = "../../substrate/primitives/application-crypto", default-features = false, features = [
 	"serde",
 ] }
+frame-support = { path = "../../substrate/frame/support", default-features = false }
 inherents = { package = "sp-inherents", path = "../../substrate/primitives/inherents", default-features = false }
 primitives = { package = "sp-core", path = "../../substrate/primitives/core", default-features = false }
 runtime_primitives = { package = "sp-runtime", path = "../../substrate/primitives/runtime", default-features = false }
@@ -57,6 +58,7 @@ std = [
 	"parachain-primitives/std",
 	"primitives/std",
 	"runtime_primitives/std",
+	"frame-support/std",
 	"scale-info/std",
 	"serde/std",
 	"sp-api/std",

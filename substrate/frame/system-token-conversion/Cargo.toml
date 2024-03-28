@@ -1,0 +1,50 @@
+[package]
+name = "pallet-system-token-conversion"
+version = "0.4.0-dev"
+authors.workspace = true
+edition.workspace = true
+license = "Apache-2.0"
+homepage = "https://infrablockchain.net"
+repository.workspace = true
+description = "FRAME for converting System Token for transaction fee"
+readme = "README.md"
+
+[dependencies]
+
+# External
+serde = { version = "1.0.188", default-features = false, features = ["alloc", "derive"] }
+codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false, features = [
+	"derive",
+	"max-encoded-len",
+] }
+log = { version = "0.4.17", default-features = false }
+scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
+
+# Base 
+frame-benchmarking = { path = "../benchmarking", default-features = false, optional = true }
+frame-support = { path = "../support", default-features = false }
+frame-system = { path = "../system", default-features = false }
+
+# Primitives
+sp-core = { path = "../../../substrate/primitives/core", default-features = false }
+sp-io = { path = "../../../substrate/primitives/io", default-features = false }
+sp-runtime = { path = "../../primitives/runtime", default-features = false }
+sp-std = { path = "../../primitives/std", default-features = false }
+sp-arithmetic = { path = "../../primitives/arithmetic", default-features = false }
+
+[features]
+default = ["std"]
+std = [
+    "serde/std",
+    "codec/std",
+    "log/std",
+	"scale-info/std",
+    "frame-benchmarking?/std",
+	"frame-support/std",
+	"frame-system/std",
+	"sp-core/std",
+	"sp-io/std",
+	"sp-runtime/std",
+	"sp-std/std",
+	"sp-arithmetic/std",
+]

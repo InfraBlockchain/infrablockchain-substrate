@@ -19,7 +19,7 @@ use crate::chain_spec::{
 };
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
-use parachains_common::types::{AccountId, AuraId, Balance as AssetHubBalance};
+use parachains_common::{AccountId, AuraId, Balance as AssetHubBalance};
 use sc_service::ChainType;
 use sp_core::{crypto::UncheckedInto, sr25519};
 
@@ -203,7 +203,6 @@ fn asset_hub_genesis(
 				.map(|k| (k, ASSET_HUB_INFRA_RELAY_ED * 4096))
 				.collect(),
 		},
-		assets: Default::default(),
 		parachain_info: asset_hub_runtime::ParachainInfoConfig {
 			parachain_id: id,
 			..Default::default()
@@ -235,5 +234,6 @@ fn asset_hub_genesis(
 			..Default::default()
 		},
 		sudo: asset_hub_runtime::SudoConfig { key: root_key },
+		..Default::default()
 	}
 }

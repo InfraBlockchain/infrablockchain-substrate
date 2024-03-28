@@ -98,7 +98,7 @@ async fn collect_relay_storage_proof(
 		relay_well_known_keys::TWO_EPOCHS_AGO_RANDOMNESS.to_vec(),
 		relay_well_known_keys::CURRENT_SLOT.to_vec(),
 		relay_well_known_keys::ACTIVE_CONFIG.to_vec(),
-		relay_well_known_keys::SYSTEM_CONFIG.to_vec(),
+		relay_well_known_keys::ACTIVE_SYSTEM_CONFIG.to_vec(),
 		relay_well_known_keys::dmq_mqc_head(para_id),
 		// TODO paritytech/polkadot#6283: Remove all usages of `relay_dispatch_queue_size`
 		// We need to keep this here until all parachains have migrated to

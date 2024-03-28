@@ -20,9 +20,12 @@ rustc-hex = { version = "2.1.0", default-features = false }
 serde = { version = "1.0.188", default-features = false }
 serde_derive = { version = "1.0.117", optional = true }
 hex-literal = { version = "0.4.1", optional = true }
+softfloat = { path = "../../../substrate/primitives/softfloat", default-features = false }
 
 # Infra
 pallet-validator-election = { path = "../../../substrate/frame/validator-election", default-features = false }
+pallet-system-token-tx-payment = { path = "../../../substrate/frame/transaction-payment/system-token-tx-payment", default-features = false }
+pallet-system-token-conversion = { path = "../../../substrate/frame/system-token-conversion", default-features = false }
 
 # Primitives
 authority-discovery-primitives = { package = "sp-authority-discovery", path = "../../../substrate/primitives/authority-discovery", default-features = false }
@@ -53,7 +56,6 @@ pallet-bounties = { path = "../../../substrate/frame/bounties", default-features
 pallet-child-bounties = { path = "../../../substrate/frame/child-bounties", default-features = false }
 pallet-transaction-payment = { path = "../../../substrate/frame/transaction-payment", default-features = false }
 pallet-transaction-payment-rpc-runtime-api = { path = "../../../substrate/frame/transaction-payment/rpc/runtime-api", default-features = false }
-pallet-system-token-tx-payment = { path = "../../../substrate/frame/transaction-payment/system-token-tx-payment", default-features = false }
 pallet-collective = { path = "../../../substrate/frame/collective", default-features = false }
 pallet-democracy = { path = "../../../substrate/frame/democracy", default-features = false }
 pallet-elections-phragmen = { path = "../../../substrate/frame/elections-phragmen", default-features = false }
@@ -94,7 +96,6 @@ xcm-builder = { package = "staging-xcm-builder", path = "../../xcm/xcm-builder",
 pallet-xcm = { path = "../../xcm/pallet-xcm", default-features = false }
 xcm-primitives = { path = "../../xcm/xcm-primitives", default-features = false }
 cumulus-primitives-utility = { path = "../../../cumulus/primitives/utility", default-features = false }
-pallet-asset-link = { package = "infra-asset-link", path = "../../xcm/infra-asset-link", default-features = false }
 infra-asset-common = { path = "../../xcm/infra-asset-common", default-features = false }
 
 # Dev tool
@@ -126,6 +127,7 @@ std = [
 	"authority-discovery-primitives/std",
 	"bitvec/std",
 	"primitives/std",
+	"softfloat/std",
 	"parachain-primitives/std",
 	"rustc-hex/std",
 	"parity-scale-codec/std",
@@ -173,6 +175,8 @@ std = [
 	"pallet-vesting/std",
 	"pallet-utility/std",
 	"pallet-validator-election/std",
+	"pallet-system-token-conversion/std",
+	"pallet-sudo/std",
 	"sp-runtime/std",
 	"frame-system/std",
 	"frame-system-rpc-runtime-api/std",
@@ -195,7 +199,6 @@ std = [
 	"frame-system-benchmarking?/std",
 	"pallet-session-benchmarking?/std",
 	"pallet-offences-benchmarking?/std",
-	"pallet-asset-link/std",
 	"infra-asset-common/std",
 ]
 runtime-benchmarks = [
@@ -234,7 +237,6 @@ runtime-benchmarks = [
 	"hex-literal",
 	"xcm-builder/runtime-benchmarks",
 	"runtime-parachains/runtime-benchmarks",
-	"pallet-asset-link/runtime-benchmarks",
 ]
 try-runtime = [
 	"frame-executive/try-runtime",

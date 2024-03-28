@@ -38,6 +38,7 @@ frame-support = { path = "../../support", default-features = false }
 frame-system = { path = "../../system", default-features = false }
 pallet-transaction-payment = { path = "..", default-features = false }
 pallet-assets = { path = "../../assets", default-features = false }
+pallet-system-token-conversion = { path = "../../system-token-conversion", default-features = false }
 
 [dev-dependencies]
 
@@ -59,4 +60,5 @@ std = [
 	"frame-system/std",
 	"pallet-transaction-payment/std",
 	"pallet-assets/std",
+	"pallet-system-token-conversion/std",
 ]

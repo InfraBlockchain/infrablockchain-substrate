@@ -525,6 +525,7 @@ impl<Config: config::Config> XcmExecutor<Config> {
 				Ok(())
 			},
 			ReceiveTeleportedAsset(assets) => {
+				log::info!("🙀🙀🙀🙀🙀🙀🙀 ReceiveTeleportedAsset => {:?}", assets);
 				let origin = *self.origin_ref().ok_or(XcmError::BadOrigin)?;
 				// check whether we trust origin to teleport this asset to us via config trait.
 				for asset in assets.inner() {
@@ -662,6 +663,7 @@ impl<Config: config::Config> XcmExecutor<Config> {
 				// Note that we pass `None` as `maybe_failed_bin` and drop any assets which cannot
 				// be reanchored  because we have already checked all assets out.
 				let assets = Self::reanchored(assets, &dest, None);
+				log::info!("🙀🙀🙀🙀🙀🙀🙀 Init TeleportedAsset => {:?}", assets);
 				let mut message = vec![ReceiveTeleportedAsset(assets), ClearOrigin];
 				message.extend(xcm.0.into_iter());
 				self.send(dest, Xcm(message), FeeReason::InitiateTeleport)?;

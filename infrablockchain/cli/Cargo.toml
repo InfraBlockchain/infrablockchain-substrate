@@ -65,7 +65,6 @@ fast-runtime = [ "service/fast-runtime" ]
 pyroscope = [ "pyro", "pyroscope_pprofrs" ]
 
 # Configure the native runtimes to use.
-rococo-native = [ "service/rococo-native" ]
 infra-relay-native = [ "service/infra-relay-native" ]
 
 malus = [ "full-node", "service/malus" ]

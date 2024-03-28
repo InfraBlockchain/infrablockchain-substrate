@@ -96,7 +96,7 @@ ws_port = 9601
 # name = "did-infra-alice"
 # validator = true
 # args = ["-lparachain=debug", "-l=xcm=trace"]
-# command = "../target/release/infra-parachain"
+# command = "./target/release/infra-parachain"
 # rpc_port = 9900
 # ws_port = 9901
 
@@ -104,7 +104,7 @@ ws_port = 9601
 # name = "did-infra-bob"
 # validator = true
 # args = ["-lparachain=debug", "-l=xcm=trace"]
-# command = "../target/release/infra-parachain"
+# command = "./target/release/infra-parachain"
 # rpc_port = 10000
 # ws_port = 10001
 

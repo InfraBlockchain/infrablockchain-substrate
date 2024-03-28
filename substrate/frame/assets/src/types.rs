@@ -61,7 +61,7 @@ impl AssetStatus {
 }
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
-pub struct AssetDetails<Balance, AccountId, DepositBalance> {
+pub struct AssetDetails<Balance, AccountId, DepositBalance, Weight> {
 	/// Can change `owner`, `issuer`, `freezer` and `admin` accounts.
 	pub(super) owner: AccountId,
 	/// Can mint tokens.
@@ -87,13 +87,19 @@ pub struct AssetDetails<Balance, AccountId, DepositBalance> {
 	pub(super) approvals: u32,
 	/// The status of the asset
 	pub(super) status: AssetStatus,
+	/// Optional fiat currency type of this asset.
+	///
+	/// It it is set, then the asset becomes potential System Token.
+	pub(super) currency_type: Option<Fiat>,
 	/// The system token weight compared with base system token. 'None' if it is not a system
 	/// token.
-	pub(super) system_token_weight: Option<SystemTokenWeight>,
+	pub(super) system_token_weight: Option<Weight>,
 }
 
-impl<Balance, AccountId, DepositBalance> AssetDetails<Balance, AccountId, DepositBalance> {
-	pub fn set_system_token_weight(&mut self, weight: SystemTokenWeight) {
+impl<Balance, AccountId, DepositBalance, Weight>
+	AssetDetails<Balance, AccountId, DepositBalance, Weight>
+{
+	pub fn set_system_token_weight(&mut self, weight: Weight) {
 		self.system_token_weight = Some(weight);
 	}
 
@@ -211,19 +217,15 @@ pub struct AssetAccount<Balance, DepositBalance, Extra, AccountId> {
 }
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Default, RuntimeDebug, MaxEncodedLen, TypeInfo)]
-pub struct AssetMetadata<DepositBalance> {
-	/// Optional fiat currency type of this asset.
-	///
-	/// It it is set, then the asset becomes potential System Token.
-	pub(super) currency_type: Option<Fiat>,
+pub struct AssetMetadata<DepositBalance, BoundedString> {
 	/// The balance deposited for this metadata.
 	///
 	/// This pays for the data stored in this struct.
 	pub(super) deposit: DepositBalance,
 	/// The user friendly name of this asset. Limited in length by `StringLimit`.
-	pub(super) name: BoundedSystemTokenName,
+	pub(super) name: BoundedString,
 	/// The ticker symbol for this asset. Limited in length by `StringLimit`.
-	pub(super) symbol: BoundedSystemTokenSymbol,
+	pub(super) symbol: BoundedString,
 	/// The number of decimals this asset uses to represent one unit.
 	pub(super) decimals: u8,
 	/// Whether the asset metadata may be changed by a non Force origin.
@@ -343,7 +345,6 @@ where
 		let mut asset = Asset::<T, I>::get(asset_id).ok_or(ConversionError::AssetMissing)?;
 		// only sufficient assets have a min balance with reliable value
 		ensure!(asset.is_sufficient, ConversionError::AssetNotSufficient);
-		ensure!(asset.system_token_weight.is_some(), ConversionError::WeightMissing);
 		let system_token_weight =
 			asset.system_token_weight.take().ok_or(ConversionError::WeightMissing)?;
 

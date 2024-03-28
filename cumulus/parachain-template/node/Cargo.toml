@@ -55,7 +55,6 @@ substrate-prometheus-endpoint = { path = "../../../substrate/utils/prometheus" }
 
 # Polkadot
 infrablockchain-cli = { path = "../../../infrablockchain/cli", features = [
-	"rococo-native",
 	"infra-relay-native",
 ] }
 primitives = { path = "../../../infrablockchain/primitives" }

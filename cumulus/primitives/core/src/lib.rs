@@ -21,19 +21,13 @@
 use codec::{Decode, Encode};
 use parachain_primitives::primitives::HeadData;
 use scale_info::TypeInfo;
-use sp_runtime::{
-	types::{
-		InfraSystemConfig, PotVotesResult, RemoteAssetMetadata, SystemTokenAssetId,
-		SystemTokenWeight,
-	},
-	RuntimeDebug,
-};
+use sp_runtime::{types::SystemConfig, RuntimeDebug};
 use sp_std::prelude::*;
 
-pub use infrablockchain_core_primitives::InboundDownwardMessage;
+pub use infrablockchain_core_primitives::{InboundDownwardMessage, OpaquePotVote};
 pub use parachain_primitives::primitives::{
-	DmpMessageHandler, Id as ParaId, IsSystem, UpwardMessage, ValidationParams, XcmpMessageFormat,
-	XcmpMessageHandler,
+	DmpMessageHandler, Id as ParaId, IsSystem, PotVotesResult, UpwardMessage, ValidationParams,
+	XcmpMessageFormat, XcmpMessageHandler,
 };
 pub use primitives::{AbridgedHostConfiguration, AbridgedHrmpChannel, PersistedValidationData};
 
@@ -52,11 +46,11 @@ pub mod relay_chain {
 }
 
 // TODO: Generic
-pub trait UpdateRCConfig {
+pub trait UpdateRCConfig<AssetId, Weight> {
 	/// System config set by Relay Chain
-	fn update_system_config(infra_system_config: InfraSystemConfig);
+	fn update_system_config(system_config: SystemConfig);
 	/// System Token weight set by Relay Chain
-	fn update_system_token_weight_for(assets: Vec<(SystemTokenAssetId, SystemTokenWeight)>);
+	fn update_system_token_weight_for(assets: Vec<(AssetId, Weight)>);
 }
 
 /// An inbound HRMP message.
@@ -315,9 +309,9 @@ pub struct CollationInfoV1 {
 	/// processed.
 	pub hrmp_watermark: relay_chain::BlockNumber,
 	/// The vote result sent by the parachain.
-	pub vote_result: Option<PotVotesResult>,
+	pub vote_result: Option<Vec<OpaquePotVote>>,
 	/// Requested assets sent by the parachain.
-	pub requested_asset: Option<RemoteAssetMetadata>,
+	pub requested_asset: Option<relay_chain::OpaqueRemoteAssetMetadata>,
 }
 
 impl CollationInfoV1 {
@@ -353,9 +347,9 @@ pub struct CollationInfo {
 	/// The head data, aka encoded header, of the block that corresponds to the collation.
 	pub head_data: HeadData,
 	/// The vote result sent by the parachain.
-	pub vote_result: Option<PotVotesResult>,
+	pub vote_result: Option<Vec<OpaquePotVote>>,
 	/// Requested assets sent by the parachain.
-	pub requested_asset: Option<RemoteAssetMetadata>,
+	pub requested_asset: Option<relay_chain::OpaqueRemoteAssetMetadata>,
 }
 
 sp_api::decl_runtime_apis! {

@@ -3,17 +3,9 @@
 use crate::{
 	codec::{Decode, Encode, MaxEncodedLen},
 	scale_info::TypeInfo,
-	types::vote::*,
 	RuntimeDebug,
 };
-use bounded_collections::{BoundedVec, ConstU32};
 use sp_std::prelude::*;
-
-#[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
-
-/// ParaId of Relay Chain
-pub const RELAY_CHAIN_PARA_ID: SystemTokenParaId = 0;
 
 // TODO: SystemTokenInterface
 
@@ -21,308 +13,42 @@ pub const RELAY_CHAIN_PARA_ID: SystemTokenParaId = 0;
 pub type StandardUnixTime = u64;
 /// General type of exchange rate
 pub type ExchangeRate = u64;
-/// General para id type for System Token
-pub type SystemTokenParaId = u32;
-/// General pallet id type for System Token
-pub type SystemTokenPalletId = u8;
-/// General asset id type for System Token
-pub type SystemTokenAssetId = u32;
 /// Generale weight type for System Token
 pub type SystemTokenWeight = u128;
 /// General balance type for System Token
 pub type SystemTokenBalance = u128;
 /// General decimal type for System Token
 pub type SystemTokenDecimal = u8;
-/// Bounded name for System Token
-pub type BoundedSystemTokenName = BoundedVec<u8, ConstU32<20>>;
-/// Bounded symbol for System Token
-pub type BoundedSystemTokenSymbol = BoundedVec<u8, ConstU32<5>>;
 
-/// System configuration for InfraBlockchain
-#[derive(
-	Encode,
-	Decode,
-	Clone,
-	PartialEq,
-	Eq,
-	RuntimeDebug,
-	TypeInfo,
-	MaxEncodedLen,
-	serde::Serialize,
-	serde::Deserialize,
-)]
-pub struct InfraSystemConfig {
-	/// Detail of base system token
-	pub base_system_token_detail: BaseSystemTokenDetail,
-	/// Scale of weight for calculating tx fee
-	pub weight_scale: SystemTokenWeight,
+pub trait ReanchorSystemToken<Location> {
+	type Error;
+	/// Reanchor `SystemToken` in vote 
+	fn reanchor_system_token(l: &mut Location) -> Result<(), Self::Error>;
 }
-
-#[derive(RuntimeDebug)]
-pub enum InitError {
-	/// Base system token is not initialized
-	InvalidBaseSystemTokenDetail,
-	/// Weight scale is not initialized
-	InvalidWeightScale,
-}
-
-impl Default for InfraSystemConfig {
-	fn default() -> Self {
-		Self { base_system_token_detail: Default::default(), weight_scale: 25 }
-	}
-}
-
-impl InfraSystemConfig {
-	/// Clone of base_currency type of `BaseSystemTokenDetail`
-	pub fn base_currency(&self) -> Fiat {
-		self.base_system_token_detail.clone().base_currency
-	}
-	/// Clone of base_weight type of `BaseSystemTokenDetail`
-	pub fn base_weight(&self) -> SystemTokenWeight {
-		self.base_system_token_detail.clone().base_weight
-	}
-	/// Clone of base_decimals type of `BaseSystemTokenDetail`
-	pub fn base_decimals(&self) -> u8 {
-		self.base_system_token_detail.clone().base_decimals
-	}
-
-	pub fn check_validity(&self) -> Result<(), InitError> {
-		if self.base_system_token_detail.base_weight == 0 {
-			return Err(InitError::InvalidBaseSystemTokenDetail)
-		}
-		if self.weight_scale == 0 {
-			return Err(InitError::InvalidWeightScale)
-		}
-		Ok(())
-	}
-
-	pub fn panic_if_not_validated(&self) {
-		if let Err(err) = self.check_validity() {
-			panic!("System configuration is not initalized: {:?}\nSCfg:\n{:#?}", err, self);
-		}
-	}
-}
-
-#[derive(
-	Encode,
-	Decode,
-	Clone,
-	PartialEq,
-	Eq,
-	RuntimeDebug,
-	TypeInfo,
-	MaxEncodedLen,
-	serde::Serialize,
-	serde::Deserialize,
-)]
-/// Detail of base system token
-pub struct BaseSystemTokenDetail {
-	/// Currency type of base system token
-	pub base_currency: Fiat,
-	/// Weight of base system token
-	pub base_weight: SystemTokenWeight,
-	/// Decimal of base system token
-	pub base_decimals: u8,
-}
-
-impl Default for BaseSystemTokenDetail {
-	fn default() -> Self {
-		Self { base_currency: Fiat::USD, base_weight: 1_000_000, base_decimals: 4 }
-	}
-}
-
-/// Data structure for Original system tokens
-#[derive(
-	Clone,
-	Encode,
-	Decode,
-	Copy,
-	Eq,
-	PartialEq,
-	PartialOrd,
-	Ord,
-	RuntimeDebug,
-	Default,
-	TypeInfo,
-	MaxEncodedLen,
-)]
-#[cfg_attr(feature = "std", derive(Hash, Serialize, Deserialize))]
-pub struct SystemTokenId {
-	/// ParaId where to use the system token. Especially, we assigned the relaychain as ParaID = 0
-	#[codec(compact)]
-	pub para_id: SystemTokenParaId,
-	/// PalletId on the parachain where to use the system token
-	#[codec(compact)]
-	pub pallet_id: SystemTokenPalletId,
-	/// AssetId on the parachain where to use the system token
-	#[codec(compact)]
-	pub asset_id: SystemTokenAssetId,
-}
-
-impl SystemTokenId {
-	/// Create new instance of `SystemTokenId`
-	pub fn new(para_id: u32, pallet_id: u8, asset_id: SystemTokenAssetId) -> Self {
-		Self { para_id, pallet_id, asset_id }
-	}
-
-	/// Clone `self` and return new instance of `SystemTokenId`
-	pub fn asset_id(&self) -> SystemTokenAssetId {
-		self.clone().asset_id
-	}
-}
-
-pub const MAX_REQUESTED_ASSETS: u32 = 1;
-/// Upper limit of number of assets to be requested
-pub type BoundedRequestedAssets = BoundedVec<RemoteAssetMetadata, ConstU32<MAX_REQUESTED_ASSETS>>;
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Default, Hash))]
-pub struct RemoteAssetMetadata {
-	/// General Assets pallet index on Runtime
-	pub pallet_id: SystemTokenPalletId,
-	/// General asset id on Runtime
-	#[codec(compact)]
-	pub asset_id: SystemTokenAssetId,
-	/// Human readable name of System Token, which should be bounded
-	pub name: BoundedSystemTokenName,
-	/// Human readable symbol of System Token, which should be bounded
-	pub symbol: BoundedSystemTokenSymbol,
+pub struct RemoteAssetMetadata<AssetId, Balance> {
+	/// General asset id on Runtime(e.g `MultiLocation`)
+	pub asset_id: AssetId,
+	/// Human readable name of System Token. Accept unbounded 'Vec<u8>' because it would be checked
+	/// `bounded` when initiated
+	pub name: Vec<u8>,
+	/// Human readable symbol of System Token. Accept unbounded 'Vec<u8>' because it would be
+	/// checked `bounded` when initiated
+	pub symbol: Vec<u8>,
 	/// Currency type of base system token
 	pub currency_type: Fiat,
 	/// Decimal of base system token
 	pub decimals: u8,
 	/// Minimum balance of system token
 	#[codec(compact)]
-	pub min_balance: SystemTokenBalance,
+	pub min_balance: Balance,
 }
 
-impl MaxEncodedLen for RemoteAssetMetadata {
-	fn max_encoded_len() -> usize {
-		SystemTokenPalletId::max_encoded_len() +
-			SystemTokenAssetId::max_encoded_len() +
-			BoundedSystemTokenSymbol::max_encoded_len() +
-			BoundedSystemTokenName::max_encoded_len() +
-			Fiat::max_encoded_len() +
-			u8::max_encoded_len() +
-			SystemTokenBalance::max_encoded_len()
-	}
-}
-
-/// API for interacting with local assets on Runtime
-pub trait LocalAssetProvider<Asset, Account> {
-	/// Get a list of local assets created on local chain
-	fn system_token_list() -> Vec<Asset>;
-	/// Get the most account balance of given `asset_id`
-	fn get_most_account_system_token_balance(
-		asset_ids: impl IntoIterator<Item = Asset>,
-		account: Account,
-	) -> Asset;
-}
-
-/// API to handle local assets which refers to System Token
-// TODO: Generic
-pub trait LocalAssetManager {
-	type AccountId: MaxEncodedLen;
-	type Error;
-
-	/// Create local asset with metadata which refers to `wrapped` System Token
-	fn create_wrapped_local(
-		asset_id: SystemTokenAssetId,
-		currency_type: Fiat,
-		min_balance: SystemTokenBalance,
-		name: Vec<u8>,
-		symbol: Vec<u8>,
-		decimals: u8,
-		system_token_weight: SystemTokenWeight,
-	) -> Result<(), Self::Error>;
-	/// Promote local asset to System Token when registered(e.g `is_sufficient` to `true`)
-	fn promote(
-		asset_id: SystemTokenAssetId,
-		system_token_weight: SystemTokenWeight,
-	) -> Result<(), Self::Error>;
-	/// Demote System Token to local asset(e.g `is_sufficient` to `false`)
-	fn demote(asset_id: SystemTokenAssetId) -> Result<(), Self::Error>;
-	/// Update weight of System Token(e.g Exhange rate has been changed)
-	fn update_system_token_weight(
-		asset_id: SystemTokenAssetId,
-		system_token_weight: SystemTokenWeight,
-	) -> Result<(), Self::Error>;
-	/// Request register System Token
-	fn request_register(asset_id: SystemTokenAssetId) -> Result<(), Self::Error>;
-	/// Get a list of System Token's local asset id
-	fn system_token_list() -> Vec<SystemTokenAssetId> {
-		Vec::new()
-	}
-	/// Return system token asset balances of `who``
-	fn account_system_token_balances(
-		who: Self::AccountId,
-	) -> Vec<(SystemTokenAssetId, SystemTokenBalance)>;
-	/// Return most system token balance of given 'asset_id' and 'account'
-	fn get_most_system_token_balance_of(
-		asset_ids: impl IntoIterator<Item = SystemTokenAssetId>,
-		account: Self::AccountId,
-	) -> SystemTokenAssetId;
-
-	/// Retrieve metadata of given `asset_id` and return `RemoteAssetMetadata`, which is for
-	/// Relay-chain
-	fn get_metadata(asset_id: SystemTokenAssetId) -> Result<RemoteAssetMetadata, Self::Error>;
-}
-
-pub trait AssetMetadataProvider {
-	fn requested(asset: RemoteAssetMetadata);
-}
-
-/// API for interacting with registered System Token
-pub trait SystemTokenInterface {
-	/// Check the system token is registered.
-	fn is_system_token(system_token: &SystemTokenId) -> bool;
-	/// Convert para system token to original system token.
-	fn convert_to_original_system_token(wrapped_token: &SystemTokenId) -> Option<SystemTokenId>;
-	/// Adjust the vote weight calculating exchange rate.
-	fn adjusted_weight(system_token: &SystemTokenId, vote_weight: VoteWeight) -> VoteWeight;
-	/// Update the metadata for requested asset received from enshirned chain
-	fn requested_asset_metadata(
-		para_id: SystemTokenParaId,
-		maybe_requested_asset: Option<RemoteAssetMetadata>,
-	);
-}
-
-impl SystemTokenInterface for () {
-	fn is_system_token(_system_token: &SystemTokenId) -> bool {
-		false
-	}
-	fn convert_to_original_system_token(_wrapped_token: &SystemTokenId) -> Option<SystemTokenId> {
-		None
-	}
-	fn adjusted_weight(_system_token: &SystemTokenId, _vote_weight: VoteWeight) -> VoteWeight {
-		Default::default()
-	}
-	fn requested_asset_metadata(
-		_para_id: SystemTokenParaId,
-		_maybe_requested_asset: Option<RemoteAssetMetadata>,
-	) {
-	}
-}
-
-pub trait AssetLinkInterface<AssetId> {
-	type Error;
-
-	fn link(asset_id: &AssetId, parents: u8, original: SystemTokenId) -> Result<(), Self::Error>;
-	fn unlink(asset_id: &AssetId) -> Result<(), Self::Error>;
-}
-
-impl<AssetId> AssetLinkInterface<AssetId> for () {
-	type Error = ();
-
-	fn link(
-		_asset_id: &AssetId,
-		_parents: u8,
-		_original: SystemTokenId,
-	) -> Result<(), Self::Error> {
-		Ok(())
-	}
-	fn unlink(_asset_id: &AssetId) -> Result<(), Self::Error> {
-		Ok(())
+impl<AssetId, Balance> RemoteAssetMetadata<AssetId, Balance> {
+	pub fn set_asset_id(&mut self, asset_id: AssetId) {
+		self.asset_id = asset_id;
 	}
 }
 
