@@ -82,13 +82,13 @@ impl<T: Config> SystemTokenConversion for Pallet<T> {
 		frame_support::ensure!(T::Fungibles::is_system_token(&asset), Error::<T>::NotSystemToken);
 		let system_token_weight =
 			T::Fungibles::system_token_weight(&asset).map_err(|_| Error::<T>::NotSystemToken)?;
-		let SystemConfig { base_system_token_detail, weight_scale } =
+		let SystemConfig { weight_scale, base_para_fee_rate, .. } =
 			T::SystemConfig::system_config().map_err(|_| Error::<T>::SystemConfigMissing)?;
 		let para_fee_rate =
 			T::SystemConfig::para_fee_rate().map_err(|_| Error::<T>::SystemConfigMissing)?;
-		let base_weight: Self::Balance = base_system_token_detail.base_weight.into();
+		let base_para_fee_rate: Self::Balance = base_para_fee_rate.into();
 		let n = balance.saturating_mul(para_fee_rate);
-		let d = base_weight.saturating_mul(system_token_weight.into());
+		let d = base_para_fee_rate.saturating_mul(system_token_weight.into());
 		let converted_fee =
 			FixedU128::saturating_from_rational(n, d).saturating_mul_int(weight_scale.into());
 		Self::deposit_event(Event::<T>::Converted { from: balance, to: converted_fee });

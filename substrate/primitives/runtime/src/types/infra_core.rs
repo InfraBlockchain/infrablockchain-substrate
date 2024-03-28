@@ -25,6 +25,8 @@ pub struct SystemConfig {
 	pub base_system_token_detail: BaseSystemTokenDetail,
 	/// Scale of weight for calculating tx fee
 	pub weight_scale: u128,
+	/// Base fee rate for para_fee_rate
+	pub base_para_fee_rate: u128,
 }
 
 #[derive(RuntimeDebug)]

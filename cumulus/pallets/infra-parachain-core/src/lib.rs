@@ -438,13 +438,12 @@ where
 	}
 
 	fn para_fee_rate() -> Result<SystemTokenBalanceOf<T>, Self::Error> {
-		let base_weight = RCSystemConfig::<T>::get()
+		let base_para_fee_rate = RCSystemConfig::<T>::get()
 			.ok_or(Error::<T>::NotInitiated)?
-			.base_system_token_detail
-			.base_weight;
+			.base_para_fee_rate;
 		Ok(ParaFeeRate::<T>::try_mutate_exists(
 			|maybe_para_fee_rate| -> Result<SystemTokenBalanceOf<T>, DispatchError> {
-				let pfr = maybe_para_fee_rate.take().map_or(base_weight.into(), |pfr| pfr);
+				let pfr = maybe_para_fee_rate.take().map_or(base_para_fee_rate.into(), |pfr| pfr);
 				*maybe_para_fee_rate = Some(pfr);
 				Ok(pfr)
 			},

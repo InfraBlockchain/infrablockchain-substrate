@@ -148,6 +148,7 @@ fn default_infra_relay_system_configuration() -> primitives::SystemConfig {
 			base_decimals: 4,
 		},
 		weight_scale: 25,
+		base_para_fee_rate: 1_000_000
 	}
 }
 
