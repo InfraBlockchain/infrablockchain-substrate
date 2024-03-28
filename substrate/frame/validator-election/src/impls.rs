@@ -258,7 +258,7 @@ impl<T: Config> Pallet<T>
 		for v in vs {
 			let (who, rewards) = v;
 			for r in rewards {
-				T::RewardHandler::distribute_reward(who.clone(), r.asset, r.amount);
+				T::RewardHandler::distribute_reward(who.clone(), r.asset, r.amount.into());
 			}
 		}
 		let _ = RewardInfo::<T>::clear_prefix(era_index, u32::MAX, None);

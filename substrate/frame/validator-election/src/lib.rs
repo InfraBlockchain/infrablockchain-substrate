@@ -236,7 +236,7 @@ pub mod pallet {
 		type Fungibles: InspectSystemToken<Self::AccountId>;
 
 		/// Type that handles aggregated reward
-		type RewardHandler: RewardInterface<AccountId=Self::AccountId, AssetKind=SystemTokenAssetIdOf<Self>, Balance=Self::Score>;
+		type RewardHandler: RewardInterface<AccountId=Self::AccountId, AssetKind=SystemTokenAssetIdOf<Self>, Balance=SystemTokenBalanceOf<Self>>;
 
 		/// Associated type for vote weight
 		type Score: Member
@@ -247,7 +247,8 @@ pub mod pallet {
 			+ MaxEncodedLen
 			+ MaybeSerializeDeserialize
 			+ From<BlockNumberFor<Self>>
-			+ Into<Self::HigherPrecisionScore>;
+			+ Into<Self::HigherPrecisionScore>
+			+ Into<SystemTokenBalanceOf<Self>>;
 
 		/// A type used for calculations of `Score` with higher precision to store on chain
 		/// TODO:
