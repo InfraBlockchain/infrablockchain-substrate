@@ -57,7 +57,7 @@ use constants::{currency::*, fee::WeightToFee};
 pub mod oracle;
 mod weights;
 pub mod xcm_config;
-use xcm_config::{XcmRouter, UniversalLocation};
+use xcm_config::UniversalLocation;
 
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use sp_api::impl_runtime_apis;
@@ -65,10 +65,10 @@ use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{
-		AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, TryConvertInto as JustTry, AccountIdConversion
+		AccountIdLookup, BlakeTwo256, Block as BlockT, AccountIdConversion
 	},
 	transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
-	types::{SystemTokenWeight, SystemTokenBalance, ExchangeRate, Fiat, StandardUnixTime},
+	types::{SystemTokenWeight, SystemTokenBalance, ExchangeRate, Fiat, StandardUnixTime, ReanchorSystemToken},
 	ApplyExtrinsicResult,
 };
 
@@ -98,8 +98,7 @@ use frame_system::{
 use pallet_system_token_tx_payment::{TransactionFeeCharger, HandleCredit};
 use parachains_common::{
 	constants::*, impls::DealWithFees, infra_relay::consensus::*, opaque::*,
-	AccountId, AssetIdForTrustBackedAssets, AuraId, Balance, BlockNumber, CollectionId, Hash,
-	ItemId, Nonce, Signature, 
+	AccountId, AuraId, Balance, BlockNumber, Hash, Nonce, Signature, 
 };
 use xcm_config::{
 	NativeLocation, NativeAssetsConvertedConcreteId, XcmConfig,
@@ -370,6 +369,17 @@ impl pallet_assets::Config<ForeignAssetsInstance> for Runtime {
 	type RemoveItemsLimit = ConstU32<1000>;
 }
 
+pub struct ReanchorHandler;
+impl ReanchorSystemToken<MultiLocation> for ReanchorHandler {
+	type Error = ();
+	fn reanchor_system_token(l: &mut MultiLocation) -> Result<(), Self::Error> {
+		let target = MultiLocation::parent();
+		let context = UniversalLocation::get();
+		l.reanchor(&target, context).map_err(|_| {})?;
+		Ok(())
+	}
+}	
+
 /// Union fungibles implementation for `Assets` and `ForeignAssets`.
 pub type NativeAndForeignAssets = UnionOf<
 	Assets,
@@ -381,6 +391,7 @@ pub type NativeAndForeignAssets = UnionOf<
 	>,
 	xcm::v3::MultiLocation,
 	AccountId,
+	ReanchorHandler,
 >;
 
 parameter_types! {

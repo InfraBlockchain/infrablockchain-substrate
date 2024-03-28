@@ -41,7 +41,7 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		SomethingHappened,
+		Converted { from: T::Balance, to: T::Balance },
 	}
 
 	#[pallet::error]
@@ -91,6 +91,7 @@ impl<T: Config> SystemTokenConversion for Pallet<T> {
 		let d = base_weight.saturating_mul(system_token_weight.into());
 		let converted_fee =
 			FixedU128::saturating_from_rational(n, d).saturating_mul_int(weight_scale.into());
+		Self::deposit_event(Event::<T>::Converted { from: balance, to: converted_fee });
 		Ok(converted_fee)
 	}
 }

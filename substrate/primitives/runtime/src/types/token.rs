@@ -20,6 +20,12 @@ pub type SystemTokenBalance = u128;
 /// General decimal type for System Token
 pub type SystemTokenDecimal = u8;
 
+pub trait ReanchorSystemToken<Location> {
+	type Error;
+	/// Reanchor `SystemToken` in vote 
+	fn reanchor_system_token(l: &mut Location) -> Result<(), Self::Error>;
+}
+
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Default, Hash))]
 pub struct RemoteAssetMetadata<AssetId, Balance> {

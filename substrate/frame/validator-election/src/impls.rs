@@ -28,20 +28,11 @@ pub trait RewardInterface {
 	type AssetKind: Parameter;
 	/// Infrablockchain Balance type
 	type Balance: Parameter;
-	/// Id for destination to distribute reward
-	type DestId: Parameter;
+	/// Type that handles local fungible
+	type Fungibles: Mutate<Self::AccountId>;
 
 	/// Fee will be distributed to the validators for current session
-	fn distribute_reward(dest_id: Self::DestId, who: Self::AccountId, asset: Self::AssetKind, amount: Self::Balance);
-}
-
-impl RewardInterface for () {
-	type AccountId = ();
-	type AssetKind = ();
-	type Balance = u64;
-	type DestId = ();
-
-	fn distribute_reward(_dest_id: Self::DestId, _who: Self::AccountId, _assset: Self::AssetKind, _amount: Self::Balance) {}
+	fn distribute_reward(who: Self::AccountId, asset: Self::AssetKind, amount: Self::Balance);
 }
 
 impl<T: Config> TaaV for Pallet<T> {
@@ -149,19 +140,11 @@ impl<T: Config> pallet_session::SessionManager<T::AccountId> for Pallet<T> {
 	}
 	fn end_session(end_index: SessionIndex) {
 		log!(info, "⏰ ending session {}", end_index);
-		// if let Some(reward_info) = Reward::<T>::get() {
-		// 	for (asset, who) in reward_info.iter() {
-		// 		if let Some(para_id) = asset.id() {
-		// 			T::RewardHandler::distribute_reward(para_id.into(), who, asset);
-		// 		} else {
-		// 			T::Fungibles::accurue(asset, who)
-		// 		}
-		// 	}
-		// }
 	}
 }
 
-impl<T: Config> Pallet<T> {
+impl<T: Config> Pallet<T> 
+{
 	/// **Process**
 	/// 
 	/// 2. Adjust absed on `BlockTimeWeight`
@@ -174,12 +157,25 @@ impl<T: Config> Pallet<T> {
 
 	fn aggregate_reward(asset_id: SystemTokenAssetIdOf<T>, amount: T::Score) {
 		// impl me!
-		for v in T::SessionInterface::validators().iter() {
-			RewardInfo::<T>::mutate_exists(v, |maybe_reward|{
-				let mut reward = maybe_reward.take().map_or(Reward::<SystemTokenAssetIdOf<T>, T::Score>::new(asset_id.clone()), |r| r); 
-				reward.add_amount(amount);
-				*maybe_reward = Some(reward);
-			});
+		if let Some(current_era) = CurrentEra::<T>::get() {
+			for v in T::SessionInterface::validators().iter() {
+				RewardInfo::<T>::mutate_exists(current_era, v, |maybe_reward| {
+					let mut rewards = maybe_reward.take().unwrap_or_default();
+					if let Some(reward) = rewards.iter_mut().find(|r| r.asset == asset_id) {
+						reward.amount += amount;
+					} else {
+						rewards.push(Reward {
+							asset: asset_id.clone(),
+							amount: amount,
+						});
+					}
+					*maybe_reward = Some(rewards);
+				});
+			}
+			Self::deposit_event(Event::<T>::Rewarded { at_era: current_era, asset: asset_id, amount });
+		} else {
+			log::warn!("Current era is not set");
+			return;
 		}
 	}
 
@@ -242,6 +238,7 @@ impl<T: Config> Pallet<T> {
 		});
 		StartSessionIndexPerEra::<T>::insert(&new_planned_era, session_index);
 		Self::deposit_event(Event::<T>::NewEraTriggered { era_index: new_planned_era });
+		Self::distribute_reward(new_planned_era);
 		Some(Self::elect_validators(new_planned_era))
 
 		// Clean old era information.
@@ -249,6 +246,22 @@ impl<T: Config> Pallet<T> {
 		// if let Some(old_era) = new_planned_era.checked_sub(T::HistoryDepth::get() + 1) {
 		// 	Self::clear_era_information(old_era);
 		// }
+	}
+
+	/// Distribute rewards to validators
+	/// 
+	/// 1. Iterate over all validators
+	/// 2. Distribute rewards to validators
+	/// 3. Clear reward info
+	pub fn distribute_reward(era_index: EraIndex) {
+		let vs = RewardInfo::<T>::iter_prefix(era_index);
+		for v in vs {
+			let (who, rewards) = v;
+			for r in rewards {
+				T::RewardHandler::distribute_reward(who.clone(), r.asset, r.amount);
+			}
+		}
+		let _ = RewardInfo::<T>::clear_prefix(era_index, u32::MAX, None);
 	}
 
 	/// Elect validators from `SeedTrustValidatorPool::<T>` and `PotValidatorPool::<T>`

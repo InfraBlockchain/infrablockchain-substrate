@@ -63,8 +63,7 @@ mod ump_tests;
 pub use origin::{ensure_parachain, Origin};
 pub use paras::ParaLifecycle;
 use primitives::{HeadData, Id as ParaId, ValidationCode};
-use softfloat::F64;
-use sp_runtime::{types::token::RemoteAssetMetadata, DispatchResult, FixedU128};
+use sp_runtime::{DispatchResult, FixedU128};
 
 /// Trait for tracking message delivery fees on a transport protocol.
 pub trait FeeTracker {

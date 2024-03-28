@@ -100,7 +100,7 @@ use sp_std::{cmp::Ordering, collections::btree_map::BTreeMap, prelude::*};
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 use static_assertions::const_assert;
-use xcm::latest::{Junction, MultiLocation};
+use xcm::latest::{Junction, MultiLocation, SystemTokenId};
 
 pub use frame_system::Call as SystemCall;
 pub use pallet_balances::Call as BalancesCall;
@@ -1432,6 +1432,17 @@ impl pallet_assets::Config<ForeignAssetsInstance> for Runtime {
 	type RemoveItemsLimit = ConstU32<1000>;
 }
 
+pub struct ReanchorHandler;
+impl ReanchorSystemToken<MultiLocation> for ReanchorHandler {
+	type Error = ();
+	fn reanchor_system_token(l: &mut MultiLocation) -> Result<(), Self::Error> {
+		let target = MultiLocation::here();
+		let context = UniversalLocation::get();
+		l.reanchor(&target, context).map_err(|_| {})?;
+		Ok(())
+	}
+}	
+
 /// Union fungibles implementation for `Assets` and `ForeignAssets`.
 pub type NativeAndForeignAssets = fungibles::UnionOf<
 	Assets,
@@ -1443,6 +1454,7 @@ pub type NativeAndForeignAssets = fungibles::UnionOf<
 	>,
 	xcm::v3::MultiLocation,
 	AccountId,
+	ReanchorHandler
 >;
 
 construct_runtime! {

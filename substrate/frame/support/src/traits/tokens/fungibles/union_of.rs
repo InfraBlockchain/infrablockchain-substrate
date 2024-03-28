@@ -26,7 +26,7 @@ use frame_support::traits::{
 };
 use sp_runtime::{
 	traits::Convert,
-	types::Fiat,
+	types::{Fiat, ReanchorSystemToken},
 	DispatchError, DispatchResult,
 	Either::{self, Left, Right},
 };
@@ -40,8 +40,8 @@ use sp_std::vec::Vec;
 /// - `Criterion` determines whether the `AssetKind` belongs to the `Left` or `Right` set.
 /// - `AssetKind` is a superset type encompassing asset kinds from `Left` and `Right` sets.
 /// - `AccountId` is an account identifier type.
-pub struct UnionOf<Left, Right, Criterion, AssetKind, AccountId>(
-	sp_std::marker::PhantomData<(Left, Right, Criterion, AssetKind, AccountId)>,
+pub struct UnionOf<Left, Right, Criterion, AssetKind, AccountId, Reanchor>(
+	sp_std::marker::PhantomData<(Left, Right, Criterion, AssetKind, AccountId, Reanchor)>,
 );
 
 impl<
@@ -50,7 +50,8 @@ impl<
 		Criterion: Convert<AssetKind, Either<Left::AssetId, Right::AssetId>>,
 		AssetKind: AssetId,
 		AccountId,
-	> fungibles::Inspect<AccountId> for UnionOf<Left, Right, Criterion, AssetKind, AccountId>
+		Reanchor,
+	> fungibles::Inspect<AccountId> for UnionOf<Left, Right, Criterion, AssetKind, AccountId, Reanchor>
 {
 	type AssetId = AssetKind;
 	type Balance = Left::Balance;
@@ -143,7 +144,8 @@ impl<
 		Criterion: Convert<AssetKind, Either<Left::AssetId, Right::AssetId>>,
 		AssetKind: AssetId,
 		AccountId,
-	> fungibles::InspectHold<AccountId> for UnionOf<Left, Right, Criterion, AssetKind, AccountId>
+		Reanchor
+	> fungibles::InspectHold<AccountId> for UnionOf<Left, Right, Criterion, AssetKind, AccountId, Reanchor>
 {
 	type Reason = Left::Reason;
 
@@ -208,7 +210,8 @@ impl<
 		Criterion: Convert<AssetKind, Either<Left::AssetId, Right::AssetId>>,
 		AssetKind: AssetId,
 		AccountId,
-	> fungibles::InspectFreeze<AccountId> for UnionOf<Left, Right, Criterion, AssetKind, AccountId>
+		Reanchor
+	> fungibles::InspectFreeze<AccountId> for UnionOf<Left, Right, Criterion, AssetKind, AccountId, Reanchor>
 {
 	type Id = Left::Id;
 	fn balance_frozen(asset: Self::AssetId, id: &Self::Id, who: &AccountId) -> Self::Balance {
@@ -237,7 +240,8 @@ impl<
 		Criterion: Convert<AssetKind, Either<Left::AssetId, Right::AssetId>>,
 		AssetKind: AssetId,
 		AccountId,
-	> fungibles::Unbalanced<AccountId> for UnionOf<Left, Right, Criterion, AssetKind, AccountId>
+		Reanchor
+	> fungibles::Unbalanced<AccountId> for UnionOf<Left, Right, Criterion, AssetKind, AccountId, Reanchor>
 {
 	fn handle_dust(dust: fungibles::Dust<AccountId, Self>)
 	where
@@ -316,7 +320,8 @@ impl<
 		Criterion: Convert<AssetKind, Either<Left::AssetId, Right::AssetId>>,
 		AssetKind: AssetId,
 		AccountId,
-	> fungibles::UnbalancedHold<AccountId> for UnionOf<Left, Right, Criterion, AssetKind, AccountId>
+		Reanchor
+	> fungibles::UnbalancedHold<AccountId> for UnionOf<Left, Right, Criterion, AssetKind, AccountId, Reanchor>
 {
 	fn set_balance_on_hold(
 		asset: Self::AssetId,
@@ -373,7 +378,8 @@ impl<
 		Criterion: Convert<AssetKind, Either<Left::AssetId, Right::AssetId>>,
 		AssetKind: AssetId,
 		AccountId: Eq,
-	> fungibles::Mutate<AccountId> for UnionOf<Left, Right, Criterion, AssetKind, AccountId>
+		Reanchor
+	> fungibles::Mutate<AccountId> for UnionOf<Left, Right, Criterion, AssetKind, AccountId, Reanchor>
 {
 	fn mint_into(
 		asset: Self::AssetId,
@@ -458,7 +464,8 @@ impl<
 		Criterion: Convert<AssetKind, Either<Left::AssetId, Right::AssetId>>,
 		AssetKind: AssetId,
 		AccountId,
-	> fungibles::MutateHold<AccountId> for UnionOf<Left, Right, Criterion, AssetKind, AccountId>
+		Reanchor
+	> fungibles::MutateHold<AccountId> for UnionOf<Left, Right, Criterion, AssetKind, AccountId, Reanchor>
 {
 	fn hold(
 		asset: Self::AssetId,
@@ -564,7 +571,8 @@ impl<
 		Criterion: Convert<AssetKind, Either<Left::AssetId, Right::AssetId>>,
 		AssetKind: AssetId,
 		AccountId,
-	> fungibles::MutateFreeze<AccountId> for UnionOf<Left, Right, Criterion, AssetKind, AccountId>
+		Reanchor
+	> fungibles::MutateFreeze<AccountId> for UnionOf<Left, Right, Criterion, AssetKind, AccountId, Reanchor>
 {
 	fn set_freeze(
 		asset: Self::AssetId,
@@ -656,7 +664,8 @@ impl<
 		Criterion: Convert<AssetKind, Either<Left::AssetId, Right::AssetId>>,
 		AssetKind: AssetId,
 		AccountId,
-	> fungibles::Balanced<AccountId> for UnionOf<Left, Right, Criterion, AssetKind, AccountId>
+		Reanchor
+	> fungibles::Balanced<AccountId> for UnionOf<Left, Right, Criterion, AssetKind, AccountId, Reanchor>
 {
 	type OnDropDebt = ConvertImbalanceDropHandler<
 		Left::OnDropDebt,
@@ -817,7 +826,8 @@ impl<
 		Criterion: Convert<AssetKind, Either<Left::AssetId, Right::AssetId>>,
 		AssetKind: AssetId,
 		AccountId,
-	> fungibles::BalancedHold<AccountId> for UnionOf<Left, Right, Criterion, AssetKind, AccountId>
+		Reanchor
+	> fungibles::BalancedHold<AccountId> for UnionOf<Left, Right, Criterion, AssetKind, AccountId, Reanchor>
 {
 	fn slash(
 		asset: Self::AssetId,
@@ -846,7 +856,8 @@ impl<
 		Criterion: Convert<AssetKind, Either<Left::AssetId, Right::AssetId>>,
 		AssetKind: AssetId,
 		AccountId,
-	> fungibles::Create<AccountId> for UnionOf<Left, Right, Criterion, AssetKind, AccountId>
+		Reanchor
+	> fungibles::Create<AccountId> for UnionOf<Left, Right, Criterion, AssetKind, AccountId, Reanchor>
 {
 	fn create(
 		asset: AssetKind,
@@ -878,7 +889,8 @@ impl<
 		Criterion: Convert<AssetKind, Either<Left::AssetId, Right::AssetId>>,
 		AssetKind: AssetId,
 		AccountId,
-	> AccountTouch<AssetKind, AccountId> for UnionOf<Left, Right, Criterion, AssetKind, AccountId>
+		Reanchor
+	> AccountTouch<AssetKind, AccountId> for UnionOf<Left, Right, Criterion, AssetKind, AccountId, Reanchor>
 {
 	type Balance = <Left as AccountTouch<Left::AssetId, AccountId>>::Balance;
 
@@ -911,8 +923,9 @@ impl<
 		Criterion: Convert<AssetKind, Either<Left::AssetId, Right::AssetId>>,
 		AssetKind: AssetId,
 		AccountId,
+		Reanchor
 	> fungibles::metadata::Inspect<AccountId>
-	for UnionOf<Left, Right, Criterion, AssetKind, AccountId>
+	for UnionOf<Left, Right, Criterion, AssetKind, AccountId, Reanchor>
 {
 	fn name(asset: &Self::AssetId) -> Vec<u8> {
 		match Criterion::convert(asset.clone()) {
@@ -946,8 +959,9 @@ impl<
 		Criterion: Convert<AssetKind, Either<Left::AssetId, Right::AssetId>>,
 		AssetKind: AssetId,
 		AccountId,
+		Reanchor
 	> fungibles::InspectSystemToken<AccountId>
-	for UnionOf<Left, Right, Criterion, AssetKind, AccountId>
+	for UnionOf<Left, Right, Criterion, AssetKind, AccountId, Reanchor>
 {
 	type SystemTokenWeight = Left::SystemTokenWeight;
 
@@ -1015,8 +1029,9 @@ impl<
 		Criterion: Convert<AssetKind, Either<Left::AssetId, Right::AssetId>>,
 		AssetKind: AssetId,
 		AccountId,
+		Reanchor
 	> fungibles::ManageSystemToken<AccountId>
-	for UnionOf<Left, Right, Criterion, AssetKind, AccountId>
+	for UnionOf<Left, Right, Criterion, AssetKind, AccountId, Reanchor>
 {
 	fn register(
 		asset: &Self::AssetId,
@@ -1117,13 +1132,25 @@ impl<
 		Criterion: Convert<AssetKind, Either<Left::AssetId, Right::AssetId>>,
 		AssetKind: AssetId,
 		AccountId,
+		Reanchor
 	> fungibles::InspectSystemTokenMetadata<AccountId>
-	for UnionOf<Left, Right, Criterion, AssetKind, AccountId>
+	for UnionOf<Left, Right, Criterion, AssetKind, AccountId, Reanchor>
 {
 	fn inner(asset: &Self::AssetId) -> Result<(Self::Balance, Fiat), DispatchError> {
 		match Criterion::convert(asset.clone()) {
 			Left(a) => <Left as fungibles::InspectSystemTokenMetadata<AccountId>>::inner(&a),
 			Right(a) => <Right as fungibles::InspectSystemTokenMetadata<AccountId>>::inner(&a),
 		}
+	}
+}
+
+impl<Left, Right, Criterion, AssetKind, AccountId, Reanchor> ReanchorSystemToken<AssetKind> for UnionOf<Left, Right, Criterion, AssetKind, AccountId, Reanchor>
+where
+	Reanchor: ReanchorSystemToken<AssetKind>
+{
+	type Error = ();
+	fn reanchor_system_token(l: &mut AssetKind) -> Result<(), Self::Error> {
+		Reanchor::reanchor_system_token(l).map_err(|_| {})?;
+		Ok(())
 	}
 }

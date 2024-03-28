@@ -69,7 +69,7 @@ pub mod pallet {
 		/// Type that handles vote
 		type VotingHandler: TaaV;
 		/// The fungibles instance used to pay for transactions in assets.
-		type Fungibles: Balanced<Self::AccountId> + InspectSystemToken<Self::AccountId>;
+		type Fungibles: Balanced<Self::AccountId> + InspectSystemToken<Self::AccountId> + ReanchorSystemToken<SystemTokenAssetIdOf<Self>>; 
 		/// The actual transaction charging logic that charges the fees.
 		type OnChargeSystemToken: OnChargeSystemToken<Self>;
 		/// Filters for bootstrappring runtime.
@@ -98,6 +98,7 @@ pub mod pallet {
 
 	#[pallet::error]
 	pub enum Error<T> {
+		/// Error on converting to asset balance
 		ErrorConvertToAssetBalance,
 	}
 
@@ -123,7 +124,7 @@ where
 
 	fn do_handle_vote(
 		candidate: &T::AccountId,
-		system_token_id: &SystemTokenAssetIdOf<T>,
+		system_token_id: &mut SystemTokenAssetIdOf<T>,
 		converted_fee: SystemTokenBalanceOf<T>,
 	) -> Result<(), TransactionValidityError> {
 		let system_token_weight = T::Fungibles::system_token_weight(&system_token_id)
@@ -135,7 +136,7 @@ where
 		let base_weight: SystemTokenWeightOf<T> = base_system_token_detail.base_weight.try_into().map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::ConversionError))?;
 		let fee_to_weight: SystemTokenWeightOf<T> = converted_fee.try_into().map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::ConversionError))?;
 		let vote_amount = FixedU128::saturating_from_rational(system_token_weight, base_weight).saturating_mul_int(fee_to_weight);
-		// TODO: Reanchoring `SystemTokenId` targeting Relay Chain
+		T::Fungibles::reanchor_system_token(system_token_id).map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::ConversionError))?;
 		let pot_vote = PotVote::new(candidate.clone(), system_token_id.clone(), vote_amount);
 		if let Err(_) = T::VotingHandler::process_vote(&mut pot_vote.encode()) {
 			log::error!("Failed to process vote: {:?}", pot_vote);
@@ -203,7 +204,6 @@ where
 			Ok((fee, InitialPayment::Nothing))
 		} else {
 			if let Some(asset_id) = self.asset_id.clone() {
-				log::info!("😝😝😝😝 SystemTokenId => {:?}", asset_id);
 				T::OnChargeSystemToken::withdraw_fee(
 					who,
 					call,
@@ -376,7 +376,7 @@ where
 							});
 							Pallet::<T>::do_handle_vote(
 								candidate,
-								&system_token_id.clone().into(),
+								&mut system_token_id.clone().into(),
 								converted_fee,
 							)?;
 						},
@@ -414,27 +414,3 @@ impl<T: Config> HandleCredit<T::AccountId, T::Fungibles> for CreditToBucket<T> {
 		let _ = <T::Fungibles as Balanced<T::AccountId>>::resolve(&dest, credit);
 	}
 }
-
-// fn adjusted_weight(
-// 			original: &SystemTokenIdOf<T>,
-// 			vote_weight: VoteWeightOf<T>,
-// 		) -> VoteWeightOf<T> {
-// 			impl_me!
-// 			if let Some(p) = <SystemTokenProperties<T>>::get(original) {
-// 				if let Ok(infra_system_config) = T::InfraCore::system_token_config() {
-// 					let system_token_weight = {
-// 						let w: u128 =
-// 							p.system_token_weight.map_or(infra_system_config.base_weight(), |w| w);
-// 						let system_token_weight = F64::from_i128(w as i128);
-// 						system_token_weight
-// 					};
-// 					let converted_base_weight =
-// 						F64::from_i128(infra_system_config.base_weight() as i128);
-
-// 					// Since the base_weight cannot be zero, this division is guaranteed to be safe.
-// 					return vote_weight.mul(system_token_weight).div(converted_base_weight)
-// 				}
-// 				return vote_weight
-// 			}
-// 			vote_weight
-// 		}

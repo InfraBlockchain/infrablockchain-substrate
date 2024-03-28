@@ -25,21 +25,20 @@ pub use impls::*;
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{
 	traits::{
-		tokens::{fungibles::{Inspect, InspectSystemToken}, Balance},
+		tokens::{fungibles::{Inspect, InspectSystemToken, Mutate}, Balance},
 		EstimateNextNewSession, Get,
 	},
 	Parameter,
 };
 pub use pallet::*;
 use scale_info::TypeInfo;
-use softfloat::{F64, BlockTimeWeight};
-use sp_arithmetic::traits::{AtLeast32BitUnsigned, Saturating};
+use softfloat::BlockTimeWeight;
+use sp_arithmetic::traits::AtLeast32BitUnsigned;
 use sp_runtime::{
 	traits::Member,
 	types::{infra_core::TaaV, vote::PotVote},
 	RuntimeDebug,
 };
-use core::ops::{Mul, Div};
 
 #[cfg(test)]
 mod tests;
@@ -57,6 +56,8 @@ pub type EraIndex = u32;
 
 pub type SystemTokenAssetIdOf<T> =
 	<<T as Config>::Fungibles as Inspect<<T as frame_system::Config>::AccountId>>::AssetId;
+pub type SystemTokenBalanceOf<T> =
+	<<T as Config>::Fungibles as Inspect<<T as frame_system::Config>::AccountId>>::Balance;
 
 pub(crate) const LOG_TARGET: &str = "runtime::voting-manager";
 // syntactic sugar for logging.
@@ -151,10 +152,6 @@ impl<AssetId, Amount: Balance> Reward<AssetId, Amount> {
 	pub fn new(asset: AssetId) -> Self {
 		Self { asset, amount: Default::default() }
 	}
-
-	fn add_amount(&mut self, amount: Amount) {
-		self.amount += amount;
-	}
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, RuntimeDebug, TypeInfo)]
@@ -178,6 +175,7 @@ impl<T: Config> VotingStatus<T> {
 				return
 			}
 		}
+		self.status.push((who.clone(), vote_weight));
 	}
 
 	pub fn counts(&self) -> usize {
@@ -238,7 +236,7 @@ pub mod pallet {
 		type Fungibles: InspectSystemToken<Self::AccountId>;
 
 		/// Type that handles aggregated reward
-		type RewardHandler: RewardInterface;
+		type RewardHandler: RewardInterface<AccountId=Self::AccountId, AssetKind=SystemTokenAssetIdOf<Self>, Balance=Self::Score>;
 
 		/// Associated type for vote weight
 		type Score: Member
@@ -337,6 +335,8 @@ pub mod pallet {
 		NewEraTriggered { era_index: EraIndex },
 		/// New pool status has been set
 		PoolStatusSet { status: Pool },
+		/// Rewarded for validator
+		Rewarded { at_era: EraIndex, asset: SystemTokenAssetIdOf<T>, amount: T::Score },
 	}
 
 	#[pallet::error]
@@ -391,11 +391,6 @@ pub mod pallet {
 	/// Total Number of validators that can be elected,
 	/// which is composed of seed trust validators and pot validators
 	#[pallet::storage]
-	pub type TotalNumberOfValidators<T: Config> = StorageValue<_, u32, ValueQuery>;
-
-	/// Total Number of validators that can be elected,
-	/// which is composed of seed trust validators and pot validators
-	#[pallet::storage]
 	pub type TotalValidatorSlots<T: Config> = StorageValue<_, u32, ValueQuery>;
 
 	#[pallet::storage]
@@ -418,7 +413,8 @@ pub mod pallet {
 
 	/// Reward for each validator
 	#[pallet::storage]
-	pub type RewardInfo<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, Reward<SystemTokenAssetIdOf<T>, T::Score>>;
+	#[pallet::unbounded]
+	pub type RewardInfo<T: Config> = StorageDoubleMap<_, Twox64Concat, EraIndex, Twox64Concat, T::AccountId, Vec<Reward<SystemTokenAssetIdOf<T>, T::Score>>>;
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {

@@ -42,10 +42,9 @@ use primitives::{
 	AvailabilityBitfield, BackedCandidate, CandidateCommitments, CandidateDescriptor,
 	CandidateHash, CandidateReceipt, CommittedCandidateReceipt, CoreIndex, GroupIndex, Hash,
 	HeadData, Id as ParaId, SignedAvailabilityBitfields, SigningContext, UpwardMessage,
-	ValidatorId, ValidatorIndex, ValidityAttestation, BLOCKS_PER_YEAR,
+	ValidatorId, ValidatorIndex, ValidityAttestation,
 };
 use scale_info::TypeInfo;
-use softfloat::F64;
 use sp_runtime::{
 	traits::One, types::infra_core::TaaV, DispatchError, SaturatedConversion, Saturating,
 };

@@ -1,5 +1,5 @@
 use super::*;
-use frame_support::traits::{GetStorageVersion, OnRuntimeUpgrade};
+use frame_support::traits::OnRuntimeUpgrade;
 
 pub mod v1 {
 	use super::*;

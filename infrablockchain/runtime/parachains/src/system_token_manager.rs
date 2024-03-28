@@ -39,7 +39,7 @@ use sp_runtime::{
 use sp_std::prelude::*;
 pub use traits::SystemTokenInterface;
 use types::*;
-use xcm::latest::{InteriorMultiLocation, MultiLocation, SystemTokenId, Junctions, Junction};
+use xcm::latest::{InteriorMultiLocation, SystemTokenId};
 
 #[frame_support::pallet(dev_mode)]
 pub mod pallet {

@@ -16,12 +16,11 @@
 
 //! Adapters to work with `frame_support::traits::tokens::fungibles` through XCM.
 
-use frame_support::traits::{tokens::SystemTokenId, Contains, Get};
+use frame_support::traits::{Contains, Get};
 use sp_runtime::traits::MaybeEquivalence;
 use sp_std::{marker::PhantomData, prelude::*, result};
 use xcm::latest::prelude::*;
 use xcm_executor::traits::{Error as MatchError, MatchesFungibles, MatchesNonFungibles};
-use parachain_primitives::primitives::Id;
 
 /// Converter struct implementing `MaybeEquivalence` converting a numeric asset ID (must be
 /// `TryFrom/TryInto<u128>`) into a `GeneralIndex` junction, prefixed by some `Location` value.

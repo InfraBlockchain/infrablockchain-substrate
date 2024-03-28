@@ -2,17 +2,15 @@
 
 use codec::Encode;
 use cumulus_pallet_xcm::{ensure_relay, Origin};
-use cumulus_primitives_core::{UpdateRCConfig, ParaId};
+use cumulus_primitives_core::UpdateRCConfig;
 use frame_support::{
 	pallet_prelude::*,
-	traits::{fungibles::{
-		Inspect, InspectSystemToken, InspectSystemTokenMetadata, ManageSystemToken,
-	}},
+	traits::fungibles::{Inspect, Mutate, InspectSystemToken, InspectSystemTokenMetadata, ManageSystemToken},
 };
 use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
 use sp_runtime::{
-	types::{fee::*, infra_core::*, token::*},
+	types::{fee::*, infra_core::*, token::{Fiat, RemoteAssetMetadata}},
 	Saturating,
 };
 use sp_std::vec::Vec;
@@ -68,7 +66,8 @@ pub mod pallet {
 		/// Type that interacts with local asset
 		type Fungibles: InspectSystemToken<Self::AccountId>
 			+ InspectSystemTokenMetadata<Self::AccountId>
-			+ ManageSystemToken<Self::AccountId>;
+			+ ManageSystemToken<Self::AccountId>
+			+ Mutate<Self::AccountId>;
 		/// Active request period for registering System Token
 		#[pallet::constant]
 		type ActiveRequestPeriod: Get<BlockNumberFor<Self>>;
@@ -122,6 +121,8 @@ pub mod pallet {
 		Suspended { asset_id: SystemTokenAssetIdOf<T> },
 		/// System Token has been unsuspended by Relay-chain governance
 		Unsuspended { asset_id: SystemTokenAssetIdOf<T> },
+		/// Reward has been distributed
+		RewardDistributed { who: T::AccountId, asset_id: SystemTokenAssetIdOf<T>, amount: SystemTokenBalanceOf<T> },
 	}
 
 	#[pallet::error]
@@ -163,7 +164,11 @@ pub mod pallet {
 		/// System Token is not native asset
 		NotNativeAsset,
 		/// Error occured while reanchoring
-		ErrorReanchoring
+		ErrorReanchoring,
+		/// Error occured while converting some types
+		ConversionError,
+		/// Error occured while distributing reward
+		ErrorDistributeReward,
 	}
 
 	#[pallet::hooks]
@@ -341,10 +346,24 @@ pub mod pallet {
 			Ok(())
 		}
 
+		#[pallet::call_index(9)]
+		pub fn distribute_reward(
+			origin: OriginFor<T>,
+			who: T::AccountId,
+			original: SystemTokenAssetIdOf<T>,
+			amount: SystemTokenBalanceOf<T>,
+		) -> DispatchResult {
+			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
+			T::Fungibles::mint_into(original.clone(), &who, amount.clone())
+				.map_err(|_| Error::<T>::ErrorDistributeReward)?;
+			Self::deposit_event(Event::<T>::RewardDistributed { who, asset_id: original, amount });
+			Ok(())
+		}
+
 		/// Request to register System Token
 		///
 		/// If succeed, request will be queued in `CurrentRequest`
-		#[pallet::call_index(9)]
+		#[pallet::call_index(10)]
 		pub fn request_register_system_token(
 			origin: OriginFor<T>,
 			original: SystemTokenAssetIdOf<T>,

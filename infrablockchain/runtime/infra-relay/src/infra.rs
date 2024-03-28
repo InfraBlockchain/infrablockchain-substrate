@@ -1,6 +1,7 @@
 use super::*;
 use parity_scale_codec::{Decode, Encode};
 use xcm::latest::prelude::*;
+use frame_support::traits::fungibles::Mutate;
 
 #[derive(Encode, Decode)]
 pub enum ParachainRuntimePallets {
@@ -28,6 +29,8 @@ pub enum ParachainCalls {
 	SuspendSystemToken(MultiLocation),
 	#[codec(index = 8)]
 	UnsuspendSystemToken(MultiLocation),
+	#[codec(index = 9)]
+	DistriubteReward(AccountId, MultiLocation, SystemTokenWeight),
 }
 
 /// Main actor for handling policy of paracahain configuration
@@ -137,10 +140,40 @@ impl RewardInterface for RewardHandler {
 	type AccountId = AccountId;
 	type AssetKind = MultiLocation;
 	type Balance = SystemTokenBalance;
-	type DestId = u32;
+	type Fungibles = NativeAndForeignAssets;
 
-	fn distribute_reward(_dest_id: Self::DestId, _who: Self::AccountId, _asset: Self::AssetKind, _amount: Self::Balance) {
-		// impl me!
+	fn distribute_reward(who: Self::AccountId, asset: Self::AssetKind, amount: Self::Balance) {
+		if let Ok((maybe_origin_id, _, _)) = asset.id() {
+			if let Some(para_id) = maybe_origin_id {
+				let target = MultiLocation::new(0, X1(Parachain(para_id)));
+				let context = UniversalLocation::get();
+				let mut reanchored = asset.clone();
+				if let Err(_) = reanchored.reanchor(&target, context) {
+					// Something went wrong
+					log::error!(
+						"Failed to reanchor asset remotely."
+					);
+					return;
+				};
+				let distribute_reward_call = ParachainRuntimePallets::InfraParaCore(ParachainCalls::DistriubteReward(
+					who,
+					reanchored,
+					amount,
+				));
+				send_xcm_for(distribute_reward_call.encode(), para_id);
+			} else {
+				// Relay Chain
+				if let Err(_) = Self::Fungibles::mint_into(asset, &who, amount) {
+					log::error!(
+						"Failed to distribute reward locally."
+					);
+				}
+			}
+		} else {
+			log::error!(
+				"❌❌❌❌ Failed to get asset id."
+			);
+		}
 	}
 }
 
