@@ -256,9 +256,6 @@ pub mod pallet {
 		type HigherPrecisionScore: BlockTimeWeight<Self::Score, BlockNumberFor<Self>>
 			+ Parameter
 			+ Member
-			+ Into<F64>
-			+ From<F64>
-			+ From<Self::Score>
 			+ Into<Self::Score>;
 
 		/// Something that can estimate the next session change, accurately or as a best effort
@@ -314,7 +311,7 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(crate) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Points has been added for candidate validator
-		Voted { who: T::AccountId, amount: T::HigherPrecisionScore },
+		Voted { who: T::AccountId, amount: T::Score },
 		/// Total number of validators has been changed
 		TotalValidatorSlotsChanged { new: u32 },
 		/// Number of seed trust validators has been changed

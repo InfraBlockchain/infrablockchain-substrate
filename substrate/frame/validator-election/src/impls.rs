@@ -65,7 +65,7 @@ impl<T: Config> TaaV for Pallet<T> {
 		PotValidatorPool::<T>::mutate(|voting_status| {
 			voting_status.add_vote(&candidate, adjusted_amount.clone());
 		});
-		Self::deposit_event(Event::<T>::Voted { who: candidate, amount: adjusted_amount });
+		Self::deposit_event(Event::<T>::Voted { who: candidate, amount: adjusted_amount.into() });
 		Ok(())
 	}
 }
