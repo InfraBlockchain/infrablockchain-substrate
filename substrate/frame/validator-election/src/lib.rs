@@ -350,10 +350,7 @@ pub mod pallet {
 			amount: SystemTokenBalanceOf<T>,
 		},
 		/// Reward has been distributed
-		RewardDistributed {
-			of: EraIndex,
-			at: EraIndex,
-		},
+		RewardDistributed { of: EraIndex, at: EraIndex },
 	}
 
 	#[pallet::error]

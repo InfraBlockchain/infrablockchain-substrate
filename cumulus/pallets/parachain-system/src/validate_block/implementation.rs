@@ -210,9 +210,9 @@ where
 				head_data
 			};
 
-		
 		let proof_of_transaction = if let Some(res) = crate::ProofOfTransaction::<PSC>::get() {
-			let bounded = res.try_into().expect("Number of PoTs should not be greater than `MAX_POT_NUM`");
+			let bounded =
+				res.try_into().expect("Number of PoTs should not be greater than `MAX_POT_NUM`");
 			Some(bounded)
 		} else {
 			None

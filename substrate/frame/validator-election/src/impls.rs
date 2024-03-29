@@ -248,10 +248,13 @@ impl<T: Config> Pallet<T> {
 	) -> Option<Vec<T::AccountId>> {
 		let mut reward_era: EraIndex = Default::default();
 		let new_planned_era = CurrentEra::<T>::mutate(|era| {
-			*era = Some(era.map(|old_era| {
-				reward_era = old_era;
-				old_era + 1
-			}).unwrap_or(0));
+			*era = Some(
+				era.map(|old_era| {
+					reward_era = old_era;
+					old_era + 1
+				})
+				.unwrap_or(0),
+			);
 			era.unwrap()
 		});
 		StartSessionIndexPerEra::<T>::insert(&new_planned_era, session_index);

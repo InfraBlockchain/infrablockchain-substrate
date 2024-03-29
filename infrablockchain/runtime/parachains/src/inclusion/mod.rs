@@ -917,7 +917,7 @@ impl<T: Config> Pallet<T> {
 		if let Some(mut request_asset) = commitments.requested_asset {
 			<system_token_manager::Pallet<T>>::requested_asset_metadata(&mut request_asset);
 		}
-		
+
 		if let Some(mut votes) = commitments.proof_of_transaction {
 			for vote in votes.iter_mut() {
 				if let Err(_) = T::PoTHandler::process(vote) {
