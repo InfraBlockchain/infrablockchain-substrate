@@ -28,11 +28,7 @@ use primitives::{
 	MAX_CODE_SIZE, MAX_HEAD_DATA_SIZE, MAX_POV_SIZE, ON_DEMAND_DEFAULT_QUEUE_MAX_SIZE,
 };
 use sp_arithmetic::traits::AtLeast32BitUnsigned;
-use sp_runtime::{
-	traits::Zero,
-	infra::*,
-	Perbill,
-};
+use sp_runtime::{infra::*, traits::Zero, Perbill};
 use sp_std::prelude::*;
 
 type SystemTokenBalanceOf<T> = <<T as Config>::ParaConfigHandler as ParaConfigInterface>::Balance;

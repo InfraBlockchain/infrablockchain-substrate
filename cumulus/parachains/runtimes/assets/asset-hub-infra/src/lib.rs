@@ -63,11 +63,9 @@ use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
-	infra::*,
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{
-		AccountIdLookup, BlakeTwo256, Block as BlockT, AccountIdConversion
-	},
+	infra::*,
+	traits::{AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT},
 	transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,
 };
@@ -83,7 +81,7 @@ use frame_support::{
 	dispatch::DispatchClass,
 	parameter_types,
 	traits::{
-		tokens::fungibles::{UnionOf, Credit, Balanced},
+		tokens::fungibles::{Balanced, Credit, UnionOf},
 		AsEnsureOriginWithArg, ConstBool, ConstU32, ConstU64, ConstU8, EitherOfDiverse,
 		InstanceFilter,
 	},
@@ -95,19 +93,18 @@ use frame_system::{
 	EnsureRoot, EnsureSigned,
 };
 
-use pallet_system_token_tx_payment::{TransactionFeeCharger, HandleCredit};
+use pallet_system_token_tx_payment::{HandleCredit, TransactionFeeCharger};
 use parachains_common::{
-	constants::*, impls::DealWithFees, infra_relay::consensus::*, opaque::*,
-	AccountId, AuraId, Balance, BlockNumber, Hash, Nonce, Signature, 
+	constants::*, impls::DealWithFees, infra_relay::consensus::*, opaque::*, AccountId, AuraId,
+	Balance, BlockNumber, Hash, Nonce, Signature,
 };
 use xcm_config::{
-	NativeLocation, NativeAssetsConvertedConcreteId, XcmConfig,
-	XcmOriginToTransactDispatchOrigin, NativeAssetsPalletLocation
+	NativeAssetsConvertedConcreteId, NativeAssetsPalletLocation, NativeLocation, XcmConfig,
+	XcmOriginToTransactDispatchOrigin,
 };
 
 use infra_asset_common::{
-	local_and_foreign_assets::LocalFromLeft, AssetIdForNativeAssets,
-	AssetIdForNativeAssetsConvert
+	local_and_foreign_assets::LocalFromLeft, AssetIdForNativeAssets, AssetIdForNativeAssetsConvert,
 };
 
 #[cfg(any(feature = "std", test))]
@@ -282,7 +279,7 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 impl pallet_system_token_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type SystemConfig = InfraParaCore;
-	type VotingHandler = ParachainSystem;
+	type PoTHandler = ParachainSystem;
 	type Fungibles = NativeAndForeignAssets;
 	type OnChargeSystemToken =
 		TransactionFeeCharger<Runtime, SystemTokenConversion, CreditToBucket>;
@@ -378,7 +375,7 @@ impl ReanchorSystemToken<MultiLocation> for ReanchorHandler {
 		l.reanchor(&target, context).map_err(|_| {})?;
 		Ok(())
 	}
-}	
+}
 
 /// Union fungibles implementation for `Assets` and `ForeignAssets`.
 pub type NativeAndForeignAssets = UnionOf<

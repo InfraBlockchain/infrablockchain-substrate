@@ -25,7 +25,10 @@ pub use impls::*;
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{
 	traits::{
-		tokens::{fungibles::{Inspect, InspectSystemToken, Mutate}, Balance},
+		tokens::{
+			fungibles::{Inspect, InspectSystemToken, Mutate},
+			Balance,
+		},
 		EstimateNextNewSession, Get,
 	},
 	Parameter,
@@ -35,8 +38,8 @@ use scale_info::TypeInfo;
 use softfloat::BlockTimeWeight;
 use sp_arithmetic::traits::AtLeast32BitUnsigned;
 use sp_runtime::{
+	infra::{Fee, PoT, TaaV, Vote},
 	traits::Member,
-	infra::{PoT, TaaV, Vote, Fee},
 	RuntimeDebug,
 };
 
@@ -226,7 +229,7 @@ pub mod pallet {
 		/// Number of sessions per era.
 		#[pallet::constant]
 		type SessionsPerEra: Get<SessionIndex>;
-		
+
 		// F64::from_i128(5_256_000)(e.g 10 blocks/min * 60 min/hours* 24 hours/day * 365 days/year)
 		/// The number of blocks per year
 		#[pallet::constant]
@@ -236,7 +239,11 @@ pub mod pallet {
 		type Fungibles: InspectSystemToken<Self::AccountId>;
 
 		/// Type that handles aggregated reward
-		type RewardHandler: RewardInterface<AccountId=Self::AccountId, AssetKind=SystemTokenAssetIdOf<Self>, Balance=SystemTokenBalanceOf<Self>>;
+		type RewardHandler: RewardInterface<
+			AccountId = Self::AccountId,
+			AssetKind = SystemTokenAssetIdOf<Self>,
+			Balance = SystemTokenBalanceOf<Self>,
+		>;
 
 		/// Associated type for vote weight
 		type Score: Member
@@ -337,7 +344,11 @@ pub mod pallet {
 		/// New pool status has been set
 		PoolStatusSet { status: Pool },
 		/// Rewarded for validator
-		Rewarded { at_era: EraIndex, asset: SystemTokenAssetIdOf<T>, amount: SystemTokenBalanceOf<T> },
+		Rewarded {
+			at_era: EraIndex,
+			asset: SystemTokenAssetIdOf<T>,
+			amount: SystemTokenBalanceOf<T>,
+		},
 	}
 
 	#[pallet::error]
@@ -415,7 +426,14 @@ pub mod pallet {
 	/// Reward for each validator
 	#[pallet::storage]
 	#[pallet::unbounded]
-	pub type RewardInfo<T: Config> = StorageDoubleMap<_, Twox64Concat, EraIndex, Twox64Concat, T::AccountId, Vec<Reward<SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>>>>;
+	pub type RewardInfo<T: Config> = StorageDoubleMap<
+		_,
+		Twox64Concat,
+		EraIndex,
+		Twox64Concat,
+		T::AccountId,
+		Vec<Reward<SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>>>,
+	>;
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {

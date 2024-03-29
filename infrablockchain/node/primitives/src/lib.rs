@@ -29,9 +29,7 @@ use futures::Future;
 use parity_scale_codec::{Decode, Encode, Error as CodecError, Input};
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 
-pub use parachain_primitives::primitives::{
-	BlockData, HorizontalMessages, PoTs, UpwardMessages,
-};
+pub use parachain_primitives::primitives::{BlockData, HorizontalMessages, PoTs, UpwardMessages};
 use primitives::{
 	BlakeTwo256, BlockNumber, CandidateCommitments, CandidateHash, CollatorPair,
 	CommittedCandidateReceipt, CompactStatement, EncodeAs, Hash, HashT, HeadData, Id as ParaId,

@@ -45,9 +45,7 @@ use primitives::{
 	ValidatorId, ValidatorIndex, ValidityAttestation,
 };
 use scale_info::TypeInfo;
-use sp_runtime::{
-	traits::One, infra::TaaV, DispatchError, SaturatedConversion, Saturating,
-};
+use sp_runtime::{infra::TaaV, traits::One, DispatchError, SaturatedConversion, Saturating};
 #[cfg(feature = "std")]
 use sp_std::fmt;
 use sp_std::{

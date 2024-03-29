@@ -78,7 +78,7 @@ pub trait Metadata<AccountId>: metadata::Inspect<AccountId> {
 	fn inner(asset: &Self::AssetId) -> Result<(Self::Balance, Fiat), DispatchError>;
 
 	fn system_token_metadata(
-		asset: &Self::AssetId
+		asset: &Self::AssetId,
 	) -> Result<RemoteAssetMetadata<Self::AssetId, Self::Balance>, DispatchError> {
 		let name = Self::name(asset);
 		let symbol = Self::symbol(asset);

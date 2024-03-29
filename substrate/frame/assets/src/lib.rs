@@ -174,8 +174,8 @@ use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
 use softfloat::F64;
 use sp_runtime::{
-	traits::{AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Saturating, StaticLookup, Zero},
 	infra::token::*,
+	traits::{AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Saturating, StaticLookup, Zero},
 	ArithmeticError, DispatchError, TokenError,
 };
 use sp_std::prelude::*;

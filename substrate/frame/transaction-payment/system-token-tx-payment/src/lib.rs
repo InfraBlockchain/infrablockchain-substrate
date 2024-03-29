@@ -44,11 +44,11 @@ use scale_info::TypeInfo;
 use sp_runtime::{
 	infra::*,
 	traits::{
-		AccountIdConversion, DispatchInfoOf, Dispatchable, PostDispatchInfoOf,
-		SignedExtension, Zero,
+		AccountIdConversion, DispatchInfoOf, Dispatchable, PostDispatchInfoOf, SignedExtension,
+		Zero,
 	},
 	transaction_validity::{TransactionValidity, TransactionValidityError, ValidTransaction},
-	FixedPointOperand, FixedU128, FixedPointNumber
+	FixedPointNumber, FixedPointOperand, FixedU128,
 };
 
 use sp_std::prelude::*;
@@ -69,7 +69,9 @@ pub mod pallet {
 		/// Type that handles vote
 		type PoTHandler: TaaV;
 		/// The fungibles instance used to pay for transactions in assets.
-		type Fungibles: Balanced<Self::AccountId> + InspectSystemToken<Self::AccountId> + ReanchorSystemToken<SystemTokenAssetIdOf<Self>>; 
+		type Fungibles: Balanced<Self::AccountId>
+			+ InspectSystemToken<Self::AccountId>
+			+ ReanchorSystemToken<SystemTokenAssetIdOf<Self>>;
 		/// The actual transaction charging logic that charges the fees.
 		type OnChargeSystemToken: OnChargeSystemToken<Self>;
 		/// Filters for bootstrappring runtime.
@@ -127,40 +129,51 @@ where
 		system_token_id: &mut SystemTokenAssetIdOf<T>,
 		fee: SystemTokenBalanceOf<T>,
 	) -> Result<Vote<T::AccountId, SystemTokenWeightOf<T>>, TransactionValidityError> {
-		let system_token_weight = T::Fungibles::system_token_weight(&system_token_id)
-			.map_err(|_| {
+		let system_token_weight =
+			T::Fungibles::system_token_weight(&system_token_id).map_err(|_| {
 				TransactionValidityError::Invalid(InvalidTransaction::SystemTokenMissing)
 			})?;
-		let SystemConfig { base_system_token_detail, .. } =
-			T::SystemConfig::system_config().map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::Payment))?;
-		let base_weight: SystemTokenWeightOf<T> = base_system_token_detail.base_weight.try_into().map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::ConversionError))?;
-		let fee_to_weight: SystemTokenWeightOf<T> = fee.try_into().map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::ConversionError))?;
-		let vote_amount = FixedU128::saturating_from_rational(system_token_weight, base_weight).saturating_mul_int(fee_to_weight);
+		let SystemConfig { base_system_token_detail, .. } = T::SystemConfig::system_config()
+			.map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::Payment))?;
+		let base_weight: SystemTokenWeightOf<T> =
+			base_system_token_detail.base_weight.try_into().map_err(|_| {
+				TransactionValidityError::Invalid(InvalidTransaction::ConversionError)
+			})?;
+		let fee_to_weight: SystemTokenWeightOf<T> = fee
+			.try_into()
+			.map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::ConversionError))?;
+		let vote_amount = FixedU128::saturating_from_rational(system_token_weight, base_weight)
+			.saturating_mul_int(fee_to_weight);
 		Ok(Vote::new(candidate.clone(), vote_amount))
 	}
 
-	/// Processes the Proof of Transaction (PoT) by encoding the transaction details and handling the vote.
-    /// If a system token ID is provided, it reanchors the token and attempts to process the PoT.
-    /// On success, it emits a `SystemTokenTxFeePaid` event with the transaction details.
-    /// Returns an error if the system token ID is not provided or if any processing step fails
-	fn do_process_pot(maybe_candidate: &Option<T::AccountId>, paid_asset: &SystemTokenAssetIdOf<T>, fee: SystemTokenBalanceOf<T>, tip: Option<SystemTokenBalanceOf<T>>, fee_payer: T::AccountId) -> Result<(), TransactionValidityError> {
+	/// Processes the Proof of Transaction (PoT) by encoding the transaction details and handling
+	/// the vote. If a system token ID is provided, it reanchors the token and attempts to process
+	/// the PoT. On success, it emits a `SystemTokenTxFeePaid` event with the transaction details.
+	/// Returns an error if the system token ID is not provided or if any processing step fails
+	fn do_process_pot(
+		maybe_candidate: &Option<T::AccountId>,
+		paid_asset: &SystemTokenAssetIdOf<T>,
+		fee: SystemTokenBalanceOf<T>,
+		tip: Option<SystemTokenBalanceOf<T>>,
+		fee_payer: T::AccountId,
+	) -> Result<(), TransactionValidityError> {
 		let mut reanchored: SystemTokenAssetIdOf<T> = paid_asset.clone();
-		T::Fungibles::reanchor_system_token(&mut reanchored).map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::ConversionError))?;
-		
-		let vote = maybe_candidate.as_ref().map(|candidate| {
-			Pallet::<T>::taav(candidate, &mut reanchored, fee)
-		}).transpose()?;
-		
-		let pot = PoT {
-			fee_amount: Fee { asset: reanchored, amount: fee },
-			maybe_vote: vote,
-		};
-		
+		T::Fungibles::reanchor_system_token(&mut reanchored)
+			.map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::ConversionError))?;
+
+		let vote = maybe_candidate
+			.as_ref()
+			.map(|candidate| Pallet::<T>::taav(candidate, &mut reanchored, fee))
+			.transpose()?;
+
+		let pot = PoT { fee_amount: Fee { asset: reanchored, amount: fee }, maybe_vote: vote };
+
 		if let Err(_) = T::PoTHandler::process(&mut pot.encode()) {
 			log::error!("Failed to process `proof-of-transaction` : {:?}", pot);
 			return Err(TransactionValidityError::Invalid(InvalidTransaction::Payment));
 		}
-		
+
 		Pallet::<T>::deposit_event(Event::<T>::SystemTokenTxFeePaid {
 			fee_detail: Detail {
 				fee_payer,
@@ -170,7 +183,7 @@ where
 			},
 			vote_candidate: maybe_candidate.clone(),
 		});
-		
+
 		Ok(())
 	}
 }
@@ -245,7 +258,9 @@ where
 				.map(|i| (fee, InitialPayment::Asset(i.into())))
 			} else {
 				log::info!("❌❌❌❌❌❌ System Token has not provided!");
-				return Err(TransactionValidityError::Invalid(InvalidTransaction::SystemTokenMissing));
+				return Err(TransactionValidityError::Invalid(
+					InvalidTransaction::SystemTokenMissing,
+				));
 			}
 		}
 	}
@@ -390,8 +405,15 @@ where
 
 					let tip: Option<SystemTokenBalanceOf<T>> =
 						if converted_tip.is_zero() { None } else { Some(converted_tip) };
-					
-					Pallet::<T>::do_process_pot(&maybe_candidate, &paid_asset_id, converted_fee, tip, who).map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::Payment))?;
+
+					Pallet::<T>::do_process_pot(
+						&maybe_candidate,
+						&paid_asset_id,
+						converted_fee,
+						tip,
+						who,
+					)
+					.map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::Payment))?;
 				},
 				InitialPayment::Nothing => {
 					// `actual_fee` should be zero here for any signed extrinsic. It would be

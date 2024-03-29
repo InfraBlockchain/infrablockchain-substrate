@@ -137,13 +137,19 @@ impl SystemTokenId for MultiLocation {
 		}
 	}
 
-	fn reanchor_loc(&mut self, parents: u8, maybe_dest_id: Option<Self::OriginId>, context: &InteriorMultiLocation) -> core::result::Result<(), Self::Error> {
+	fn reanchor_loc(
+		&mut self,
+		parents: u8,
+		maybe_dest_id: Option<Self::OriginId>,
+		context: &InteriorMultiLocation,
+	) -> core::result::Result<(), Self::Error> {
 		let target = if let Some(dest_id) = maybe_dest_id {
 			MultiLocation::new(parents, Junctions::X1(Junction::Parachain(dest_id)))
 		} else {
 			MultiLocation::new(parents, Junctions::Here)
 		};
-		self.reanchor(&target, context.clone()).map_err(|_| Self::Error::ErrorOnReanchor)?;
+		self.reanchor(&target, context.clone())
+			.map_err(|_| Self::Error::ErrorOnReanchor)?;
 		Ok(())
 	}
 
@@ -181,9 +187,9 @@ impl SystemTokenId for MultiLocation {
 
 	// fn reanchor_to_local(&self) -> Result<Self, Self::Error> {
 	// 	match self.interior {
-	// 		Junctions::X3(Junction::Parachain(_), Junction::PalletInstance(pallet_id), Junction::GeneralIndex(asset_id)) => {
-	// 			let interior = Junctions::X2(Junction::PalletInstance(pallet_id), Junction::GeneralIndex(asset_id));
-	// 			Ok(
+	// 		Junctions::X3(Junction::Parachain(_), Junction::PalletInstance(pallet_id),
+	// Junction::GeneralIndex(asset_id)) => { 			let interior =
+	// Junctions::X2(Junction::PalletInstance(pallet_id), Junction::GeneralIndex(asset_id)); 			Ok(
 	// 				Self {
 	// 					parents: self.parents,
 	// 					interior,

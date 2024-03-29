@@ -30,9 +30,7 @@ use frame_support::traits::{ExecuteBlock, ExtrinsicCall, Get, IsSubType};
 use sp_core::storage::{ChildInfo, StateVersion};
 use sp_externalities::{set_and_run_with_externalities, Externalities};
 use sp_io::KillStorageResult;
-use sp_runtime::{
-	traits::{Block as BlockT, Extrinsic, HashingFor, Header as HeaderT},
-};
+use sp_runtime::traits::{Block as BlockT, Extrinsic, HashingFor, Header as HeaderT};
 use sp_std::prelude::*;
 use sp_trie::MemoryDB;
 
@@ -211,11 +209,12 @@ where
 			} else {
 				head_data
 			};
-		
-		let proof_of_transaction: BoundedVec<_> = crate::ProofOfTransaction::<PSC>::get()
+
+		let proof_of_transaction: Vec<_> = crate::ProofOfTransaction::<PSC>::get();
+		assert!(!proof_of_transaction.is_empty(), "Proof-of-Transaction should not be empty!");
+		let bounded_pot = proof_of_transaction
 			.try_into()
 			.expect("Number of PoTs should not be greater than `MAX_POT_NUM`");
-		assert!(!proof_of_transaction.is_none(), "Proof-of-Transaction should not be empty!");
 
 		let requested_asset = crate::RequestedAsset::<PSC>::get();
 
@@ -226,7 +225,7 @@ where
 			processed_downward_messages,
 			horizontal_messages,
 			hrmp_watermark,
-			proof_of_transaction,
+			proof_of_transaction: bounded_pot,
 			requested_asset,
 		}
 	})

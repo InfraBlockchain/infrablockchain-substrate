@@ -26,7 +26,7 @@ use frame_system::{
 	pallet_prelude::*,
 };
 use lite_json::JsonValue;
-use sp_runtime::{offchain::http, traits::Zero, infra::*};
+use sp_runtime::{infra::*, offchain::http, traits::Zero};
 use sp_std::{prelude::ToOwned, vec::Vec};
 
 pub use pallet::*;

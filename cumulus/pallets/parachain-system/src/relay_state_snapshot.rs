@@ -21,7 +21,7 @@ use cumulus_primitives_core::{
 	relay_chain, AbridgedHostConfiguration, AbridgedHrmpChannel, MultiLocation, ParaId,
 };
 use scale_info::TypeInfo;
-use sp_runtime::{traits::HashingFor, infra::SystemTokenWeight};
+use sp_runtime::{infra::SystemTokenWeight, traits::HashingFor};
 use sp_state_machine::{Backend, TrieBackend, TrieBackendBuilder};
 use sp_std::vec::Vec;
 use sp_trie::{HashDBT, MemoryDB, StorageProof, EMPTY_PREFIX};

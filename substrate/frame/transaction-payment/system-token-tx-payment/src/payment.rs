@@ -20,10 +20,7 @@ use crate::Config;
 use frame_support::{
 	traits::{
 		fungibles::{Balanced, Credit, Inspect},
-		tokens::{
-			AssetId, Balance, Fortitude::Polite, Precision::Exact,
-			Preservation::Protect,
-		},
+		tokens::{AssetId, Balance, Fortitude::Polite, Precision::Exact, Preservation::Protect},
 	},
 	unsigned::TransactionValidityError,
 };

@@ -5,14 +5,13 @@ use cumulus_pallet_xcm::{ensure_relay, Origin};
 use cumulus_primitives_core::UpdateRCConfig;
 use frame_support::{
 	pallet_prelude::*,
-	traits::fungibles::{Inspect, Mutate, InspectSystemToken, InspectSystemTokenMetadata, ManageSystemToken},
+	traits::fungibles::{
+		Inspect, InspectSystemToken, InspectSystemTokenMetadata, ManageSystemToken, Mutate,
+	},
 };
 use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
-use sp_runtime::{
-	infra::*,
-	Saturating,
-};
+use sp_runtime::{infra::*, Saturating};
 use sp_std::vec::Vec;
 
 pub use pallet::*;
@@ -122,7 +121,11 @@ pub mod pallet {
 		/// System Token has been unsuspended by Relay-chain governance
 		Unsuspended { asset_id: SystemTokenAssetIdOf<T> },
 		/// Reward has been distributed
-		RewardDistributed { who: T::AccountId, asset_id: SystemTokenAssetIdOf<T>, amount: SystemTokenBalanceOf<T> },
+		RewardDistributed {
+			who: T::AccountId,
+			asset_id: SystemTokenAssetIdOf<T>,
+			amount: SystemTokenBalanceOf<T>,
+		},
 	}
 
 	#[pallet::error]
@@ -187,7 +190,7 @@ pub mod pallet {
 	}
 
 	#[pallet::call]
-	impl<T: Config> Pallet<T> 
+	impl<T: Config> Pallet<T>
 	where
 		T::SystemTokenId: TryFrom<SystemTokenAssetIdOf<T>> + Into<SystemTokenAssetIdOf<T>>,
 	{
@@ -328,8 +331,7 @@ pub mod pallet {
 			asset_id: SystemTokenAssetIdOf<T>,
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
-			T::Fungibles::suspend(&asset_id)
-				.map_err(|_| Error::<T>::ErrorSuspendSystemToken)?;
+			T::Fungibles::suspend(&asset_id).map_err(|_| Error::<T>::ErrorSuspendSystemToken)?;
 			Self::deposit_event(Event::<T>::Suspended { asset_id });
 			Ok(())
 		}
@@ -379,12 +381,15 @@ pub mod pallet {
 	}
 }
 
-impl<T: Config> Pallet<T> 
+impl<T: Config> Pallet<T>
 where
-	T::SystemTokenId: TryFrom<SystemTokenAssetIdOf<T>> + Into<SystemTokenAssetIdOf<T>>
+	T::SystemTokenId: TryFrom<SystemTokenAssetIdOf<T>> + Into<SystemTokenAssetIdOf<T>>,
 {
 	/// Put requested _asset_metadata_  on `CurrentRequest` and calculate expired block numbe
-	fn do_request(original: &SystemTokenAssetIdOf<T>, currency_type: Fiat) -> Result<BlockNumberFor<T>, DispatchError> {
+	fn do_request(
+		original: &SystemTokenAssetIdOf<T>,
+		currency_type: Fiat,
+	) -> Result<BlockNumberFor<T>, DispatchError> {
 		let current = <frame_system::Pallet<T>>::block_number();
 		T::Fungibles::request_register(original, currency_type)
 			.map_err(|_| Error::<T>::ErrorOnRequestRegister)?;
@@ -401,13 +406,20 @@ where
 		Ok(exp)
 	}
 
-	fn check_valid_register(asset_metadata: &mut RemoteAssetMetadata<SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>>, asset: &SystemTokenAssetIdOf<T>) -> Result<(), DispatchError> {
+	fn check_valid_register(
+		asset_metadata: &mut RemoteAssetMetadata<SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>>,
+		asset: &SystemTokenAssetIdOf<T>,
+	) -> Result<(), DispatchError> {
 		let mut is_valid: bool = true;
 		let context = T::UniversalLocation::get();
-		let mut system_token_id: T::SystemTokenId = asset.clone().try_into().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
-		let (maybe_origin_id, _, _) = system_token_id.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
+		let mut system_token_id: T::SystemTokenId =
+			asset.clone().try_into().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
+		let (maybe_origin_id, _, _) =
+			system_token_id.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
 		ensure!(maybe_origin_id.is_none(), Error::<T>::BadRequest);
-		system_token_id.reanchor_loc(1, None, &context).map_err(|_| Error::<T>::ErrorReanchoring)?;
+		system_token_id
+			.reanchor_loc(1, None, &context)
+			.map_err(|_| Error::<T>::ErrorReanchoring)?;
 		asset_metadata.set_asset_id(system_token_id.into());
 		if let Some(status) = ActiveRequestStatus::<T>::get() {
 			if !status.is_expired(<frame_system::Pallet<T>>::block_number()) {
@@ -416,7 +428,7 @@ where
 			} else {
 				is_valid = false;
 			}
-		} 
+		}
 		ensure!(is_valid, Error::<T>::BadRequest);
 		Ok(())
 	}
@@ -438,9 +450,8 @@ where
 	}
 
 	fn para_fee_rate() -> Result<SystemTokenBalanceOf<T>, Self::Error> {
-		let base_para_fee_rate = RCSystemConfig::<T>::get()
-			.ok_or(Error::<T>::NotInitiated)?
-			.base_para_fee_rate;
+		let base_para_fee_rate =
+			RCSystemConfig::<T>::get().ok_or(Error::<T>::NotInitiated)?.base_para_fee_rate;
 		Ok(ParaFeeRate::<T>::try_mutate_exists(
 			|maybe_para_fee_rate| -> Result<SystemTokenBalanceOf<T>, DispatchError> {
 				let pfr = maybe_para_fee_rate.take().map_or(base_para_fee_rate.into(), |pfr| pfr);

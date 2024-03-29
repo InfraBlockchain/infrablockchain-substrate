@@ -17,10 +17,9 @@
 //! XCM configuration for infrablockspace.
 
 use super::{
-	parachains_origin, system_token_manager, AccountId, AllPalletsWithSystem, Authorship, Balance,
-	Balances, Assets, NativeAssetsInstance, ParaId, Runtime, RuntimeCall, RuntimeEvent,
-	RuntimeOrigin, ValidatorCollective, WeightToFee, ForeignAssets, ForeignAssetsInstance,
-	XcmPallet,
+	parachains_origin, system_token_manager, AccountId, AllPalletsWithSystem, Assets, Authorship,
+	Balance, Balances, ForeignAssets, ForeignAssetsInstance, NativeAssetsInstance, ParaId, Runtime,
+	RuntimeCall, RuntimeEvent, RuntimeOrigin, ValidatorCollective, WeightToFee, XcmPallet,
 };
 use frame_support::{
 	match_types, parameter_types,
@@ -28,7 +27,7 @@ use frame_support::{
 };
 use infra_asset_common::{
 	matching::{StartsWith, StartsWithExplicitGlobalConsensus},
-	AssetFeeAsExistentialDepositMultiplier, 
+	AssetFeeAsExistentialDepositMultiplier,
 };
 use parachain_primitives::primitives::Sibling;
 use runtime_common::{paras_registrar, xcm_sender};
@@ -65,19 +64,20 @@ pub type LocationToAccountId = (
 );
 
 /// `AssetId`/`Balance` converter for `ForeignAssets`.
-pub type ForeignAssetsConvertedConcreteId = infra_asset_common::ForeignAssetsConvertedConcreteIdForParent<
-	(
-		// Ignore `TrustBackedAssets` explicitly
-		StartsWith<NativeAssetsPalletLocation>,
-		// Ignore asset which starts explicitly with our `GlobalConsensus(NetworkId)`, means:
-		// - foreign assets from our consensus should be: `Location {parents: 1, X*(Parachain(xyz),
-		//   ..)}
-		// - foreign assets outside our consensus with the same `GlobalConsensus(NetworkId)` wont
-		//   be accepted here
-		StartsWithExplicitGlobalConsensus<UniversalLocationNetworkId>,
-	),
-	Balance,
->;
+pub type ForeignAssetsConvertedConcreteId =
+	infra_asset_common::ForeignAssetsConvertedConcreteIdForParent<
+		(
+			// Ignore `TrustBackedAssets` explicitly
+			StartsWith<NativeAssetsPalletLocation>,
+			// Ignore asset which starts explicitly with our `GlobalConsensus(NetworkId)`, means:
+			// - foreign assets from our consensus should be: `Location {parents: 1,
+			//   X*(Parachain(xyz), ..)}
+			// - foreign assets outside our consensus with the same `GlobalConsensus(NetworkId)`
+			//   wont be accepted here
+			StartsWithExplicitGlobalConsensus<UniversalLocationNetworkId>,
+		),
+		Balance,
+	>;
 
 /// Means for transacting foreign assets from different global consensus.
 pub type ForeignFungiblesTransactor = FungiblesAdapter<

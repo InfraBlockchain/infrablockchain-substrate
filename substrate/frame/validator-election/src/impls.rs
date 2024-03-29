@@ -39,16 +39,20 @@ impl<T: Config> TaaV for Pallet<T> {
 	type Error = sp_runtime::DispatchError;
 
 	fn process(bytes: &mut Vec<u8>) -> Result<(), Self::Error> {
-		let PoT { fee_amount, maybe_vote } =
-			PoT::<T::AccountId, SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>, T::Score>::decode(&mut &bytes[..])
-				.map_err(|_| Error::<T>::ErrorDecode)?;
+		let PoT { fee_amount, maybe_vote } = PoT::<
+			T::AccountId,
+			SystemTokenAssetIdOf<T>,
+			SystemTokenBalanceOf<T>,
+			T::Score,
+		>::decode(&mut &bytes[..])
+		.map_err(|_| Error::<T>::ErrorDecode)?;
 
 		Self::do_process_fee(fee_amount);
 
 		if let Some(vote) = maybe_vote {
 			Self::do_process_vote(vote)
 		}
-		
+
 		Ok(())
 	}
 }
@@ -135,51 +139,48 @@ impl<T: Config> pallet_session::SessionManager<T::AccountId> for Pallet<T> {
 	}
 }
 
-impl<T: Config> Pallet<T> 
-{
+impl<T: Config> Pallet<T> {
 	/// **Process**
-	/// 
+	///
 	/// 1. Check if the candidate is in the seed trust validator pool
 	/// 2. Adjust vote amount based on block time
 	/// 3. Add vote to the pool
 	/// 4. Deposit event. Convert `T::HigherPrecisionScore` to `T::Score` for human-readable format
 	fn do_process_vote(vote: Vote<T::AccountId, T::Score>) {
 		let Vote { candidate, amount } = vote;
-		// 1. 
+		// 1.
 		if SeedTrustValidatorPool::<T>::get().contains(&candidate) {
 			return;
 		}
-		// 2. 
+		// 2.
 		let current = <frame_system::Pallet<T>>::block_number();
 		let blocks_per_year = T::BlocksPerYear::get();
-		let adjusted_amount = T::HigherPrecisionScore::block_time_weight(amount, current, blocks_per_year);
-		// 3. 
+		let adjusted_amount =
+			T::HigherPrecisionScore::block_time_weight(amount, current, blocks_per_year);
+		// 3.
 		PotValidatorPool::<T>::mutate(|voting_status| {
 			voting_status.add_vote(&candidate, adjusted_amount.clone());
 		});
-		// 4. 
+		// 4.
 		Self::deposit_event(Event::<T>::Voted { who: candidate, amount: adjusted_amount.into() });
 	}
 
 	/// **Process**
-	/// 
+	///
 	/// 1. Check if the current era is set
 	/// 2. Add some rewards for validators who have authored the block
 	fn do_process_fee(fee_amount: Fee<SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>>) {
 		let Fee { asset, amount } = fee_amount;
-		// 1. 
+		// 1.
 		if let Some(current_era) = CurrentEra::<T>::get() {
-			// 2. 
+			// 2.
 			for v in T::SessionInterface::validators().iter() {
 				RewardInfo::<T>::mutate_exists(current_era, v, |maybe_reward| {
 					let mut rewards = maybe_reward.take().unwrap_or_default();
 					if let Some(reward) = rewards.iter_mut().find(|r| r.asset == asset) {
 						reward.amount += amount;
 					} else {
-						rewards.push(Reward {
-							asset: asset.clone(),
-							amount: amount,
-						});
+						rewards.push(Reward { asset: asset.clone(), amount });
 					}
 					*maybe_reward = Some(rewards);
 				});
@@ -262,7 +263,7 @@ impl<T: Config> Pallet<T>
 	}
 
 	/// Distribute rewards to validators
-	/// 
+	///
 	/// 1. Iterate over all validators
 	/// 2. Distribute rewards to validators
 	/// 3. Clear reward info

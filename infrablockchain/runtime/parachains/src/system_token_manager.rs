@@ -21,7 +21,9 @@ pub use frame_support::{
 	storage::KeyPrefixIterator,
 	traits::{
 		tokens::{
-			fungibles::{Inspect, InspectSystemToken, ManageSystemToken, InspectSystemTokenMetadata},
+			fungibles::{
+				Inspect, InspectSystemToken, InspectSystemTokenMetadata, ManageSystemToken,
+			},
 			AssetId, Balance,
 		},
 		Get, UnixTime,
@@ -33,8 +35,8 @@ use softfloat::F64;
 
 pub use pallet::*;
 use sp_runtime::{
-	traits::{AccountIdConversion, AtLeast32BitUnsigned, Zero},
 	infra::*,
+	traits::{AccountIdConversion, AtLeast32BitUnsigned, Zero},
 };
 use sp_std::prelude::*;
 pub use traits::SystemTokenInterface;
@@ -327,7 +329,12 @@ pub mod pallet {
 			let mut is_remote: bool = true;
 			let (original, maybe_para_id) = match system_token_type {
 				SystemTokenType::Original { system_token_id, mut currency_type } => {
-					Self::do_register_system_token(&system_token_id, extended_metadata, &mut currency_type, &mut is_remote)?;
+					Self::do_register_system_token(
+						&system_token_id,
+						extended_metadata,
+						&mut currency_type,
+						&mut is_remote,
+					)?;
 					(system_token_id, None)
 				},
 				SystemTokenType::Wrapped { original, maybe_para_id } => {
@@ -492,16 +499,23 @@ impl<T: Config> Pallet<T> {
 			let context = T::UniversalLocation::get();
 			for para_id in para_ids {
 				let mut original = o.clone();
-				UpdateExchangeRates::<T>::try_mutate(&para_id, |maybe_updated| -> DispatchResult {
-					original.reanchor_loc(0, Some(para_id.clone()), &context).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
-					*maybe_updated = Some(vec![(original, updated_sys_weight)]);
-					Ok(())
-				})?;
+				UpdateExchangeRates::<T>::try_mutate(
+					&para_id,
+					|maybe_updated| -> DispatchResult {
+						original
+							.reanchor_loc(0, Some(para_id.clone()), &context)
+							.map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+						*maybe_updated = Some(vec![(original, updated_sys_weight)]);
+						Ok(())
+					},
+				)?;
 			}
 			// Handle for Relay Chain wrapped
 			if !is_rc_original {
 				let mut original = o.clone();
-				original.reanchor_loc(0, None, &context).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+				original
+					.reanchor_loc(0, None, &context)
+					.map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
 				T::Fungibles::update_system_token_weight(&original, updated_sys_weight)
 					.map_err(|_| Error::<T>::ErrorUpdateSystemTokenWeight)?;
 			}
@@ -616,7 +630,7 @@ impl<T: Config> Pallet<T> {
 		original: &T::SystemTokenId,
 		extended_metadata: Option<ExtendedMetadata>,
 		maybe_currency_type: &mut Option<Fiat>,
-		is_remote: &mut bool
+		is_remote: &mut bool,
 	) -> DispatchResult {
 		let (maybe_origin_id, _, _) =
 			original.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
@@ -630,9 +644,18 @@ impl<T: Config> Pallet<T> {
 			// TODO: Better Way
 			*is_remote = false;
 			let currency_type = maybe_currency_type.take().ok_or(Error::<T>::BadAccess)?;
-			T::Fungibles::request_register(original, currency_type).map_err(|_| Error::<T>::ErrorRegisterSystemToken)?;
-			let RemoteAssetMetadata { name, symbol, decimals, min_balance, currency_type, .. } = T::Fungibles::system_token_metadata(original).map_err(|_| Error::<T>::ErrorRegisterSystemToken)?;
-			let system_token_metadata = SystemTokenMetadata::new(currency_type.clone(), name, symbol, decimals, min_balance);
+			T::Fungibles::request_register(original, currency_type)
+				.map_err(|_| Error::<T>::ErrorRegisterSystemToken)?;
+			let RemoteAssetMetadata { name, symbol, decimals, min_balance, currency_type, .. } =
+				T::Fungibles::system_token_metadata(original)
+					.map_err(|_| Error::<T>::ErrorRegisterSystemToken)?;
+			let system_token_metadata = SystemTokenMetadata::new(
+				currency_type.clone(),
+				name,
+				symbol,
+				decimals,
+				min_balance,
+			);
 			Metadata::<T>::insert(original, system_token_metadata.clone());
 			RequestFiatList::<T>::mutate(|request_fiat| {
 				if !request_fiat.contains(&currency_type) {
@@ -646,11 +669,13 @@ impl<T: Config> Pallet<T> {
 		let currency_type = system_token_metadata.currency_type();
 		let system_token_weight = Self::calc_system_token_weight(&currency_type, original)?;
 		Self::extend_metadata(&mut system_token_metadata, extended_metadata)?;
-		
+
 		// 2. Register System Token
 		if let Some(para_id) = maybe_dest_id {
 			let mut reanchored = original.clone();
-			reanchored.reanchor_loc(0, Some(para_id.clone()), &T::UniversalLocation::get()).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+			reanchored
+				.reanchor_loc(0, Some(para_id.clone()), &T::UniversalLocation::get())
+				.map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
 			T::SystemTokenHandler::register_system_token(
 				para_id.into(),
 				reanchored,
@@ -719,7 +744,9 @@ impl<T: Config> Pallet<T> {
 				system_token_metadata;
 			let owner = Self::account_id();
 			let mut reanchored = original.clone();
-			reanchored.reanchor_loc(0, None, &T::UniversalLocation::get()).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+			reanchored
+				.reanchor_loc(0, None, &T::UniversalLocation::get())
+				.map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
 			if let Err(_) = T::Fungibles::touch(
 				owner,
 				reanchored,
@@ -749,7 +776,9 @@ impl<T: Config> Pallet<T> {
 					// Original System Token for Parachains
 					para_ids.push(para_id);
 					// We do suspend for Relay Chain first
-					reanchored.reanchor_loc(0, None, &T::UniversalLocation::get()).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+					reanchored
+						.reanchor_loc(0, None, &T::UniversalLocation::get())
+						.map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
 					T::Fungibles::suspend(&reanchored)
 						.map_err(|_| Error::<T>::ErrorSuspendSystemToken)?;
 				} else {
@@ -761,11 +790,10 @@ impl<T: Config> Pallet<T> {
 				para_ids.extend(original_used_para_ids);
 				for para_id in para_ids {
 					let mut reanchored = original.clone();
-					reanchored.reanchor_loc(0, Some(para_id.clone()), &T::UniversalLocation::get()).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
-					T::SystemTokenHandler::suspend_system_token(
-						para_id.into(),
-						reanchored,
-					);
+					reanchored
+						.reanchor_loc(0, Some(para_id.clone()), &T::UniversalLocation::get())
+						.map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+					T::SystemTokenHandler::suspend_system_token(para_id.into(), reanchored);
 				}
 			},
 			MutateKind::Wrapped { original, wrapped } => {
@@ -775,12 +803,16 @@ impl<T: Config> Pallet<T> {
 					original.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
 				if let Some(para_id) = maybe_para_id {
 					let mut reanchored = original.clone();
-					reanchored.reanchor_loc(0, Some(para_id.clone()), &context).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+					reanchored
+						.reanchor_loc(0, Some(para_id.clone()), &context)
+						.map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
 					T::SystemTokenHandler::suspend_system_token(para_id.into(), reanchored);
 				} else {
 					// Relay Chain
 					let mut reanchored = original.clone();
-					reanchored.reanchor_loc(0, None, &context).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+					reanchored
+						.reanchor_loc(0, None, &context)
+						.map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
 					T::Fungibles::suspend(&reanchored)
 						.map_err(|_| Error::<T>::ErrorSuspendSystemToken)?;
 				}
@@ -803,7 +835,9 @@ impl<T: Config> Pallet<T> {
 					// Original System Token for Parachains
 					para_ids.push(para_id);
 					// We do suspend for Relay Chain first
-					reanchored.reanchor_loc(0, None, &context).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+					reanchored
+						.reanchor_loc(0, None, &context)
+						.map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
 					T::Fungibles::unsuspend(&reanchored)
 						.map_err(|_| Error::<T>::ErrorUnsuspendSystemToken)?;
 				} else {
@@ -815,11 +849,10 @@ impl<T: Config> Pallet<T> {
 				para_ids.extend(original_used_para_ids);
 				for para_id in para_ids {
 					let mut reanchored = original.clone();
-					reanchored.reanchor_loc(0, Some(para_id.clone()), &context).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
-					T::SystemTokenHandler::unsuspend_system_token(
-						para_id.into(),
-						reanchored,
-					);
+					reanchored
+						.reanchor_loc(0, Some(para_id.clone()), &context)
+						.map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+					T::SystemTokenHandler::unsuspend_system_token(para_id.into(), reanchored);
 				}
 			},
 			MutateKind::Wrapped { original, wrapped } => {
@@ -828,11 +861,15 @@ impl<T: Config> Pallet<T> {
 					original.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
 				let mut reanchored = original.clone();
 				if let Some(para_id) = maybe_para_id {
-					reanchored.reanchor_loc(0, Some(para_id.clone()), &context).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+					reanchored
+						.reanchor_loc(0, Some(para_id.clone()), &context)
+						.map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
 					T::SystemTokenHandler::unsuspend_system_token(para_id.into(), reanchored);
 				} else {
 					// Relay Chain
-					reanchored.reanchor_loc(0, None, &context).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+					reanchored
+						.reanchor_loc(0, None, &context)
+						.map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
 					T::Fungibles::unsuspend(&reanchored)
 						.map_err(|_| Error::<T>::ErrorUnsuspendSystemToken)?;
 				}
@@ -916,11 +953,10 @@ impl<T: Config> Pallet<T> {
 				Metadata::<T>::remove(&original);
 				if let Some(para_id) = origin_id {
 					let mut reanchored = original.clone();
-					reanchored.reanchor_loc(0, Some(para_id.clone()), &T::UniversalLocation::get()).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
-					T::SystemTokenHandler::deregister_system_token(
-						para_id.into(),
-						reanchored,
-					);
+					reanchored
+						.reanchor_loc(0, Some(para_id.clone()), &T::UniversalLocation::get())
+						.map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+					T::SystemTokenHandler::deregister_system_token(para_id.into(), reanchored);
 				} else {
 					// Relay Chain
 					T::Fungibles::deregister(&original)
@@ -937,15 +973,16 @@ impl<T: Config> Pallet<T> {
 					);
 					Self::remove_system_token_for_para_id(&original, &para_id)?;
 					let mut reanchored = original.clone();
-					reanchored.reanchor_loc(0, Some(para_id.clone()), &T::UniversalLocation::get()).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
-					T::SystemTokenHandler::deregister_system_token(
-						para_id.into(),
-						reanchored,
-					);
+					reanchored
+						.reanchor_loc(0, Some(para_id.clone()), &T::UniversalLocation::get())
+						.map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+					T::SystemTokenHandler::deregister_system_token(para_id.into(), reanchored);
 				} else {
 					// Relay Chain
 					let mut reanchored = original.clone();
-					reanchored.reanchor_loc(0, None, &T::UniversalLocation::get()).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+					reanchored
+						.reanchor_loc(0, None, &T::UniversalLocation::get())
+						.map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
 					T::Fungibles::deregister(&reanchored)
 						.map_err(|_| Error::<T>::ErrorDeregisterSystemToken)?;
 				}
@@ -975,7 +1012,9 @@ impl<T: Config> Pallet<T> {
 	) -> DispatchResult {
 		let original_metadata = Metadata::<T>::get(original).ok_or(Error::<T>::MetadataNotFound)?;
 		let mut reanchored = original.clone();
-		reanchored.reanchor_loc(0, Some(para_id.clone()), &T::UniversalLocation::get()).map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+		reanchored
+			.reanchor_loc(0, Some(para_id.clone()), &T::UniversalLocation::get())
+			.map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
 		let owner = Self::account_id();
 		T::SystemTokenHandler::create_wrapped(
 			para_id.clone().into(),
@@ -1001,13 +1040,7 @@ impl<T: Config> Pallet<T> {
 	) {
 		Metadata::<T>::insert(
 			original,
-			SystemTokenMetadata::new(
-				currency_type.clone(),
-				name,
-				symbol,
-				decimals,
-				min_balance,
-			),
+			SystemTokenMetadata::new(currency_type.clone(), name, symbol, decimals, min_balance),
 		);
 		RequestFiatList::<T>::mutate(|request_fiat| {
 			if !request_fiat.contains(currency_type) {
@@ -1031,8 +1064,7 @@ impl<T: Config> Pallet<T> {
 				min_balance,
 			} = remote_asset_metadata;
 			if let Ok((origin_id, pallet_id, asset_id)) = asset_id.id() {
-				let original =
-					T::SystemTokenId::convert_back(origin_id, pallet_id, asset_id);
+				let original = T::SystemTokenId::convert_back(origin_id, pallet_id, asset_id);
 				Self::handle_request(
 					&original,
 					&currency_type,

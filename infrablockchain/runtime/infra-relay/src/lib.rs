@@ -27,26 +27,19 @@ use runtime_common::{
 };
 
 use runtime_parachains::{
-	assigner as parachains_assigner,
-	assigner_on_demand as parachains_assigner_on_demand,
+	assigner as parachains_assigner, assigner_on_demand as parachains_assigner_on_demand,
 	assigner_parachains as parachains_assigner_parachains,
 	configuration as parachains_configuration,
 	configuration::ParaConfigInterface,
 	disputes as parachains_disputes,
 	disputes::slashing as parachains_slashing,
-	dmp as parachains_dmp,
-	hrmp as parachains_hrmp,
-	inclusion as parachains_inclusion,
+	dmp as parachains_dmp, hrmp as parachains_hrmp, inclusion as parachains_inclusion,
 	inclusion::{AggregateMessageOrigin, UmpQueueId},
-	initializer as parachains_initializer,
-	origin as parachains_origin,
-	paras as parachains_paras,
+	initializer as parachains_initializer, origin as parachains_origin, paras as parachains_paras,
 	paras_inherent as parachains_paras_inherent,
 	runtime_api_impl::v7 as parachains_runtime_api_impl,
-	scheduler as parachains_scheduler,
-	session_info as parachains_session_info,
-	shared as parachains_shared,
-	system_token_manager,
+	scheduler as parachains_scheduler, session_info as parachains_session_info,
+	shared as parachains_shared, system_token_manager,
 	system_token_manager::SystemTokenInterface,
 };
 
@@ -71,7 +64,7 @@ use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use pallet_session::historical as session_historical;
 use pallet_system_token_tx_payment::{HandleCredit, TransactionFeeCharger};
 use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
-use pallet_validator_election::{SessionIndex, RewardInterface};
+use pallet_validator_election::{RewardInterface, SessionIndex};
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use primitives::{
 	slashing, AccountId, AccountIndex, Balance, BlockNumber, CandidateEvent, CandidateHash,
@@ -83,12 +76,12 @@ use primitives::{
 use sp_core::OpaqueMetadata;
 use sp_mmr_primitives as mmr;
 use sp_runtime::{
-	infra::*,
 	create_runtime_str, generic, impl_opaque_keys,
+	infra::*,
 	traits::{
 		AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT,
 		Extrinsic as ExtrinsicT, OpaqueKeys, SaturatedConversion, Verify,
-	}, 
+	},
 	transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, FixedU128, KeyTypeId, Perbill, Percent, Permill,
 };
@@ -114,13 +107,12 @@ use infra_relay_runtime_constants::{currency::*, fee::*, system_parachain::ASSET
 mod weights;
 
 mod infra;
-use infra::{ParaConfigHandler, SystemTokenHandler, RewardHandler};
+use infra::{ParaConfigHandler, RewardHandler, SystemTokenHandler};
 
 // XCM
 pub mod xcm_config;
 use infra_asset_common::{
-	local_and_foreign_assets::LocalFromLeft, AssetIdForNativeAssets,
-	AssetIdForNativeAssetsConvert,
+	local_and_foreign_assets::LocalFromLeft, AssetIdForNativeAssets, AssetIdForNativeAssetsConvert,
 };
 use xcm_config::{NativeAssetsPalletLocation, UniversalLocation};
 
@@ -381,9 +373,8 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 				parachains_configuration::Call::set_admin { .. } |
 				parachains_configuration::Call::update_para_fee_rate { .. } |
 				parachains_configuration::Call::update_fee_table { .. } |
-				parachains_configuration::Call::update_runtime_state { .. }
-			)
-			=> true,
+				parachains_configuration::Call::update_runtime_state { .. },
+			) => true,
 			_ => false,
 		}
 	}
@@ -1434,7 +1425,7 @@ impl ReanchorSystemToken<MultiLocation> for ReanchorHandler {
 		l.reanchor(&target, context).map_err(|_| {})?;
 		Ok(())
 	}
-}	
+}
 
 /// Union fungibles implementation for `Assets` and `ForeignAssets`.
 pub type NativeAndForeignAssets = fungibles::UnionOf<
@@ -1447,7 +1438,7 @@ pub type NativeAndForeignAssets = fungibles::UnionOf<
 	>,
 	xcm::v3::MultiLocation,
 	AccountId,
-	ReanchorHandler
+	ReanchorHandler,
 >;
 
 construct_runtime! {

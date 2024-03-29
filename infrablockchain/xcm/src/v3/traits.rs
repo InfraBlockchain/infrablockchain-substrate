@@ -18,9 +18,9 @@
 
 use crate::v2::Error as OldError;
 use core::result;
-use parity_scale_codec::{Decode, Encode, MaxEncodedLen, FullCodec};
+use frame_support::{traits::tokens::AssetId as LocalAssetId, Parameter};
+use parity_scale_codec::{Decode, Encode, FullCodec, MaxEncodedLen};
 use scale_info::TypeInfo;
-use frame_support::{traits::tokens::{AssetId as LocalAssetId}, Parameter};
 pub use sp_weights::Weight;
 
 use super::*;
@@ -609,10 +609,17 @@ pub trait SystemTokenId: LocalAssetId {
 	type Error: FullCodec + Debug;
 
 	/// Id for System Token
-	fn id(&self) -> core::result::Result<(Option<Self::OriginId>, Self::PalletId, Self::AssetId), Self::Error>;
+	fn id(
+		&self,
+	) -> core::result::Result<(Option<Self::OriginId>, Self::PalletId, Self::AssetId), Self::Error>;
 
 	/// Reanchor the location to the given target
-	fn reanchor_loc(&mut self, parents: u8, maybe_dest_id: Option<Self::OriginId>, context: &InteriorMultiLocation) -> core::result::Result<(), Self::Error>;
+	fn reanchor_loc(
+		&mut self,
+		parents: u8,
+		maybe_dest_id: Option<Self::OriginId>,
+		context: &InteriorMultiLocation,
+	) -> core::result::Result<(), Self::Error>;
 
 	/// Convert the id back to the original type
 	fn convert_back(

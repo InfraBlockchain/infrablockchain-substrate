@@ -29,9 +29,7 @@ use frame_support::traits::{
 };
 use sp_std::marker::PhantomData;
 use xcm::prelude::MultiLocation;
-use xcm_builder::{
-	AsPrefixedGeneralIndex, MatchedConvertedConcreteId, V3LocationConverter,
-};
+use xcm_builder::{AsPrefixedGeneralIndex, MatchedConvertedConcreteId, V3LocationConverter};
 use xcm_executor::traits::{JustTry, Properties};
 
 use frame_support::{
@@ -199,13 +197,12 @@ where
 pub type AssetIdForNativeAssets = u32;
 
 /// `Location` vs `AssetIdForNativeAssets` converter for `TrustBackedAssets`
-pub type AssetIdForNativeAssetsConvert<NativeAssetsPalletLocation> =
-	AsPrefixedGeneralIndex<
-		NativeAssetsPalletLocation,
-		AssetIdForNativeAssets,
-		JustTry,
-		xcm::v3::MultiLocation,
-	>;
+pub type AssetIdForNativeAssetsConvert<NativeAssetsPalletLocation> = AsPrefixedGeneralIndex<
+	NativeAssetsPalletLocation,
+	AssetIdForNativeAssets,
+	JustTry,
+	xcm::v3::MultiLocation,
+>;
 
 /// [`MatchedConvertedConcreteId`] converter dedicated for `TrustBackedAssets`
 pub type NativeAssetsConvertedConcreteId<NativeAssetsPalletLocation, Balance> =
@@ -266,10 +263,7 @@ pub type ForeignAssetsConvertedConcreteId<AdditionalLocationExclusionFilter, Bal
 /// For Relay
 /// `AdditionalLocationExclusionFilter` can customize additional excluded Locations
 pub type ForeignAssetsConvertedConcreteIdForParent<AdditionalLocationExclusionFilter, Balance> =
-	LocationConvertedConcreteId<
-		EverythingBut<AdditionalLocationExclusionFilter>,
-		Balance,
-	>;
+	LocationConvertedConcreteId<EverythingBut<AdditionalLocationExclusionFilter>, Balance>;
 
 #[cfg(test)]
 mod tests {

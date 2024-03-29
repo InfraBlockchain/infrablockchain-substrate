@@ -1,7 +1,7 @@
 use super::*;
+use frame_support::traits::fungibles::Mutate;
 use parity_scale_codec::{Decode, Encode};
 use xcm::latest::prelude::*;
-use frame_support::traits::fungibles::Mutate;
 
 #[derive(Encode, Decode)]
 pub enum ParachainRuntimePallets {
@@ -150,29 +150,21 @@ impl RewardInterface for RewardHandler {
 				let mut reanchored = asset.clone();
 				if let Err(_) = reanchored.reanchor(&target, context) {
 					// Something went wrong
-					log::error!(
-						"Failed to reanchor asset remotely."
-					);
+					log::error!("Failed to reanchor asset remotely.");
 					return;
 				};
-				let distribute_reward_call = ParachainRuntimePallets::InfraParaCore(ParachainCalls::DistriubteReward(
-					who,
-					reanchored,
-					amount,
-				));
+				let distribute_reward_call = ParachainRuntimePallets::InfraParaCore(
+					ParachainCalls::DistriubteReward(who, reanchored, amount),
+				);
 				send_xcm_for(distribute_reward_call.encode(), para_id);
 			} else {
 				// Relay Chain
 				if let Err(_) = Self::Fungibles::mint_into(asset, &who, amount) {
-					log::error!(
-						"Failed to distribute reward locally."
-					);
+					log::error!("Failed to distribute reward locally.");
 				}
 			}
 		} else {
-			log::error!(
-				"❌❌❌❌ Failed to get asset id."
-			);
+			log::error!("❌❌❌❌ Failed to get asset id.");
 		}
 	}
 }

@@ -40,7 +40,7 @@ use jsonrpsee::RpcModule;
 use crate::rpc;
 pub use parachains_common::{
 	opaque::{Block, Header},
-	AccountId, Balance, Hash, Nonce
+	AccountId, Balance, Hash, Nonce,
 };
 
 use cumulus_client_consensus_relay_chain::Verifier as RelayChainVerifier;

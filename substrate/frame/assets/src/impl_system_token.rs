@@ -25,7 +25,9 @@ impl<T: Config<I>, I: 'static> InspectSystemToken<T::AccountId> for Pallet<T, I>
 		Self::system_token_balance(who, maybe_asset)
 	}
 
-	fn system_token_weight(asset: &Self::AssetId) -> Result<Self::SystemTokenWeight, DispatchError> {
+	fn system_token_weight(
+		asset: &Self::AssetId,
+	) -> Result<Self::SystemTokenWeight, DispatchError> {
 		let ad = Asset::<T, I>::get(asset).ok_or(Error::<T, I>::Unknown)?;
 		ad.system_token_weight.ok_or(Error::<T, I>::IncorrectStatus.into())
 	}
@@ -114,7 +116,8 @@ impl<T: Config<I>, I: 'static> InspectSystemTokenMetadata<T::AccountId> for Pall
 	fn inner(asset: &Self::AssetId) -> Result<(Self::Balance, Fiat), DispatchError> {
 		let mut asset_detail = Asset::<T, I>::get(asset).ok_or(Error::<T, I>::InvalidRequest)?;
 		let min_balance = asset_detail.min_balance;
-		let currency_type = asset_detail.currency_type.take().ok_or(Error::<T,I>::InvalidRequest)?;
+		let currency_type =
+			asset_detail.currency_type.take().ok_or(Error::<T, I>::InvalidRequest)?;
 		Ok((min_balance, currency_type))
 	}
 }

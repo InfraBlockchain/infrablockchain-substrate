@@ -52,7 +52,7 @@ pub use multilocation::{
 };
 pub use traits::{
 	send_xcm, validate_send, Error, ExecuteXcm, Outcome, PreparedMessage, Result, SendError,
-	SendResult, SendXcm, Weight, XcmHash, SystemTokenId
+	SendResult, SendXcm, SystemTokenId, Weight, XcmHash,
 };
 // These parts of XCM v2 are unchanged in XCM v3, and are re-imported here.
 pub use super::v2::{GetWeight, OriginKind};

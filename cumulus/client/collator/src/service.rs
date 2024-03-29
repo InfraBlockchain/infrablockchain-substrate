@@ -270,16 +270,17 @@ where
 				)
 			})
 			.ok()?;
-		let proof_of_transaction = collation_info.proof_of_transaction
-				.try_into()
-				.map_err(|e| {
-					tracing::error!(
-						target: LOG_TARGET,
-						error = ?e,
-						"Number of vote results should not be greater than `MAX_POT_RESULT`",
-					)
-				})
-				.ok()?;
+		let proof_of_transaction = collation_info
+			.proof_of_transaction
+			.try_into()
+			.map_err(|e| {
+				tracing::error!(
+					target: LOG_TARGET,
+					error = ?e,
+					"Number of vote results should not be greater than `MAX_POT_RESULT`",
+				)
+			})
+			.ok()?;
 
 		let requested_asset = collation_info.requested_asset;
 
