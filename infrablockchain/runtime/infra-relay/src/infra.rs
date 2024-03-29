@@ -151,7 +151,7 @@ impl RewardInterface for RewardHandler {
 				if let Err(_) = reanchored.reanchor(&target, context) {
 					// Something went wrong
 					log::error!("Failed to reanchor asset remotely.");
-					return;
+					return
 				};
 				let distribute_reward_call = ParachainRuntimePallets::InfraParaCore(
 					ParachainCalls::DistriubteReward(who, reanchored, amount),

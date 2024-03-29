@@ -171,7 +171,7 @@ where
 
 		if let Err(_) = T::PoTHandler::process(&mut pot.encode()) {
 			log::error!("Failed to process `proof-of-transaction` : {:?}", pot);
-			return Err(TransactionValidityError::Invalid(InvalidTransaction::Payment));
+			return Err(TransactionValidityError::Invalid(InvalidTransaction::Payment))
 		}
 
 		Pallet::<T>::deposit_event(Event::<T>::SystemTokenTxFeePaid {
@@ -260,7 +260,7 @@ where
 				log::info!("❌❌❌❌❌❌ System Token has not provided!");
 				return Err(TransactionValidityError::Invalid(
 					InvalidTransaction::SystemTokenMissing,
-				));
+				))
 			}
 		}
 	}

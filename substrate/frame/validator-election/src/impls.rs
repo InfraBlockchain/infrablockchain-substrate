@@ -150,7 +150,7 @@ impl<T: Config> Pallet<T> {
 		let Vote { candidate, amount } = vote;
 		// 1.
 		if SeedTrustValidatorPool::<T>::get().contains(&candidate) {
-			return;
+			return
 		}
 		// 2.
 		let current = <frame_system::Pallet<T>>::block_number();
@@ -189,7 +189,7 @@ impl<T: Config> Pallet<T> {
 		} else {
 			// We don't handle fee if the current era is not set
 			log::warn!("Current era is not set");
-			return;
+			return
 		}
 	}
 

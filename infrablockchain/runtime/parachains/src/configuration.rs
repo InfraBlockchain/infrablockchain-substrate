@@ -1292,7 +1292,7 @@ pub mod pallet {
 			ensure_root(origin)?;
 			RuntimeState::<T>::try_mutate(|s| -> DispatchResult {
 				if *s == Mode::Normal {
-					return Err(Error::<T>::AlreadyEndedBootstrap.into());
+					return Err(Error::<T>::AlreadyEndedBootstrap.into())
 				}
 				*s = Mode::Normal;
 				Ok(())
