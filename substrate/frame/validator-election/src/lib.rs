@@ -349,6 +349,11 @@ pub mod pallet {
 			asset: SystemTokenAssetIdOf<T>,
 			amount: SystemTokenBalanceOf<T>,
 		},
+		/// Reward has been distributed
+		RewardDistributed {
+			of: EraIndex,
+			at: EraIndex,
+		},
 	}
 
 	#[pallet::error]

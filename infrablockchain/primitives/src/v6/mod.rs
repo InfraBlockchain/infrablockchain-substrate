@@ -702,7 +702,7 @@ pub struct CandidateCommitments<N = BlockNumber> {
 	/// processed.
 	pub hrmp_watermark: N,
 	/// Result of pot votes sent by the parachain
-	pub proof_of_transaction: PoTs,
+	pub proof_of_transaction: Option<PoTs>,
 	/// Requested assets for System Token,
 	pub requested_asset: Option<OpaqueRemoteAssetMetadata>,
 }

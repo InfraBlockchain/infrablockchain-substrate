@@ -246,13 +246,17 @@ impl<T: Config> Pallet<T> {
 		session_index: SessionIndex,
 		_is_genesis: bool,
 	) -> Option<Vec<T::AccountId>> {
+		let mut reward_era: EraIndex = Default::default();
 		let new_planned_era = CurrentEra::<T>::mutate(|era| {
-			*era = Some(era.map(|old_era| old_era + 1).unwrap_or(0));
+			*era = Some(era.map(|old_era| {
+				reward_era = old_era;
+				old_era + 1
+			}).unwrap_or(0));
 			era.unwrap()
 		});
 		StartSessionIndexPerEra::<T>::insert(&new_planned_era, session_index);
 		Self::deposit_event(Event::<T>::NewEraTriggered { era_index: new_planned_era });
-		Self::distribute_reward(new_planned_era);
+		Self::distribute_reward(reward_era, new_planned_era);
 		Some(Self::elect_validators(new_planned_era))
 
 		// Clean old era information.
@@ -267,15 +271,16 @@ impl<T: Config> Pallet<T> {
 	/// 1. Iterate over all validators
 	/// 2. Distribute rewards to validators
 	/// 3. Clear reward info
-	pub fn distribute_reward(era_index: EraIndex) {
-		let vs = RewardInfo::<T>::iter_prefix(era_index);
+	pub fn distribute_reward(of: EraIndex, at: EraIndex) {
+		let vs = RewardInfo::<T>::iter_prefix(of);
 		for v in vs {
 			let (who, rewards) = v;
 			for r in rewards {
 				T::RewardHandler::distribute_reward(who.clone(), r.asset, r.amount.into());
 			}
 		}
-		let _ = RewardInfo::<T>::clear_prefix(era_index, u32::MAX, None);
+		let _ = RewardInfo::<T>::clear_prefix(of, u32::MAX, None);
+		Self::deposit_event(Event::<T>::RewardDistributed { of, at });
 	}
 
 	/// Elect validators from `SeedTrustValidatorPool::<T>` and `PotValidatorPool::<T>`

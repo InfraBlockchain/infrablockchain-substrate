@@ -425,7 +425,7 @@ pub struct ValidationResult {
 	/// processed.
 	pub hrmp_watermark: RelayChainBlockNumber,
 	/// Proof of Transaction for the parachain block. Should be bounded
-	pub proof_of_transaction: PoTs,
+	pub proof_of_transaction: Option<PoTs>,
 	/// Requested asset for the parachain block. Should be bounded
 	pub requested_asset: Option<OpaqueRemoteAssetMetadata>,
 }

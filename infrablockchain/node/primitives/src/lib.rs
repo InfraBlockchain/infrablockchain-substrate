@@ -423,7 +423,7 @@ pub struct Collation<BlockNumber = primitives::BlockNumber> {
 	/// processed.
 	pub hrmp_watermark: BlockNumber,
 	/// Proof of Transaction
-	pub proof_of_transaction: PoTs,
+	pub proof_of_transaction: Option<PoTs>,
 	/// Requested assets
 	pub requested_asset: Option<OpaqueRemoteAssetMetadata>,
 }

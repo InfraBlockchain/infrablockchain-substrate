@@ -126,11 +126,11 @@ where
 	/// Process `Transaction-as-a-Vote`
 	fn taav(
 		candidate: &T::AccountId,
-		system_token_id: &mut SystemTokenAssetIdOf<T>,
+		system_token_id: &SystemTokenAssetIdOf<T>,
 		fee: SystemTokenBalanceOf<T>,
 	) -> Result<Vote<T::AccountId, SystemTokenWeightOf<T>>, TransactionValidityError> {
 		let system_token_weight =
-			T::Fungibles::system_token_weight(&system_token_id).map_err(|_| {
+			T::Fungibles::system_token_weight(system_token_id).map_err(|_| {
 				TransactionValidityError::Invalid(InvalidTransaction::SystemTokenMissing)
 			})?;
 		let SystemConfig { base_system_token_detail, .. } = T::SystemConfig::system_config()
@@ -164,7 +164,7 @@ where
 
 		let vote = maybe_candidate
 			.as_ref()
-			.map(|candidate| Pallet::<T>::taav(candidate, &mut reanchored, fee))
+			.map(|candidate| Self::taav(candidate, &paid_asset, fee))
 			.transpose()?;
 
 		let pot = PoT { fee_amount: Fee { asset: reanchored, amount: fee }, maybe_vote: vote };

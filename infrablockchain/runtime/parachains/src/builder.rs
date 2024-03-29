@@ -304,7 +304,7 @@ impl<T: paras_inherent::Config> BenchBuilder<T> {
 			head_data: Self::mock_head_data(),
 			processed_downward_messages: 0,
 			hrmp_watermark: 0u32.into(),
-			proof_of_transaction: Default::default(),
+			proof_of_transaction: None,
 			requested_asset: None,
 		};
 		inclusion::PendingAvailability::<T>::insert(para_id, candidate_availability);
@@ -557,6 +557,8 @@ impl<T: paras_inherent::Config> BenchBuilder<T> {
 						head_data,
 						processed_downward_messages: 0,
 						hrmp_watermark: self.relay_parent_number(),
+						proof_of_transaction: None,
+						requested_asset: None,
 					},
 				};
 

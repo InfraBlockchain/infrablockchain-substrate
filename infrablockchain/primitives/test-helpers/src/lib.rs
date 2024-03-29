@@ -78,7 +78,7 @@ pub fn dummy_candidate_commitments(head_data: impl Into<Option<HeadData>>) -> Ca
 		horizontal_messages: vec![].try_into().expect("empty vec fits within bounds"),
 		processed_downward_messages: 0,
 		hrmp_watermark: 0_u32,
-		proof_of_transaction: Default::default(),
+		proof_of_transaction: None,
 		requested_asset: None,
 	}
 }
@@ -183,7 +183,7 @@ pub fn make_candidate(
 		new_validation_code: None,
 		processed_downward_messages: 0,
 		hrmp_watermark: relay_parent_number,
-		proof_of_transaction: Default::default(),
+		proof_of_transaction: None,
 		requested_asset: None,
 	};
 

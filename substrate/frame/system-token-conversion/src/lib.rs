@@ -16,7 +16,6 @@ pub type SystemTokenWeightOf<T> = <<T as Config>::Fungibles as InspectSystemToke
 pub mod pallet {
 	use super::*;
 	use frame_support::pallet_prelude::*;
-	use frame_system::pallet_prelude::*;
 
 	#[pallet::pallet]
 	pub struct Pallet<T>(_);

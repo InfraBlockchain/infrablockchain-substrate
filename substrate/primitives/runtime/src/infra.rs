@@ -7,10 +7,12 @@ pub use config::*;
 pub use token::*;
 pub use voting::*;
 
+/// Module that defines configuration related
 pub mod config {
 
 	use super::*;
 
+	/// System configuration for Infra-* Runtime
 	#[derive(
 		Encode,
 		Decode,
@@ -33,6 +35,7 @@ pub mod config {
 		pub base_para_fee_rate: u128,
 	}
 
+	/// Error type while initializing system configuration
 	#[derive(RuntimeDebug)]
 	pub enum InitError {
 		/// Base system token is not initialized
@@ -42,6 +45,7 @@ pub mod config {
 	}
 
 	impl SystemConfig {
+		/// Check if system configuration is valid
 		pub fn check_validity(&self) -> Result<(), InitError> {
 			if self.base_system_token_detail.base_weight == 0 {
 				return Err(InitError::InvalidBaseSystemTokenDetail)
@@ -52,6 +56,7 @@ pub mod config {
 			Ok(())
 		}
 
+		/// Panic if system configuration is not valid
 		pub fn panic_if_not_validated(&self) {
 			if let Err(err) = self.check_validity() {
 				panic!("System configuration is not initalized: {:?}\nSCfg:\n{:#?}", err, self);
@@ -82,6 +87,7 @@ pub mod config {
 	}
 
 	impl BaseSystemTokenDetail {
+		/// Create new instance of base system token detail
 		pub fn new(fiat: Fiat, base_weight: u128, decimals: u8) -> Self {
 			Self { base_currency: fiat, base_weight, base_decimals: decimals }
 		}
@@ -213,6 +219,7 @@ pub mod token {
 
 	/// Reanchor system token
 	pub trait ReanchorSystemToken<Location> {
+		/// Type of error that should be handled when reanchoring system token
 		type Error;
 		/// Reanchor `SystemToken` in vote
 		fn reanchor_system_token(l: &mut Location) -> Result<(), Self::Error>;
