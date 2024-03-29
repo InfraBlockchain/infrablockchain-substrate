@@ -48,7 +48,7 @@ pub use v6::{
 	InboundDownwardMessage, InboundHrmpMessage, IndexedVec, InherentData,
 	InvalidDisputeStatementKind, Moment, MultiDisputeStatementSet, Nonce, OccupiedCore,
 	OccupiedCoreAssumption, OpaqueRemoteAssetMetadata, OutboundHrmpMessage, ParathreadClaim,
-	ParathreadEntry, PersistedValidationData, PotVotesResult, PvfCheckStatement,
+	ParathreadEntry, PersistedValidationData, PoTs, PvfCheckStatement,
 	PvfExecTimeoutKind, PvfPrepTimeoutKind, RuntimeMetricLabel, RuntimeMetricLabelValue,
 	RuntimeMetricLabelValues, RuntimeMetricLabels, RuntimeMetricOp, RuntimeMetricUpdate,
 	ScheduledCore, ScrapedOnChainVotes, SessionIndex, SessionInfo, Signature, Signed,

@@ -21,12 +21,12 @@
 use codec::{Decode, Encode};
 use parachain_primitives::primitives::HeadData;
 use scale_info::TypeInfo;
-use sp_runtime::{types::SystemConfig, RuntimeDebug};
+use sp_runtime::{infra::SystemConfig, RuntimeDebug};
 use sp_std::prelude::*;
 
-pub use infrablockchain_core_primitives::{InboundDownwardMessage, OpaquePotVote};
+pub use infrablockchain_core_primitives::{InboundDownwardMessage, OpaquePoT};
 pub use parachain_primitives::primitives::{
-	DmpMessageHandler, Id as ParaId, IsSystem, PotVotesResult, UpwardMessage, ValidationParams,
+	DmpMessageHandler, Id as ParaId, IsSystem, PoTs, UpwardMessage, ValidationParams,
 	XcmpMessageFormat, XcmpMessageHandler,
 };
 pub use primitives::{AbridgedHostConfiguration, AbridgedHrmpChannel, PersistedValidationData};
@@ -309,7 +309,7 @@ pub struct CollationInfoV1 {
 	/// processed.
 	pub hrmp_watermark: relay_chain::BlockNumber,
 	/// The vote result sent by the parachain.
-	pub vote_result: Option<Vec<OpaquePotVote>>,
+	pub proof_of_transaction: Vec<OpaquePoT>,
 	/// Requested assets sent by the parachain.
 	pub requested_asset: Option<relay_chain::OpaqueRemoteAssetMetadata>,
 }
@@ -324,7 +324,7 @@ impl CollationInfoV1 {
 			processed_downward_messages: self.processed_downward_messages,
 			hrmp_watermark: self.hrmp_watermark,
 			head_data,
-			vote_result: self.vote_result,
+			proof_of_transaction: self.proof_of_transaction,
 			requested_asset: self.requested_asset,
 		}
 	}
@@ -346,8 +346,8 @@ pub struct CollationInfo {
 	pub hrmp_watermark: relay_chain::BlockNumber,
 	/// The head data, aka encoded header, of the block that corresponds to the collation.
 	pub head_data: HeadData,
-	/// The vote result sent by the parachain.
-	pub vote_result: Option<Vec<OpaquePotVote>>,
+	/// The proof of transaction sent by the parachain.
+	pub proof_of_transaction: Vec<OpaquePoT>,
 	/// Requested assets sent by the parachain.
 	pub requested_asset: Option<relay_chain::OpaqueRemoteAssetMetadata>,
 }

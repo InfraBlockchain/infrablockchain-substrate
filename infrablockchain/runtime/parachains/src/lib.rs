@@ -40,10 +40,7 @@ pub mod reward_points;
 pub mod scheduler;
 pub mod session_info;
 pub mod shared;
-pub mod system_token_helper;
 pub mod system_token_manager;
-// pub mod validator_reward_manager;
-// pub mod system_token_aggregator;
 
 pub mod runtime_api_impl;
 
@@ -53,9 +50,6 @@ mod util;
 mod builder;
 #[cfg(test)]
 mod mock;
-
-#[cfg(test)]
-pub mod system_token_tests;
 
 #[cfg(test)]
 mod ump_tests;

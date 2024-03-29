@@ -211,12 +211,11 @@ where
 			} else {
 				head_data
 			};
-
-		let vote_result = if let Some(res) = crate::PotVotes::<PSC>::get() {
-			Some(res.try_into().expect("Number of votes should not be greater than `MAX_VOTES_NUM`"))
-		} else {
-			None
-		};
+		
+		let proof_of_transaction: BoundedVec<_> = crate::ProofOfTransaction::<PSC>::get()
+			.try_into()
+			.expect("Number of PoTs should not be greater than `MAX_POT_NUM`");
+		assert!(!proof_of_transaction.is_none(), "Proof-of-Transaction should not be empty!");
 
 		let requested_asset = crate::RequestedAsset::<PSC>::get();
 
@@ -227,7 +226,7 @@ where
 			processed_downward_messages,
 			horizontal_messages,
 			hrmp_watermark,
-			vote_result,
+			proof_of_transaction,
 			requested_asset,
 		}
 	})

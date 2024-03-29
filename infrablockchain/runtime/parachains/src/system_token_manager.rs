@@ -34,7 +34,7 @@ use softfloat::F64;
 pub use pallet::*;
 use sp_runtime::{
 	traits::{AccountIdConversion, AtLeast32BitUnsigned, Zero},
-	types::{infra_core::*, token::*},
+	infra::*,
 };
 use sp_std::prelude::*;
 pub use traits::SystemTokenInterface;

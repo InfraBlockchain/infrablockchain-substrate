@@ -139,7 +139,7 @@ fn default_parachains_host_configuration(
 
 #[cfg(any(feature = "infra-relay-native"))]
 fn default_infra_relay_system_configuration() -> primitives::SystemConfig {
-	use sp_runtime::types::{BaseSystemTokenDetail, Fiat};
+	use sp_runtime::infra::{BaseSystemTokenDetail, Fiat};
 
 	primitives::SystemConfig {
 		base_system_token_detail: BaseSystemTokenDetail {

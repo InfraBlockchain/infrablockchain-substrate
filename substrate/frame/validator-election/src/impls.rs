@@ -38,25 +38,17 @@ pub trait RewardInterface {
 impl<T: Config> TaaV for Pallet<T> {
 	type Error = sp_runtime::DispatchError;
 
-	fn process_vote(bytes: &mut Vec<u8>) -> Result<(), Self::Error> {
-		// Try decode
-		let vote =
-			PotVote::<T::AccountId, SystemTokenAssetIdOf<T>, T::Score>::decode(&mut &bytes[..])
+	fn process(bytes: &mut Vec<u8>) -> Result<(), Self::Error> {
+		let PoT { fee_amount, maybe_vote } =
+			PoT::<T::AccountId, SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>, T::Score>::decode(&mut &bytes[..])
 				.map_err(|_| Error::<T>::ErrorDecode)?;
-		log::info!("🥶🥶 Processing Vote: {:?}", vote);
-		
-		let PotVote { candidate, asset_id, amount } = vote;
-		if SeedTrustValidatorPool::<T>::get().contains(&candidate) {
-			return Ok(())
-		}
-		Self::aggregate_reward(asset_id, amount.clone());
-		
-		let adjusted_amount = Self::adjust_amount(amount);
 
-		PotValidatorPool::<T>::mutate(|voting_status| {
-			voting_status.add_vote(&candidate, adjusted_amount.clone());
-		});
-		Self::deposit_event(Event::<T>::Voted { who: candidate, amount: adjusted_amount.into() });
+		Self::do_process_fee(fee_amount);
+
+		if let Some(vote) = maybe_vote {
+			Self::do_process_vote(vote)
+		}
+		
 		Ok(())
 	}
 }
@@ -147,33 +139,54 @@ impl<T: Config> Pallet<T>
 {
 	/// **Process**
 	/// 
-	/// 2. Adjust absed on `BlockTimeWeight`
-	fn adjust_amount(amount: T::Score) -> T::HigherPrecisionScore {
-		// impl me!
+	/// 1. Check if the candidate is in the seed trust validator pool
+	/// 2. Adjust vote amount based on block time
+	/// 3. Add vote to the pool
+	/// 4. Deposit event. Convert `T::HigherPrecisionScore` to `T::Score` for human-readable format
+	fn do_process_vote(vote: Vote<T::AccountId, T::Score>) {
+		let Vote { candidate, amount } = vote;
+		// 1. 
+		if SeedTrustValidatorPool::<T>::get().contains(&candidate) {
+			return;
+		}
+		// 2. 
 		let current = <frame_system::Pallet<T>>::block_number();
 		let blocks_per_year = T::BlocksPerYear::get();
-		T::HigherPrecisionScore::block_time_weight(amount, current, blocks_per_year)
+		let adjusted_amount = T::HigherPrecisionScore::block_time_weight(amount, current, blocks_per_year);
+		// 3. 
+		PotValidatorPool::<T>::mutate(|voting_status| {
+			voting_status.add_vote(&candidate, adjusted_amount.clone());
+		});
+		// 4. 
+		Self::deposit_event(Event::<T>::Voted { who: candidate, amount: adjusted_amount.into() });
 	}
 
-	fn aggregate_reward(asset_id: SystemTokenAssetIdOf<T>, amount: T::Score) {
-		// impl me!
+	/// **Process**
+	/// 
+	/// 1. Check if the current era is set
+	/// 2. Add some rewards for validators who have authored the block
+	fn do_process_fee(fee_amount: Fee<SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>>) {
+		let Fee { asset, amount } = fee_amount;
+		// 1. 
 		if let Some(current_era) = CurrentEra::<T>::get() {
+			// 2. 
 			for v in T::SessionInterface::validators().iter() {
 				RewardInfo::<T>::mutate_exists(current_era, v, |maybe_reward| {
 					let mut rewards = maybe_reward.take().unwrap_or_default();
-					if let Some(reward) = rewards.iter_mut().find(|r| r.asset == asset_id) {
+					if let Some(reward) = rewards.iter_mut().find(|r| r.asset == asset) {
 						reward.amount += amount;
 					} else {
 						rewards.push(Reward {
-							asset: asset_id.clone(),
+							asset: asset.clone(),
 							amount: amount,
 						});
 					}
 					*maybe_reward = Some(rewards);
 				});
 			}
-			Self::deposit_event(Event::<T>::Rewarded { at_era: current_era, asset: asset_id, amount });
+			Self::deposit_event(Event::<T>::Rewarded { at_era: current_era, asset, amount });
 		} else {
+			// We don't handle fee if the current era is not set
 			log::warn!("Current era is not set");
 			return;
 		}

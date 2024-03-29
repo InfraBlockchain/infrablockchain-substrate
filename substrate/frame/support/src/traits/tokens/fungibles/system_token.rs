@@ -1,6 +1,6 @@
 use softfloat::F64;
 use sp_runtime::{
-	types::{Fiat, RemoteAssetMetadata},
+	infra::{Fiat, RemoteAssetMetadata},
 	DispatchError,
 };
 use sp_std::vec::Vec;

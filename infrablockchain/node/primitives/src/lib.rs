@@ -30,7 +30,7 @@ use parity_scale_codec::{Decode, Encode, Error as CodecError, Input};
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 
 pub use parachain_primitives::primitives::{
-	BlockData, HorizontalMessages, PotVotesResult, UpwardMessages,
+	BlockData, HorizontalMessages, PoTs, UpwardMessages,
 };
 use primitives::{
 	BlakeTwo256, BlockNumber, CandidateCommitments, CandidateHash, CollatorPair,
@@ -424,8 +424,8 @@ pub struct Collation<BlockNumber = primitives::BlockNumber> {
 	/// The mark which specifies the block number up to which all inbound HRMP messages are
 	/// processed.
 	pub hrmp_watermark: BlockNumber,
-	/// Pot Vote Result
-	pub vote_result: Option<PotVotesResult>,
+	/// Proof of Transaction
+	pub proof_of_transaction: PoTs,
 	/// Requested assets
 	pub requested_asset: Option<OpaqueRemoteAssetMetadata>,
 }

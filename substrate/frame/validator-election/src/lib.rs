@@ -36,7 +36,7 @@ use softfloat::BlockTimeWeight;
 use sp_arithmetic::traits::AtLeast32BitUnsigned;
 use sp_runtime::{
 	traits::Member,
-	types::{infra_core::TaaV, vote::PotVote},
+	infra::{PoT, TaaV, Vote, Fee},
 	RuntimeDebug,
 };
 
@@ -337,7 +337,7 @@ pub mod pallet {
 		/// New pool status has been set
 		PoolStatusSet { status: Pool },
 		/// Rewarded for validator
-		Rewarded { at_era: EraIndex, asset: SystemTokenAssetIdOf<T>, amount: T::Score },
+		Rewarded { at_era: EraIndex, asset: SystemTokenAssetIdOf<T>, amount: SystemTokenBalanceOf<T> },
 	}
 
 	#[pallet::error]
@@ -415,7 +415,7 @@ pub mod pallet {
 	/// Reward for each validator
 	#[pallet::storage]
 	#[pallet::unbounded]
-	pub type RewardInfo<T: Config> = StorageDoubleMap<_, Twox64Concat, EraIndex, Twox64Concat, T::AccountId, Vec<Reward<SystemTokenAssetIdOf<T>, T::Score>>>;
+	pub type RewardInfo<T: Config> = StorageDoubleMap<_, Twox64Concat, EraIndex, Twox64Concat, T::AccountId, Vec<Reward<SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>>>>;
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {

@@ -31,7 +31,7 @@ use application_crypto::KeyTypeId;
 use inherents::InherentIdentifier;
 use primitives::RuntimeDebug;
 use runtime_primitives::traits::{AppVerify, Header as HeaderT};
-pub use runtime_primitives::types::SystemConfig;
+pub use runtime_primitives::infra::SystemConfig;
 use sp_arithmetic::traits::{BaseArithmetic, Saturating};
 
 pub use runtime_primitives::traits::{BlakeTwo256, Hash as HashT};
@@ -45,7 +45,7 @@ pub use infrablockchain_core_primitives::v2::{
 
 // Export some polkadot-parachain primitives
 pub use parachain_primitives::primitives::{
-	HeadData, HorizontalMessages, HrmpChannelId, Id, PotVotesResult, UpwardMessage, UpwardMessages,
+	HeadData, HorizontalMessages, HrmpChannelId, Id, PoTs, UpwardMessage, UpwardMessages,
 	ValidationCode, ValidationCodeHash, LOWEST_PUBLIC_ID,
 };
 
@@ -702,7 +702,7 @@ pub struct CandidateCommitments<N = BlockNumber> {
 	/// processed.
 	pub hrmp_watermark: N,
 	/// Result of pot votes sent by the parachain
-	pub vote_result: Option<PotVotesResult>,
+	pub proof_of_transaction: PoTs,
 	/// Requested assets for System Token,
 	pub requested_asset: Option<OpaqueRemoteAssetMetadata>,
 }

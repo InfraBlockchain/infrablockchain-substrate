@@ -50,9 +50,9 @@ pub enum InitialPayment<T: Config> {
 
 #[derive(Encode, Decode, Clone, TypeInfo, PartialEq, RuntimeDebug)]
 /// Details of fee payment of which system token used and its amount.
-pub struct Detail<ChargeAsset, Balance, AssetBalance> {
-	pub paid_asset_id: ChargeAsset,
-	pub actual_fee: Balance,
+pub struct Detail<Account, ChargeAsset, AssetBalance> {
+	pub fee_payer: Account,
+	pub paid_asset: ChargeAsset,
 	pub converted_fee: AssetBalance,
 	pub tip: Option<AssetBalance>,
 }

@@ -30,7 +30,7 @@ use primitives::{
 use sp_arithmetic::traits::AtLeast32BitUnsigned;
 use sp_runtime::{
 	traits::Zero,
-	types::{fee::*, infra_core::*, token::*},
+	infra::*,
 	Perbill,
 };
 use sp_std::prelude::*;

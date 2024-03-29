@@ -10,7 +10,7 @@ use frame_support::{
 use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
 use sp_runtime::{
-	types::{fee::*, infra_core::*, token::{Fiat, RemoteAssetMetadata}},
+	infra::*,
 	Saturating,
 };
 use sp_std::vec::Vec;

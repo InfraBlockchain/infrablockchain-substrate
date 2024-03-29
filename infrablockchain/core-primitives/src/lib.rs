@@ -153,7 +153,7 @@ pub struct OutboundHrmpMessage<Id> {
 
 pub type OpaqueRemoteAssetMetadata = sp_std::vec::Vec<u8>;
 
-pub type OpaquePotVote = sp_std::vec::Vec<u8>;
+pub type OpaquePoT = sp_std::vec::Vec<u8>;
 
 /// `V2` primitives.
 pub mod v2 {

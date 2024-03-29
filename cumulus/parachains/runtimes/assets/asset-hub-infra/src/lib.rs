@@ -63,12 +63,12 @@ use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
+	infra::*,
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{
 		AccountIdLookup, BlakeTwo256, Block as BlockT, AccountIdConversion
 	},
 	transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
-	types::{SystemTokenWeight, SystemTokenBalance, ExchangeRate, Fiat, StandardUnixTime, ReanchorSystemToken},
 	ApplyExtrinsicResult,
 };
 
@@ -792,7 +792,6 @@ construct_runtime!(
 		Assets: pallet_assets::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>} = 50,
 		ForeignAssets: pallet_assets::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>} = 51,
 		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 52,
-		// SystemTokenAggregator: system_token_aggregator = 54,
 		SystemTokenOracle: pallet_system_token_oracle::{Pallet, Call, Storage, ValidateUnsigned} = 55,
 		SystemTokenConversion: pallet_system_token_conversion::{Pallet, Event<T>} = 56,
 

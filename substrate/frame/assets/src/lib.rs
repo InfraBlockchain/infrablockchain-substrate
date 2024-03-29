@@ -175,7 +175,7 @@ use scale_info::TypeInfo;
 use softfloat::F64;
 use sp_runtime::{
 	traits::{AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Saturating, StaticLookup, Zero},
-	types::token::*,
+	infra::token::*,
 	ArithmeticError, DispatchError, TokenError,
 };
 use sp_std::prelude::*;

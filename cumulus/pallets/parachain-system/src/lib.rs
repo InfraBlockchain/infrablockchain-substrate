@@ -52,7 +52,7 @@ use sp_runtime::{
 		InvalidTransaction, TransactionLongevity, TransactionSource, TransactionValidity,
 		ValidTransaction,
 	},
-	types::token::*,
+	infra::*,
 	DispatchError, RuntimeDebug,
 };
 use sp_std::{cmp, collections::btree_map::BTreeMap, prelude::*};
@@ -182,7 +182,7 @@ where
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use cumulus_primitives_core::relay_chain::OpaquePotVote;
+	use cumulus_primitives_core::relay_chain::OpaquePoT;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
@@ -432,7 +432,7 @@ pub mod pallet {
 			UpwardMessages::<T>::kill();
 			HrmpOutboundMessages::<T>::kill();
 			CustomValidationHeadData::<T>::kill();
-			PotVotes::<T>::kill();
+			ProofOfTransaction::<T>::kill();
 			RequestedAsset::<T>::kill();
 
 			weight += T::DbWeight::get().writes(8);
@@ -906,7 +906,7 @@ pub mod pallet {
 
 	/// The vote weight of a specific account for a specific asset.
 	#[pallet::storage]
-	pub(super) type PotVotes<T: Config> = StorageValue<_, Vec<OpaquePotVote>, OptionQuery>;
+	pub(super) type ProofOfTransaction<T: Config> = StorageValue<_, Vec<OpaquePoT>, ValueQuery>;
 
 	#[pallet::storage]
 	pub(super) type RequestedAsset<T: Config> =
@@ -1411,7 +1411,7 @@ impl<T: Config> Pallet<T> {
 			head_data: CustomValidationHeadData::<T>::get()
 				.map_or_else(|| header.encode(), |v| v)
 				.into(),
-			vote_result: PotVotes::<T>::get(),
+			proof_of_transaction: ProofOfTransaction::<T>::get(),
 			requested_asset: RequestedAsset::<T>::get(),
 		}
 	}
@@ -1496,10 +1496,10 @@ impl<T: Config> frame_system::SetCode<T> for ParachainSetCode<T> {
 	}
 }
 
-impl<T: Config> sp_runtime::types::infra_core::TaaV for Pallet<T> {
+impl<T: Config> sp_runtime::infra::TaaV for Pallet<T> {
 	type Error = ();
 
-	fn process_vote(bytes: &mut Vec<u8>) -> Result<(), Self::Error> {
+	fn process(bytes: &mut Vec<u8>) -> Result<(), Self::Error> {
 		Self::relay_vote(bytes.clone());
 		Ok(())
 	}
@@ -1508,10 +1508,8 @@ impl<T: Config> sp_runtime::types::infra_core::TaaV for Pallet<T> {
 /// Something deals with infra- stuff
 impl<T: Config> Pallet<T> {
 	pub fn relay_vote(bytes: Vec<u8>) {
-		PotVotes::<T>::mutate(|maybe_votes| {
-			let mut votes = maybe_votes.take().map_or_else(Vec::new, |v| v);
-			votes.push(bytes);
-			*maybe_votes = Some(votes);
+		ProofOfTransaction::<T>::mutate(|maybe_pot| {
+			maybe_pot.push(bytes);
 		});
 	}
 

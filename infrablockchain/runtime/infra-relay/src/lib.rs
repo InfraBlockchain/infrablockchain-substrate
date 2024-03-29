@@ -48,8 +48,6 @@ use runtime_parachains::{
 	shared as parachains_shared,
 	system_token_manager,
 	system_token_manager::SystemTokenInterface,
-	// validator_reward_manager,
-	// system_token_aggregator
 };
 
 use authority_discovery_primitives::AuthorityId as AuthorityDiscoveryId;
@@ -85,13 +83,13 @@ use primitives::{
 use sp_core::OpaqueMetadata;
 use sp_mmr_primitives as mmr;
 use sp_runtime::{
+	infra::*,
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{
 		AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT,
 		Extrinsic as ExtrinsicT, OpaqueKeys, SaturatedConversion, Verify,
-	},
+	}, 
 	transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
-	types::token::*,
 	ApplyExtrinsicResult, FixedU128, KeyTypeId, Perbill, Percent, Permill,
 };
 
@@ -400,7 +398,7 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 impl pallet_system_token_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type SystemConfig = Configuration;
-	type VotingHandler = ValidatorElection;
+	type PoTHandler = ValidatorElection;
 	type Fungibles = NativeAndForeignAssets;
 	type OnChargeSystemToken =
 		TransactionFeeCharger<Runtime, SystemTokenConversion, CreditToBucket>;
@@ -1112,7 +1110,7 @@ impl parachains_inclusion::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type DisputesHandler = ParasDisputes;
 	type RewardValidators = RewardValidators;
-	type VotingHandler = ValidatorElection;
+	type PoTHandler = ValidatorElection;
 	type MessageQueue = MessageQueue;
 	type WeightInfo = weights::runtime_parachains_inclusion::WeightInfo<Runtime>;
 }
@@ -1155,11 +1153,6 @@ impl system_token_manager::Config for Runtime {
 	type AssetHubId = AssetHubId;
 	type PalletId = SystemTokenManagerId;
 }
-
-// impl validator_reward_manager::Config for Runtime {
-// 	type RuntimeEvent = RuntimeEvent;
-// 	type ValidatorSet = Historical;
-// }
 
 parameter_types! {
 	pub const ParasUnsignedPriority: TransactionPriority = TransactionPriority::max_value();
@@ -1472,8 +1465,6 @@ construct_runtime! {
 		Assets: pallet_assets::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>} = 22,
 		ForeignAssets: pallet_assets::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>} = 23,
 		SystemTokenConversion: pallet_system_token_conversion::{Pallet, Event<T>} = 24,
-		// ValidatorRewardManager: validator_reward_manager::{Pallet, Call, Storage, Event<T>} = 22,
-		// SystemTokenAggregator: system_token_aggregator = 25,
 
 		// Babe must be before session.
 		Babe: pallet_babe::{Pallet, Call, Storage, Config<T>, ValidateUnsigned} = 2,

@@ -28,7 +28,7 @@ use sp_core::{bytes, RuntimeDebug, TypeId};
 use sp_runtime::traits::Hash as _;
 
 use infrablockchain_core_primitives::{
-	Hash, OpaquePotVote, OpaqueRemoteAssetMetadata, OutboundHrmpMessage,
+	Hash, OpaquePoT, OpaqueRemoteAssetMetadata, OutboundHrmpMessage,
 };
 
 /// Block number type used by the relay chain.
@@ -399,10 +399,10 @@ pub type HorizontalMessages =
 	BoundedVec<OutboundHrmpMessage<Id>, ConstU32<MAX_HORIZONTAL_MESSAGE_NUM>>;
 
 /// Maximum number of votes that can be collected for given period
-pub const MAX_VOTE_NUM: u32 = 16 * 1024;
+pub const MAX_POT_NUM: u32 = 16 * 1024;
 
-/// Aggregated votes with maximum amount `MAX_VOTE_NUM`
-pub type PotVotesResult = BoundedVec<OpaquePotVote, ConstU32<MAX_VOTE_NUM>>;
+/// Aggregated votes with maximum amount `MAX_POT_NUM`
+pub type PoTs = BoundedVec<OpaquePoT, ConstU32<MAX_POT_NUM>>;
 
 /// The result of parachain validation.
 // TODO: balance uploads (https://github.com/paritytech/polkadot/issues/220)
@@ -424,8 +424,8 @@ pub struct ValidationResult {
 	/// The mark which specifies the block number up to which all inbound HRMP messages are
 	/// processed.
 	pub hrmp_watermark: RelayChainBlockNumber,
-	/// Vote Result for the parachain block. Should be bounded
-	pub vote_result: Option<PotVotesResult>,
+	/// Proof of Transaction for the parachain block. Should be bounded
+	pub proof_of_transaction: PoTs,
 	/// Requested asset for the parachain block. Should be bounded
 	pub requested_asset: Option<OpaqueRemoteAssetMetadata>,
 }

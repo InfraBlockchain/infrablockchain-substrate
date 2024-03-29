@@ -4,7 +4,7 @@ use frame_support::traits::{fungibles::*, tokens::Balance};
 pub use pallet::*;
 use sp_arithmetic::{FixedPointNumber, FixedU128};
 use sp_runtime::{
-	types::{infra_core::SystemConfig, RuntimeConfigProvider},
+	infra::{SystemConfig, RuntimeConfigProvider},
 	DispatchError, Saturating,
 };
 

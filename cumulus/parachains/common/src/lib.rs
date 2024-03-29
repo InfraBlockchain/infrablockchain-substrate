@@ -41,7 +41,7 @@ mod types {
 	pub type AssetId = u32;
 
 	/// Balance of an account.
-	pub type Balance = sp_runtime::types::SystemTokenBalance;
+	pub type Balance = sp_runtime::infra::SystemTokenBalance;
 
 	/// Index of a transaction in the chain.
 	pub type Nonce = u32;

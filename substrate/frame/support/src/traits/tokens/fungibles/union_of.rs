@@ -26,7 +26,7 @@ use frame_support::traits::{
 };
 use sp_runtime::{
 	traits::Convert,
-	types::{Fiat, ReanchorSystemToken},
+	infra::{Fiat, ReanchorSystemToken},
 	DispatchError, DispatchResult,
 	Either::{self, Left, Right},
 };

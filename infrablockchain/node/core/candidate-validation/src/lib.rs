@@ -675,7 +675,7 @@ async fn validate_candidate_exhaustive(
 					new_validation_code: res.new_validation_code,
 					processed_downward_messages: res.processed_downward_messages,
 					hrmp_watermark: res.hrmp_watermark,
-					vote_result: res.vote_result,
+					proof_of_transaction: res.proof_of_transaction,
 					requested_asset: res.requested_asset,
 				};
 				if candidate_receipt.commitments_hash != outputs.hash() {
