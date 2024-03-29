@@ -30,11 +30,8 @@ use sp_std::{
 use application_crypto::KeyTypeId;
 use inherents::InherentIdentifier;
 use primitives::RuntimeDebug;
+pub use runtime_primitives::infra::SystemConfig;
 use runtime_primitives::traits::{AppVerify, Header as HeaderT};
-pub use runtime_primitives::types::{
-	token::{InfraSystemConfig, RemoteAssetMetadata},
-	vote::PotVotesResult,
-};
 use sp_arithmetic::traits::{BaseArithmetic, Saturating};
 
 pub use runtime_primitives::traits::{BlakeTwo256, Hash as HashT};
@@ -43,13 +40,13 @@ pub use runtime_primitives::traits::{BlakeTwo256, Hash as HashT};
 pub use infrablockchain_core_primitives::v2::{
 	AccountId, AccountIndex, AccountPublic, Balance, Block, BlockId, BlockNumber, CandidateHash,
 	ChainId, DownwardMessage, Hash, Header, InboundDownwardMessage, InboundHrmpMessage, Moment,
-	Nonce, OutboundHrmpMessage, Remark, Signature, UncheckedExtrinsic,
+	Nonce, OpaqueRemoteAssetMetadata, OutboundHrmpMessage, Remark, Signature, UncheckedExtrinsic,
 };
 
 // Export some polkadot-parachain primitives
 pub use parachain_primitives::primitives::{
-	HeadData, HorizontalMessages, HrmpChannelId, Id, UpwardMessage, UpwardMessages, ValidationCode,
-	ValidationCodeHash, LOWEST_PUBLIC_ID,
+	HeadData, HorizontalMessages, HrmpChannelId, Id, PoTs, UpwardMessage, UpwardMessages,
+	ValidationCode, ValidationCodeHash, LOWEST_PUBLIC_ID,
 };
 
 use serde::{Deserialize, Serialize};
@@ -152,7 +149,6 @@ pub mod well_known_keys {
 	use super::{HrmpChannelId, Id, WellKnownKey};
 	use hex_literal::hex;
 	use parity_scale_codec::Encode as _;
-	use runtime_primitives::types::SystemTokenParaId;
 	use sp_io::hashing::twox_64;
 	use sp_std::prelude::*;
 
@@ -205,19 +201,18 @@ pub mod well_known_keys {
 		&hex!["06de3d8a54d27e44a9d5ce189618f22db4b49d95320d9021994c850f25b8e385"];
 
 	/// The currently active system configuration for InfraBlockchain
-	pub const SYSTEM_CONFIG: &[u8] =
-		&hex!["c1b1962c8d78658bd8ffce50b52608924749b1555450acbdc9c90fdcafcce80c"];
+	pub const ACTIVE_SYSTEM_CONFIG: &[u8] =
+		&hex!["06de3d8a54d27e44a9d5ce189618f22d4749b1555450acbdc9c90fdcafcce80c"];
 
 	/// Weight needs to be updated for `para_id`
 	pub fn update_system_token_weight(para_id: Id) -> Vec<u8> {
 		let prefix = hex!["8b48ccceef96f69546d630a6a9445f25262f55aa25e8eaac78e113273688c349"];
-		let system_token_para_id: SystemTokenParaId = para_id.into();
-		system_token_para_id.using_encoded(|system_token_para_id: &[u8]| {
+		para_id.using_encoded(|para_id: &[u8]| {
 			prefix
 				.as_ref()
 				.iter()
-				.chain(twox_64(system_token_para_id).iter())
-				.chain(system_token_para_id.iter())
+				.chain(twox_64(para_id).iter())
+				.chain(para_id.iter())
 				.cloned()
 				.collect()
 		})
@@ -707,9 +702,9 @@ pub struct CandidateCommitments<N = BlockNumber> {
 	/// processed.
 	pub hrmp_watermark: N,
 	/// Result of pot votes sent by the parachain
-	pub vote_result: Option<PotVotesResult>,
+	pub proof_of_transaction: Option<PoTs>,
 	/// Requested assets for System Token,
-	pub requested_asset: Option<RemoteAssetMetadata>,
+	pub requested_asset: Option<OpaqueRemoteAssetMetadata>,
 }
 
 impl CandidateCommitments {

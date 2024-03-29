@@ -15,7 +15,7 @@ enum RelayRuntimePallets {
 /// Call encoding for the calls needed from the relay system token manager pallet.
 #[derive(Encode, Decode)]
 enum SystemTokenManagerCalls {
-	#[codec(index = 6)]
+	#[codec(index = 4)]
 	UpdateExchangeRates(StandardUnixTime, Vec<(Fiat, ExchangeRate)>),
 }
 

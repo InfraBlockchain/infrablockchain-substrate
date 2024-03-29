@@ -18,9 +18,9 @@
 pub mod impls;
 pub mod infra_relay;
 pub mod xcm_config;
-
+pub use types::*;
 /// Common types of parachains.
-pub mod types {
+mod types {
 	use sp_runtime::traits::{IdentifyAccount, Verify};
 
 	/// An index to a block.
@@ -41,7 +41,7 @@ pub mod types {
 	pub type AssetId = u32;
 
 	/// Balance of an account.
-	pub type Balance = u128;
+	pub type Balance = sp_runtime::infra::SystemTokenBalance;
 
 	/// Index of a transaction in the chain.
 	pub type Nonce = u32;
@@ -57,6 +57,12 @@ pub mod types {
 
 	// Id used for identifying assets.
 	pub type AssetIdForTrustBackedAssets = u32;
+
+	// Id used for identifying non-fungible collections.
+	pub type CollectionId = u32;
+
+	// Id used for identifying non-fungible items.
+	pub type ItemId = u32;
 }
 
 /// Common constants of parachains.

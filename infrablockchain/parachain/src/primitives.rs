@@ -25,12 +25,11 @@ use parity_scale_codec::{CompactAs, Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_core::{bytes, RuntimeDebug, TypeId};
-use sp_runtime::{
-	traits::Hash as _,
-	types::{vote::PotVotesResult, RemoteAssetMetadata},
-};
+use sp_runtime::traits::Hash as _;
 
-use infrablockchain_core_primitives::{Hash, OutboundHrmpMessage};
+use infrablockchain_core_primitives::{
+	Hash, OpaquePoT, OpaqueRemoteAssetMetadata, OutboundHrmpMessage,
+};
 
 /// Block number type used by the relay chain.
 pub use infrablockchain_core_primitives::BlockNumber as RelayChainBlockNumber;
@@ -399,6 +398,12 @@ pub type UpwardMessages = BoundedVec<UpwardMessage, ConstU32<MAX_UPWARD_MESSAGE_
 pub type HorizontalMessages =
 	BoundedVec<OutboundHrmpMessage<Id>, ConstU32<MAX_HORIZONTAL_MESSAGE_NUM>>;
 
+/// Maximum number of votes that can be collected for given period
+pub const MAX_POT_NUM: u32 = 16 * 1024;
+
+/// Aggregated votes with maximum amount `MAX_POT_NUM`
+pub type PoTs = BoundedVec<OpaquePoT, ConstU32<MAX_POT_NUM>>;
+
 /// The result of parachain validation.
 // TODO: balance uploads (https://github.com/paritytech/polkadot/issues/220)
 #[derive(PartialEq, Eq, Clone, Encode)]
@@ -419,8 +424,8 @@ pub struct ValidationResult {
 	/// The mark which specifies the block number up to which all inbound HRMP messages are
 	/// processed.
 	pub hrmp_watermark: RelayChainBlockNumber,
-	/// Vote Result for the parachain block. Should be bounded
-	pub vote_result: Option<PotVotesResult>,
-	/// Requested assets for the parachain block. Should be bounded
-	pub requested_asset: Option<RemoteAssetMetadata>,
+	/// Proof of Transaction for the parachain block. Should be bounded
+	pub proof_of_transaction: Option<PoTs>,
+	/// Requested asset for the parachain block. Should be bounded
+	pub requested_asset: Option<OpaqueRemoteAssetMetadata>,
 }

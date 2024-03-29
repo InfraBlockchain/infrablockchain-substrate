@@ -296,7 +296,6 @@ where
 					CandidateEvent::CandidateTimedOut(c, h, core),
 				// Not needed for candidate events.
 				RawEvent::<T>::UpwardMessagesReceived { .. } => return None,
-				RawEvent::<T>::VoteCollected { .. } => return None,
 				RawEvent::<T>::__Ignore(_, _) => unreachable!("__Ignore cannot be used"),
 			})
 		})

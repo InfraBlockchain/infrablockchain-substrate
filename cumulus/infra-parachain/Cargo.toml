@@ -26,9 +26,6 @@ parachains-common = { path = "../parachains/common" }
 
 # parachains's runtimes
 asset-hub-runtime = { path = "../parachains/runtimes/assets/asset-hub-infra" }
-newnal-runtime = { path = "../parachains/runtimes/newnal" }
-contracts-infra-runtime = { path = "../parachains/runtimes/contracts/contracts-infra" }
-did-runtime = { path = "../parachains/runtimes/did" }
 
 # Substrate
 frame-benchmarking = { path = "../../substrate/frame/benchmarking" }
@@ -68,7 +65,6 @@ substrate-state-trie-migration-rpc = { path = "../../substrate/utils/frame/rpc/s
 
 # Infr Relay
 infrablockchain-cli = { path = "../../infrablockchain/cli", features = [
-	"rococo-native",
 	"infra-relay-native",
 ] }
 primitives = { path = "../../infrablockchain/primitives" }
@@ -119,7 +115,4 @@ try-runtime = [
 
 fast-runtime = [
 	"asset-hub-runtime/fast-runtime",
-	"contracts-infra-runtime/fast-runtime",
-	"did-runtime/fast-runtime",
-	"newnal-runtime/fast-runtime",
 ]

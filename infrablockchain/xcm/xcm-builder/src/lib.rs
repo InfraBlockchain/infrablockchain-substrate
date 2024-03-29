@@ -38,6 +38,9 @@ pub use location_conversion::{
 	SiblingParachainConvertsVia,
 };
 
+mod matches_location;
+pub use matches_location::{StartsWith, StartsWithExplicitGlobalConsensus};
+
 mod origin_conversion;
 pub use origin_conversion::{
 	BackingToPlurality, ChildParachainAsNative, ChildSystemParachainAsSuperuser, EnsureXcmOrigin,
@@ -49,6 +52,7 @@ pub use origin_conversion::{
 mod asset_conversion;
 pub use asset_conversion::{
 	AsPrefixedGeneralIndex, ConvertedAbstractId, ConvertedConcreteId, MatchedConvertedConcreteId,
+	V3LocationConverter,
 };
 #[allow(deprecated)]
 pub use asset_conversion::{ConvertedAbstractAssetId, ConvertedConcreteAssetId};

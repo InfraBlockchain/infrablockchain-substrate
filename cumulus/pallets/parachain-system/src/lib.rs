@@ -30,7 +30,7 @@
 use codec::{Decode, Encode, MaxEncodedLen};
 use cumulus_primitives_core::{
 	relay_chain, AbridgedHostConfiguration, ChannelStatus, CollationInfo, DmpMessageHandler,
-	GetChannelInfo, InboundDownwardMessage, InboundHrmpMessage, MessageSendError,
+	GetChannelInfo, InboundDownwardMessage, InboundHrmpMessage, MessageSendError, MultiLocation,
 	OutboundHrmpMessage, ParaId, PersistedValidationData, UpdateRCConfig, UpwardMessage,
 	UpwardMessageSender, XcmpMessageHandler, XcmpMessageSource,
 };
@@ -47,12 +47,12 @@ use frame_system::{ensure_none, ensure_root, pallet_prelude::HeaderFor};
 use parachain_primitives::primitives::RelayChainBlockNumber;
 use scale_info::TypeInfo;
 use sp_runtime::{
+	infra::*,
 	traits::{Block as BlockT, BlockNumberProvider, Hash},
 	transaction_validity::{
 		InvalidTransaction, TransactionLongevity, TransactionSource, TransactionValidity,
 		ValidTransaction,
 	},
-	types::{token::*, vote::*},
 	DispatchError, RuntimeDebug,
 };
 use sp_std::{cmp, collections::btree_map::BTreeMap, prelude::*};
@@ -182,6 +182,7 @@ where
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use cumulus_primitives_core::relay_chain::OpaquePoT;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
@@ -224,7 +225,7 @@ pub mod pallet {
 		type CheckAssociatedRelayNumber: CheckAssociatedRelayNumber;
 
 		/// Type that updates configuration set by relay chain
-		type UpdateRCConfig: UpdateRCConfig;
+		type UpdateRCConfig: UpdateRCConfig<MultiLocation, SystemTokenWeight>;
 
 		/// An entry-point for higher-level logic to manage the backlog of unincluded parachain
 		/// blocks and authorship rights for those blocks.
@@ -431,7 +432,7 @@ pub mod pallet {
 			UpwardMessages::<T>::kill();
 			HrmpOutboundMessages::<T>::kill();
 			CustomValidationHeadData::<T>::kill();
-			CollectedPotVotes::<T>::kill();
+			ProofOfTransaction::<T>::kill();
 			RequestedAsset::<T>::kill();
 
 			weight += T::DbWeight::get().writes(8);
@@ -594,7 +595,7 @@ pub mod pallet {
 			);
 			<UpgradeGoAhead<T>>::put(upgrade_go_ahead_signal);
 			let infra_system_config = relay_state_proof
-				.read_infra_system_config()
+				.read_active_system_config()
 				.expect("Error on reading infra system config in relay chain state proof");
 			T::UpdateRCConfig::update_system_config(infra_system_config);
 
@@ -705,8 +706,6 @@ pub mod pallet {
 		DownwardMessagesProcessed { weight_used: Weight, dmq_head: relay_chain::Hash },
 		/// An upward message was sent to the relay chain.
 		UpwardMessageSent { message_hash: Option<XcmHash> },
-		/// Requested assets' metadata
-		AssetForSystemTokenRequestsed { requested_asset: RemoteAssetMetadata },
 	}
 
 	#[pallet::error]
@@ -793,10 +792,6 @@ pub mod pallet {
 	#[pallet::storage]
 	pub(super) type UpgradeRestrictionSignal<T: Config> =
 		StorageValue<_, Option<relay_chain::UpgradeRestriction>, ValueQuery>;
-
-	#[pallet::storage]
-	pub(super) type UpdatedInfraSystemConfig<T: Config> =
-		StorageValue<_, Option<InfraSystemConfig>, ValueQuery>;
 
 	/// Optional upgrade go-ahead signal from the relay-chain.
 	///
@@ -911,10 +906,11 @@ pub mod pallet {
 
 	/// The vote weight of a specific account for a specific asset.
 	#[pallet::storage]
-	pub(super) type CollectedPotVotes<T: Config> = StorageValue<_, PotVotes, OptionQuery>;
+	pub(super) type ProofOfTransaction<T: Config> = StorageValue<_, Vec<OpaquePoT>>;
 
 	#[pallet::storage]
-	pub(super) type RequestedAsset<T: Config> = StorageValue<_, RemoteAssetMetadata>;
+	pub(super) type RequestedAsset<T: Config> =
+		StorageValue<_, relay_chain::OpaqueRemoteAssetMetadata>;
 
 	#[pallet::inherent]
 	impl<T: Config> ProvideInherent for Pallet<T> {
@@ -975,25 +971,6 @@ pub mod pallet {
 			}
 			Err(InvalidTransaction::Call.into())
 		}
-	}
-}
-
-impl<T: Config> CollectVote for Pallet<T> {
-	fn collect_vote(who: VoteAccountId, system_token_id: SystemTokenId, vote_weight: VoteWeight) {
-		let pot_votes = if let Some(mut old) = CollectedPotVotes::<T>::get() {
-			old.update_vote_weight(system_token_id, who, vote_weight);
-			old
-		} else {
-			PotVotes::new(system_token_id, who, vote_weight)
-		};
-		CollectedPotVotes::<T>::put(pot_votes);
-	}
-}
-
-impl<T: Config> AssetMetadataProvider for Pallet<T> {
-	fn requested(asset: RemoteAssetMetadata) {
-		RequestedAsset::<T>::put(&asset);
-		Self::deposit_event(Event::AssetForSystemTokenRequestsed { requested_asset: asset });
 	}
 }
 
@@ -1423,12 +1400,6 @@ impl<T: Config> Pallet<T> {
 	/// This is expected to be used by the
 	/// [`CollectCollationInfo`](cumulus_primitives_core::CollectCollationInfo) runtime api.
 	pub fn collect_collation_info(header: &HeaderFor<T>) -> CollationInfo {
-		let vote_result = if let Some(res) = CollectedPotVotes::<T>::get() {
-			let vote_result = res.votes();
-			Some(vote_result)
-		} else {
-			None
-		};
 		CollationInfo {
 			hrmp_watermark: HrmpWatermark::<T>::get(),
 			horizontal_messages: HrmpOutboundMessages::<T>::get(),
@@ -1440,7 +1411,7 @@ impl<T: Config> Pallet<T> {
 			head_data: CustomValidationHeadData::<T>::get()
 				.map_or_else(|| header.encode(), |v| v)
 				.into(),
-			vote_result,
+			proof_of_transaction: ProofOfTransaction::<T>::get(),
 			requested_asset: RequestedAsset::<T>::get(),
 		}
 	}
@@ -1522,6 +1493,30 @@ pub struct ParachainSetCode<T>(sp_std::marker::PhantomData<T>);
 impl<T: Config> frame_system::SetCode<T> for ParachainSetCode<T> {
 	fn set_code(code: Vec<u8>) -> DispatchResult {
 		Pallet::<T>::schedule_code_upgrade(code)
+	}
+}
+
+impl<T: Config> sp_runtime::infra::TaaV for Pallet<T> {
+	type Error = ();
+
+	fn process(bytes: &mut Vec<u8>) -> Result<(), Self::Error> {
+		Self::relay_vote(bytes.clone());
+		Ok(())
+	}
+}
+
+/// Something deals with infra- stuff
+impl<T: Config> Pallet<T> {
+	pub fn relay_vote(bytes: Vec<u8>) {
+		ProofOfTransaction::<T>::mutate(|maybe_pot| {
+			let mut pot = maybe_pot.take().unwrap_or_default();
+			pot.push(bytes);
+			*maybe_pot = Some(pot);
+		});
+	}
+
+	pub fn relay_request_asset(bytes: Vec<u8>) {
+		RequestedAsset::<T>::put(bytes);
 	}
 }
 

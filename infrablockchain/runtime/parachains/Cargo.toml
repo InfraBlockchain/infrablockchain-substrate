@@ -48,6 +48,7 @@ sp-core = { path = "../../../substrate/primitives/core", default-features = fals
 sp-keystore = { path = "../../../substrate/primitives/keystore", optional = true }
 sp-application-crypto = { path = "../../../substrate/primitives/application-crypto", default-features = false, optional = true }
 sp-tracing = { path = "../../../substrate/primitives/tracing", default-features = false, optional = true }
+sp-arithmetic = { path = "../../../substrate/primitives/arithmetic", default-features = false }
 
 # frames
 pallet-assets = { path = "../../../substrate/frame/assets", default-features = false }
@@ -69,7 +70,6 @@ xcm = { package = "staging-xcm", path = "../../xcm", default-features = false }
 xcm-executor = { package = "staging-xcm-executor", path = "../../xcm/xcm-executor", default-features = false }
 primitives = { path = "../../primitives", default-features = false }
 pallet-xcm = { path = "../../xcm/pallet-xcm", default-features = false }
-pallet-asset-link = { package = "infra-asset-link", path = "../../xcm/infra-asset-link", default-features = false }
 xcm-primitives = { path = "../../xcm/xcm-primitives", default-features = false }
 
 parachain-primitives = { path = "../../parachain", default-features = false }
@@ -99,7 +99,6 @@ std = [
 	"inherents/std",
 	"log/std",
 	"pallet-assets/std",
-	"pallet-asset-link/std",
 	"pallet-xcm/std",
 	"pallet-validator-election/std",
 	"pallet-system-token-oracle/std",
@@ -131,6 +130,7 @@ std = [
 	"sp-session/std",
 	"sp-staking/std",
 	"sp-std/std",
+	"sp-arithmetic/std",
 	"xcm-primitives/std",
 	"xcm-executor/std",
 	"xcm/std",

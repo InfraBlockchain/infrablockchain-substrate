@@ -1,6 +1,5 @@
-use frame_system::pallet_prelude::BlockNumberFor;
-
 use crate::*;
+use frame_system::pallet_prelude::BlockNumberFor;
 
 pub trait CollectiveInterface<AccountId> {
 	fn set_new_members(new: Vec<AccountId>);
@@ -23,26 +22,39 @@ impl<T: Config> SessionAlert<BlockNumberFor<T>> for Pallet<T> {
 
 /// Something that handles fee reward
 pub trait RewardInterface {
-	/// Fee will be aggregated on certain account for current session
-	fn aggregate_reward(
-		session_index: SessionIndex,
-		para_id: SystemTokenParaId,
-		system_token_id: SystemTokenId,
-		amount: VoteWeight,
-	);
+	/// Infrablockchain AccountId type
+	type AccountId: Parameter;
+	/// Infrablockchain SystemTokenId type
+	type AssetKind: Parameter;
+	/// Infrablockchain Balance type
+	type Balance: Parameter;
+	/// Type that handles local fungible
+	type Fungibles: Mutate<Self::AccountId>;
+
 	/// Fee will be distributed to the validators for current session
-	fn distribute_reward(session_index: SessionIndex);
+	fn distribute_reward(who: Self::AccountId, asset: Self::AssetKind, amount: Self::Balance);
 }
 
-impl RewardInterface for () {
-	fn aggregate_reward(
-		_session_index: SessionIndex,
-		_para_id: SystemTokenParaId,
-		__system_token_id: SystemTokenId,
-		_amount: VoteWeight,
-	) {
+impl<T: Config> TaaV for Pallet<T> {
+	type Error = sp_runtime::DispatchError;
+
+	fn process(bytes: &mut Vec<u8>) -> Result<(), Self::Error> {
+		let PoT { fee_amount, maybe_vote } = PoT::<
+			T::AccountId,
+			SystemTokenAssetIdOf<T>,
+			SystemTokenBalanceOf<T>,
+			T::Score,
+		>::decode(&mut &bytes[..])
+		.map_err(|_| Error::<T>::ErrorDecode)?;
+
+		Self::do_process_fee(fee_amount);
+
+		if let Some(vote) = maybe_vote {
+			Self::do_process_vote(vote)
+		}
+
+		Ok(())
 	}
-	fn distribute_reward(_session_index: SessionIndex) {}
 }
 
 /// Means for interacting with a specialized version of the `session` trait.
@@ -85,36 +97,6 @@ impl<AccountId> SessionInterface<AccountId> for () {
 	}
 }
 
-pub trait VotingInterface<T> {
-	/// Update the vote status for the given account.
-	fn update_vote_status(who: VoteAccountId, weight: VoteWeight) -> bool;
-}
-
-impl<T: Config> VotingInterface<T> for Pallet<T>
-where
-	T::AccountId: From<VoteAccountId>,
-{
-	fn update_vote_status(who: VoteAccountId, weight: VoteWeight) -> bool {
-		// Return if vote candidate is in SeedTrustValidatorPool
-		if SeedTrustValidatorPool::<T>::get().contains(&who.clone().into()) {
-			return false
-		}
-		let vote_account_id: T::InfraVoteAccountId = who.into();
-		let vote_points: T::InfraVotePoints = weight.into();
-
-		let mut vote_status = PotValidatorPool::<T>::get();
-		vote_status.add_points(&vote_account_id, vote_points);
-		PotValidatorPool::<T>::put(vote_status);
-		true
-	}
-}
-
-impl<T: Config> VotingInterface<T> for () {
-	fn update_vote_status(_: VoteAccountId, _: VoteWeight) -> bool {
-		false
-	}
-}
-
 // Session Pallet Rotate Order
 //
 // On Genesis:
@@ -154,11 +136,63 @@ impl<T: Config> pallet_session::SessionManager<T::AccountId> for Pallet<T> {
 	}
 	fn end_session(end_index: SessionIndex) {
 		log!(info, "⏰ ending session {}", end_index);
-		T::RewardInterface::distribute_reward(end_index);
 	}
 }
 
 impl<T: Config> Pallet<T> {
+	/// **Process**
+	///
+	/// 1. Check if the candidate is in the seed trust validator pool
+	/// 2. Adjust vote amount based on block time
+	/// 3. Add vote to the pool
+	/// 4. Deposit event. Convert `T::HigherPrecisionScore` to `T::Score` for human-readable format
+	fn do_process_vote(vote: Vote<T::AccountId, T::Score>) {
+		let Vote { candidate, amount } = vote;
+		// 1.
+		if SeedTrustValidatorPool::<T>::get().contains(&candidate) {
+			return
+		}
+		// 2.
+		let current = <frame_system::Pallet<T>>::block_number();
+		let blocks_per_year = T::BlocksPerYear::get();
+		let adjusted_amount =
+			T::HigherPrecisionScore::block_time_weight(amount, current, blocks_per_year);
+		// 3.
+		PotValidatorPool::<T>::mutate(|voting_status| {
+			voting_status.add_vote(&candidate, adjusted_amount.clone());
+		});
+		// 4.
+		Self::deposit_event(Event::<T>::Voted { who: candidate, amount: adjusted_amount.into() });
+	}
+
+	/// **Process**
+	///
+	/// 1. Check if the current era is set
+	/// 2. Add some rewards for validators who have authored the block
+	fn do_process_fee(fee_amount: Fee<SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>>) {
+		let Fee { asset, amount } = fee_amount;
+		// 1.
+		if let Some(current_era) = CurrentEra::<T>::get() {
+			// 2.
+			for v in T::SessionInterface::validators().iter() {
+				RewardInfo::<T>::mutate_exists(current_era, v, |maybe_reward| {
+					let mut rewards = maybe_reward.take().unwrap_or_default();
+					if let Some(reward) = rewards.iter_mut().find(|r| r.asset == asset) {
+						reward.amount += amount;
+					} else {
+						rewards.push(Reward { asset: asset.clone(), amount });
+					}
+					*maybe_reward = Some(rewards);
+				});
+			}
+			Self::deposit_event(Event::<T>::Rewarded { at_era: current_era, asset, amount });
+		} else {
+			// We don't handle fee if the current era is not set
+			log::warn!("Current era is not set");
+			return
+		}
+	}
+
 	fn handle_new_session(
 		session_index: SessionIndex,
 		is_genesis: bool,
@@ -212,12 +246,20 @@ impl<T: Config> Pallet<T> {
 		session_index: SessionIndex,
 		_is_genesis: bool,
 	) -> Option<Vec<T::AccountId>> {
+		let mut reward_era: EraIndex = Default::default();
 		let new_planned_era = CurrentEra::<T>::mutate(|era| {
-			*era = Some(era.map(|old_era| old_era + 1).unwrap_or(0));
+			*era = Some(
+				era.map(|old_era| {
+					reward_era = old_era;
+					old_era + 1
+				})
+				.unwrap_or(0),
+			);
 			era.unwrap()
 		});
 		StartSessionIndexPerEra::<T>::insert(&new_planned_era, session_index);
 		Self::deposit_event(Event::<T>::NewEraTriggered { era_index: new_planned_era });
+		Self::distribute_reward(reward_era, new_planned_era);
 		Some(Self::elect_validators(new_planned_era))
 
 		// Clean old era information.
@@ -225,6 +267,23 @@ impl<T: Config> Pallet<T> {
 		// if let Some(old_era) = new_planned_era.checked_sub(T::HistoryDepth::get() + 1) {
 		// 	Self::clear_era_information(old_era);
 		// }
+	}
+
+	/// Distribute rewards to validators
+	///
+	/// 1. Iterate over all validators
+	/// 2. Distribute rewards to validators
+	/// 3. Clear reward info
+	pub fn distribute_reward(of: EraIndex, at: EraIndex) {
+		let vs = RewardInfo::<T>::iter_prefix(of);
+		for v in vs {
+			let (who, rewards) = v;
+			for r in rewards {
+				T::RewardHandler::distribute_reward(who.clone(), r.asset, r.amount.into());
+			}
+		}
+		let _ = RewardInfo::<T>::clear_prefix(of, u32::MAX, None);
+		Self::deposit_event(Event::<T>::RewardDistributed { of, at });
 	}
 
 	/// Elect validators from `SeedTrustValidatorPool::<T>` and `PotValidatorPool::<T>`

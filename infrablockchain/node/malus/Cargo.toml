@@ -26,7 +26,7 @@ path = "../../src/bin/prepare-worker.rs"
 doc = false
 
 [dependencies]
-infrablockchain-cli = { path = "../../cli", features = [ "malus", "rococo-native", "infra-relay-native" ] }
+infrablockchain-cli = { path = "../../cli", features = [ "malus", "infra-relay-native" ] }
 node-subsystem = { path = "../subsystem" }
 node-subsystem-util = { path = "../subsystem-util" }
 node-subsystem-types = { path = "../subsystem-types" }

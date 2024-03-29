@@ -92,13 +92,6 @@ impl SubstrateCli for Cli {
 			"infra-relay-local" => Box::new(service::chain_spec::infra_relay_development_config()?),
 			#[cfg(feature = "infra-relay-native")]
 			"infra-relay-staging" => Box::new(service::chain_spec::infra_relay_staging_testnet_config()?),
-			"rococo" => Box::new(service::chain_spec::rococo_config()?),
-			#[cfg(feature = "rococo-native")]
-			"rococo-dev" => Box::new(service::chain_spec::rococo_development_config()?),
-			#[cfg(feature = "rococo-native")]
-			"rococo-local" => Box::new(service::chain_spec::rococo_local_testnet_config()?),
-			#[cfg(feature = "rococo-native")]
-			"rococo-staging" => Box::new(service::chain_spec::rococo_staging_testnet_config()?),
 			#[cfg(not(feature = "rococo-native"))]
 			name if name.starts_with("rococo-") && !name.ends_with(".json") || name == "dev" =>
 				Err(format!("`{}` only supported with `rococo-native` feature enabled.", name))?,

@@ -57,18 +57,16 @@ use constants::{currency::*, fee::WeightToFee};
 pub mod oracle;
 mod weights;
 pub mod xcm_config;
-use xcm_config::XcmRouter;
+use xcm_config::UniversalLocation;
 
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{
-		AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, TryConvertInto as JustTry,
-	},
+	infra::*,
+	traits::{AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT},
 	transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
-	types::token::*,
 	ApplyExtrinsicResult,
 };
 
@@ -83,6 +81,7 @@ use frame_support::{
 	dispatch::DispatchClass,
 	parameter_types,
 	traits::{
+		tokens::fungibles::{Balanced, Credit, UnionOf},
 		AsEnsureOriginWithArg, ConstBool, ConstU32, ConstU64, ConstU8, EitherOfDiverse,
 		InstanceFilter,
 	},
@@ -94,13 +93,18 @@ use frame_system::{
 	EnsureRoot, EnsureSigned,
 };
 
-use pallet_system_token_tx_payment::{CreditToBucket, TransactionFeeCharger};
+use pallet_system_token_tx_payment::{HandleCredit, TransactionFeeCharger};
 use parachains_common::{
-	constants::*, impls::DealWithFees, infra_relay::consensus::*, opaque::*, types::*,
+	constants::*, impls::DealWithFees, infra_relay::consensus::*, opaque::*, AccountId, AuraId,
+	Balance, BlockNumber, Hash, Nonce, Signature,
 };
 use xcm_config::{
-	NativeLocation, TrustBackedAssetsConvertedConcreteId, XcmConfig,
+	NativeAssetsConvertedConcreteId, NativeAssetsPalletLocation, NativeLocation, XcmConfig,
 	XcmOriginToTransactDispatchOrigin,
+};
+
+use infra_asset_common::{
+	local_and_foreign_assets::LocalFromLeft, AssetIdForNativeAssets, AssetIdForNativeAssetsConvert,
 };
 
 #[cfg(any(feature = "std", test))]
@@ -109,8 +113,7 @@ pub use sp_runtime::BuildStorage;
 // Polkadot imports
 use pallet_xcm::{EnsureXcm, IsMajorityOfBody};
 use runtime_common::{prod_or_fast, BlockHashCount, SlowAdjustingFeeUpdate};
-use runtime_parachains::system_token_aggregator;
-use xcm::latest::BodyId;
+use xcm::latest::{BodyId, MultiLocation};
 use xcm_executor::XcmExecutor;
 
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
@@ -251,9 +254,9 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 	fn contains(call: &RuntimeCall) -> bool {
 		match call {
 			RuntimeCall::Assets(
-				pallet_assets::Call::create { .. } |
-				pallet_assets::Call::set_metadata { .. } |
-				pallet_assets::Call::mint { .. },
+				NativeAssetsCall::create { .. } |
+				NativeAssetsCall::set_metadata { .. } |
+				NativeAssetsCall::mint { .. },
 			) |
 			RuntimeCall::SystemTokenOracle(
 				pallet_system_token_oracle::Call::submit_exchange_rates_unsigned { .. },
@@ -275,22 +278,36 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 
 impl pallet_system_token_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type InfraTxInterface = InfraParaCore;
-	type Assets = Assets;
-	type OnChargeSystemToken = TransactionFeeCharger<
-		Runtime,
-		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
-		CreditToBucket<Runtime>,
-		JustTry,
-	>;
+	type SystemConfig = InfraParaCore;
+	type PoTHandler = ParachainSystem;
+	type Fungibles = NativeAndForeignAssets;
+	type OnChargeSystemToken =
+		TransactionFeeCharger<Runtime, SystemTokenConversion, CreditToBucket>;
 	type BootstrapCallFilter = BootstrapCallFilter;
 	type PalletId = FeeTreasuryId;
+}
+
+pub struct CreditToBucket;
+impl HandleCredit<AccountId, NativeAndForeignAssets> for CreditToBucket {
+	fn handle_credit(credit: Credit<AccountId, NativeAndForeignAssets>) {
+		let dest = FeeTreasuryId::get().into_account_truncating();
+		let _ = <NativeAndForeignAssets as Balanced<AccountId>>::resolve(&dest, credit);
+	}
+}
+
+impl pallet_system_token_conversion::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Balance = SystemTokenBalance;
+	type AssetKind = xcm::v3::MultiLocation;
+	type Fungibles = NativeAndForeignAssets;
+	type SystemConfig = InfraParaCore;
 }
 
 parameter_types! {
 	pub const DepositToCreateAsset: Balance = 1 * DOLLARS; // 1 UNITS deposit to create fungible asset class
 	pub const DepositToMaintainAsset: Balance = deposit(1, 16);
 	pub const ApprovalDeposit: Balance = EXISTENTIAL_DEPOSIT;
+	pub const StringLimit: u32 = 50;
 	/// Key = 32 bytes, Value = 36 bytes (32+1+1+1+1)
 	// https://github.com/paritytech/substrate/blob/069917b/frame/assets/src/lib.rs#L257L271
 	pub const MetadataDepositBase: Balance = deposit(1, 68);
@@ -301,27 +318,78 @@ parameter_types! {
 /// We allow root and the Relay Chain council to execute privileged asset operations.
 pub type RootOrigin = EnsureRoot<AccountId>;
 
-impl pallet_assets::Config for Runtime {
+pub type NativeAssetsInstance = pallet_assets::Instance1;
+type NativeAssetsCall = pallet_assets::Call<Runtime, NativeAssetsInstance>;
+impl pallet_assets::Config<NativeAssetsInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
-	type AssetId = AssetId;
-	type AssetIdParameter = codec::Compact<AssetId>;
+	type AssetId = AssetIdForNativeAssets;
+	type AssetIdParameter = codec::Compact<AssetIdForNativeAssets>;
+	type SystemTokenWeight = SystemTokenWeight;
 	type Currency = Balances;
-	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
+	type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
 	type ForceOrigin = RootOrigin;
 	type AssetDeposit = DepositToCreateAsset;
+	type AssetAccountDeposit = DepositToMaintainAsset;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ApprovalDeposit = ApprovalDeposit;
-	type AssetAccountDeposit = DepositToMaintainAsset;
-	type RemoveItemsLimit = frame_support::traits::ConstU32<1000>;
-	type WeightInfo = weights::pallet_assets::WeightInfo<Runtime>;
+	type StringLimit = StringLimit;
 	type Freezer = ();
 	type Extra = ();
 	type CallbackHandle = ();
-	#[cfg(feature = "runtime-benchmarks")]
-	type BenchmarkHelper = ();
+	type WeightInfo = ();
+	type RemoveItemsLimit = ConstU32<1000>;
 }
+
+pub type ForeignAssetsInstance = pallet_assets::Instance2;
+type ForeignAssetsCall = pallet_assets::Call<Runtime, ForeignAssetsInstance>;
+impl pallet_assets::Config<ForeignAssetsInstance> for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Balance = Balance;
+	type AssetId = xcm::v3::MultiLocation;
+	type AssetIdParameter = xcm::v3::MultiLocation;
+	type SystemTokenWeight = SystemTokenWeight;
+	type Currency = Balances;
+	type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
+	type ForceOrigin = RootOrigin; //TODO
+	type AssetDeposit = DepositToCreateAsset;
+	type AssetAccountDeposit = DepositToMaintainAsset;
+	type MetadataDepositBase = MetadataDepositBase;
+	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type ApprovalDeposit = ApprovalDeposit;
+	type StringLimit = StringLimit;
+	type Freezer = ();
+	type Extra = ();
+	type CallbackHandle = ();
+	type WeightInfo = ();
+	type RemoveItemsLimit = ConstU32<1000>;
+}
+
+pub struct ReanchorHandler;
+impl ReanchorSystemToken<MultiLocation> for ReanchorHandler {
+	type Error = ();
+	fn reanchor_system_token(l: &mut MultiLocation) -> Result<(), Self::Error> {
+		let target = MultiLocation::parent();
+		let context = UniversalLocation::get();
+		l.reanchor(&target, context).map_err(|_| {})?;
+		Ok(())
+	}
+}
+
+/// Union fungibles implementation for `Assets` and `ForeignAssets`.
+pub type NativeAndForeignAssets = UnionOf<
+	Assets,
+	ForeignAssets,
+	LocalFromLeft<
+		AssetIdForNativeAssetsConvert<NativeAssetsPalletLocation>,
+		AssetIdForNativeAssets,
+		xcm::v3::MultiLocation,
+	>,
+	xcm::v3::MultiLocation,
+	AccountId,
+	ReanchorHandler,
+>;
 
 parameter_types! {
 	// One storage item; key size is 32; value is size 4+4+16+32 bytes = 56 bytes.
@@ -422,15 +490,15 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 			},
 			ProxyType::AssetOwner => matches!(
 				c,
-				RuntimeCall::Assets(pallet_assets::Call::create { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::start_destroy { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::destroy_accounts { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::destroy_approvals { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::finish_destroy { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::transfer_ownership { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::set_team { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::set_metadata { .. }) |
-					RuntimeCall::Assets(pallet_assets::Call::clear_metadata { .. }) |
+				RuntimeCall::Assets(NativeAssetsCall::create { .. }) |
+					RuntimeCall::Assets(NativeAssetsCall::start_destroy { .. }) |
+					RuntimeCall::Assets(NativeAssetsCall::destroy_accounts { .. }) |
+					RuntimeCall::Assets(NativeAssetsCall::destroy_approvals { .. }) |
+					RuntimeCall::Assets(NativeAssetsCall::finish_destroy { .. }) |
+					RuntimeCall::Assets(NativeAssetsCall::transfer_ownership { .. }) |
+					RuntimeCall::Assets(NativeAssetsCall::set_team { .. }) |
+					RuntimeCall::Assets(NativeAssetsCall::set_metadata { .. }) |
+					RuntimeCall::Assets(NativeAssetsCall::clear_metadata { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::create { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::destroy { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::transfer_ownership { .. }) |
@@ -532,9 +600,9 @@ parameter_types! {
 impl cumulus_pallet_infra_parachain_core::Config for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeEvent = RuntimeEvent;
-	type LocalAssetManager = Assets;
-	type AssetLink = AssetLink;
-	type ParachainSystem = ParachainSystem;
+	type SystemTokenId = MultiLocation;
+	type UniversalLocation = UniversalLocation;
+	type Fungibles = NativeAndForeignAssets;
 	type ActiveRequestPeriod = ActiveRequestPeriod;
 }
 
@@ -661,29 +729,9 @@ impl pallet_uniques::Config for Runtime {
 	type Locker = ();
 }
 
-impl pallet_asset_link::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type Assets = Assets;
-	type WeightInfo = ();
-}
-
 parameter_types! {
 	pub const MaxVotedValidators: u32 = 1024;
 	pub const WeightFactor: u64 = 1;
-}
-
-parameter_types! {
-	pub const AggregatedPeriod: BlockNumber = 10;
-	pub const IsRelay: bool = false;
-}
-
-impl system_token_aggregator::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type Period = AggregatedPeriod;
-	type LocalAssetManager = Assets;
-	type AssetMultiLocationGetter = AssetLink;
-	type SendXcm = XcmRouter;
-	type IsRelay = IsRelay;
 }
 
 impl pallet_sudo::Config for Runtime {
@@ -738,11 +786,11 @@ construct_runtime!(
 		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>} = 42,
 
 		// The main stage.
-		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>, Config<T>} = 50,
-		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
-		AssetLink: pallet_asset_link::{Pallet, Storage, Event<T>} = 52,
-		SystemTokenAggregator: system_token_aggregator = 54,
+		Assets: pallet_assets::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>} = 50,
+		ForeignAssets: pallet_assets::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>} = 51,
+		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 52,
 		SystemTokenOracle: pallet_system_token_oracle::{Pallet, Call, Storage, ValidateUnsigned} = 55,
+		SystemTokenConversion: pallet_system_token_conversion::{Pallet, Event<T>} = 56,
 
 		Sudo: pallet_sudo::{Pallet, Call, Storage, Config<T>, Event<T>} = 99,
 	}
@@ -967,8 +1015,8 @@ impl_runtime_apis! {
 					}
 				},
 				// collect pallet_assets (TrustBackedAssets)
-				convert::<_, _, _, _, TrustBackedAssetsConvertedConcreteId>(
-					Assets::account_balances(account)
+				convert::<_, _, _, _, NativeAssetsConvertedConcreteId>(
+					Assets::account_balances(&account)
 						.iter()
 						.filter(|(_, balance)| balance > &0)
 				)?,

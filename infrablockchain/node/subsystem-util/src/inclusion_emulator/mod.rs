@@ -1196,7 +1196,7 @@ mod tests {
 				head_data: HeadData::from(vec![1, 2, 3, 4, 5]),
 				processed_downward_messages: 0,
 				hrmp_watermark: relay_parent.number,
-				vote_result: None,
+				proof_of_transaction: None,
 				requested_asset: None,
 			}),
 			collator,

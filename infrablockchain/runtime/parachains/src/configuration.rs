@@ -27,9 +27,12 @@ use primitives::{
 	AsyncBackingParams, Balance, ExecutorParams, SessionIndex, LEGACY_MIN_BACKING_VOTES,
 	MAX_CODE_SIZE, MAX_HEAD_DATA_SIZE, MAX_POV_SIZE, ON_DEMAND_DEFAULT_QUEUE_MAX_SIZE,
 };
-use sp_runtime::{traits::Zero, Perbill};
+use sp_arithmetic::traits::AtLeast32BitUnsigned;
+use sp_runtime::{infra::*, traits::Zero, Perbill};
 use sp_std::prelude::*;
 
+type SystemTokenBalanceOf<T> = <<T as Config>::ParaConfigHandler as ParaConfigInterface>::Balance;
+type DestIdOf<T> = <<T as Config>::ParaConfigHandler as ParaConfigInterface>::DestId;
 #[cfg(test)]
 mod tests;
 
@@ -508,12 +511,17 @@ pub mod pallet {
 	pub trait Config: frame_system::Config + shared::Config {
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
+
+		/// The configuration interface for parachain
+		type ParaConfigHandler: ParaConfigInterface<AccountId = Self::AccountId>;
 	}
 
 	#[pallet::error]
 	pub enum Error<T> {
 		/// The new value for a configuration parameter is invalid.
 		InvalidNewValue,
+		/// The bootstrap has already ended.
+		AlreadyEndedBootstrap,
 	}
 
 	/// The active configuration for the current session.
@@ -522,6 +530,11 @@ pub mod pallet {
 	#[pallet::getter(fn config)]
 	pub(crate) type ActiveConfig<T: Config> =
 		StorageValue<_, HostConfiguration<BlockNumberFor<T>>, ValueQuery>;
+
+	/// System Token configuration for `InfraRelay` Runtime
+	#[pallet::storage]
+	#[pallet::getter(fn active_system_config)]
+	pub type ActiveSystemConfig<T: Config> = StorageValue<_, SystemConfig, ValueQuery>;
 
 	/// Pending configuration changes.
 	///
@@ -539,17 +552,23 @@ pub mod pallet {
 	#[pallet::storage]
 	pub(crate) type BypassConsistencyCheck<T: Config> = StorageValue<_, bool, ValueQuery>;
 
+	#[pallet::storage]
+	pub(crate) type RuntimeState<T: Config> = StorageValue<_, Mode, ValueQuery>;
+
 	#[pallet::genesis_config]
 	#[derive(DefaultNoBound)]
 	pub struct GenesisConfig<T: Config> {
 		pub config: HostConfiguration<BlockNumberFor<T>>,
+		pub system_config: SystemConfig,
 	}
 
 	#[pallet::genesis_build]
 	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
 			self.config.panic_if_not_consistent();
+			self.system_config.panic_if_not_validated();
 			ActiveConfig::<T>::put(&self.config);
+			ActiveSystemConfig::<T>::put(self.system_config.clone());
 		}
 	}
 
@@ -1185,6 +1204,101 @@ pub mod pallet {
 				config.minimum_backing_votes = new;
 			})
 		}
+
+		// TODO: Benchmark weight!
+		#[pallet::call_index(53)]
+		#[pallet::weight((
+			T::WeightInfo::set_config_with_u32(),
+			DispatchClass::Operational
+		))]
+		pub fn update_system_config(origin: OriginFor<T>, new: SystemConfig) -> DispatchResult {
+			// TODO: Use `scheudle_config_update`
+			ensure_root(origin)?;
+			ActiveSystemConfig::<T>::put(new);
+			Ok(())
+		}
+
+		// TODO: Benchmark weight!
+		#[pallet::call_index(54)]
+		#[pallet::weight((
+			T::WeightInfo::set_config_with_u32(),
+			DispatchClass::Operational
+		))]
+		pub fn update_fee_table(
+			origin: OriginFor<T>,
+			dest: DestIdOf<T>,
+			pallet_name: Vec<u8>,
+			call_name: Vec<u8>,
+			fee: SystemTokenBalanceOf<T>,
+		) -> DispatchResult {
+			// TODO: Use `scheudle_config_update`
+			ensure_root(origin)?;
+			T::ParaConfigHandler::update_fee_table(dest, pallet_name, call_name, fee);
+			Ok(())
+		}
+
+		// TODO: Benchmark weight!
+		#[pallet::call_index(55)]
+		#[pallet::weight((
+			T::WeightInfo::set_config_with_u32(),
+			DispatchClass::Operational
+		))]
+		pub fn update_para_fee_rate(
+			origin: OriginFor<T>,
+			dest: DestIdOf<T>,
+			fee_rate: SystemTokenBalanceOf<T>,
+		) -> DispatchResult {
+			// TODO: Use `scheudle_config_update`
+			ensure_root(origin)?;
+			T::ParaConfigHandler::update_para_fee_rate(dest, fee_rate);
+			Ok(())
+		}
+
+		// TODO: Benchmark weight!
+		#[pallet::call_index(56)]
+		#[pallet::weight((
+			T::WeightInfo::set_config_with_u32(),
+			DispatchClass::Operational
+		))]
+		pub fn update_runtime_state(origin: OriginFor<T>, dest: DestIdOf<T>) -> DispatchResult {
+			// TODO: Use `scheudle_config_update`
+			ensure_root(origin)?;
+			T::ParaConfigHandler::update_runtime_state(dest);
+			Ok(())
+		}
+
+		// TODO: Benchmark weight!
+		#[pallet::call_index(57)]
+		#[pallet::weight((
+			T::WeightInfo::set_config_with_u32(),
+			DispatchClass::Operational
+		))]
+		pub fn set_admin(
+			origin: OriginFor<T>,
+			dest: DestIdOf<T>,
+			who: T::AccountId,
+		) -> DispatchResult {
+			ensure_root(origin)?;
+			T::ParaConfigHandler::set_admin(dest, who);
+			Ok(())
+		}
+
+		#[pallet::call_index(58)]
+		#[pallet::weight((
+			T::WeightInfo::set_config_with_u32(),
+			DispatchClass::Operational
+		))]
+		pub fn end_bootstrap(origin: OriginFor<T>) -> DispatchResult {
+			ensure_root(origin)?;
+			RuntimeState::<T>::try_mutate(|s| -> DispatchResult {
+				if *s == Mode::Normal {
+					return Err(Error::<T>::AlreadyEndedBootstrap.into())
+				}
+				*s = Mode::Normal;
+				Ok(())
+			})?;
+			Ok(())
+		}
 	}
 
 	#[pallet::hooks]
@@ -1374,5 +1488,52 @@ impl<T: Config> Pallet<T> {
 		<PendingConfigs<T>>::put(pending_configs);
 
 		Ok(())
+	}
+}
+
+/// Runtime configuration set by parent chain which is mostly Relay Chain
+pub trait ParaConfigInterface {
+	/// InfraBlockchain AccountId type
+	type AccountId: Parameter;
+	/// Destination ID type
+	type DestId: Parameter;
+	/// Balance type of System Token
+	type Balance: Parameter + AtLeast32BitUnsigned;
+
+	/// Set admin for InfraParaCore of `dest_id` Runtime
+	fn set_admin(dest_id: Self::DestId, who: Self::AccountId);
+	/// Update fee table for `dest_id` Runtime
+	fn update_fee_table(
+		dest_id: Self::DestId,
+		pallet_name: Vec<u8>,
+		call_name: Vec<u8>,
+		fee: Self::Balance,
+	);
+	/// Update fee rate for `dest_id` Runtime
+	fn update_para_fee_rate(dest_id: Self::DestId, fee_rate: Self::Balance);
+	/// Set runtime state for `dest_id` Runtime
+	fn update_runtime_state(dest_id: Self::DestId);
+}
+
+impl<T: Config> RuntimeConfigProvider<SystemTokenBalanceOf<T>> for Pallet<T>
+where
+	SystemTokenBalanceOf<T>: From<u128>,
+{
+	type Error = ();
+
+	fn system_config() -> Result<SystemConfig, Self::Error> {
+		Ok(ActiveSystemConfig::<T>::get())
+	}
+
+	fn para_fee_rate() -> Result<SystemTokenBalanceOf<T>, Self::Error> {
+		Ok(ActiveSystemConfig::<T>::get().base_system_token_detail.base_weight.into())
+	}
+
+	fn fee_for(_ext: ExtrinsicMetadata) -> Option<SystemTokenBalanceOf<T>> {
+		None
+	}
+
+	fn runtime_state() -> Mode {
+		RuntimeState::<T>::get()
 	}
 }

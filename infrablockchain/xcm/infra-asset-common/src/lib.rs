@@ -16,9 +16,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub mod fungible_conversion;
+pub mod local_and_foreign_assets;
 pub mod matching;
 pub mod runtime_api;
-use crate::matching::{Equals, ParentLocation, StartsWith};
+
+use crate::matching::{Equals, LocalLocationPattern, ParentLocation, StartsWith};
 use sp_runtime::traits::Zero;
 
 use frame_support::traits::{
@@ -27,7 +29,7 @@ use frame_support::traits::{
 };
 use sp_std::marker::PhantomData;
 use xcm::prelude::MultiLocation;
-use xcm_builder::{AsPrefixedGeneralIndex, MatchedConvertedConcreteId};
+use xcm_builder::{AsPrefixedGeneralIndex, MatchedConvertedConcreteId, V3LocationConverter};
 use xcm_executor::traits::{JustTry, Properties};
 
 use frame_support::{
@@ -168,8 +170,6 @@ impl<Location: Get<MultiLocation>> ContainsPair<MultiAsset, MultiLocation>
 	}
 }
 
-pub type AssetIdForTrustBackedAssets = u32;
-
 /// Allow checking in assets that have issuance > 0.
 pub struct NonZeroIssuance<AccountId, Assets>(PhantomData<(AccountId, Assets)>);
 impl<AccountId, Assets> Contains<<Assets as fungibles::Inspect<AccountId>>::AssetId>
@@ -194,17 +194,23 @@ where
 	}
 }
 
-/// `MultiLocation` vs `AssetIdForTrustBackedAssets` converter for `TrustBackedAssets`
-pub type AssetIdForTrustBackedAssetsConvert<TrustBackedAssetsPalletLocation> =
-	AsPrefixedGeneralIndex<TrustBackedAssetsPalletLocation, AssetIdForTrustBackedAssets, JustTry>;
+pub type AssetIdForNativeAssets = u32;
+
+/// `Location` vs `AssetIdForNativeAssets` converter for `TrustBackedAssets`
+pub type AssetIdForNativeAssetsConvert<NativeAssetsPalletLocation> = AsPrefixedGeneralIndex<
+	NativeAssetsPalletLocation,
+	AssetIdForNativeAssets,
+	JustTry,
+	xcm::v3::MultiLocation,
+>;
 
 /// [`MatchedConvertedConcreteId`] converter dedicated for `TrustBackedAssets`
-pub type TrustBackedAssetsConvertedConcreteId<TrustBackedAssetsPalletLocation, Balance> =
+pub type NativeAssetsConvertedConcreteId<NativeAssetsPalletLocation, Balance> =
 	MatchedConvertedConcreteId<
-		AssetIdForTrustBackedAssets,
+		AssetIdForNativeAssets,
 		Balance,
-		StartsWith<TrustBackedAssetsPalletLocation>,
-		AssetIdForTrustBackedAssetsConvert<TrustBackedAssetsPalletLocation>,
+		StartsWith<NativeAssetsPalletLocation>,
+		AssetIdForNativeAssetsConvert<NativeAssetsPalletLocation>,
 		JustTry,
 	>;
 
@@ -214,39 +220,50 @@ pub type MultiLocationForAssetId = MultiLocation;
 /// [`MatchedConvertedConcreteId`] converter dedicated for storing `AssetId` as `MultiLocation`.
 pub type MultiLocationConvertedConcreteId<MultiLocationFilter, AssetConverter, Balance> =
 	MatchedConvertedConcreteId<
-		AssetIdForTrustBackedAssets,
+		AssetIdForNativeAssets,
 		Balance,
 		MultiLocationFilter,
-		xcm_primitives::AsAssetMultiLocation<AssetIdForTrustBackedAssets, AssetConverter>,
+		xcm_primitives::AsAssetMultiLocation<AssetIdForNativeAssets, AssetConverter>,
 		JustTry,
 	>;
 
+/// [`MatchedConvertedConcreteId`] converter dedicated for storing `AssetId` as `Location`.
+pub type LocationConvertedConcreteId<LocationFilter, Balance> = MatchedConvertedConcreteId<
+	xcm::v3::MultiLocation,
+	Balance,
+	LocationFilter,
+	V3LocationConverter,
+	JustTry,
+>;
+
 /// [`MatchedConvertedConcreteId`] converter dedicated for storing `ForeignAssets` with `AssetId` as
-/// `MultiLocation`.
+/// `Location`.
 ///
 /// Excludes by default:
 /// - parent as relay chain
-/// - all local MultiLocations
+/// - all local Locations
 ///
-/// `AdditionalMultiLocationExclusionFilter` can customize additional excluded MultiLocations
-pub type ForeignAssetsConvertedConcreteId<
-	AdditionalMultiLocationExclusionFilter,
-	AssetConverter,
-	Balance,
-> = MultiLocationConvertedConcreteId<
-	EverythingBut<(
-		// Excludes relay/parent chain currency
-		Equals<ParentLocation>,
-		// Here we rely on fact that something like this works:
-		// assert!(MultiLocation::new(1,
-		// X1(Parachain(100))).starts_with(&MultiLocation::parent())); assert!(X1(Parachain(100)).
-		// starts_with(&Here)); StartsWith<LocalMultiLocationPattern>,
-		// Here we can exclude more stuff or leave it as `()`
-		AdditionalMultiLocationExclusionFilter,
-	)>,
-	AssetConverter,
-	Balance,
->;
+/// `AdditionalLocationExclusionFilter` can customize additional excluded Locations
+pub type ForeignAssetsConvertedConcreteId<AdditionalLocationExclusionFilter, Balance> =
+	LocationConvertedConcreteId<
+		EverythingBut<(
+			// Excludes relay/parent chain currency
+			Equals<ParentLocation>,
+			// Here we rely on fact that something like this works:
+			// assert!(Location::new(1,
+			// [Parachain(100)]).starts_with(&Location::parent()));
+			// assert!([Parachain(100)].into().starts_with(&Here));
+			StartsWith<LocalLocationPattern>,
+			// Here we can exclude more stuff or leave it as `()`
+			AdditionalLocationExclusionFilter,
+		)>,
+		Balance,
+	>;
+
+/// For Relay
+/// `AdditionalLocationExclusionFilter` can customize additional excluded Locations
+pub type ForeignAssetsConvertedConcreteIdForParent<AdditionalLocationExclusionFilter, Balance> =
+	LocationConvertedConcreteId<EverythingBut<AdditionalLocationExclusionFilter>, Balance>;
 
 #[cfg(test)]
 mod tests {
@@ -261,19 +278,19 @@ mod tests {
 
 	#[test]
 	fn asset_id_for_trust_backed_assets_convert_works() {
-		let local_asset_id = 123456789 as AssetIdForTrustBackedAssets;
+		let local_asset_id = 123456789 as AssetIdForNativeAssets;
 		let expected_reverse_ref =
 			MultiLocation::new(5, X2(PalletInstance(13), GeneralIndex(local_asset_id.into())));
 
 		assert_eq!(
-			AssetIdForTrustBackedAssetsConvert::<TrustBackedAssetsPalletLocation>::reverse_ref(
+			AssetIdForOriginalAssetsConvert::<TrustBackedAssetsPalletLocation>::reverse_ref(
 				local_asset_id
 			)
 			.unwrap(),
 			expected_reverse_ref
 		);
 		assert_eq!(
-			AssetIdForTrustBackedAssetsConvert::<TrustBackedAssetsPalletLocation>::convert_ref(
+			AssetIdForOriginalAssetsConvert::<TrustBackedAssetsPalletLocation>::convert_ref(
 				expected_reverse_ref
 			)
 			.unwrap(),

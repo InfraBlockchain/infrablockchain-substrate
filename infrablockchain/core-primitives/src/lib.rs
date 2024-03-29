@@ -16,7 +16,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-//! Core Polkadot types.
+//! Core InfraBlockchain types.
 //!
 //! These core Polkadot types are used by the relay chain and the Parachains.
 
@@ -150,6 +150,10 @@ pub struct OutboundHrmpMessage<Id> {
 	/// The message payload.
 	pub data: sp_std::vec::Vec<u8>,
 }
+
+pub type OpaqueRemoteAssetMetadata = sp_std::vec::Vec<u8>;
+
+pub type OpaquePoT = sp_std::vec::Vec<u8>;
 
 /// `V2` primitives.
 pub mod v2 {

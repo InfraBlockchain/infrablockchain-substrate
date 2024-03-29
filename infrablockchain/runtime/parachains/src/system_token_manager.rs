@@ -16,30 +16,60 @@
 // limitations under the License.
 
 use crate::{configuration, ensure_parachain, paras, Origin as ParachainOrigin, ParaId};
-use frame_support::storage::KeyPrefixIterator;
-pub use frame_support::{pallet_prelude::*, traits::UnixTime};
+pub use frame_support::{
+	pallet_prelude::*,
+	storage::KeyPrefixIterator,
+	traits::{
+		tokens::{
+			fungibles::{
+				Inspect, InspectSystemToken, InspectSystemTokenMetadata, ManageSystemToken,
+			},
+			AssetId, Balance,
+		},
+		Get, UnixTime,
+	},
+	BoundedVec, PalletId, Parameter,
+};
 use frame_system::pallet_prelude::*;
-pub use pallet::*;
 use softfloat::F64;
-use sp_runtime::types::{infra_core::*, token::*, vote::*};
+
+pub use pallet::*;
+use sp_runtime::{
+	infra::*,
+	traits::{AccountIdConversion, AtLeast32BitUnsigned, Zero},
+};
 use sp_std::prelude::*;
+pub use traits::SystemTokenInterface;
 use types::*;
+use xcm::latest::{InteriorMultiLocation, SystemTokenId};
 
 #[frame_support::pallet(dev_mode)]
 pub mod pallet {
 
 	use super::*;
-
 	#[pallet::config]
 	pub trait Config: frame_system::Config + configuration::Config + paras::Config {
+		/// Origin for this module
 		type RuntimeOrigin: From<<Self as frame_system::Config>::RuntimeOrigin>
 			+ Into<Result<ParachainOrigin, <Self as Config>::RuntimeOrigin>>;
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-		/// Core interface for InfraBlockchain Runtime
-		type InfraCore: UpdateInfraConfig + RuntimeConfigProvider + VotingHandler;
-		/// Time used for computing registration date.
-		type UnixTime: UnixTime;
+		/// Local fungibles module
+		type Fungibles: InspectSystemToken<Self::AccountId, AssetId = Self::SystemTokenId>
+			+ InspectSystemTokenMetadata<Self::AccountId>
+			+ ManageSystemToken<Self::AccountId>;
+		/// Id of System Token
+		type SystemTokenId: SystemTokenId;
+		/// This chain's Universal Location
+		type UniversalLocation: Get<InteriorMultiLocation>;
+		/// Type for handling System Token related calls
+		type SystemTokenHandler: SystemTokenInterface<
+			AccountId = Self::AccountId,
+			Location = Self::SystemTokenId,
+			Balance = SystemTokenBalanceOf<Self>,
+			SystemTokenWeight = SystemTokenWeightOf<Self>,
+			DestId = SystemTokenOriginIdOf<Self>,
+		>;
 		/// The string limit for name and symbol of system token.
 		#[pallet::constant]
 		type StringLimit: Get<u32>;
@@ -52,36 +82,24 @@ pub mod pallet {
 		/// The ParaId of the asset hub system parachain.
 		#[pallet::constant]
 		type AssetHubId: Get<u32>;
+		/// Id for `SystemTokenManager`
+		type PalletId: Get<PalletId>;
 	}
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Register a new `original` system token.
-		OriginalSystemTokenRegistered { original: SystemTokenId },
+		SystemTokenRegistered {
+			original: T::SystemTokenId,
+			wrapped: Option<SystemTokenOriginIdOf<T>>,
+		},
 		/// Deregister the `original` system token.
-		OriginalSystemTokenDeregistered { original: SystemTokenId },
-		/// Register a `wrapped` system token to an `original` system token.
-		WrappedSystemTokenRegistered { original: SystemTokenId, wrapped: SystemTokenId },
-		/// Deregister a `wrapped` system token to an `original` system token.
-		WrappedSystemTokenDeregistered { wrapped: SystemTokenId },
-		/// Converting from `wrapped` to `original` has happened
-		SystemTokenConverted { from: SystemTokenId, to: SystemTokenId },
-		/// Update the weight for system token. The weight is calculated based on the exchange_rate
-		/// and decimal.
-		SetSystemTokenWeight { system_token_id: SystemTokenId, property: SystemTokenProperty },
-		/// Update the fee rate of the parachain. The default value is 1_000.
-		SetParaFeeRate { para_id: SystemTokenParaId, para_fee_rate: SystemTokenBalance },
-		/// Update the fee table of the parachain
-		SetFeeTable { para_call_metadata: ParaCallMetadata, fee: SystemTokenBalance },
+		SystemTokenDeregistered { kind: MutateKind<T::SystemTokenId, SystemTokenOriginIdOf<T>> },
 		/// Suspend a `original` system token.
-		OriginalSystemTokenSuspended { original: SystemTokenId },
+		SystemTokenSuspended { kind: MutateKind<T::SystemTokenId, SystemTokenOriginIdOf<T>> },
 		/// Unsuspend the `original` system token.
-		OriginalSystemTokenUnsuspended { original: SystemTokenId },
-		/// Suspend a `wrapped` system token.
-		WrappedSystemTokenSuspended { wrapped: SystemTokenId },
-		/// Unsuspend the `wrapped` system token.
-		WrappedSystemTokenUnsuspended { wrapped: SystemTokenId },
+		SystemTokenUnsuspended { kind: MutateKind<T::SystemTokenId, SystemTokenOriginIdOf<T>> },
 		/// Update exchange rates for given fiat currencies
 		ExchangeRateUpdated { at: StandardUnixTime, updated: Vec<(Fiat, ExchangeRate)> },
 	}
@@ -91,13 +109,11 @@ pub mod pallet {
 		/// Requested `original` system token is already registered.
 		OriginalAlreadyRegistered,
 		/// Failed to remove the `original` system token as it is not registered.
-		OriginalNotRegistered,
+		SystemTokenNotRegistered,
 		/// Requested `wrapped` sytem token has already registered
 		WrappedAlreadyRegistered,
 		/// `Wrapped` system token has not been registered on Relay Chain
 		WrappedNotRegistered,
-		/// `Wrapped` system token id is not provided when register `orinal` system token
-		WrappedForRelayNotProvided,
 		/// Registered System Tokens are out of limit
 		TooManySystemTokensOnPara,
 		/// Number of para ids using `original` system tokens has reached
@@ -109,26 +125,16 @@ pub mod pallet {
 		BadAccess,
 		/// Some of the value are stored on runtime(e.g key missing)
 		NotFound,
-		/// Property of system token is not found
-		PropertyNotFound,
 		/// System tokens used by para id are not found
 		ParaIdSystemTokensNotFound,
-		/// A specific system token used para ids are not found
-		ParaIdsNotFound,
 		/// Metadata of `original` system token is not found
 		MetadataNotFound,
 		/// Missing value of base system token weight
 		WeightMissing,
-		/// Error occurred on sending XCM
-		DmpError,
 		/// System token is already suspended
 		AlreadySuspended,
 		/// System token is not suspended
 		NotSuspended,
-		/// System token metadata is not provided when registered `original` system token
-		SystemTokenMetadataNotProvided,
-		/// Asset metadata is not provided when registered `original` system token
-		AssetMetadataNotProvided,
 		/// The paraid making the call is not the asset hub system parachain
 		NotAssetHub,
 		/// Pallet has not started yet
@@ -137,6 +143,28 @@ pub mod pallet {
 		NotRequested,
 		/// Exchange rate for given currency has not been requested
 		ExchangeRateNotRequested,
+		/// Error occurred on converting from `T::SystemTokenId` to SystemTokenId
+		ErrorConvertToSystemTokenId,
+		/// Error occurred while converting from 'original' to `wrapped`
+		ErrorConvertToWrapped,
+		/// Error occurred while converting to `RemoteAssetMetadata`
+		ErrorConvertToRemoteAssetMetadata,
+		/// Error occured while converting to some types
+		ConversionError,
+		/// Invalid System Token Weight(e.g `0`)
+		InvalidSystemTokenWeight,
+		/// Error occurred while registering system token
+		ErrorRegisterSystemToken,
+		/// Error occurred while deregistering system token
+		ErrorDeregisterSystemToken,
+		/// Error occurred while suspending system token
+		ErrorSuspendSystemToken,
+		/// Error occurred while unsuspending system token
+		ErrorUnsuspendSystemToken,
+		/// Error occurred while updating system token weight
+		ErrorUpdateSystemTokenWeight,
+		/// Error occurred while reanchoring system token id
+		ErrorReanchorSystemTokenId,
 	}
 
 	#[pallet::pallet]
@@ -177,14 +205,38 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type ExchangeRates<T: Config> = StorageMap<_, Twox64Concat, Fiat, ExchangeRate>;
 
+	#[pallet::storage]
+	#[pallet::getter(fn system_token)]
+	/// **Description:**
+	///
+	/// Properties of system token that stored useful data. Return `None` when there is no value.
+	///
+	/// **Key:**
+	///
+	/// `Original` System Token
+	///
+	/// **Value:**
+	///
+	/// `SystemTokenDetail`
+	pub type SystemToken<T: Config> = StorageMap<
+		_,
+		Blake2_128Concat,
+		T::SystemTokenId,
+		SystemTokenDetail<
+			SystemTokenWeightOf<T>,
+			SystemTokenOriginIdOf<T>,
+			T::MaxOriginalUsedParaIds,
+		>,
+	>;
+
 	/// Updated exchange rates for `para_id` based on updated exchange rate data from Oracle
 	#[pallet::storage]
 	#[pallet::unbounded]
 	pub type UpdateExchangeRates<T: Config> = StorageMap<
 		_,
 		Twox64Concat,
-		SystemTokenParaId,
-		Vec<(SystemTokenAssetId, SystemTokenWeight)>,
+		SystemTokenOriginIdOf<T>,
+		Vec<(T::SystemTokenId, SystemTokenWeightOf<T>)>,
 	>;
 
 	#[pallet::storage]
@@ -201,24 +253,12 @@ pub mod pallet {
 	/// **Value:**
 	///
 	/// `SystemTokenMetadata`
-	pub type OriginalSystemTokenMetadata<T: Config> =
-		StorageMap<_, Blake2_128Concat, SystemTokenId, SystemTokenMetadata<BoundedStringOf<T>>>;
-
-	#[pallet::storage]
-	#[pallet::getter(fn system_token_properties)]
-	/// **Description:**
-	///
-	/// Properties of system token that stored useful data. Return `None` when there is no value.
-	///
-	/// **Key:**
-	///
-	/// (`original` or `wrapped`) system token id
-	///
-	/// **Value:**
-	///
-	/// `SystemTokenProperty`
-	pub type SystemTokenProperties<T: Config> =
-		StorageMap<_, Blake2_128Concat, SystemTokenId, SystemTokenProperty>;
+	pub type Metadata<T: Config> = StorageMap<
+		_,
+		Blake2_128Concat,
+		T::SystemTokenId,
+		SystemTokenMetadata<SystemTokenBalanceOf<T>, BoundedStringOf<T>, BlockNumberFor<T>>,
+	>;
 
 	/// **Description:**
 	///
@@ -238,25 +278,9 @@ pub mod pallet {
 		Twox64Concat,
 		Fiat,
 		Twox64Concat,
-		SystemTokenId,
-		BoundedVec<SystemTokenId, T::MaxOriginalUsedParaIds>,
+		T::SystemTokenId, // Original
+		BoundedVec<SystemTokenOriginIdOf<T>, T::MaxOriginalUsedParaIds>,
 	>;
-
-	#[pallet::storage]
-	#[pallet::getter(fn wrapped_system_token_on_para)]
-	/// **Description:**
-	///
-	/// Used for converting `wrapped` system token to `original` system token
-	///
-	/// **Key:**
-	///
-	/// `wrapped` system token id
-	///
-	/// **Value:**
-	///
-	/// `original` system token id
-	pub type OriginalSystemTokenConverter<T: Config> =
-		StorageMap<_, Blake2_128Concat, SystemTokenId, SystemTokenId>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn para_id_system_tokens)]
@@ -275,123 +299,78 @@ pub mod pallet {
 	pub type ParaIdSystemTokens<T: Config> = StorageMap<
 		_,
 		Blake2_128Concat,
-		SystemTokenParaId,
-		BoundedVec<SystemTokenId, T::MaxSystemTokens>,
-	>;
-
-	#[pallet::storage]
-	#[pallet::getter(fn system_token_used_para_ids)]
-	/// **Description:**
-	///
-	/// List of para_ids that are using a `original` system token, which is key
-	///
-	/// **Key:**
-	///
-	/// `original` system token id
-	///
-	/// **Value:**
-	///
-	/// BoundedVec of `para_id` with maximum `MaxSystemTokenUsedParaIds`
-	pub type SystemTokenUsedParaIds<T: Config> = StorageMap<
-		_,
-		Blake2_128Concat,
-		SystemTokenId,
-		BoundedVec<SystemTokenParaId, T::MaxOriginalUsedParaIds>,
+		SystemTokenOriginIdOf<T>,
+		BoundedVec<T::SystemTokenId, T::MaxSystemTokens>,
 	>;
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		// Description:
-		// Register system token after creating local asset on original chain.
+		// **Description**:
+		// Register (Original/Wrapped) SystemToken based on `SystemTokenType`
 		//
 		// Origin:
 		// ** Root(Authorized) privileged call **
 		//
 		// Params:
 		// - original: `Original` system token id expected to be registered
-		// - wrapped_fore_relay_chain: Original's `Wrapped` system token for relay chain
-		// - issuer: Human-readable issuer of system token which is metadata for Relay Chain
-		// - description: Human-readable description of system token which is metadata for Relay
-		//   Chain
-		// - url: Human-readable url of system token which is metadata for Relay Chain
-		// - name: Name of system token which is same as original chain
-		// - symbol: Symbol of system token which is same as original chain
-		// - decimals: Decimal of system token which is same as original chain
-		// - min_balance: Min balance of system token to be alive which is same as original chain
-		// - system_token_weight: Weight of system token which is same as original chain
+		// - system_token_type: Register as `Original` or `Wrapped`
+		// - extended_metadata: Additional metadata for `Original` System Token
 		//
-		// Logic:
-		// Once it is accepted by governance,
-		// `try_register_original` and `try_promote` will be called,
-		// which will change `original` system token state
+		// Process:
+		// - Create & register `Original` System Token
+		// - Create `wrapped` for Relay if None. Otherwise, create asset remotely via DMP
 		#[pallet::call_index(0)]
 		pub fn register_system_token(
 			origin: OriginFor<T>,
-			system_token_type: SystemTokenType,
-			wrapped_for_relay_chain: Option<SystemTokenId>,
+			system_token_type: SystemTokenType<T::SystemTokenId, SystemTokenOriginIdOf<T>>,
 			extended_metadata: Option<ExtendedMetadata>,
 		) -> DispatchResult {
 			ensure_root(origin)?;
-			let (original, wrapped) = match system_token_type {
-				SystemTokenType::Original(original) => {
-					Self::try_register_original(&original, extended_metadata)?;
-					let wrapped =
-						wrapped_for_relay_chain.ok_or(Error::<T>::WrappedForRelayNotProvided)?;
-					ensure!(wrapped.para_id == RELAY_CHAIN_PARA_ID, Error::<T>::BadAccess);
-					(original, wrapped)
+			let mut is_remote: bool = true;
+			let (original, maybe_para_id) = match system_token_type {
+				SystemTokenType::Original { system_token_id, mut currency_type } => {
+					Self::do_register_system_token(
+						&system_token_id,
+						extended_metadata,
+						&mut currency_type,
+						&mut is_remote,
+					)?;
+					(system_token_id, None)
 				},
-				SystemTokenType::Wrapped { original, wrapped } => {
+				SystemTokenType::Wrapped { original, maybe_para_id } => {
 					ensure!(extended_metadata.is_none(), Error::<T>::BadAccess);
-					(original, wrapped)
+					(original, maybe_para_id)
 				},
 			};
-			// Create wrapped for Relay Chain
-			let (system_token_weight, currency_type) =
-				Self::try_register_wrapped(&original, &wrapped)?;
-			Self::try_create_wrapped(&wrapped, system_token_weight)?;
-			FiatForOriginal::<T>::try_mutate(
-				&currency_type,
-				&original,
-				|maybe_wrapped| -> DispatchResult {
-					// Since `Vec<_>` has default, it is safe to unwrap
-					let mut wrapped_list = maybe_wrapped.take().unwrap_or_default();
-					wrapped_list.try_push(wrapped).map_err(|_| Error::<T>::TooManyUsed)?;
-					*maybe_wrapped = Some(wrapped_list);
-					Ok(())
-				},
-			)?;
-			Self::deposit_event(Event::<T>::OriginalSystemTokenRegistered { original });
-			Self::deposit_event(Event::<T>::WrappedSystemTokenRegistered { original, wrapped });
+			// If `Original` is remote, do register `Wrapped` for Relay Chain
+			if is_remote {
+				Self::do_register_wrapped(&original, maybe_para_id.clone())?;
+			}
+			Self::deposit_event(Event::<T>::SystemTokenRegistered {
+				original,
+				wrapped: maybe_para_id,
+			});
 
 			Ok(())
 		}
 
 		#[pallet::call_index(1)]
 		// Description:
-		// Deregister all `original` and `wrapped` system token registered on runtime.
-		// Deregistered system token is no longer used as `transaction fee`
+		// Deregister SystemToken based on given `MutateKind`
 		//
 		// Origin:
 		// ** Root(Authorized) privileged call **
 		//
 		// Params:
 		// - original: Original system token id expected to be deregistered
+		// - kind: How should deregister work
 		pub fn deregister_system_token(
 			origin: OriginFor<T>,
-			system_token_type: SystemTokenType,
+			kind: MutateKind<T::SystemTokenId, SystemTokenOriginIdOf<T>>,
 		) -> DispatchResult {
 			ensure_root(origin)?;
-			match system_token_type {
-				SystemTokenType::Original(original) => {
-					Self::try_deregister_all(original)?;
-					Self::deposit_event(Event::<T>::OriginalSystemTokenDeregistered { original });
-				},
-				SystemTokenType::Wrapped { wrapped, .. } => {
-					Self::try_deregister(&wrapped, false)?;
-					Self::deposit_event(Event::<T>::WrappedSystemTokenDeregistered { wrapped });
-				},
-			}
-
+			Self::do_deregister_system_token(kind.clone())?;
+			Self::deposit_event(Event::<T>::SystemTokenDeregistered { kind });
 			Ok(())
 		}
 
@@ -407,20 +386,11 @@ pub mod pallet {
 		// - original: Original system token id expected to be suspended
 		pub fn suspend_system_token(
 			origin: OriginFor<T>,
-			system_token_type: SystemTokenType,
+			kind: MutateKind<T::SystemTokenId, SystemTokenOriginIdOf<T>>,
 		) -> DispatchResult {
 			ensure_root(origin)?;
-
-			match system_token_type {
-				SystemTokenType::Original(original) => {
-					Self::try_suspend_all(original)?;
-					Self::deposit_event(Event::<T>::OriginalSystemTokenSuspended { original });
-				},
-				SystemTokenType::Wrapped { wrapped, .. } => {
-					Self::try_suspend(&wrapped, false)?;
-					Self::deposit_event(Event::<T>::WrappedSystemTokenSuspended { wrapped });
-				},
-			}
+			Self::do_suspend_system_token(kind.clone())?;
+			Self::deposit_event(Event::<T>::SystemTokenSuspended { kind });
 
 			Ok(())
 		}
@@ -437,80 +407,15 @@ pub mod pallet {
 		// - original: Original system token id expected to be unsuspended
 		pub fn unsuspend_system_token(
 			origin: OriginFor<T>,
-			system_token_type: SystemTokenType,
+			kind: MutateKind<T::SystemTokenId, SystemTokenOriginIdOf<T>>,
 		) -> DispatchResult {
 			ensure_root(origin)?;
-			match system_token_type {
-				SystemTokenType::Original(original) => {
-					Self::try_unsuspend_all(original)?;
-					Self::deposit_event(Event::<T>::OriginalSystemTokenUnsuspended { original });
-				},
-				SystemTokenType::Wrapped { wrapped, .. } => {
-					Self::try_unsuspend(&wrapped, false)?;
-					Self::deposit_event(Event::<T>::WrappedSystemTokenUnsuspended { wrapped });
-				},
-			}
-
+			Self::do_unsuspend_system_token(kind.clone())?;
+			Self::deposit_event(Event::<T>::SystemTokenUnsuspended { kind });
 			Ok(())
 		}
 
 		#[pallet::call_index(4)]
-		// Description:
-		// Try send DMP for encoded `update_para_fee_rate` to given `para_id`
-		//
-		// Origin:
-		// ** Root(Authorized) privileged call **
-		//
-		// Params:
-		// - para_id: Destination of DMP
-		// - pallet_id: Pallet index of `update_fee_para_rate`
-		// - para_fee_rate: Fee rate for specific parachain expected to be updated
-		pub fn update_para_fee_rate(
-			origin: OriginFor<T>,
-			para_id: SystemTokenParaId,
-			para_fee_rate: SystemTokenBalance,
-		) -> DispatchResult {
-			ensure_root(origin)?;
-			T::InfraCore::update_para_fee_rate(para_id, para_fee_rate);
-			Self::deposit_event(Event::<T>::SetParaFeeRate { para_id, para_fee_rate });
-
-			Ok(())
-		}
-
-		#[pallet::call_index(5)]
-		// Description:
-		// Setting fee for parachain-specific calls(extrinsics).
-		//
-		// Origin:
-		// ** Root(Authorized) privileged call **
-		//
-		// Params:
-		// - para_id: Id of the parachain of which fee to be set
-		// - pallet_id: Pallet index of `System Token`
-		// - pallet_name: Name of the pallet of which extrinsic is defined
-		// - call_name: Name of the call(extrinsic) of which fee to be set
-		// - fee: Amount of fee to be set
-		//
-		// Logic:
-		// When fee is charged on the parachain, extract the metadata of the call, which is
-		// 'pallet_name' and 'call_name' Lookup the fee table with `key = (pallet_name, call_name)`.
-		// If value exists, we charged with that fee. Otherwise, default fee will be charged
-		pub fn update_fee_table(
-			origin: OriginFor<T>,
-			para_call_metadata: ParaCallMetadata,
-			fee: SystemTokenBalance,
-		) -> DispatchResult {
-			ensure_root(origin)?;
-
-			let ParaCallMetadata { para_id, pallet_name, call_name, .. } =
-				para_call_metadata.clone();
-			T::InfraCore::update_fee_table(para_id, pallet_name, call_name, fee);
-			Self::deposit_event(Event::<T>::SetFeeTable { para_call_metadata, fee });
-
-			Ok(())
-		}
-
-		#[pallet::call_index(6)]
 		pub fn update_exchange_rate(
 			origin: OriginFor<T>,
 			standard_unix_time: StandardUnixTime,
@@ -526,20 +431,27 @@ pub mod pallet {
 
 // System token related interal methods
 impl<T: Config> Pallet<T> {
-	fn unix_time() -> u128 {
-		T::UnixTime::now().as_millis()
+	/// The account ID of SystemTokenManager.
+	///
+	/// This actually does computation. If you need to keep using it, then make sure you cache the
+	/// value and only call this once.
+	pub fn account_id() -> T::AccountId {
+		T::PalletId::get().into_account_truncating()
 	}
-
 	/// Extend system token metadata for this runtime
 	pub fn extend_metadata(
-		metadata: &mut SystemTokenMetadata<BoundedStringOf<T>>,
+		metadata: &mut SystemTokenMetadata<
+			SystemTokenBalanceOf<T>,
+			BoundedStringOf<T>,
+			BlockNumberFor<T>,
+		>,
 		extended: Option<ExtendedMetadata>,
 	) -> Result<(), DispatchError> {
 		if let Some(extended) = extended {
 			let ExtendedMetadata { issuer, description, url } = extended;
-			let bounded_issuer = Self::bounded_metadata(issuer)?;
-			let bounded_description = Self::bounded_metadata(description)?;
-			let bounded_url = Self::bounded_metadata(url)?;
+			let bounded_issuer = Self::bounded_metadata(issuer);
+			let bounded_description = Self::bounded_metadata(description);
+			let bounded_url = Self::bounded_metadata(url);
 			metadata.additional(bounded_issuer, bounded_description, bounded_url);
 		}
 
@@ -547,72 +459,86 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Bound some metadata info to `BoundedStringOf`
-	fn bounded_metadata(
-		byte: Option<Vec<u8>>,
-	) -> Result<Option<BoundedStringOf<T>>, DispatchError> {
-		if let Some(b) = byte {
-			let bounded = b.try_into().map_err(|_| Error::<T>::BadMetadata)?;
-			Ok(Some(bounded))
-		} else {
-			Ok(None)
+	fn bounded_metadata(byte: Vec<u8>) -> BoundedStringOf<T> {
+		if let Ok(bounded) = byte.try_into().map_err(|_| Error::<T>::BadMetadata) {
+			return bounded
 		}
+		Default::default()
 	}
 
-	fn fiat_for_originals(currency: &Fiat) -> KeyPrefixIterator<SystemTokenId> {
+	/// Iterator of System Token for given currency
+	fn fiat_for_originals(currency: &Fiat) -> KeyPrefixIterator<T::SystemTokenId> {
 		FiatForOriginal::<T>::iter_key_prefix(currency)
 	}
 
-	fn try_update_system_token_weight(currency: &Fiat) -> DispatchResult {
+	fn do_update_system_token_weight(currency: &Fiat) -> DispatchResult {
 		let os = Self::fiat_for_originals(currency);
-		let mut k_v: Vec<(SystemTokenParaId, SystemTokenAssetId)> = Default::default();
+		let mut para_ids: Vec<SystemTokenOriginIdOf<T>> = Default::default();
 		for o in os {
+			let mut is_rc_original: bool = false;
+			let mut system_token_detail =
+				SystemToken::<T>::get(&o).ok_or(Error::<T>::SystemTokenNotRegistered)?;
 			let updated_sys_weight = Self::calc_system_token_weight(currency, &o)?;
-			Self::try_update_weight_property(&o, updated_sys_weight)?;
-			let SystemTokenId { para_id, asset_id, .. } = o.clone();
-			k_v.push((para_id, asset_id));
+			let (origin_id, _, _) = o.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
+			// If it is Some(_), it means System Token is from some parachain.
+			// Otherwise, it is from Relay Chain
+			if let Some(para_id) = origin_id {
+				para_ids.push(para_id)
+			} else {
+				// Original System Token for RC
+				is_rc_original = true;
+				T::Fungibles::update_system_token_weight(&o, updated_sys_weight)
+					.map_err(|_| Error::<T>::ErrorUpdateSystemTokenWeight)?;
+			}
+			system_token_detail.update_weight(updated_sys_weight);
 			if let Some(ws) = FiatForOriginal::<T>::get(currency, &o) {
 				for w in ws {
-					Self::try_update_weight_property(&w, updated_sys_weight)?;
-					let SystemTokenId { para_id, asset_id, .. } = w;
-					k_v.push((para_id, asset_id));
+					para_ids.push(w);
 				}
 			}
-			for (para_id, asset_id) in k_v {
-				if para_id == RELAY_CHAIN_PARA_ID {
-					T::InfraCore::update_system_token_weight(asset_id, updated_sys_weight)
-				} else {
-					UpdateExchangeRates::<T>::try_mutate(
-						para_id,
-						|maybe_updated| -> DispatchResult {
-							let mut updated = maybe_updated.take().unwrap_or_default();
-							updated = vec![(asset_id, updated_sys_weight)];
-							*maybe_updated = Some(updated);
-							Ok(())
-						},
-					)?;
-				}
+			let context = T::UniversalLocation::get();
+			for para_id in para_ids {
+				let mut original = o.clone();
+				UpdateExchangeRates::<T>::try_mutate(
+					&para_id,
+					|maybe_updated| -> DispatchResult {
+						original
+							.reanchor_loc(0, Some(para_id.clone()), &context)
+							.map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+						*maybe_updated = Some(vec![(original, updated_sys_weight)]);
+						Ok(())
+					},
+				)?;
 			}
-			k_v = Default::default();
+			// Handle for Relay Chain wrapped
+			if !is_rc_original {
+				let mut original = o.clone();
+				original
+					.reanchor_loc(0, None, &context)
+					.map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+				T::Fungibles::update_system_token_weight(&original, updated_sys_weight)
+					.map_err(|_| Error::<T>::ErrorUpdateSystemTokenWeight)?;
+			}
+			para_ids = Default::default();
 		}
 		Ok(())
 	}
 
-	/// Calculate `original` system token weight based on `FORMULA`
+	/// Calcuƒlate `original` system token weight based on `FORMULA`
 	///
 	/// `FORMULA` = `BASE_WEIGHT` * `DECIMAL_RELATIVE_TO_BASE` / `EXCHANGE_RATE_RELATIVE_TO_BASE`
 	fn calc_system_token_weight(
 		currency: &Fiat,
-		original: &SystemTokenId,
-	) -> Result<SystemTokenWeight, DispatchError> {
-		let BaseSystemTokenDetail { base_weight, base_decimals, base_currency } =
-			T::InfraCore::infra_system_config()
-				.map_err(|_| Error::<T>::NotInitiated)?
-				.base_system_token_detail
-				.clone();
+		original: &T::SystemTokenId,
+	) -> Result<SystemTokenWeightOf<T>, DispatchError> {
+		let SystemConfig { base_system_token_detail, .. } =
+			configuration::Pallet::<T>::active_system_config();
+		let BaseSystemTokenDetail { base_currency, base_weight, base_decimals } =
+			base_system_token_detail;
 		let SystemTokenMetadata { decimals, .. } =
-			OriginalSystemTokenMetadata::<T>::get(original).ok_or(Error::<T>::MetadataNotFound)?;
+			Metadata::<T>::get(original).ok_or(Error::<T>::MetadataNotFound)?;
 		let exponents: i32 = (base_decimals as i32) - (decimals as i32);
-		let decimal_to_base: F64 = F64::from_i32(10).powi(exponents);
+		let decimal_to_base = F64::from_i32(10).powi(exponents);
 		let exchange_rate_to_base: F64 = if *currency != base_currency {
 			ExchangeRates::<T>::get(currency)
 				.ok_or(Error::<T>::ExchangeRateNotRequested)?
@@ -620,9 +546,9 @@ impl<T: Config> Pallet<T> {
 		} else {
 			F64::from_i32(1)
 		};
-		let f64_base_weight: F64 = base_weight.into();
-		let system_token_weight: u128 =
-			f64_base_weight.mul(decimal_to_base).div(exchange_rate_to_base).into();
+		let f64_base_weight: F64 = F64::from_i128(base_weight as i128);
+		let system_token_weight: SystemTokenWeightOf<T> =
+			(f64_base_weight * decimal_to_base / exchange_rate_to_base).into();
 		Ok(system_token_weight)
 	}
 
@@ -672,7 +598,7 @@ impl<T: Config> Pallet<T> {
 				continue
 			}
 			ExchangeRates::<T>::insert(&currency, &rate);
-			Self::try_update_system_token_weight(&currency)?;
+			Self::do_update_system_token_weight(&currency)?;
 			updated_currency.push((currency, rate));
 		}
 		Self::deposit_event(Event::<T>::ExchangeRateUpdated { at, updated: updated_currency });
@@ -686,62 +612,82 @@ impl<T: Config> Pallet<T> {
 	/// **Validity**
 	///
 	/// Ensure `original` system token is already registered
-	fn try_get_wrapped_system_token_list(
-		original: &SystemTokenId,
-	) -> Result<Vec<SystemTokenId>, Error<T>> {
-		ensure!(
-			SystemTokenProperties::<T>::contains_key(&original),
-			Error::<T>::OriginalNotRegistered
-		);
-		let token_list = OriginalSystemTokenConverter::<T>::iter_keys()
-			.filter(|wrapped| {
-				OriginalSystemTokenConverter::<T>::get(wrapped).as_ref() == Some(original)
-			})
-			.collect::<Vec<SystemTokenId>>();
-		Ok(token_list)
+	fn list_all_para_ids_for(
+		original: &T::SystemTokenId,
+	) -> Result<Vec<SystemTokenOriginIdOf<T>>, Error<T>> {
+		let system_token_detail =
+			SystemToken::<T>::get(original).ok_or(Error::<T>::SystemTokenNotRegistered)?;
+		Ok(system_token_detail.list_all_wrapped())
 	}
 
-	/// **Description:**: SystemTokenMetadata<BoundedVec<u8, <T as Config>::StringLimit>>
+	/// **Description:**
 	///
-	/// Try register `original` system token on runtime.
-	///
-	/// **Validity:**
-	///
-	/// - Ensure `original` system token is not registered in `OriginalSystemTokenMetadata`
-	///
-	/// **Changes:**
-	///
-	/// `ParaIdSystemTokens`, `SystemTokenUsedParaIds`, `SystemTokenProperties`,
-	/// `OriginalSystemTokenConverter`, `OriginalSystemTokenMetadata`
-	fn try_register_original(
-		original: &SystemTokenId,
+	/// Process
+	/// 1. Extend `SystemTokenMetadata` if any
+	/// 2. Calculate `SystemTokenWeight` based on the type of currency
+	/// 3. Send DMP if it is from parachain. Do it locally if it is from Relay Chain
+	fn do_register_system_token(
+		original: &T::SystemTokenId,
 		extended_metadata: Option<ExtendedMetadata>,
+		maybe_currency_type: &mut Option<Fiat>,
+		is_remote: &mut bool,
 	) -> DispatchResult {
-		let mut system_token_metadata =
-			OriginalSystemTokenMetadata::<T>::get(&original).ok_or(Error::<T>::NotRequested)?;
-		system_token_metadata.set_registered_at(Self::unix_time());
+		let (maybe_origin_id, _, _) =
+			original.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
+
+		// 1. Handle metadata
+		let (mut system_token_metadata, maybe_dest_id) = if let Some(para_id) = maybe_origin_id {
+			ensure!(maybe_currency_type.is_none(), Error::<T>::BadAccess);
+			(Metadata::<T>::get(original).ok_or(Error::<T>::NotRequested)?, Some(para_id))
+		} else {
+			// Relay Chain
+			// TODO: Better Way
+			*is_remote = false;
+			let currency_type = maybe_currency_type.take().ok_or(Error::<T>::BadAccess)?;
+			T::Fungibles::request_register(original, currency_type)
+				.map_err(|_| Error::<T>::ErrorRegisterSystemToken)?;
+			let RemoteAssetMetadata { name, symbol, decimals, min_balance, currency_type, .. } =
+				T::Fungibles::system_token_metadata(original)
+					.map_err(|_| Error::<T>::ErrorRegisterSystemToken)?;
+			let system_token_metadata = SystemTokenMetadata::new(
+				currency_type.clone(),
+				name,
+				symbol,
+				decimals,
+				min_balance,
+			);
+			Metadata::<T>::insert(original, system_token_metadata.clone());
+			RequestFiatList::<T>::mutate(|request_fiat| {
+				if !request_fiat.contains(&currency_type) {
+					request_fiat.push(currency_type);
+				}
+			});
+			(system_token_metadata, None)
+		};
+		let now = frame_system::Pallet::<T>::block_number();
+		system_token_metadata.set_registered_at(now);
 		let currency_type = system_token_metadata.currency_type();
 		let system_token_weight = Self::calc_system_token_weight(&currency_type, original)?;
 		Self::extend_metadata(&mut system_token_metadata, extended_metadata)?;
-		let SystemTokenId { para_id, .. } = original.clone();
-		Self::try_push_sys_token_for_para_id(para_id, &original)?;
-		Self::try_push_para_id(para_id, &original)?;
-		// TODO: What if register System Token on Relay Chain?
-		Self::try_promote(&original, Some(system_token_weight))?;
-		// TODO: Deprecate `SystemTokenProperties`
-		SystemTokenProperties::<T>::insert(
-			&original,
-			SystemTokenProperty {
-				system_token_weight: Some(system_token_weight),
-				status: SystemTokenStatus::Active,
-				created_at: Self::unix_time(),
-			},
-		);
-		// Self registered as wrapped token, which would be used for knowing it is 'original system
-		// token'
-		OriginalSystemTokenConverter::<T>::insert(&original, &original);
-		OriginalSystemTokenMetadata::<T>::insert(&original, system_token_metadata);
 
+		// 2. Register System Token
+		if let Some(para_id) = maybe_dest_id {
+			let mut reanchored = original.clone();
+			reanchored
+				.reanchor_loc(0, Some(para_id.clone()), &T::UniversalLocation::get())
+				.map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+			T::SystemTokenHandler::register_system_token(
+				para_id.into(),
+				reanchored,
+				system_token_weight,
+			);
+		} else {
+			// Relay Chain
+			T::Fungibles::register(original, system_token_weight)
+				.map_err(|_| Error::<T>::ErrorRegisterSystemToken)?;
+		}
+		Metadata::<T>::insert(original, system_token_metadata);
+		SystemToken::<T>::insert(original, SystemTokenDetail::new(system_token_weight));
 		Ok(())
 	}
 
@@ -761,217 +707,187 @@ impl<T: Config> Pallet<T> {
 	///
 	/// - `OriginalSystemTokenConverter`, `ParaIdSystemTokens`, `SystemTokenUsedParaIds`,
 	///   `SystemTokenProperties`
-	fn try_register_wrapped(
-		original: &SystemTokenId,
-		wrapped: &SystemTokenId,
-	) -> Result<(SystemTokenWeight, Fiat), DispatchError> {
-		ensure!(
-			!OriginalSystemTokenConverter::<T>::contains_key(wrapped),
-			Error::<T>::WrappedAlreadyRegistered
-		);
-		let system_token_metadata = OriginalSystemTokenMetadata::<T>::get(original)
-			.ok_or(Error::<T>::OriginalNotRegistered)?;
-		let SystemTokenId { para_id, .. } = wrapped.clone();
-
-		let para_ids = SystemTokenUsedParaIds::<T>::get(original)
-			.map_or(Default::default(), |para_id| para_id);
-		ensure!(!para_ids.contains(&para_id), Error::<T>::WrappedAlreadyRegistered);
-
-		OriginalSystemTokenConverter::<T>::insert(wrapped, original);
-		SystemTokenProperties::<T>::insert(
-			wrapped,
-			&SystemTokenProperty {
-				system_token_weight: None,
-				status: SystemTokenStatus::Active,
-				created_at: Self::unix_time(),
-			},
-		);
-
-		Self::try_push_sys_token_for_para_id(para_id, wrapped)?;
-		Self::try_push_para_id(para_id, original)?;
-
-		let property =
-			SystemTokenProperties::<T>::get(original).ok_or(Error::<T>::PropertyNotFound)?;
-		let weight = property.system_token_weight.ok_or(Error::<T>::WeightMissing)?;
-		Ok((weight, system_token_metadata.currency_type()))
-	}
-
-	/// **Description:**
-	///
-	/// Try deregister for all `original` and `wrapped` system tokens registered on runtime.
-	///
-	/// **Changes:**
-	fn try_deregister_all(original: SystemTokenId) -> DispatchResult {
-		let wrapped_system_tokens = Self::try_get_wrapped_system_token_list(&original)?;
-		for wrapped_system_token_id in wrapped_system_tokens {
-			Self::try_deregister(&wrapped_system_token_id, true)?;
-		}
-
-		Ok(())
-	}
-
-	/// **Description:**
-	///
-	/// Remove value for given `wrapped` system token.
-	///
-	/// **Changes:**
-	///
-	/// `ParaIdSystemTokens`, `SystemTokenUsedParaIds`, `OriginalSystemTokenConverter`,
-	/// `SystemTokenProperties`
-	fn try_deregister(
-		wrapped: &SystemTokenId,
-		is_allowed_to_remove_original: bool,
-	) -> DispatchResult {
-		let original = OriginalSystemTokenConverter::<T>::get(&wrapped)
-			.ok_or(Error::<T>::WrappedNotRegistered)?;
-
-		let SystemTokenId { para_id, .. } = wrapped.clone();
-		if original.para_id == para_id && !is_allowed_to_remove_original {
-			return Err(Error::<T>::BadAccess.into())
-		}
-
-		// Case: Original's self-wrapped
-		let (system_token_id, is_unlink) = if original.para_id == para_id {
-			OriginalSystemTokenMetadata::<T>::remove(original);
-			(original, false)
+	fn do_register_wrapped(
+		original: &T::SystemTokenId,
+		maybe_para_id: Option<SystemTokenOriginIdOf<T>>,
+	) -> Result<(), DispatchError> {
+		let mut system_token_detail =
+			SystemToken::<T>::get(original).ok_or(Error::<T>::SystemTokenNotRegistered)?;
+		let system_token_weight = system_token_detail.weight();
+		ensure!(system_token_weight.ne(&Zero::zero()), Error::<T>::InvalidSystemTokenWeight);
+		let system_token_metadata =
+			Metadata::<T>::get(original).ok_or(Error::<T>::SystemTokenNotRegistered)?;
+		if let Some(para_id) = maybe_para_id {
+			ensure!(
+				!system_token_detail.is_used_by(&para_id),
+				Error::<T>::WrappedAlreadyRegistered
+			);
+			// Send DMP
+			Self::do_create_wrapped(&para_id, &original, system_token_weight)?;
+			system_token_detail.register_wrapped_for(&para_id, SystemTokenStatus::Active)?;
+			Self::system_token_used_para_id(&para_id, original)?;
+			FiatForOriginal::<T>::try_mutate(
+				&system_token_metadata.currency_type,
+				&original,
+				|maybe_para_ids| -> DispatchResult {
+					// Since `Vec<_>` has default, it is safe to unwrap
+					let mut para_ids = maybe_para_ids.take().unwrap_or_default();
+					para_ids.try_push(para_id.clone()).map_err(|_| Error::<T>::TooManyUsed)?;
+					*maybe_para_ids = Some(para_ids);
+					Ok(())
+				},
+			)?;
+			SystemToken::<T>::insert(&original, system_token_detail);
 		} else {
-			(wrapped.clone(), true)
-		};
-		Self::try_demote(system_token_id, is_unlink)?;
-		Self::try_remove_sys_token_for_para(wrapped)?;
-		Self::try_remove_para_id(original, para_id)?;
-
-		OriginalSystemTokenConverter::<T>::remove(&wrapped);
-		SystemTokenProperties::<T>::remove(&wrapped);
-
-		Ok(())
-	}
-
-	/// **Description:**
-	///
-	/// Try suspend for all `original` and `wrapped` system tokens registered on runtime.
-	///
-	/// **Changes:**
-	fn try_suspend_all(original: SystemTokenId) -> DispatchResult {
-		let wrapped_system_tokens = Self::try_get_wrapped_system_token_list(&original)?;
-		for wrapped_system_token_id in wrapped_system_tokens {
-			Self::try_suspend(&wrapped_system_token_id, true)?;
+			// Relay Chain
+			let SystemTokenMetadata { currency_type, name, symbol, decimals, min_balance, .. } =
+				system_token_metadata;
+			let owner = Self::account_id();
+			let mut reanchored = original.clone();
+			reanchored
+				.reanchor_loc(0, None, &T::UniversalLocation::get())
+				.map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+			if let Err(_) = T::Fungibles::touch(
+				owner,
+				reanchored,
+				currency_type,
+				min_balance,
+				name,
+				symbol,
+				decimals,
+				system_token_weight,
+			) {
+				log::error!("Error creating wrapped System Token, {:?}", original.clone());
+			}
 		}
-
 		Ok(())
 	}
 
-	/// **Description:**
-	///
-	/// Suspend for given `wrapped` system token.
-	///
-	/// **Changes:**
-	///
-	/// `SystemTokenProperties`
-	fn try_suspend(
-		wrapped: &SystemTokenId,
-		is_allowed_to_suspend_original: bool,
-	) -> DispatchResult {
-		let original = OriginalSystemTokenConverter::<T>::get(&wrapped)
-			.ok_or(Error::<T>::WrappedNotRegistered)?;
-
-		let SystemTokenId { para_id, .. } = wrapped.clone();
-		if original.para_id == para_id && !is_allowed_to_suspend_original {
-			return Err(Error::<T>::BadAccess.into())
+	fn do_suspend_system_token(
+		kind: MutateKind<T::SystemTokenId, SystemTokenOriginIdOf<T>>,
+	) -> Result<(), DispatchError> {
+		let mut para_ids: Vec<SystemTokenOriginIdOf<T>> = Default::default();
+		match kind {
+			MutateKind::All(original) => {
+				let (maybe_para_id, _, _) =
+					original.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
+				if let Some(para_id) = maybe_para_id {
+					let mut reanchored = original.clone();
+					// Original System Token for Parachains
+					para_ids.push(para_id);
+					// We do suspend for Relay Chain first
+					reanchored
+						.reanchor_loc(0, None, &T::UniversalLocation::get())
+						.map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+					T::Fungibles::suspend(&reanchored)
+						.map_err(|_| Error::<T>::ErrorSuspendSystemToken)?;
+				} else {
+					// Original System Token for RC
+					T::Fungibles::suspend(&original)
+						.map_err(|_| Error::<T>::ErrorSuspendSystemToken)?;
+				}
+				let original_used_para_ids = Self::list_all_para_ids_for(&original)?;
+				para_ids.extend(original_used_para_ids);
+				for para_id in para_ids {
+					let mut reanchored = original.clone();
+					reanchored
+						.reanchor_loc(0, Some(para_id.clone()), &T::UniversalLocation::get())
+						.map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+					T::SystemTokenHandler::suspend_system_token(para_id.into(), reanchored);
+				}
+			},
+			MutateKind::Wrapped { original, wrapped } => {
+				ensure!(original.is_same_origin(wrapped.clone()), Error::<T>::BadAccess);
+				let context = T::UniversalLocation::get();
+				let (maybe_para_id, _, _) =
+					original.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
+				if let Some(para_id) = maybe_para_id {
+					let mut reanchored = original.clone();
+					reanchored
+						.reanchor_loc(0, Some(para_id.clone()), &context)
+						.map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+					T::SystemTokenHandler::suspend_system_token(para_id.into(), reanchored);
+				} else {
+					// Relay Chain
+					let mut reanchored = original.clone();
+					reanchored
+						.reanchor_loc(0, None, &context)
+						.map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+					T::Fungibles::suspend(&reanchored)
+						.map_err(|_| Error::<T>::ErrorSuspendSystemToken)?;
+				}
+			},
 		}
-
-		SystemTokenProperties::<T>::try_mutate_exists(&wrapped, |p| -> DispatchResult {
-			let mut property = p.take().ok_or(Error::<T>::PropertyNotFound)?;
-			property.status = SystemTokenStatus::Suspended;
-			*p = Some(property);
-			Ok(())
-		})?;
-
-		Self::try_demote(*wrapped, false)?;
-
 		Ok(())
 	}
 
-	/// **Description:**
-	///
-	/// Try unsuspend for all `original` and `wrapped` system tokens registered on runtime.
-	///
-	/// **Changes:**
-	fn try_unsuspend_all(original: SystemTokenId) -> DispatchResult {
-		let wrapped_system_tokens = Self::try_get_wrapped_system_token_list(&original)?;
-		for wrapped_system_token_id in wrapped_system_tokens {
-			Self::try_unsuspend(&wrapped_system_token_id, true)?;
+	fn do_unsuspend_system_token(
+		kind: MutateKind<T::SystemTokenId, SystemTokenOriginIdOf<T>>,
+	) -> Result<(), DispatchError> {
+		let mut para_ids: Vec<SystemTokenOriginIdOf<T>> = Default::default();
+		let context = T::UniversalLocation::get();
+		match kind {
+			MutateKind::All(original) => {
+				let (maybe_para_id, _, _) =
+					original.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
+				if let Some(para_id) = maybe_para_id {
+					let mut reanchored = original.clone();
+					// Original System Token for Parachains
+					para_ids.push(para_id);
+					// We do suspend for Relay Chain first
+					reanchored
+						.reanchor_loc(0, None, &context)
+						.map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+					T::Fungibles::unsuspend(&reanchored)
+						.map_err(|_| Error::<T>::ErrorUnsuspendSystemToken)?;
+				} else {
+					// Original System Token for RC
+					T::Fungibles::unsuspend(&original)
+						.map_err(|_| Error::<T>::ErrorUnsuspendSystemToken)?;
+				}
+				let original_used_para_ids = Self::list_all_para_ids_for(&original)?;
+				para_ids.extend(original_used_para_ids);
+				for para_id in para_ids {
+					let mut reanchored = original.clone();
+					reanchored
+						.reanchor_loc(0, Some(para_id.clone()), &context)
+						.map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+					T::SystemTokenHandler::unsuspend_system_token(para_id.into(), reanchored);
+				}
+			},
+			MutateKind::Wrapped { original, wrapped } => {
+				ensure!(original.is_same_origin(wrapped.clone()), Error::<T>::BadAccess);
+				let (maybe_para_id, _, _) =
+					original.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
+				let mut reanchored = original.clone();
+				if let Some(para_id) = maybe_para_id {
+					reanchored
+						.reanchor_loc(0, Some(para_id.clone()), &context)
+						.map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+					T::SystemTokenHandler::unsuspend_system_token(para_id.into(), reanchored);
+				} else {
+					// Relay Chain
+					reanchored
+						.reanchor_loc(0, None, &context)
+						.map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+					T::Fungibles::unsuspend(&reanchored)
+						.map_err(|_| Error::<T>::ErrorUnsuspendSystemToken)?;
+				}
+			},
 		}
-
 		Ok(())
 	}
 
 	/// **Description:**
 	///
-	/// Unsuspend for given `wrapped` system token.
-	///
-	/// **Changes:**
-	///
-	/// `SystemTokenProperties`
-	fn try_unsuspend(
-		wrapped: &SystemTokenId,
-		is_allowed_to_unsuspend_original: bool,
-	) -> DispatchResult {
-		let original = OriginalSystemTokenConverter::<T>::get(&wrapped)
-			.ok_or(Error::<T>::WrappedNotRegistered)?;
-
-		let SystemTokenId { para_id, .. } = wrapped.clone();
-		if original.para_id == para_id && !is_allowed_to_unsuspend_original {
-			return Err(Error::<T>::BadAccess.into())
-		}
-
-		SystemTokenProperties::<T>::try_mutate_exists(&wrapped, |p| -> DispatchResult {
-			let mut property = p.take().ok_or(Error::<T>::PropertyNotFound)?;
-			property.status = SystemTokenStatus::Active;
-			*p = Some(property);
-			Ok(())
-		})?;
-
-		Self::try_promote(&wrapped, None)?;
-
-		Ok(())
-	}
-
-	/// **Description:**
-	///
-	/// Try update `weight` property of `original` system token
-	///
-	/// **Changes:**
-	///
-	/// - `SystemTokenProperties`
-	fn try_update_weight_property(
-		system_token_id: &SystemTokenId,
-		system_token_weight: SystemTokenWeight,
-	) -> DispatchResult {
-		SystemTokenProperties::<T>::try_mutate_exists(system_token_id, |p| -> DispatchResult {
-			let mut property = p.take().ok_or(Error::<T>::PropertyNotFound)?;
-			property.system_token_weight = Some(system_token_weight);
-			*p = Some(property.clone());
-			Self::deposit_event(Event::<T>::SetSystemTokenWeight {
-				system_token_id: system_token_id.clone(),
-				property,
-			});
-			Ok(())
-		})?;
-
-		Ok(())
-	}
-
-	/// **Description:**
-	///
-	/// Try push `system_token_id` for given `para_id` to `ParaIdSystemTokens`.
+	/// Try push `Original` System Token for `para_id` that are using System Token
 	///
 	/// **Errors:**
 	///
 	/// - `TooManySystemTokensOnPara`: Maximum number of elements has been reached for BoundedVec
-	fn try_push_sys_token_for_para_id(
-		para_id: SystemTokenParaId,
-		system_token_id: &SystemTokenId,
+	fn system_token_used_para_id(
+		para_id: &SystemTokenOriginIdOf<T>,
+		original: &T::SystemTokenId,
 	) -> DispatchResult {
 		ParaIdSystemTokens::<T>::try_mutate_exists(
 			para_id.clone(),
@@ -980,7 +896,7 @@ impl<T: Config> Pallet<T> {
 					.take()
 					.map_or(Default::default(), |sys_tokens| sys_tokens);
 				system_tokens
-					.try_push(*system_token_id)
+					.try_push(original.clone())
 					.map_err(|_| Error::<T>::TooManySystemTokensOnPara)?;
 				*maybe_used_system_tokens = Some(system_tokens);
 				Ok(())
@@ -992,63 +908,22 @@ impl<T: Config> Pallet<T> {
 
 	/// **Description:**
 	///
-	/// Try push `para_id` for given `original` system token to `SystemTokenUsedParaIds`
-	///
-	/// **Errors:**
-	///
-	/// - `TooManyUsed`: Number of para ids using `original` system tokens has reached
-	///   `MaxSystemTokenUsedParaIds`
-	fn try_push_para_id(para_id: SystemTokenParaId, original: &SystemTokenId) -> DispatchResult {
-		SystemTokenUsedParaIds::<T>::try_mutate_exists(
-			original,
-			|maybe_para_id_list| -> Result<(), DispatchError> {
-				let mut para_ids = maybe_para_id_list.take().map_or(Default::default(), |ids| ids);
-				para_ids.try_push(para_id).map_err(|_| Error::<T>::TooManyUsed)?;
-				*maybe_para_id_list = Some(para_ids);
-				Ok(())
-			},
-		)?;
-
-		Ok(())
-	}
-
-	/// **Description:**
-	///
 	/// Try remove `ParaIdSystemTokens` for any(`original` or `wrapped`) system token id
-	fn try_remove_sys_token_for_para(sys_token_id: &SystemTokenId) -> DispatchResult {
-		let SystemTokenId { para_id, .. } = sys_token_id.clone();
+	fn remove_system_token_for_para_id(
+		system_token_id: &T::SystemTokenId,
+		para_id: &SystemTokenOriginIdOf<T>,
+	) -> DispatchResult {
 		ParaIdSystemTokens::<T>::try_mutate_exists(
 			para_id,
 			|maybe_system_tokens| -> Result<(), DispatchError> {
 				let mut system_tokens =
 					maybe_system_tokens.take().ok_or(Error::<T>::ParaIdSystemTokensNotFound)?;
-				system_tokens.retain(|&x| x != *sys_token_id);
+				system_tokens.retain(|x| x != system_token_id);
 				if system_tokens.is_empty() {
 					*maybe_system_tokens = None;
 					return Ok(())
 				}
 				*maybe_system_tokens = Some(system_tokens);
-				Ok(())
-			},
-		)?;
-
-		Ok(())
-	}
-
-	/// **Description:**
-	///
-	/// Try remove `SystemTokenUsedParaIds` for system token id
-	fn try_remove_para_id(original: SystemTokenId, para_id: SystemTokenParaId) -> DispatchResult {
-		SystemTokenUsedParaIds::<T>::try_mutate_exists(
-			original,
-			|maybe_para_ids| -> Result<(), DispatchError> {
-				let mut para_ids = maybe_para_ids.take().ok_or(Error::<T>::ParaIdsNotFound)?;
-				para_ids.retain(|x| *x != para_id);
-				if para_ids.is_empty() {
-					*maybe_para_ids = None;
-					return Ok(())
-				}
-				*maybe_para_ids = Some(para_ids);
 				Ok(())
 			},
 		)?;
@@ -1061,40 +936,58 @@ impl<T: Config> Pallet<T> {
 impl<T: Config> Pallet<T> {
 	/// **Description:**
 	///
-	/// Try change state of `wrapped` system token, which is `sufficient` and unlink the system
-	/// token with local asset
-	///
-	/// **Params:**
-	///
-	/// - wrapped: Wrapped system token expected to be changed
-	///
-	/// - is_sufficient: State of 'sufficient' to be changed
-	///
-	/// **Logic:**
-	///
-	/// If `para_id == 0`, which means Relay Chain, call internal `Assets` pallet method.
-	/// Otherwise, send DMP of `demote` to expected `para_id`
-	/// destination
-	fn try_demote(wrapped: SystemTokenId, is_unlink: bool) -> DispatchResult {
-		let SystemTokenId { para_id, asset_id, .. } = wrapped;
-		T::InfraCore::deregister_system_token(para_id, asset_id, is_unlink);
-
-		Ok(())
-	}
-
-	/// **Description:**
-	///
-	/// Try sending DMP of call `promote` to specific parachain.
-	/// If success, destination parachain's local asset's `sufficient` state to `is_sufficient`, and
-	/// set its weight
-	fn try_promote(
-		system_token_id: &SystemTokenId,
-		system_token_weight: Option<SystemTokenWeight>,
+	/// Deregister system token for given `kind`
+	fn do_deregister_system_token(
+		kind: MutateKind<T::SystemTokenId, SystemTokenOriginIdOf<T>>,
 	) -> DispatchResult {
-		let SystemTokenId { para_id, asset_id, .. } = system_token_id.clone();
-		let weight = system_token_weight.ok_or(Error::<T>::WeightMissing)?;
-		T::InfraCore::register_system_token(para_id, asset_id, weight);
-		T::InfraCore::update_runtime_state(para_id);
+		match kind {
+			MutateKind::All(original) => {
+				let system_token_detail =
+					SystemToken::<T>::get(&original).ok_or(Error::<T>::SystemTokenNotRegistered)?;
+				let (origin_id, _, _) =
+					original.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
+				for para_id in system_token_detail.list_all_wrapped().iter() {
+					Self::remove_system_token_for_para_id(&original, para_id)?;
+				}
+				SystemToken::<T>::remove(&original);
+				Metadata::<T>::remove(&original);
+				if let Some(para_id) = origin_id {
+					let mut reanchored = original.clone();
+					reanchored
+						.reanchor_loc(0, Some(para_id.clone()), &T::UniversalLocation::get())
+						.map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+					T::SystemTokenHandler::deregister_system_token(para_id.into(), reanchored);
+				} else {
+					// Relay Chain
+					T::Fungibles::deregister(&original)
+						.map_err(|_| Error::<T>::ErrorDeregisterSystemToken)?;
+				}
+			},
+			MutateKind::Wrapped { original, wrapped } => {
+				if let Some(para_id) = wrapped {
+					let system_token_detail = SystemToken::<T>::get(&original)
+						.ok_or(Error::<T>::SystemTokenNotRegistered)?;
+					ensure!(
+						system_token_detail.is_used_by(&para_id),
+						Error::<T>::WrappedNotRegistered
+					);
+					Self::remove_system_token_for_para_id(&original, &para_id)?;
+					let mut reanchored = original.clone();
+					reanchored
+						.reanchor_loc(0, Some(para_id.clone()), &T::UniversalLocation::get())
+						.map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+					T::SystemTokenHandler::deregister_system_token(para_id.into(), reanchored);
+				} else {
+					// Relay Chain
+					let mut reanchored = original.clone();
+					reanchored
+						.reanchor_loc(0, None, &T::UniversalLocation::get())
+						.map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+					T::Fungibles::deregister(&reanchored)
+						.map_err(|_| Error::<T>::ErrorDeregisterSystemToken)?;
+				}
+			},
+		}
 		Ok(())
 	}
 
@@ -1112,95 +1005,81 @@ impl<T: Config> Pallet<T> {
 	///
 	/// If `para_id == 0`, call internal `Assets` pallet method.
 	/// Otherwise, send DMP of `force_create_with_metadata` to expected `para_id` destination
-	fn try_create_wrapped(
-		wrapped: &SystemTokenId,
-		system_token_weight: SystemTokenWeight,
+	fn do_create_wrapped(
+		para_id: &SystemTokenOriginIdOf<T>,
+		original: &T::SystemTokenId,
+		system_token_weight: SystemTokenWeightOf<T>,
 	) -> DispatchResult {
-		let original = <OriginalSystemTokenConverter<T>>::get(wrapped)
-			.ok_or(Error::<T>::WrappedNotRegistered)?;
-		let original_metadata =
-			OriginalSystemTokenMetadata::<T>::get(&original).ok_or(Error::<T>::MetadataNotFound)?;
-		let SystemTokenId { para_id, asset_id, .. } = wrapped.clone();
-		let parent_for_asset_link: u8 = if para_id == RELAY_CHAIN_PARA_ID { 0 } else { 1 };
-		T::InfraCore::create_wrapped_local(
-			para_id,
-			asset_id,
+		let original_metadata = Metadata::<T>::get(original).ok_or(Error::<T>::MetadataNotFound)?;
+		let mut reanchored = original.clone();
+		reanchored
+			.reanchor_loc(0, Some(para_id.clone()), &T::UniversalLocation::get())
+			.map_err(|_| Error::<T>::ErrorConvertToWrapped)?;
+		let owner = Self::account_id();
+		T::SystemTokenHandler::create_wrapped(
+			para_id.clone().into(),
+			owner,
+			reanchored,
 			original_metadata.currency_type,
 			original_metadata.min_balance,
 			original_metadata.name.to_vec(),
 			original_metadata.symbol.to_vec(),
 			original_metadata.decimals,
 			system_token_weight,
-			parent_for_asset_link,
-			original,
 		);
 		Ok(())
 	}
-}
 
-impl<T: Config> SystemTokenInterface for Pallet<T> {
-	fn is_system_token(original: &SystemTokenId) -> bool {
-		<OriginalSystemTokenMetadata<T>>::get(original).is_some()
-	}
-	fn convert_to_original_system_token(wrapped: &SystemTokenId) -> Option<SystemTokenId> {
-		if let Some(original) = <OriginalSystemTokenConverter<T>>::get(wrapped) {
-			Self::deposit_event(Event::<T>::SystemTokenConverted {
-				from: wrapped.clone(),
-				to: original.clone(),
-			});
-			return Some(original)
-		}
-		None
-	}
-	fn adjusted_weight(original: &SystemTokenId, vote_weight: VoteWeight) -> VoteWeight {
-		if let Some(p) = <SystemTokenProperties<T>>::get(original) {
-			if let Ok(infra_system_config) = T::InfraCore::infra_system_config() {
-				let system_token_weight = {
-					let w: u128 =
-						p.system_token_weight.map_or(infra_system_config.base_weight(), |w| w);
-					let system_token_weight = F64::from_i128(w as i128);
-					system_token_weight
-				};
-				let converted_base_weight =
-					F64::from_i128(infra_system_config.base_weight() as i128);
-
-				// Since the base_weight cannot be zero, this division is guaranteed to be safe.
-				return vote_weight.mul(system_token_weight).div(converted_base_weight)
-			}
-			return vote_weight
-		}
-		vote_weight
-	}
-	fn requested_asset_metadata(
-		para_id: SystemTokenParaId,
-		maybe_requested_asset: Option<RemoteAssetMetadata>,
+	pub fn handle_request(
+		original: &T::SystemTokenId,
+		currency_type: &Fiat,
+		name: Vec<u8>,
+		symbol: Vec<u8>,
+		decimals: u8,
+		min_balance: SystemTokenBalanceOf<T>,
 	) {
-		if let Some(request_asset_metadata) = maybe_requested_asset {
+		Metadata::<T>::insert(
+			original,
+			SystemTokenMetadata::new(currency_type.clone(), name, symbol, decimals, min_balance),
+		);
+		RequestFiatList::<T>::mutate(|request_fiat| {
+			if !request_fiat.contains(currency_type) {
+				request_fiat.push(currency_type.clone());
+			}
+		});
+	}
+
+	pub fn requested_asset_metadata(bytes: &mut Vec<u8>) {
+		if let Ok(remote_asset_metadata) = RemoteAssetMetadata::<
+			T::SystemTokenId,
+			SystemTokenBalanceOf<T>,
+		>::decode(&mut &bytes[..])
+		{
 			let RemoteAssetMetadata {
-				pallet_id,
 				asset_id,
 				name,
 				symbol,
 				currency_type,
 				decimals,
 				min_balance,
-			} = request_asset_metadata;
-			let system_token_id = SystemTokenId::new(para_id, pallet_id, asset_id);
-			OriginalSystemTokenMetadata::<T>::insert(
-				system_token_id,
-				SystemTokenMetadata::new(
-					currency_type.clone(),
+			} = remote_asset_metadata;
+			if let Ok((origin_id, pallet_id, asset_id)) = asset_id.id() {
+				let original = T::SystemTokenId::convert_back(origin_id, pallet_id, asset_id);
+				Self::handle_request(
+					&original,
+					&currency_type,
 					name,
 					symbol,
 					decimals,
 					min_balance,
-				),
-			);
-			RequestFiatList::<T>::mutate(|request_fiat| {
-				if !request_fiat.contains(&currency_type) {
-					request_fiat.push(currency_type);
-				}
-			});
+				);
+			} else {
+				log::error!("❌ Failed to convert to SystemTokenId ❌");
+				return
+			}
+		} else {
+			log::error!("❌ Failed to decode RemoteAssetMetadata ❌");
+			return
 		}
 	}
 }
@@ -1208,15 +1087,24 @@ impl<T: Config> SystemTokenInterface for Pallet<T> {
 pub mod types {
 
 	use super::*;
-	use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
-	use scale_info::TypeInfo;
 
+	pub type SystemTokenAssetIdOf<T> = <<T as Config>::SystemTokenId as SystemTokenId>::AssetId;
+	pub type SystemTokenOriginIdOf<T> = <<T as Config>::SystemTokenId as SystemTokenId>::OriginId;
+	pub type SystemTokenPalletIdOf<T> = <<T as Config>::SystemTokenId as SystemTokenId>::PalletId;
+	pub type SystemTokenWeightOf<T> = <<T as Config>::Fungibles as InspectSystemToken<
+		<T as frame_system::Config>::AccountId,
+	>>::SystemTokenWeight;
+	pub type SystemTokenBalanceOf<T> =
+		<<T as Config>::Fungibles as Inspect<<T as frame_system::Config>::AccountId>>::Balance;
 	pub type BoundedStringOf<T> = BoundedVec<u8, <T as Config>::StringLimit>;
+	pub type DestIdOf<T> = <<T as Config>::SystemTokenHandler as SystemTokenInterface>::DestId;
 
 	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, TypeInfo)]
-	pub enum SystemTokenType {
-		Original(SystemTokenId),
-		Wrapped { original: SystemTokenId, wrapped: SystemTokenId },
+	pub enum SystemTokenType<SystemTokenId, ParaId> {
+		/// Register `Original` System Token. It means Relay Chain if currency type is `Some(_)`
+		Original { system_token_id: SystemTokenId, currency_type: Option<Fiat> },
+		/// Register as `Wrapped` System Token. It means Relay Chain if para_id is `None`
+		Wrapped { original: SystemTokenId, maybe_para_id: Option<ParaId> },
 	}
 
 	#[derive(
@@ -1229,10 +1117,18 @@ pub mod types {
 		Pending,
 	}
 
+	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+	pub enum MutateKind<SystemTokenId, ParaId> {
+		/// Deregister all related to `T::SystemTokenId`
+		All(SystemTokenId),
+		/// Deregister for specific `Option<ParaId>`. If `None`, it means `Relay Chain`
+		Wrapped { original: SystemTokenId, wrapped: Option<ParaId> },
+	}
+
 	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, Default, TypeInfo)]
-	pub struct ParaCallMetadata {
-		pub(crate) para_id: SystemTokenParaId,
-		pub(crate) pallet_id: SystemTokenPalletId,
+	pub struct ParaCallMetadata<ParaId, PalletId> {
+		pub(crate) para_id: ParaId,
+		pub(crate) pallet_id: PalletId,
 		pub(crate) pallet_name: Vec<u8>,
 		pub(crate) call_name: Vec<u8>,
 	}
@@ -1240,87 +1136,176 @@ pub mod types {
 	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, Default, TypeInfo)]
 	pub struct ExtendedMetadata {
 		/// The user friendly name of issuer in real world
-		pub(crate) issuer: Option<Vec<u8>>,
+		pub(crate) issuer: Vec<u8>,
 		/// The description of the token
-		pub(crate) description: Option<Vec<u8>>,
+		pub(crate) description: Vec<u8>,
 		/// The url of related to the token or issuer
-		pub(crate) url: Option<Vec<u8>>,
+		pub(crate) url: Vec<u8>,
 	}
 
+	/// Detail for `Original` System Token
 	#[derive(
 		Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, Default, TypeInfo, MaxEncodedLen,
 	)]
+	#[scale_info(skip_type_params(MaxUsed))]
+	pub struct SystemTokenDetail<Weight, ParaId, MaxUsed: Get<u32>> {
+		/// Weight of System Token for adjusting weight transaction vote
+		pub(crate) system_token_weight: Weight,
+		/// Status of System Token
+		pub(crate) system_token_status: SystemTokenStatus,
+		/// List of para_ids that are using this System Token
+		pub(crate) para_ids: BoundedVec<(ParaId, SystemTokenStatus), MaxUsed>,
+	}
+
+	impl<Weight: Clone, ParaId: PartialEq + Clone, MaxUsed: Get<u32>>
+		SystemTokenDetail<Weight, ParaId, MaxUsed>
+	{
+		pub fn new(system_token_weight: Weight) -> Self {
+			Self {
+				system_token_weight,
+				system_token_status: SystemTokenStatus::Active,
+				para_ids: BoundedVec::new(),
+			}
+		}
+
+		pub fn weight(&self) -> Weight {
+			self.system_token_weight.clone()
+		}
+
+		/// Check if given `para_id` is using wrapped
+		pub fn is_used_by(&self, para_id: &ParaId) -> bool {
+			self.para_ids.iter().any(|(p, _)| p == para_id)
+		}
+
+		/// Try push `para_id` to `wrapped` list
+		pub fn register_wrapped_for(
+			&mut self,
+			para_id: &ParaId,
+			system_token_status: SystemTokenStatus,
+		) -> DispatchResult {
+			if let Err(_) = self.para_ids.try_push((para_id.clone(), system_token_status)) {
+				// TODO
+				Ok(())
+			} else {
+				Ok(())
+			}
+		}
+
+		/// List all `para_ids` which are `SystemTokenStatus::Active` that are using this System
+		/// Token
+		pub fn list_all_wrapped(&self) -> Vec<ParaId> {
+			self.para_ids
+				.clone()
+				.into_iter()
+				.filter_map(|(p, s)| if s == SystemTokenStatus::Active { Some(p) } else { None })
+				.collect()
+		}
+
+		pub fn update_weight(&mut self, new: Weight) {
+			self.system_token_weight = new;
+		}
+	}
+
+	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, Default, TypeInfo)]
 	/// Metadata of the `original` asset from enshrined runtime
-	// TODO: `SystemTokenMetadata` -> `SystemTokenDetail`
-	// TODO: Additional fields -> `SystemTokenWeight`, `List of Wrapped`, `Status`
-	pub struct SystemTokenMetadata<BoundedString> {
+	pub struct SystemTokenMetadata<Balance, BoundedString, BlockNumber> {
 		pub(crate) currency_type: Fiat,
 		/// The user friendly name of this system token.
-		pub(crate) name: BoundedSystemTokenName,
+		pub(crate) name: Vec<u8>,
 		/// The exchange symbol for this system token.
-		pub(crate) symbol: BoundedSystemTokenSymbol,
+		pub(crate) symbol: Vec<u8>,
 		/// The number of decimals this asset uses to represent one unit.
 		pub(crate) decimals: u8,
 		/// The minimum balance of this new asset that any single account must
 		/// have. If an account's balance is reduced below this, then it collapses to zero.
 		#[codec(compact)]
-		pub(crate) min_balance: SystemTokenBalance,
-		/// The unix time of this system token registered
+		pub(crate) min_balance: Balance,
+		/// The time of when system token registered
 		#[codec(compact)]
-		pub(crate) registered_at: u128,
+		pub(crate) registered_at: BlockNumber,
 		/// The user friendly name of issuer in real world
-		pub(crate) issuer: Option<BoundedString>,
+		pub(crate) issuer: BoundedString,
 		/// The description of the token
-		pub(crate) description: Option<BoundedString>,
+		pub(crate) description: BoundedString,
 		/// The url of related to the token or issuer
-		pub(crate) url: Option<BoundedString>,
+		pub(crate) url: BoundedString,
 	}
 
-	impl<BoundedString: Default> SystemTokenMetadata<BoundedString> {
+	impl<Balance: Default, BoundedString: Default, BlockNumber: Default>
+		SystemTokenMetadata<Balance, BoundedString, BlockNumber>
+	{
 		pub fn currency_type(&self) -> Fiat {
 			self.currency_type.clone()
 		}
 
-		pub fn set_registered_at(&mut self, at: u128) {
+		pub fn set_registered_at(&mut self, at: BlockNumber) {
 			self.registered_at = at;
 		}
 
 		pub fn new(
 			currency_type: Fiat,
-			name: BoundedSystemTokenName,
-			symbol: BoundedSystemTokenSymbol,
+			name: Vec<u8>,
+			symbol: Vec<u8>,
 			decimals: u8,
-			min_balance: SystemTokenBalance,
+			min_balance: Balance,
 		) -> Self {
-			Self {
-				currency_type,
-				name,
-				symbol,
-				decimals,
-				min_balance,
-				issuer: None,
-				description: None,
-				url: None,
-				..Default::default()
-			}
+			Self { currency_type, name, symbol, decimals, min_balance, ..Default::default() }
 		}
 
 		pub fn additional(
 			&mut self,
-			issuer: Option<BoundedString>,
-			description: Option<BoundedString>,
-			url: Option<BoundedString>,
+			issuer: BoundedString,
+			description: BoundedString,
+			url: BoundedString,
 		) {
 			self.issuer = issuer;
 			self.description = description;
 			self.url = url;
 		}
 	}
+}
 
-	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, TypeInfo)]
-	pub struct SystemTokenProperty {
-		pub(crate) system_token_weight: Option<SystemTokenWeight>,
-		pub(crate) status: SystemTokenStatus,
-		pub(crate) created_at: u128,
+pub mod traits {
+
+	use super::*;
+
+	/// API for handling System Token related methods
+	/// Generally implemented by the Relay-chain
+	pub trait SystemTokenInterface {
+		/// AccountId type for InfraBlockchain
+		type AccountId: Parameter;
+		/// Location for asset
+		type Location: Parameter;
+		/// Type of System Token balance
+		type Balance: Parameter + AtLeast32BitUnsigned;
+		/// Type of System Token weight
+		type SystemTokenWeight: Parameter + AtLeast32BitUnsigned;
+		/// Type of destination id(e.g para_id)
+		type DestId: Parameter;
+
+		/// Register `Original` System Token for `dest_id` Runtime(e.g `set_sufficient=true`)
+		fn register_system_token(
+			dest_id: Self::DestId,
+			asset_id: Self::Location,
+			system_token_weight: Self::SystemTokenWeight,
+		);
+		/// Deregister `Original/Wrapped` System Token for `dest_id` Runtime
+		fn deregister_system_token(dest_id: Self::DestId, asset_id: Self::Location);
+		/// Create local asset of `Wrapped` System Token for `dest_id` Runtime
+		fn create_wrapped(
+			dest_id: Self::DestId,
+			owner: Self::AccountId,
+			original: Self::Location,
+			currency_type: Fiat,
+			min_balance: Self::Balance,
+			name: Vec<u8>,
+			symbol: Vec<u8>,
+			decimals: u8,
+			system_token_weight: Self::SystemTokenWeight,
+		);
+		/// Suspend `Original/Wrapped` System Token for `dest_id` Runtime
+		fn suspend_system_token(dest_id: Self::DestId, asset_id: Self::Location);
+		/// Unsuspend `Original/Wrapped` System Token for `dest_id` Runtime
+		fn unsuspend_system_token(dest_id: Self::DestId, asset_id: Self::Location);
 	}
 }

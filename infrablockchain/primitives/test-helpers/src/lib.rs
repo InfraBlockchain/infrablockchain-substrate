@@ -78,7 +78,7 @@ pub fn dummy_candidate_commitments(head_data: impl Into<Option<HeadData>>) -> Ca
 		horizontal_messages: vec![].try_into().expect("empty vec fits within bounds"),
 		processed_downward_messages: 0,
 		hrmp_watermark: 0_u32,
-		vote_result: None,
+		proof_of_transaction: None,
 		requested_asset: None,
 	}
 }
@@ -183,8 +183,8 @@ pub fn make_candidate(
 		new_validation_code: None,
 		processed_downward_messages: 0,
 		hrmp_watermark: relay_parent_number,
-		vote_result: None,
-		requested_assets: None,
+		proof_of_transaction: None,
+		requested_asset: None,
 	};
 
 	let mut candidate =

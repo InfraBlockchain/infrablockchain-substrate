@@ -41,13 +41,13 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	}
 
 	/// Get the asset `id` balance of `who`, or zero if the asset-account doesn't exist.
-	pub fn balance(id: T::AssetId, who: impl sp_std::borrow::Borrow<T::AccountId>) -> T::Balance {
+	pub fn balance(id: &T::AssetId, who: impl sp_std::borrow::Borrow<T::AccountId>) -> T::Balance {
 		Self::maybe_balance(id, who).unwrap_or_default()
 	}
 
 	/// Get the asset `id` balance of `who` if the asset-account exists.
 	pub fn maybe_balance(
-		id: T::AssetId,
+		id: &T::AssetId,
 		who: impl sp_std::borrow::Borrow<T::AccountId>,
 	) -> Option<T::Balance> {
 		Account::<T, I>::get(id, who.borrow()).map(|a| a.balance)
@@ -65,7 +65,12 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 	pub(super) fn new_account(
 		who: &T::AccountId,
-		d: &mut AssetDetails<T::Balance, T::AccountId, DepositBalanceOf<T, I>>,
+		d: &mut AssetDetails<
+			T::Balance,
+			T::AccountId,
+			DepositBalanceOf<T, I>,
+			T::SystemTokenWeight,
+		>,
 		maybe_deposit: Option<(&T::AccountId, DepositBalanceOf<T, I>)>,
 	) -> Result<ExistenceReasonOf<T, I>, DispatchError> {
 		let accounts = d.accounts.checked_add(1).ok_or(ArithmeticError::Overflow)?;
@@ -96,7 +101,12 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 	pub(super) fn dead_account(
 		who: &T::AccountId,
-		d: &mut AssetDetails<T::Balance, T::AccountId, DepositBalanceOf<T, I>>,
+		d: &mut AssetDetails<
+			T::Balance,
+			T::AccountId,
+			DepositBalanceOf<T, I>,
+			T::SystemTokenWeight,
+		>,
 		reason: &ExistenceReasonOf<T, I>,
 		force: bool,
 	) -> DeadConsequence {
@@ -437,7 +447,12 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		beneficiary: &T::AccountId,
 		amount: T::Balance,
 		check: impl FnOnce(
-			&mut AssetDetails<T::Balance, T::AccountId, DepositBalanceOf<T, I>>,
+			&mut AssetDetails<
+				T::Balance,
+				T::AccountId,
+				DepositBalanceOf<T, I>,
+				T::SystemTokenWeight,
+			>,
 		) -> DispatchResult,
 	) -> DispatchResult {
 		if amount.is_zero() {
@@ -527,7 +542,12 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		f: DebitFlags,
 		check: impl FnOnce(
 			T::Balance,
-			&mut AssetDetails<T::Balance, T::AccountId, DepositBalanceOf<T, I>>,
+			&mut AssetDetails<
+				T::Balance,
+				T::AccountId,
+				DepositBalanceOf<T, I>,
+				T::SystemTokenWeight,
+			>,
 		) -> DispatchResult,
 	) -> Result<T::Balance, DispatchError> {
 		if amount.is_zero() {
@@ -705,8 +725,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		is_sufficient: bool,
 		min_balance: T::Balance,
 		asset_status: Option<AssetStatus>,
-		system_token_weight: Option<SystemTokenWeight>,
+		fiat: Option<Fiat>,
+		system_token_weight: Option<T::SystemTokenWeight>,
 	) -> DispatchResult {
+		log::info!("🤡🤡🤡🤡🤡🤡 Force creating asset => {:?}", id);
 		ensure!(!Asset::<T, I>::contains_key(&id), Error::<T, I>::InUse);
 		ensure!(!min_balance.is_zero(), Error::<T, I>::MinBalanceZero);
 		let status = asset_status.map_or(AssetStatus::InActive, |s| s);
@@ -725,6 +747,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 				sufficients: 0,
 				approvals: 0,
 				status,
+				currency_type: fiat,
 				system_token_weight,
 			},
 		);
@@ -959,15 +982,15 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	/// Do set metadata
 	pub(super) fn do_set_metadata(
 		id: T::AssetId,
-		currency_type: Option<Fiat>,
 		from: &T::AccountId,
 		name: Vec<u8>,
 		symbol: Vec<u8>,
 		decimals: u8,
 	) -> DispatchResult {
-		let bounded_name: BoundedSystemTokenName =
+		log::info!("🤡🤡🤡🤡🤡🤡 Setting metadata => {:?}", id);
+		let bounded_name: BoundedVec<u8, T::StringLimit> =
 			name.clone().try_into().map_err(|_| Error::<T, I>::BadMetadata)?;
-		let bounded_symbol: BoundedSystemTokenSymbol =
+		let bounded_symbol: BoundedVec<u8, T::StringLimit> =
 			symbol.clone().try_into().map_err(|_| Error::<T, I>::BadMetadata)?;
 
 		let d = Asset::<T, I>::get(&id).ok_or(Error::<T, I>::Unknown)?;
@@ -980,18 +1003,18 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		Metadata::<T, I>::try_mutate_exists(id.clone(), |metadata| {
 			ensure!(metadata.as_ref().map_or(true, |m| !m.is_frozen), Error::<T, I>::NoPermission);
 
+			// TODO
 			let old_deposit = metadata.take().map_or(Zero::zero(), |m| m.deposit);
-			let new_deposit = Self::calc_metadata_deposit(&name, &symbol);
+			// let new_deposit = Self::calc_metadata_deposit(&name, &symbol);
 
-			if new_deposit > old_deposit {
-				T::Currency::reserve(from, new_deposit - old_deposit)?;
-			} else {
-				T::Currency::unreserve(from, old_deposit - new_deposit);
-			}
+			// if new_deposit > old_deposit {
+			// 	T::Currency::reserve(from, new_deposit - old_deposit)?;
+			// } else {
+			// 	T::Currency::unreserve(from, old_deposit - new_deposit);
+			// }
 
 			*metadata = Some(AssetMetadata {
-				currency_type,
-				deposit: new_deposit,
+				deposit: old_deposit,
 				name: bounded_name,
 				symbol: bounded_symbol,
 				decimals,
@@ -1017,11 +1040,9 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	}
 
 	/// Returns all the non-zero balances for all assets of the given `account`.
-	pub fn account_balances(account: T::AccountId) -> Vec<(T::AssetId, T::Balance)> {
+	pub fn account_balances(account: &T::AccountId) -> Vec<(T::AssetId, T::Balance)> {
 		Asset::<T, I>::iter_keys()
-			.filter_map(|id| {
-				Self::maybe_balance(id.clone(), account.clone()).map(|balance| (id, balance))
-			})
+			.filter_map(|id| Self::maybe_balance(&id, account).map(|balance| (id, balance)))
 			.collect::<Vec<_>>()
 	}
 }
@@ -1030,17 +1051,37 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	pub fn asset_detail(
 		asset_id: &T::AssetId,
-	) -> Option<AssetDetails<T::Balance, T::AccountId, DepositBalanceOf<T, I>>> {
+	) -> Option<AssetDetails<T::Balance, T::AccountId, DepositBalanceOf<T, I>, T::SystemTokenWeight>>
+	{
 		Asset::<T, I>::get(asset_id)
 	}
 
-	/// Try promote local `asset` to System Token
-	pub fn try_promote(
-		asset_id: SystemTokenAssetId,
-		system_token_weight: SystemTokenWeight,
+	/// Return most of the system token balance of 'asset' and 'who'. If asset is 'Some(_), it will
+	/// return balance of that asset. If it is None, it will return most of the balance of 'who'
+	pub fn system_token_balance(
+		who: &T::AccountId,
+		maybe_asset: Option<T::AssetId>,
+	) -> Option<(T::AssetId, T::Balance)> {
+		maybe_asset.map_or_else(
+			|| {
+				<Self as fungibles::EnumerateSystemToken<T::AccountId>>::system_token_ids()
+					.into_iter()
+					.filter_map(|id| {
+						let balance = Self::balance(&id, who);
+						// TODO: Adjust value based on system token weight
+						Some((id, balance))
+					})
+					.max_by_key(|&(_, balance)| balance)
+			},
+			|id| Some((id.clone(), Self::balance(&id, who))),
+		)
+	}
+
+	pub fn do_register(
+		asset_id: &T::AssetId,
+		system_token_weight: T::SystemTokenWeight,
 	) -> DispatchResult {
-		let id: T::AssetId = asset_id.into();
-		Asset::<T, I>::try_mutate_exists(id, |maybe_detail| -> DispatchResult {
+		Asset::<T, I>::try_mutate_exists(asset_id, |maybe_detail| -> DispatchResult {
 			let mut asset_detail = maybe_detail.take().ok_or(Error::<T, I>::Unknown)?;
 			ensure!(asset_detail.status == AssetStatus::Requested, Error::<T, I>::IncorrectStatus);
 			asset_detail.is_sufficient = true;
@@ -1052,37 +1093,36 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		Ok(())
 	}
 
-	/// Try create `wrapped` System Token's local asset with `original` System Token's metadata
-	pub fn try_create_wrapped_local(
-		asset_id: SystemTokenAssetId,
-		currency_type: Fiat,
+	pub fn do_create_wrapped_local(
 		owner: T::AccountId,
-		min_balance: SystemTokenBalance,
+		asset_id: T::AssetId,
+		currency_type: Fiat,
+		min_balance: T::Balance,
 		name: Vec<u8>,
 		symbol: Vec<u8>,
 		decimals: u8,
-		system_token_weight: Option<SystemTokenWeight>,
+		system_token_weight: T::SystemTokenWeight,
 	) -> DispatchResult {
-		let id: T::AssetId = asset_id.into();
-		ensure!(!Asset::<T, I>::contains_key(&id), Error::<T, I>::InUse);
+		log::info!("🤡🤡🤡🤡🤡🤡 Creating asset => {:?}", asset_id);
+		ensure!(!Asset::<T, I>::contains_key(&asset_id), Error::<T, I>::InUse);
 		Self::do_force_create(
-			id.clone(),
+			asset_id.clone(),
 			&owner,
 			true,
 			min_balance.into(),
 			Some(AssetStatus::Live),
-			system_token_weight,
+			Some(currency_type.clone()),
+			Some(system_token_weight),
 		)?;
-		Self::do_set_metadata(id, Some(currency_type), &owner, name, symbol, decimals)?;
+		Self::do_set_metadata(asset_id, &owner, name, symbol, decimals)?;
 		Ok(())
 	}
 
-	pub fn try_update_system_token_weight(
-		asset_id: SystemTokenAssetId,
-		system_token_weight: SystemTokenWeight,
+	pub fn do_update_system_token_weight(
+		asset_id: &T::AssetId,
+		system_token_weight: T::SystemTokenWeight,
 	) -> DispatchResult {
-		let id: T::AssetId = asset_id.into();
-		Asset::<T, I>::try_mutate_exists(&id, |maybe_detail| -> DispatchResult {
+		Asset::<T, I>::try_mutate_exists(asset_id, |maybe_detail| -> DispatchResult {
 			let mut asset_detail = maybe_detail.take().ok_or(Error::<T, I>::Unknown)?;
 			asset_detail.system_token_weight = Some(system_token_weight);
 			*maybe_detail = Some(asset_detail);
@@ -1092,9 +1132,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		Ok(())
 	}
 
-	pub fn try_demote(asset_id: SystemTokenAssetId) -> DispatchResult {
-		let id: T::AssetId = asset_id.into();
-		Asset::<T, I>::try_mutate_exists(id, |maybe_detail| -> DispatchResult {
+	pub fn do_deregister(asset_id: &T::AssetId) -> DispatchResult {
+		Asset::<T, I>::try_mutate_exists(asset_id, |maybe_detail| -> DispatchResult {
 			let mut asset_detail = maybe_detail.take().ok_or(Error::<T, I>::Unknown)?;
 			asset_detail.is_sufficient = false;
 			*maybe_detail = Some(asset_detail);
@@ -1104,23 +1143,39 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		Ok(())
 	}
 
-	/// Request for System Token
-	///
-	/// Check
-	/// - Error if the asset is not exist
-	/// - Error if it is not `InActive` status
-	/// - Error if it is already `sufficient`
-	pub fn try_request_register(asset_id: SystemTokenAssetId) -> DispatchResult {
-		let id: T::AssetId = asset_id.into();
-		Asset::<T, I>::try_mutate_exists(id.clone(), |maybe_detail| -> DispatchResult {
+	pub fn do_request_register(asset_id: &T::AssetId, currency_type: Fiat) -> DispatchResult {
+		Asset::<T, I>::try_mutate_exists(asset_id, |maybe_detail| -> DispatchResult {
 			let mut asset_detail = maybe_detail.take().ok_or(Error::<T, I>::Unknown)?;
 			ensure!(!asset_detail.is_sufficient, Error::<T, I>::IncorrectStatus);
 			ensure!(asset_detail.status == AssetStatus::InActive, Error::<T, I>::IncorrectStatus);
 			let issuer = asset_detail.clone().issuer;
 			let min_balance = asset_detail.min_balance;
 			// TODO: Better way
-			ensure!(Self::balance(id, issuer) >= min_balance, Error::<T, I>::InvalidRequest);
+			ensure!(Self::balance(asset_id, issuer) >= min_balance, Error::<T, I>::InvalidRequest);
 			asset_detail.status = AssetStatus::Requested;
+			asset_detail.currency_type = Some(currency_type);
+			*maybe_detail = Some(asset_detail);
+			Ok(())
+		})?;
+		Ok(())
+	}
+
+	pub fn do_suspend(asset_id: &T::AssetId) -> DispatchResult {
+		Asset::<T, I>::try_mutate_exists(asset_id, |maybe_detail| -> DispatchResult {
+			let mut asset_detail = maybe_detail.take().ok_or(Error::<T, I>::Unknown)?;
+			ensure!(asset_detail.status == AssetStatus::Live, Error::<T, I>::IncorrectStatus);
+			asset_detail.status = AssetStatus::Suspend;
+			*maybe_detail = Some(asset_detail);
+			Ok(())
+		})?;
+		Ok(())
+	}
+
+	pub fn do_unsuspend(asset_id: &T::AssetId) -> DispatchResult {
+		Asset::<T, I>::try_mutate_exists(asset_id, |maybe_detail| -> DispatchResult {
+			let mut asset_detail = maybe_detail.take().ok_or(Error::<T, I>::Unknown)?;
+			ensure!(asset_detail.status == AssetStatus::Suspend, Error::<T, I>::IncorrectStatus);
+			asset_detail.status = AssetStatus::Live;
 			*maybe_detail = Some(asset_detail);
 			Ok(())
 		})?;

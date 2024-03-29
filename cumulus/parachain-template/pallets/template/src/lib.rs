@@ -124,7 +124,7 @@ pub mod pallet {
 			let den_f64 = F64::from_i128(den as i128);
 			let num_f64 = F64::from_i128(num as i128);
 
-			let result = den_f64.div(num_f64).to_i128() as u32;
+			let result = (den_f64 / num_f64).to_i128() as u32;
 
 			// Emit an event.
 			Self::deposit_event(Event::SomethingStored(result, who));

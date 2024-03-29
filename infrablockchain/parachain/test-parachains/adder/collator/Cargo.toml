@@ -21,7 +21,7 @@ log = "0.4.17"
 test-parachain-adder = { path = ".." }
 primitives = { path = "../../../../primitives" }
 infrablockchain-cli = { path = "../../../../cli" }
-infrablockchain-service = { path = "../../../../node/service", features = ["rococo-native"] }
+infrablockchain-service = { path = "../../../../node/service", features = ["infra-relay-native"] }
 node-primitives = { path = "../../../../node/primitives" }
 node-subsystem = { path = "../../../../node/subsystem" }
 

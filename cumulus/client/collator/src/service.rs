@@ -270,6 +270,23 @@ where
 				)
 			})
 			.ok()?;
+
+		let proof_of_transaction = if let Some(res) = collation_info.proof_of_transaction {
+			let bounded = res
+				.try_into()
+				.map_err(|e| {
+					tracing::error!(
+						target: LOG_TARGET,
+						error = ?e,
+						"Number of vote results should not be greater than `MAX_VOTES_RESULT`",
+					)
+				})
+				.ok()?;
+			Some(bounded)
+		} else {
+			None
+		};
+
 		let requested_asset = collation_info.requested_asset;
 
 		let collation = Collation {
@@ -280,7 +297,7 @@ where
 			hrmp_watermark: collation_info.hrmp_watermark,
 			head_data: collation_info.head_data,
 			proof_of_validity: MaybeCompressedPoV::Compressed(pov),
-			vote_result: collation_info.vote_result,
+			proof_of_transaction,
 			requested_asset,
 		};
 

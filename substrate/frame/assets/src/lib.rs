@@ -154,8 +154,8 @@ pub use extra_mutator::*;
 mod functions;
 
 mod impl_fungibles;
-mod impl_infra_related;
 mod impl_stored_map;
+mod impl_system_token;
 
 pub mod types;
 pub use types::*;
@@ -172,12 +172,10 @@ use frame_support::{
 };
 use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
+use softfloat::F64;
 use sp_runtime::{
-	traits::{
-		AccountIdConversion, AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Saturating,
-		StaticLookup, Zero,
-	},
-	types::token::*,
+	infra::token::*,
+	traits::{AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Saturating, StaticLookup, Zero},
 	ArithmeticError, DispatchError, TokenError,
 };
 use sp_std::prelude::*;
@@ -187,7 +185,6 @@ pub use pallet::*;
 pub use weights::WeightInfo;
 
 type AccountIdLookupOf<T> = <<T as frame_system::Config>::Lookup as StaticLookup>::Source;
-const LOG_TARGET: &str = "runtime::assets";
 
 /// Trait with callbacks that are executed after successfull asset creation or destruction.
 pub trait AssetsCallback<AssetId, AccountId> {
@@ -207,6 +204,8 @@ impl<AssetId, AccountId> AssetsCallback<AssetId, AccountId> for () {}
 
 #[frame_support::pallet]
 pub mod pallet {
+	use frame_support::traits::tokens::Balance;
+
 	use super::*;
 
 	/// The current storage version.
@@ -242,8 +241,10 @@ pub mod pallet {
 			+ Copy
 			+ MaybeSerializeDeserialize
 			+ MaxEncodedLen
-			+ TypeInfo
-			+ IsType<SystemTokenBalance>;
+			+ TypeInfo;
+
+		/// The units in which we record weight of System Token
+		type SystemTokenWeight: Balance + From<F64> + TryInto<i128>;
 
 		/// Max number of items to destroy per `destroy_accounts` and `destroy_approvals` call.
 		///
@@ -252,12 +253,7 @@ pub mod pallet {
 		type RemoveItemsLimit: Get<u32>;
 
 		/// Identifier for the class of asset.
-		type AssetId: Member
-			+ Parameter
-			+ Clone
-			+ MaybeSerializeDeserialize
-			+ MaxEncodedLen
-			+ IsType<SystemTokenAssetId>;
+		type AssetId: Member + Parameter + Clone + MaybeSerializeDeserialize + MaxEncodedLen;
 
 		/// Wrapper around `Self::AssetId` to use in dispatchable call signatures. Allows the use
 		/// of compact encoding in instances of the pallet, which will prevent breaking changes
@@ -322,6 +318,9 @@ pub mod pallet {
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
 
+		#[pallet::constant]
+		type StringLimit: Get<u32>;
+
 		/// Helper trait for benchmarks.
 		#[cfg(feature = "runtime-benchmarks")]
 		type BenchmarkHelper: BenchmarkHelper<Self::AssetIdParameter>;
@@ -333,7 +332,7 @@ pub mod pallet {
 		_,
 		Blake2_128Concat,
 		T::AssetId,
-		AssetDetails<T::Balance, T::AccountId, DepositBalanceOf<T, I>>,
+		AssetDetails<T::Balance, T::AccountId, DepositBalanceOf<T, I>, T::SystemTokenWeight>,
 	>;
 
 	#[pallet::storage]
@@ -367,7 +366,7 @@ pub mod pallet {
 		_,
 		Blake2_128Concat,
 		T::AssetId,
-		AssetMetadata<DepositBalanceOf<T, I>>,
+		AssetMetadata<DepositBalanceOf<T, I>, BoundedVec<u8, T::StringLimit>>,
 		OptionQuery,
 	>;
 
@@ -403,6 +402,7 @@ pub mod pallet {
 						sufficients: 0,
 						approvals: 0,
 						status: AssetStatus::Live,
+						currency_type: None,
 						system_token_weight: None,
 					},
 				);
@@ -411,13 +411,12 @@ pub mod pallet {
 			for (id, name, symbol, decimals) in &self.metadata {
 				assert!(Asset::<T, I>::contains_key(id), "Asset does not exist");
 
-				let bounded_name: BoundedSystemTokenName =
+				let bounded_name: BoundedVec<u8, T::StringLimit> =
 					name.clone().try_into().expect("asset name is too long");
-				let bounded_symbol: BoundedSystemTokenSymbol =
+				let bounded_symbol: BoundedVec<u8, T::StringLimit> =
 					symbol.clone().try_into().expect("asset symbol is too long");
 
 				let metadata = AssetMetadata {
-					currency_type: None,
 					deposit: Zero::zero(),
 					name: bounded_name,
 					symbol: bounded_symbol,
@@ -645,6 +644,7 @@ pub mod pallet {
 					sufficients: 0,
 					approvals: 0,
 					status: AssetStatus::InActive,
+					currency_type: None,
 					system_token_weight: None,
 				},
 			);
@@ -684,11 +684,12 @@ pub mod pallet {
 			owner: AccountIdLookupOf<T>,
 			is_sufficient: bool,
 			#[pallet::compact] min_balance: T::Balance,
+			fiat: Option<Fiat>,
 		) -> DispatchResult {
 			T::ForceOrigin::ensure_origin(origin)?;
 			let owner = T::Lookup::lookup(owner)?;
 			let id: T::AssetId = id.into();
-			Self::do_force_create(id, &owner, is_sufficient, min_balance, None, None)
+			Self::do_force_create(id, &owner, is_sufficient, min_balance, None, fiat, None)
 		}
 
 		/// Start the process of destroying a fungible asset class.
@@ -1166,7 +1167,6 @@ pub mod pallet {
 		pub fn set_metadata(
 			origin: OriginFor<T>,
 			id: T::AssetIdParameter,
-			currency_type: Option<Fiat>,
 			name: Vec<u8>,
 			symbol: Vec<u8>,
 			decimals: u8,
@@ -1176,7 +1176,7 @@ pub mod pallet {
 			// TODO:
 			// If currency type is specified, assume it would be System Token for the future.
 			// We should not let users set the metadata for free maybe?
-			Self::do_set_metadata(id, currency_type, &origin, name, symbol, decimals)
+			Self::do_set_metadata(id, &origin, name, symbol, decimals)
 		}
 
 		/// Clear the metadata for an asset.
@@ -1226,7 +1226,6 @@ pub mod pallet {
 		pub fn force_set_metadata(
 			origin: OriginFor<T>,
 			id: T::AssetIdParameter,
-			currency_type: Fiat,
 			name: Vec<u8>,
 			symbol: Vec<u8>,
 			decimals: u8,
@@ -1235,17 +1234,16 @@ pub mod pallet {
 			T::ForceOrigin::ensure_origin(origin)?;
 			let id: T::AssetId = id.into();
 
-			let bounded_name: BoundedSystemTokenName =
+			let bounded_name: BoundedVec<u8, T::StringLimit> =
 				name.clone().try_into().map_err(|_| Error::<T, I>::BadMetadata)?;
 
-			let bounded_symbol: BoundedSystemTokenSymbol =
+			let bounded_symbol: BoundedVec<u8, T::StringLimit> =
 				symbol.clone().try_into().map_err(|_| Error::<T, I>::BadMetadata)?;
 
 			ensure!(Asset::<T, I>::contains_key(&id), Error::<T, I>::Unknown);
 			Metadata::<T, I>::try_mutate_exists(id.clone(), |metadata| {
 				let deposit = metadata.take().map_or(Zero::zero(), |m| m.deposit);
 				*metadata = Some(AssetMetadata {
-					currency_type: Some(currency_type),
 					deposit,
 					name: bounded_name,
 					symbol: bounded_symbol,
@@ -1711,8 +1709,20 @@ pub mod pallet {
 			T::AssetAccountDeposit::get()
 		}
 
-		fn touch(asset: T::AssetId, who: T::AccountId, depositor: T::AccountId) -> DispatchResult {
-			Self::do_touch(asset, who, depositor, false)
+		fn should_touch(asset: T::AssetId, who: &T::AccountId) -> bool {
+			match Asset::<T, I>::get(&asset) {
+				Some(info) if info.is_sufficient => false,
+				Some(_) => !Account::<T, I>::contains_key(asset, who),
+				_ => true,
+			}
+		}
+
+		fn touch(
+			asset: T::AssetId,
+			who: &T::AccountId,
+			depositor: &T::AccountId,
+		) -> DispatchResult {
+			Self::do_touch(asset, who.clone(), depositor.clone(), false)
 		}
 	}
 

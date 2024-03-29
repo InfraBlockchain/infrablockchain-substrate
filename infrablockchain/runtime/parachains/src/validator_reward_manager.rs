@@ -26,10 +26,12 @@
 //! The Pot Reward Pallet is a pallet that rewards validators
 //! who are selected due to pot consensus.
 
+// impl me!
+
 use frame_support::{
 	dispatch::DispatchResult,
 	pallet_prelude::*,
-	traits::{IsType, ValidatorSet},
+	traits::{IsType, ValidatorSet, tokens::fungibles::{InspectSystemToken, Inspect}},
 };
 use frame_system::pallet_prelude::*;
 pub use pallet::*;
@@ -40,22 +42,25 @@ use sp_runtime::{
 	traits::{Convert, StaticLookup},
 	types::{token::*, vote::*},
 };
+use primitives::{Id as ParaId};
 use sp_std::prelude::*;
 type AccountIdLookupOf<T> = <<T as frame_system::Config>::Lookup as StaticLookup>::Source;
 
+pub type SystemTokenAssetIdOf<T> = <<T as Config>::Fungibles as Inspect<<T as frame_system::Config>::AccountId>>::AssetId;
+pub type SystemTokenBalanceOf<T> = <<T as Config>::Fungibles as Inspect<<T as frame_system::Config>::AccountId>>::Balance;
 /// A type for representing the validator id in a session.
 pub type ValidatorId<T> = <<T as Config>::ValidatorSet as ValidatorSet<
 	<T as frame_system::Config>::AccountId,
 >>::ValidatorId;
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
-pub struct ValidatorReward {
-	pub system_token_id: SystemTokenId,
-	pub amount: F64,
+pub struct ValidatorReward<AssetId, Balance> {
+	pub system_token_id: AssetId,
+	pub amount: Balance,
 }
 
-impl ValidatorReward {
-	pub fn new(system_token_id: SystemTokenId, amount: F64) -> Self {
+impl<AssetId, Balance> ValidatorReward<AssetId, Balance> {
+	pub fn new(system_token_id: AssetId, amount: Balance) -> Self {
 		Self { system_token_id, amount }
 	}
 }
@@ -80,25 +85,26 @@ pub mod pallet {
 		+ configuration::Config
 		+ paras::Config
 		+ dmp::Config
-		+ pallet_assets::Config
 	{
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// A type for retrieving the validators supposed to be online in a session.
 		type ValidatorSet: ValidatorSet<Self::AccountId>;
+		/// Local fungibles module
+		type Fungibles: InspectSystemToken<Self::AccountId>;
 	}
 
 	#[pallet::storage]
 	#[pallet::getter(fn validator_rewards)]
 	#[pallet::unbounded]
 	pub type ValidatorRewards<T: Config> =
-		StorageMap<_, Twox64Concat, ValidatorId<T>, Vec<ValidatorReward>>;
+		StorageMap<_, Twox64Concat, ValidatorId<T>, Vec<ValidatorReward<SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>>>>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn session_rewards)]
 	#[pallet::unbounded]
 	pub type TotalSessionRewards<T: Config> =
-		StorageMap<_, Twox64Concat, SessionIndex, Vec<ValidatorReward>>;
+		StorageMap<_, Twox64Concat, SessionIndex, Vec<ValidatorReward<SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>>>>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn rewards_by_parachain)]
@@ -108,16 +114,15 @@ pub mod pallet {
 		Twox64Concat,
 		SessionIndex,
 		Twox64Concat,
-		SystemTokenParaId,
-		Vec<ValidatorReward>,
-		OptionQuery,
+		ParaId,
+		Vec<ValidatorReward<SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>>>,
 	>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(crate) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// The validator has been rewarded.
-		ValidatorRewarded { stash: ValidatorId<T>, system_token_id: SystemTokenId, amount: u128 },
+		ValidatorRewarded { stash: ValidatorId<T>, system_token_id: SystemTokenAssetIdOf<T>, amount: SystemTokenBalanceOf<T> },
 	}
 
 	#[pallet::error]
@@ -136,10 +141,6 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T>
-	where
-		u32: PartialEq<<T as pallet_assets::Config>::AssetId>,
-		<T as pallet_assets::Config>::Balance: From<u128>,
-		<T as pallet_assets::Config>::AssetIdParameter: From<u32>,
 	{
 		#[pallet::call_index(0)]
 		#[pallet::weight(0)]
@@ -241,11 +242,11 @@ impl<T: Config> Pallet<T> {
 						.iter_mut()
 						.find(|ar| ar.system_token_id == aggregated_reward.system_token_id)
 					{
-						reward.amount += aggregated_reward.amount.div(current_validators_len)
+						reward.amount += aggregated_reward.amount / current_validators_len
 					} else {
 						let new_reward = ValidatorReward::new(
 							aggregated_reward.clone().system_token_id,
-							aggregated_reward.clone().amount.div(current_validators_len),
+							aggregated_reward.clone().amount / current_validators_len,
 						);
 						rewards.push(new_reward);
 					}
@@ -266,17 +267,17 @@ impl<T: Config> Pallet<T> {
 	}
 }
 
-impl<T: Config> RewardInterface for Pallet<T> {
-	fn aggregate_reward(
-		session_index: SessionIndex,
-		para_id: SystemTokenParaId,
-		system_token_id: SystemTokenId,
-		amount: VoteWeight,
-	) {
-		Self::aggregate_reward(session_index, para_id, system_token_id, amount);
-	}
+// impl<T: Config> RewardInterface for Pallet<T> {
+// 	fn aggregate_reward(
+// 		session_index: SessionIndex,
+// 		para_id: SystemTokenParaId,
+// 		system_token_id: SystemTokenId,
+// 		amount: VoteWeight,
+// 	) {
+// 		Self::aggregate_reward(session_index, para_id, system_token_id, amount);
+// 	}
 
-	fn distribute_reward(session_index: SessionIndex) {
-		Self::distribute_reward(session_index);
-	}
-}
+// 	fn distribute_reward(session_index: SessionIndex) {
+// 		Self::distribute_reward(session_index);
+// 	}
+// }

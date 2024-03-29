@@ -30,10 +30,7 @@ use frame_support::traits::{ExecuteBlock, ExtrinsicCall, Get, IsSubType};
 use sp_core::storage::{ChildInfo, StateVersion};
 use sp_externalities::{set_and_run_with_externalities, Externalities};
 use sp_io::KillStorageResult;
-use sp_runtime::{
-	traits::{Block as BlockT, Extrinsic, HashingFor, Header as HeaderT},
-	types::token::BoundedRequestedAssets,
-};
+use sp_runtime::traits::{Block as BlockT, Extrinsic, HashingFor, Header as HeaderT};
 use sp_std::prelude::*;
 use sp_trie::MemoryDB;
 
@@ -213,9 +210,10 @@ where
 				head_data
 			};
 
-		let vote_result = if let Some(res) = crate::CollectedPotVotes::<PSC>::get() {
-			let vote_result = res.votes();
-			Some(vote_result)
+		let proof_of_transaction = if let Some(res) = crate::ProofOfTransaction::<PSC>::get() {
+			let bounded =
+				res.try_into().expect("Number of PoTs should not be greater than `MAX_POT_NUM`");
+			Some(bounded)
 		} else {
 			None
 		};
@@ -229,7 +227,7 @@ where
 			processed_downward_messages,
 			horizontal_messages,
 			hrmp_watermark,
-			vote_result,
+			proof_of_transaction,
 			requested_asset,
 		}
 	})

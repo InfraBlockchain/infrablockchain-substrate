@@ -23,12 +23,23 @@ pub mod impls;
 pub use impls::*;
 
 use codec::{Decode, Encode, MaxEncodedLen};
-use frame_support::traits::{EstimateNextNewSession, Get};
+use frame_support::{
+	traits::{
+		tokens::{
+			fungibles::{Inspect, InspectSystemToken, Mutate},
+			Balance,
+		},
+		EstimateNextNewSession, Get,
+	},
+	Parameter,
+};
 pub use pallet::*;
 use scale_info::TypeInfo;
+use softfloat::BlockTimeWeight;
+use sp_arithmetic::traits::AtLeast32BitUnsigned;
 use sp_runtime::{
-	traits::MaybeDisplay,
-	types::{token::*, vote::*},
+	infra::{Fee, PoT, TaaV, Vote},
+	traits::Member,
 	RuntimeDebug,
 };
 
@@ -46,7 +57,10 @@ pub type SessionIndex = u32;
 /// Counter for the number of eras that have passed.
 pub type EraIndex = u32;
 
-pub type WrappedSystemTokenId = SystemTokenId;
+pub type SystemTokenAssetIdOf<T> =
+	<<T as Config>::Fungibles as Inspect<<T as frame_system::Config>::AccountId>>::AssetId;
+pub type SystemTokenBalanceOf<T> =
+	<<T as Config>::Fungibles as Inspect<<T as frame_system::Config>::AccountId>>::Balance;
 
 pub(crate) const LOG_TARGET: &str = "runtime::voting-manager";
 // syntactic sugar for logging.
@@ -119,10 +133,34 @@ impl Default for Forcing {
 	}
 }
 
+#[derive(
+	Copy,
+	Clone,
+	PartialEq,
+	Eq,
+	Encode,
+	Decode,
+	RuntimeDebug,
+	TypeInfo,
+	MaxEncodedLen,
+	serde::Serialize,
+	serde::Deserialize,
+)]
+pub struct Reward<AssetId, Amount> {
+	asset: AssetId,
+	amount: Amount,
+}
+
+impl<AssetId, Amount: Balance> Reward<AssetId, Amount> {
+	pub fn new(asset: AssetId) -> Self {
+		Self { asset, amount: Default::default() }
+	}
+}
+
 #[derive(Encode, Decode, Clone, PartialEq, RuntimeDebug, TypeInfo)]
 #[scale_info(skip_type_params(T))]
 pub struct VotingStatus<T: Config> {
-	pub status: Vec<(T::InfraVoteAccountId, T::InfraVotePoints)>,
+	pub status: Vec<(T::AccountId, T::HigherPrecisionScore)>,
 }
 
 impl<T: Config> Default for VotingStatus<T> {
@@ -133,16 +171,14 @@ impl<T: Config> Default for VotingStatus<T> {
 
 impl<T: Config> VotingStatus<T> {
 	/// Add vote point for given vote account id and vote points.
-	pub fn add_points(&mut self, who: &T::InfraVoteAccountId, vote_points: T::InfraVotePoints) {
-		for s in self.status.iter_mut() {
-			if &s.0 == who {
-				let current_vote_weight: VoteWeight = s.1.clone().into();
-				let additional_vote_weight: VoteWeight = vote_points.into();
-				s.1 = current_vote_weight.add(additional_vote_weight).into();
+	pub fn add_vote(&mut self, who: &T::AccountId, vote_weight: T::HigherPrecisionScore) {
+		for (candidate, amount) in self.status.iter_mut() {
+			if candidate == who {
+				*amount += vote_weight;
 				return
 			}
 		}
-		self.status.push((who.clone(), vote_points));
+		self.status.push((who.clone(), vote_weight));
 	}
 
 	pub fn counts(&self) -> usize {
@@ -151,7 +187,11 @@ impl<T: Config> VotingStatus<T> {
 
 	/// Sort vote status for decreasing order
 	pub fn sort_by_vote_points(&mut self) {
-		self.status.sort_by(|x, y| y.1.cmp(&x.1));
+		self.status.sort_by(|x, y| {
+			let vote1: T::Score = x.1.clone().into();
+			let vote2: T::Score = y.1.clone().into();
+			vote2.cmp(&vote1)
+		});
 	}
 
 	/// Get top validators for given vote status.
@@ -163,8 +203,11 @@ impl<T: Config> VotingStatus<T> {
 		self.status
 			.iter()
 			.take(num as usize)
-			.filter(|vote_status| vote_status.1 >= MinVotePointsThreshold::<T>::get())
-			.map(|vote_status| vote_status.0.clone().into())
+			.filter(|vote_status| {
+				let vote: T::Score = vote_status.1.clone().into();
+				vote >= MinVotePointsThreshold::<T>::get()
+			})
+			.map(|vote_status| vote_status.0.clone())
 			.collect()
 	}
 }
@@ -175,11 +218,7 @@ pub mod pallet {
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
-	/// The current storage version.
-	const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
-
 	#[pallet::pallet]
-	#[pallet::storage_version(STORAGE_VERSION)]
 	pub struct Pallet<T>(_);
 
 	#[pallet::config]
@@ -191,31 +230,39 @@ pub mod pallet {
 		#[pallet::constant]
 		type SessionsPerEra: Get<SessionIndex>;
 
-		/// Simply the vote account id type for vote
-		type InfraVoteAccountId: Parameter
-			+ Member
-			+ MaybeSerializeDeserialize
-			+ sp_std::fmt::Debug
-			+ MaybeDisplay
-			+ Ord
-			+ MaxEncodedLen
-			+ From<VoteAccountId>
-			+ IsType<<Self as frame_system::Config>::AccountId>;
+		// F64::from_i128(5_256_000)(e.g 10 blocks/min * 60 min/hours* 24 hours/day * 365 days/year)
+		/// The number of blocks per year
+		#[pallet::constant]
+		type BlocksPerYear: Get<BlockNumberFor<Self>>;
 
-		/// Simply the vote weight type for election
-		type InfraVotePoints: codec::FullCodec
-			+ Eq
-			+ PartialEq
-			+ PartialOrd
-			+ Ord
+		/// Local fungibles trait
+		type Fungibles: InspectSystemToken<Self::AccountId>;
+
+		/// Type that handles aggregated reward
+		type RewardHandler: RewardInterface<
+			AccountId = Self::AccountId,
+			AssetKind = SystemTokenAssetIdOf<Self>,
+			Balance = SystemTokenBalanceOf<Self>,
+		>;
+
+		/// Associated type for vote weight
+		type Score: Member
+			+ Parameter
+			+ AtLeast32BitUnsigned
 			+ Copy
-			+ MaybeSerializeDeserialize
-			+ sp_std::fmt::Debug
 			+ Default
-			+ TypeInfo
 			+ MaxEncodedLen
-			+ From<VoteWeight>
-			+ Into<VoteWeight>;
+			+ MaybeSerializeDeserialize
+			+ From<BlockNumberFor<Self>>
+			+ Into<Self::HigherPrecisionScore>
+			+ Into<SystemTokenBalanceOf<Self>>;
+
+		/// A type used for calculations of `Score` with higher precision to store on chain
+		/// TODO:
+		type HigherPrecisionScore: BlockTimeWeight<Self::Score, BlockNumberFor<Self>>
+			+ Parameter
+			+ Member
+			+ Into<Self::Score>;
 
 		/// Something that can estimate the next session change, accurately or as a best effort
 		/// guess.
@@ -226,9 +273,6 @@ pub mod pallet {
 
 		/// Interface for interacting with validator collective pallet
 		type CollectiveInterface: CollectiveInterface<Self::AccountId>;
-
-		/// Interface for fee reward
-		type RewardInterface: RewardInterface;
 	}
 
 	#[pallet::genesis_config]
@@ -239,7 +283,6 @@ pub mod pallet {
 		pub force_era: Forcing,
 		pub pool_status: Pool,
 		pub is_pot_enable_at_genesis: bool,
-		pub vote_status_at_genesis: Vec<(T::InfraVoteAccountId, T::InfraVotePoints)>,
 	}
 
 	impl<T: Config> Default for GenesisConfig<T> {
@@ -251,7 +294,6 @@ pub mod pallet {
 				seed_trust_slots: Default::default(),
 				force_era: Default::default(),
 				pool_status: Default::default(),
-				vote_status_at_genesis: Default::default(),
 			}
 		}
 	}
@@ -266,12 +308,7 @@ pub mod pallet {
 			ForceEra::<T>::put(self.force_era);
 			PoolStatus::<T>::put(self.pool_status);
 			if self.is_pot_enable_at_genesis {
-				assert!(self.vote_status_at_genesis.len() > 0, "Vote status should not be empty");
-				let mut vote_status = VotingStatus::<T>::default();
-				self.vote_status_at_genesis.clone().into_iter().for_each(|v| {
-					vote_status.add_points(&v.0, v.1);
-				});
-				PotValidatorPool::<T>::put(vote_status);
+				// do_something
 			}
 		}
 	}
@@ -280,7 +317,7 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(crate) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Points has been added for candidate validator
-		VotePointsAdded { who: T::InfraVoteAccountId },
+		Voted { who: T::AccountId, amount: T::Score },
 		/// Total number of validators has been changed
 		TotalValidatorSlotsChanged { new: u32 },
 		/// Number of seed trust validators has been changed
@@ -294,7 +331,7 @@ pub mod pallet {
 		/// Validators have been elected by PoT
 		PotValidatorsElected { validators: Vec<T::AccountId> },
 		/// Min vote weight has been set
-		MinVotePointsChanged { old: T::InfraVotePoints, new: T::InfraVotePoints },
+		MinVotePointsChanged { old: T::Score, new: T::Score },
 		/// If new validator set is same as old validator. This could be caused by seed trust/pot
 		/// election.
 		ValidatorsNotChanged,
@@ -306,6 +343,14 @@ pub mod pallet {
 		NewEraTriggered { era_index: EraIndex },
 		/// New pool status has been set
 		PoolStatusSet { status: Pool },
+		/// Rewarded for validator
+		Rewarded {
+			at_era: EraIndex,
+			asset: SystemTokenAssetIdOf<T>,
+			amount: SystemTokenBalanceOf<T>,
+		},
+		/// Reward has been distributed
+		RewardDistributed { of: EraIndex, at: EraIndex },
 	}
 
 	#[pallet::error]
@@ -318,6 +363,8 @@ pub mod pallet {
 		BadTransactionParams,
 		/// New number of Seed Trust slots should be provided
 		SeedTrustSlotsShouldBeProvided,
+		/// Error occured while decoding types mostly `PotVote`
+		ErrorDecode,
 	}
 
 	/// The current era index.
@@ -358,15 +405,10 @@ pub mod pallet {
 	/// Total Number of validators that can be elected,
 	/// which is composed of seed trust validators and pot validators
 	#[pallet::storage]
-	pub type TotalNumberOfValidators<T: Config> = StorageValue<_, u32, ValueQuery>;
-
-	/// Total Number of validators that can be elected,
-	/// which is composed of seed trust validators and pot validators
-	#[pallet::storage]
 	pub type TotalValidatorSlots<T: Config> = StorageValue<_, u32, ValueQuery>;
 
 	#[pallet::storage]
-	pub type MinVotePointsThreshold<T: Config> = StorageValue<_, T::InfraVotePoints, ValueQuery>;
+	pub type MinVotePointsThreshold<T: Config> = StorageValue<_, T::Score, ValueQuery>;
 
 	/// Start Session index for era
 	#[pallet::storage]
@@ -382,6 +424,18 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn pool_status)]
 	pub type PoolStatus<T> = StorageValue<_, Pool, ValueQuery>;
+
+	/// Reward for each validator
+	#[pallet::storage]
+	#[pallet::unbounded]
+	pub type RewardInfo<T: Config> = StorageDoubleMap<
+		_,
+		Twox64Concat,
+		EraIndex,
+		Twox64Concat,
+		T::AccountId,
+		Vec<Reward<SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>>>,
+	>;
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
@@ -414,7 +468,7 @@ pub mod pallet {
 		#[pallet::weight(0)]
 		pub fn set_min_vote_weight_threshold(
 			origin: OriginFor<T>,
-			new: T::InfraVotePoints,
+			new: T::Score,
 		) -> DispatchResult {
 			ensure_root(origin)?;
 			let old = MinVotePointsThreshold::<T>::get();
