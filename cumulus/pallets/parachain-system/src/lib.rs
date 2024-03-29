@@ -906,7 +906,7 @@ pub mod pallet {
 
 	/// The vote weight of a specific account for a specific asset.
 	#[pallet::storage]
-	pub(super) type ProofOfTransaction<T: Config> = StorageValue<_, Vec<OpaquePoT>, ValueQuery>;
+	pub(super) type ProofOfTransaction<T: Config> = StorageValue<_, Vec<OpaquePoT>>;
 
 	#[pallet::storage]
 	pub(super) type RequestedAsset<T: Config> =
@@ -1509,7 +1509,9 @@ impl<T: Config> sp_runtime::infra::TaaV for Pallet<T> {
 impl<T: Config> Pallet<T> {
 	pub fn relay_vote(bytes: Vec<u8>) {
 		ProofOfTransaction::<T>::mutate(|maybe_pot| {
-			maybe_pot.push(bytes);
+			let mut pot = maybe_pot.take().unwrap_or_default();
+			pot.push(bytes);
+			*maybe_pot = Some(pot);
 		});
 	}
 

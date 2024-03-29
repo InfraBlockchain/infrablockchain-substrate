@@ -309,7 +309,7 @@ pub struct CollationInfoV1 {
 	/// processed.
 	pub hrmp_watermark: relay_chain::BlockNumber,
 	/// The vote result sent by the parachain.
-	pub proof_of_transaction: Vec<OpaquePoT>,
+	pub proof_of_transaction: Option<Vec<OpaquePoT>>,
 	/// Requested assets sent by the parachain.
 	pub requested_asset: Option<relay_chain::OpaqueRemoteAssetMetadata>,
 }
@@ -347,7 +347,7 @@ pub struct CollationInfo {
 	/// The head data, aka encoded header, of the block that corresponds to the collation.
 	pub head_data: HeadData,
 	/// The proof of transaction sent by the parachain.
-	pub proof_of_transaction: Vec<OpaquePoT>,
+	pub proof_of_transaction: Option<Vec<OpaquePoT>>,
 	/// Requested assets sent by the parachain.
 	pub requested_asset: Option<relay_chain::OpaqueRemoteAssetMetadata>,
 }

@@ -270,17 +270,22 @@ where
 				)
 			})
 			.ok()?;
-		let proof_of_transaction = collation_info
-			.proof_of_transaction
-			.try_into()
-			.map_err(|e| {
-				tracing::error!(
-					target: LOG_TARGET,
-					error = ?e,
-					"Number of vote results should not be greater than `MAX_POT_RESULT`",
-				)
-			})
-			.ok()?;
+
+		let proof_of_transaction = if let Some(res) = collation_info.proof_of_transaction {
+				let bounded = res
+					.try_into()
+					.map_err(|e| {
+						tracing::error!(
+							target: LOG_TARGET,
+							error = ?e,
+							"Number of vote results should not be greater than `MAX_VOTES_RESULT`",
+						)
+					})
+					.ok()?;
+				Some(bounded)
+			} else {
+				None
+			};
 
 		let requested_asset = collation_info.requested_asset;
 

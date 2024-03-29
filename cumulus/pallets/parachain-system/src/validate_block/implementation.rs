@@ -210,11 +210,13 @@ where
 				head_data
 			};
 
-		let proof_of_transaction: Vec<_> = crate::ProofOfTransaction::<PSC>::get();
-		assert!(!proof_of_transaction.is_empty(), "Proof-of-Transaction should not be empty!");
-		let bounded_pot = proof_of_transaction
-			.try_into()
-			.expect("Number of PoTs should not be greater than `MAX_POT_NUM`");
+		
+		let proof_of_transaction = if let Some(res) = crate::ProofOfTransaction::<PSC>::get() {
+			let bounded = res.try_into().expect("Number of PoTs should not be greater than `MAX_POT_NUM`");
+			Some(bounded)
+		} else {
+			None
+		};
 
 		let requested_asset = crate::RequestedAsset::<PSC>::get();
 
@@ -225,7 +227,7 @@ where
 			processed_downward_messages,
 			horizontal_messages,
 			hrmp_watermark,
-			proof_of_transaction: bounded_pot,
+			proof_of_transaction,
 			requested_asset,
 		}
 	})
