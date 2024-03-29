@@ -40,8 +40,8 @@ impl<IsForeign: ContainsPair<MultiLocation, MultiLocation>> ContainsPair<MultiAs
 pub struct FromSiblingParachain<SelfParaId, L = MultiLocation>(
 	sp_std::marker::PhantomData<(SelfParaId, L)>,
 );
-impl<SelfParaId: Get<ParaId>, L: TryFrom<MultiLocation> + TryInto<MultiLocation> + Clone> ContainsPair<L, L>
-	for FromSiblingParachain<SelfParaId, L>
+impl<SelfParaId: Get<ParaId>, L: TryFrom<MultiLocation> + TryInto<MultiLocation> + Clone>
+	ContainsPair<L, L> for FromSiblingParachain<SelfParaId, L>
 {
 	fn contains(a: &L, b: &L) -> bool {
 		// We convert locations to latest
@@ -100,8 +100,10 @@ impl<
 pub struct IsTrustedBridgedReserveLocationForConcreteAsset<UniversalLocation, Reserves>(
 	sp_std::marker::PhantomData<(UniversalLocation, Reserves)>,
 );
-impl<UniversalLocation: Get<InteriorMultiLocation>, Reserves: ContainsPair<MultiAsset, MultiLocation>>
-	ContainsPair<MultiAsset, MultiLocation>
+impl<
+		UniversalLocation: Get<InteriorMultiLocation>,
+		Reserves: ContainsPair<MultiAsset, MultiLocation>,
+	> ContainsPair<MultiAsset, MultiLocation>
 	for IsTrustedBridgedReserveLocationForConcreteAsset<UniversalLocation, Reserves>
 {
 	fn contains(asset: &MultiAsset, origin: &MultiLocation) -> bool {
@@ -152,8 +154,12 @@ mod tests {
 			GeneralIndex(1),
 		)
 			.into();
-		let origin: MultiLocation = (Parent, Parent, GlobalConsensus(Wococo), Parachain(1000)).into();
-		assert!(FromNetwork::<UniversalLocation, ExpectedNetworkId>::contains(&MultiAsset, &origin));
+		let origin: MultiLocation =
+			(Parent, Parent, GlobalConsensus(Wococo), Parachain(1000)).into();
+		assert!(FromNetwork::<UniversalLocation, ExpectedNetworkId>::contains(
+			&MultiAsset,
+			&origin
+		));
 
 		// asset and origin from local consensus fails
 		let asset: MultiLocation = (
@@ -165,13 +171,20 @@ mod tests {
 			GeneralIndex(1),
 		)
 			.into();
-		let origin: MultiLocation = (Parent, Parent, GlobalConsensus(Rococo), Parachain(1000)).into();
-		assert!(!FromNetwork::<UniversalLocation, ExpectedNetworkId>::contains(&MultiAsset, &origin));
+		let origin: MultiLocation =
+			(Parent, Parent, GlobalConsensus(Rococo), Parachain(1000)).into();
+		assert!(!FromNetwork::<UniversalLocation, ExpectedNetworkId>::contains(
+			&MultiAsset,
+			&origin
+		));
 
 		// asset and origin from here fails
 		let asset: MultiLocation = (PalletInstance(1), GeneralIndex(1)).into();
 		let origin: MultiLocation = Here.into();
-		assert!(!FromNetwork::<UniversalLocation, ExpectedNetworkId>::contains(&MultiAsset, &origin));
+		assert!(!FromNetwork::<UniversalLocation, ExpectedNetworkId>::contains(
+			&MultiAsset,
+			&origin
+		));
 
 		// asset from different consensus fails
 		let asset: MultiLocation = (
@@ -183,8 +196,12 @@ mod tests {
 			GeneralIndex(1),
 		)
 			.into();
-		let origin: MultiLocation = (Parent, Parent, GlobalConsensus(Wococo), Parachain(1000)).into();
-		assert!(!FromNetwork::<UniversalLocation, ExpectedNetworkId>::contains(&MultiAsset, &origin));
+		let origin: MultiLocation =
+			(Parent, Parent, GlobalConsensus(Wococo), Parachain(1000)).into();
+		assert!(!FromNetwork::<UniversalLocation, ExpectedNetworkId>::contains(
+			&MultiAsset,
+			&origin
+		));
 
 		// origin from different consensus fails
 		let asset: MultiLocation = (
@@ -196,8 +213,12 @@ mod tests {
 			GeneralIndex(1),
 		)
 			.into();
-		let origin: MultiLocation = (Parent, Parent, GlobalConsensus(Polkadot), Parachain(1000)).into();
-		assert!(!FromNetwork::<UniversalLocation, ExpectedNetworkId>::contains(&MultiAsset, &origin));
+		let origin: MultiLocation =
+			(Parent, Parent, GlobalConsensus(Polkadot), Parachain(1000)).into();
+		assert!(!FromNetwork::<UniversalLocation, ExpectedNetworkId>::contains(
+			&MultiAsset,
+			&origin
+		));
 
 		// asset and origin from unexpected consensus fails
 		let asset: MultiLocation = (
@@ -209,7 +230,11 @@ mod tests {
 			GeneralIndex(1),
 		)
 			.into();
-		let origin: MultiLocation = (Parent, Parent, GlobalConsensus(Polkadot), Parachain(1000)).into();
-		assert!(!FromNetwork::<UniversalLocation, ExpectedNetworkId>::contains(&MultiAsset, &origin));
+		let origin: MultiLocation =
+			(Parent, Parent, GlobalConsensus(Polkadot), Parachain(1000)).into();
+		assert!(!FromNetwork::<UniversalLocation, ExpectedNetworkId>::contains(
+			&MultiAsset,
+			&origin
+		));
 	}
 }

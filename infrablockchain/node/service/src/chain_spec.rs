@@ -19,7 +19,9 @@
 use beefy_primitives::ecdsa_crypto::AuthorityId as BeefyId;
 use grandpa::AuthorityId as GrandpaId;
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
-use primitives::{AccountId, AccountPublic, AssignmentId, ValidatorId};
+use primitives::{
+	AccountId, AccountPublic, AssignmentId, SystemConfig as InfraSystemConfig, ValidatorId,
+};
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_babe::AuthorityId as BabeId;
 
@@ -32,7 +34,10 @@ use sc_chain_spec::ChainSpecExtension;
 use sc_chain_spec::ChainType;
 use serde::{Deserialize, Serialize};
 use sp_core::{sr25519, Pair, Public};
-use sp_runtime::traits::IdentifyAccount;
+use sp_runtime::{
+	infra::{BaseSystemTokenDetail, Fiat},
+	traits::IdentifyAccount,
+};
 #[cfg(any(feature = "infra-relay-native"))]
 use telemetry::TelemetryEndpoints;
 // ToDo: Should change
@@ -138,10 +143,8 @@ fn default_parachains_host_configuration(
 }
 
 #[cfg(any(feature = "infra-relay-native"))]
-fn default_infra_relay_system_configuration() -> primitives::SystemConfig {
-	use sp_runtime::infra::{BaseSystemTokenDetail, Fiat};
-
-	primitives::SystemConfig {
+fn default_infra_relay_system_configuration() -> InfraSystemConfig {
+	InfraSystemConfig {
 		base_system_token_detail: BaseSystemTokenDetail {
 			base_currency: Fiat::USD,
 			base_weight: 1_000_000,

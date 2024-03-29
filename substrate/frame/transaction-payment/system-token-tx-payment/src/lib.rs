@@ -366,7 +366,7 @@ where
 			who,
 			call_metadata,
 			initial_payment,
-			maybe_system_token_id,
+			_maybe_system_token_id,
 			maybe_candidate,
 		)) = pre
 		{
