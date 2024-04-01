@@ -692,7 +692,10 @@ parameter_types! {
 }
 
 impl pallet_system_token_oracle::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
 	type SystemTokenOracle = oracle::SystemTokenOracle;
+	type Balance = SystemTokenBalance;
+	type SystemConfig = InfraParaCore;
 	type RequestPeriod = APIRequestPeriod;
 	type UnsignedPriority = UnsignedPriority;
 }
@@ -789,7 +792,7 @@ construct_runtime!(
 		Assets: pallet_assets::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>} = 50,
 		ForeignAssets: pallet_assets::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>} = 51,
 		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 52,
-		SystemTokenOracle: pallet_system_token_oracle::{Pallet, Call, Storage, ValidateUnsigned} = 55,
+		SystemTokenOracle: pallet_system_token_oracle::{Pallet, Call, Storage, Event<T>, ValidateUnsigned} = 55,
 		SystemTokenConversion: pallet_system_token_conversion::{Pallet, Event<T>} = 56,
 
 		Sudo: pallet_sudo::{Pallet, Call, Storage, Config<T>, Event<T>} = 99,

@@ -39,7 +39,7 @@ use sp_runtime::{
 	traits::{AccountIdConversion, AtLeast32BitUnsigned, Zero},
 };
 use sp_std::prelude::*;
-pub use traits::SystemTokenInterface;
+pub use traits::{SystemTokenInterface, OracleInterface};
 use types::*;
 use xcm::latest::{InteriorMultiLocation, SystemTokenId};
 
@@ -70,6 +70,7 @@ pub mod pallet {
 			SystemTokenWeight = SystemTokenWeightOf<Self>,
 			DestId = SystemTokenOriginIdOf<Self>,
 		>;
+		type OracleManager: OracleInterface<DestId=u32>;
 		/// The string limit for name and symbol of system token.
 		#[pallet::constant]
 		type StringLimit: Get<u32>;
@@ -101,7 +102,7 @@ pub mod pallet {
 		/// Unsuspend the `original` system token.
 		SystemTokenUnsuspended { kind: MutateKind<T::SystemTokenId, SystemTokenOriginIdOf<T>> },
 		/// Update exchange rates for given fiat currencies
-		ExchangeRateUpdated { at: StandardUnixTime, updated: Vec<(Fiat, ExchangeRate)> },
+		ExchangeRateUpdated { updated: Vec<(Fiat, ExchangeRate)> },
 	}
 
 	#[pallet::error]
@@ -165,6 +166,8 @@ pub mod pallet {
 		ErrorUpdateSystemTokenWeight,
 		/// Error occurred while reanchoring system token id
 		ErrorReanchorSystemTokenId,
+		/// Request for RC is already made
+		AlreadyRequested,
 	}
 
 	#[pallet::pallet]
@@ -196,10 +199,6 @@ pub mod pallet {
 	#[pallet::unbounded]
 	#[pallet::getter(fn request_fiat_list)]
 	pub type RequestFiatList<T: Config> = StorageValue<_, Vec<Fiat>, ValueQuery>;
-
-	/// Standard time for updating exchange rates
-	#[pallet::storage]
-	pub type RequestStandardTime<T: Config> = StorageValue<_, StandardUnixTime, ValueQuery>;
 
 	/// Exchange rates for currencies relative to the base currency.
 	#[pallet::storage]
@@ -306,7 +305,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		// **Description**:
-		// Register (Original/Wrapped) SystemToken based on `SystemTokenType`
+		// Register (Original/Wrapped) SystemToken based on `RegisterType`
 		//
 		// Origin:
 		// ** Root(Authorized) privileged call **
@@ -322,22 +321,22 @@ pub mod pallet {
 		#[pallet::call_index(0)]
 		pub fn register_system_token(
 			origin: OriginFor<T>,
-			system_token_type: SystemTokenType<T::SystemTokenId, SystemTokenOriginIdOf<T>>,
+			system_token_type: RegisterType<T::SystemTokenId, SystemTokenOriginIdOf<T>>,
 			extended_metadata: Option<ExtendedMetadata>,
 		) -> DispatchResult {
 			ensure_root(origin)?;
 			let mut is_remote: bool = true;
 			let (original, maybe_para_id) = match system_token_type {
-				SystemTokenType::Original { system_token_id, mut currency_type } => {
+				RegisterType::Original { system_token_id, currency_type } => {
 					Self::do_register_system_token(
 						&system_token_id,
 						extended_metadata,
-						&mut currency_type,
+						currency_type,
 						&mut is_remote,
 					)?;
 					(system_token_id, None)
 				},
-				SystemTokenType::Wrapped { original, maybe_para_id } => {
+				RegisterType::Wrapped { original, maybe_para_id } => {
 					ensure!(extended_metadata.is_none(), Error::<T>::BadAccess);
 					(original, maybe_para_id)
 				},
@@ -418,11 +417,23 @@ pub mod pallet {
 		#[pallet::call_index(4)]
 		pub fn update_exchange_rate(
 			origin: OriginFor<T>,
-			standard_unix_time: StandardUnixTime,
 			exchange_rates: Vec<(Fiat, ExchangeRate)>,
 		) -> DispatchResult {
 			Self::ensure_root_or_para(origin, <T as Config>::AssetHubId::get().into())?;
-			Self::do_update_exchange_rate(standard_unix_time, exchange_rates)?;
+			Self::do_update_exchange_rate(exchange_rates)?;
+
+			Ok(())
+		}
+
+		#[pallet::call_index(5)]
+		pub fn request_exchange_rate(
+			origin: OriginFor<T>,
+		) -> DispatchResult {
+			ensure_root(origin)?;
+			let requested_fiat_list = RequestFiatList::<T>::get();
+			if requested_fiat_list.is_empty() { return Ok(()) }
+			let dest_id = T::AssetHubId::get();
+			T::OracleManager::request_fiat(dest_id, requested_fiat_list);
 
 			Ok(())
 		}
@@ -539,13 +550,9 @@ impl<T: Config> Pallet<T> {
 			Metadata::<T>::get(original).ok_or(Error::<T>::MetadataNotFound)?;
 		let exponents: i32 = (base_decimals as i32) - (decimals as i32);
 		let decimal_to_base = F64::from_i32(10).powi(exponents);
-		let exchange_rate_to_base: F64 = if *currency != base_currency {
-			ExchangeRates::<T>::get(currency)
-				.ok_or(Error::<T>::ExchangeRateNotRequested)?
-				.into()
-		} else {
-			F64::from_i32(1)
-		};
+		let exchange_rate_to_base: F64 = ExchangeRates::<T>::get(currency)
+			.ok_or(Error::<T>::ExchangeRateNotRequested)?
+			.into();
 		let f64_base_weight: F64 = F64::from_i128(base_weight as i128);
 		let system_token_weight: SystemTokenWeightOf<T> =
 			(f64_base_weight * decimal_to_base / exchange_rate_to_base).into();
@@ -583,14 +590,12 @@ impl<T: Config> Pallet<T> {
 	/// - Then store on `UpdateExchangeRates` with the key `para_id` and value **updated**
 	///   `SystemTokenWeight`
 	fn do_update_exchange_rate(
-		at: StandardUnixTime,
 		exchange_rates: Vec<(Fiat, ExchangeRate)>,
 	) -> Result<(), DispatchError> {
 		let request_fiat_list = Self::request_fiat_list();
 		if request_fiat_list.len() == 0 {
 			return Ok(())
 		}
-		RequestStandardTime::<T>::put(at);
 		let mut updated_currency: Vec<(Fiat, ExchangeRate)> = Default::default();
 		for (currency, rate) in exchange_rates.into_iter() {
 			// Just in-case, check if the currency is requested
@@ -601,7 +606,7 @@ impl<T: Config> Pallet<T> {
 			Self::do_update_system_token_weight(&currency)?;
 			updated_currency.push((currency, rate));
 		}
-		Self::deposit_event(Event::<T>::ExchangeRateUpdated { at, updated: updated_currency });
+		Self::deposit_event(Event::<T>::ExchangeRateUpdated { updated: updated_currency });
 		Ok(())
 	}
 
@@ -620,30 +625,9 @@ impl<T: Config> Pallet<T> {
 		Ok(system_token_detail.list_all_wrapped())
 	}
 
-	/// **Description:**
-	///
-	/// Process
-	/// 1. Extend `SystemTokenMetadata` if any
-	/// 2. Calculate `SystemTokenWeight` based on the type of currency
-	/// 3. Send DMP if it is from parachain. Do it locally if it is from Relay Chain
-	fn do_register_system_token(
-		original: &T::SystemTokenId,
-		extended_metadata: Option<ExtendedMetadata>,
-		maybe_currency_type: &mut Option<Fiat>,
-		is_remote: &mut bool,
-	) -> DispatchResult {
-		let (maybe_origin_id, _, _) =
-			original.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
-
-		// 1. Handle metadata
-		let (mut system_token_metadata, maybe_dest_id) = if let Some(para_id) = maybe_origin_id {
-			ensure!(maybe_currency_type.is_none(), Error::<T>::BadAccess);
-			(Metadata::<T>::get(original).ok_or(Error::<T>::NotRequested)?, Some(para_id))
-		} else {
-			// Relay Chain
-			// TODO: Better Way
-			*is_remote = false;
-			let currency_type = maybe_currency_type.take().ok_or(Error::<T>::BadAccess)?;
+	fn check_is_request_for_rc(original: &T::SystemTokenId, maybe_currency_type: Option<Fiat>, is_remote: &mut bool) -> Result<bool, DispatchError> {
+		if let Some(currency_type) = maybe_currency_type {
+			ensure!(!Metadata::<T>::contains_key(original), Error::<T>::AlreadyRequested);
 			T::Fungibles::request_register(original, currency_type)
 				.map_err(|_| Error::<T>::ErrorRegisterSystemToken)?;
 			let RemoteAssetMetadata { name, symbol, decimals, min_balance, currency_type, .. } =
@@ -662,16 +646,40 @@ impl<T: Config> Pallet<T> {
 					request_fiat.push(currency_type);
 				}
 			});
-			(system_token_metadata, None)
-		};
+			*is_remote = false;
+			return Ok(true)
+		} 
+		Ok(false)
+	}
+
+	/// **Description:**
+	///
+	/// Process
+	/// 1. Extend `SystemTokenMetadata` if any
+	/// 2. Calculate `SystemTokenWeight` based on the type of currency
+	/// 3. Send DMP if it is from parachain. Do it locally if it is from Relay Chain
+	fn do_register_system_token(
+		original: &T::SystemTokenId,
+		extended_metadata: Option<ExtendedMetadata>,
+		maybe_currency_type: Option<Fiat>,
+		is_remote: &mut bool,
+	) -> DispatchResult {
+		if Self::check_is_request_for_rc(original, maybe_currency_type, is_remote)? {
+			return Ok(())
+		}
+
+		let (maybe_origin_id, _, _) =
+			original.id().map_err(|_| Error::<T>::ErrorConvertToSystemTokenId)?;
+		// 1. Handle metadata
+		let mut system_token_metadata = Metadata::<T>::get(original).ok_or(Error::<T>::NotRequested)?;
 		let now = frame_system::Pallet::<T>::block_number();
 		system_token_metadata.set_registered_at(now);
 		let currency_type = system_token_metadata.currency_type();
 		let system_token_weight = Self::calc_system_token_weight(&currency_type, original)?;
 		Self::extend_metadata(&mut system_token_metadata, extended_metadata)?;
 
-		// 2. Register System Token
-		if let Some(para_id) = maybe_dest_id {
+		// 2. Register System Token for remote Runtime
+		if let Some(para_id) = maybe_origin_id {
 			let mut reanchored = original.clone();
 			reanchored
 				.reanchor_loc(0, Some(para_id.clone()), &T::UniversalLocation::get())
@@ -681,6 +689,7 @@ impl<T: Config> Pallet<T> {
 				reanchored,
 				system_token_weight,
 			);
+			*is_remote = true;
 		} else {
 			// Relay Chain
 			T::Fungibles::register(original, system_token_weight)
@@ -1100,7 +1109,7 @@ pub mod types {
 	pub type DestIdOf<T> = <<T as Config>::SystemTokenHandler as SystemTokenInterface>::DestId;
 
 	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, TypeInfo)]
-	pub enum SystemTokenType<SystemTokenId, ParaId> {
+	pub enum RegisterType<SystemTokenId, ParaId> {
 		/// Register `Original` System Token. It means Relay Chain if currency type is `Some(_)`
 		Original { system_token_id: SystemTokenId, currency_type: Option<Fiat> },
 		/// Register as `Wrapped` System Token. It means Relay Chain if para_id is `None`
@@ -1307,5 +1316,11 @@ pub mod traits {
 		fn suspend_system_token(dest_id: Self::DestId, asset_id: Self::Location);
 		/// Unsuspend `Original/Wrapped` System Token for `dest_id` Runtime
 		fn unsuspend_system_token(dest_id: Self::DestId, asset_id: Self::Location);
+	}
+	
+	/// Interface that interacts with Oracle
+	pub trait OracleInterface {
+		type DestId: Parameter;
+		fn request_fiat(dest_id: Self::DestId, fiat: Vec<Fiat>);
 	}
 }

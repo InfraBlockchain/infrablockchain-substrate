@@ -16,19 +16,16 @@ enum RelayRuntimePallets {
 #[derive(Encode, Decode)]
 enum SystemTokenManagerCalls {
 	#[codec(index = 4)]
-	UpdateExchangeRates(StandardUnixTime, Vec<(Fiat, ExchangeRate)>),
+	UpdateExchangeRates(Vec<(Fiat, ExchangeRate)>),
 }
 
 /// Type that implements `SystemTokenOracleInterface`.
 pub struct SystemTokenOracle;
 impl SystemTokenOracleInterface for SystemTokenOracle {
-	fn exchange_rates_at(
-		standard_time: StandardUnixTime,
-		exchange_rates: Vec<(Fiat, ExchangeRate)>,
-	) {
+	fn submit_exchange_rates(exchange_rates: Vec<(Fiat, ExchangeRate)>) {
 		use crate::oracle::SystemTokenManagerCalls::UpdateExchangeRates;
 		let update_exchange_rate_call = RelayRuntimePallets::SystemTokenManager(
-			UpdateExchangeRates(standard_time, exchange_rates),
+			UpdateExchangeRates(exchange_rates),
 		);
 		let message = Xcm(vec![
 			Instruction::UnpaidExecution {

@@ -259,6 +259,7 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 				pallet_uniques::Call::set_price { .. } |
 				pallet_uniques::Call::buy_item { .. },
 			) |
+			RuntimeCall::SystemTokenOracle(pallet_system_token_oracle::Call::request_fiat { .. }) |
 			RuntimeCall::InfraParaCore(..) => true,
 			_ => false,
 		}

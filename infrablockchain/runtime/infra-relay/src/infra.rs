@@ -6,11 +6,13 @@ use xcm::latest::prelude::*;
 #[derive(Encode, Decode)]
 pub enum ParachainRuntimePallets {
 	#[codec(index = 2)]
-	InfraParaCore(ParachainCalls),
+	InfraParaCore(InfraParaCoreCalls),
+	#[codec(index = 55)]
+	Oracle(OracleCalls),
 }
 
 #[derive(Encode, Decode)]
-pub enum ParachainCalls {
+pub enum InfraParaCoreCalls {
 	#[codec(index = 0)]
 	SetAdmin(AccountId),
 	#[codec(index = 1)]
@@ -33,6 +35,12 @@ pub enum ParachainCalls {
 	DistriubteReward(AccountId, MultiLocation, SystemTokenWeight),
 }
 
+#[derive(Encode, Decode)]
+pub enum OracleCalls {
+	#[codec(index = 1)]
+	RequestFiat(Vec<Fiat>),
+}
+
 /// Main actor for handling policy of paracahain configuration
 pub struct ParaConfigHandler;
 
@@ -42,8 +50,8 @@ impl ParaConfigInterface for ParaConfigHandler {
 	type Balance = SystemTokenBalance;
 
 	fn set_admin(dest_id: Self::DestId, who: Self::AccountId) {
-		let set_admin_call = ParachainRuntimePallets::InfraParaCore(ParachainCalls::SetAdmin(who));
-		send_xcm_for(set_admin_call.encode(), dest_id);
+		let set_admin_call = ParachainRuntimePallets::InfraParaCore(InfraParaCoreCalls::SetAdmin(who));
+		send_xcm_for(true,set_admin_call.encode(), dest_id);
 	}
 
 	fn update_fee_table(
@@ -53,21 +61,32 @@ impl ParaConfigInterface for ParaConfigHandler {
 		fee: Self::Balance,
 	) {
 		let set_fee_table_call = ParachainRuntimePallets::InfraParaCore(
-			ParachainCalls::UpdateFeeTable(pallet_name, call_name, fee),
+			InfraParaCoreCalls::UpdateFeeTable(pallet_name, call_name, fee),
 		);
-		send_xcm_for(set_fee_table_call.encode(), dest_id);
+		send_xcm_for(true, set_fee_table_call.encode(), dest_id);
 	}
 
 	fn update_para_fee_rate(dest_id: Self::DestId, fee_rate: Self::Balance) {
 		let set_fee_rate_call =
-			ParachainRuntimePallets::InfraParaCore(ParachainCalls::UpdateParaFeeRate(fee_rate));
-		send_xcm_for(set_fee_rate_call.encode(), dest_id);
+			ParachainRuntimePallets::InfraParaCore(InfraParaCoreCalls::UpdateParaFeeRate(fee_rate));
+		send_xcm_for(true, set_fee_rate_call.encode(), dest_id);
 	}
 
 	fn update_runtime_state(dest_id: Self::DestId) {
 		let set_runtime_state_call =
-			ParachainRuntimePallets::InfraParaCore(ParachainCalls::UpdateRuntimeState);
-		send_xcm_for(set_runtime_state_call.encode(), dest_id);
+			ParachainRuntimePallets::InfraParaCore(InfraParaCoreCalls::UpdateRuntimeState);
+		send_xcm_for(true, set_runtime_state_call.encode(), dest_id);
+	}
+}
+
+pub struct OracleManager;
+impl OracleInterface for OracleManager {
+	type DestId = u32;
+
+	fn request_fiat(dest_id: Self::DestId, fiat: Vec<Fiat>) {
+		if dest_id != AssetHubId::get() { return }
+		let request_fiat_call = ParachainRuntimePallets::Oracle(OracleCalls::RequestFiat(fiat));
+		send_xcm_for(false, request_fiat_call.encode(), dest_id);
 	}
 }
 
@@ -86,16 +105,16 @@ impl SystemTokenInterface for SystemTokenHandler {
 		system_token_weight: Self::SystemTokenWeight,
 	) {
 		let register_call = ParachainRuntimePallets::InfraParaCore(
-			ParachainCalls::RegisterSystemToken(system_token_id, system_token_weight),
+			InfraParaCoreCalls::RegisterSystemToken(system_token_id, system_token_weight),
 		);
-		send_xcm_for(register_call.encode(), dest_id);
+		send_xcm_for(true, register_call.encode(), dest_id);
 	}
 
 	fn deregister_system_token(dest_id: Self::DestId, system_token_id: Self::Location) {
 		let deregister_call = ParachainRuntimePallets::InfraParaCore(
-			ParachainCalls::DeregisterSystemToken(system_token_id),
+			InfraParaCoreCalls::DeregisterSystemToken(system_token_id),
 		);
-		send_xcm_for(deregister_call.encode(), dest_id);
+		send_xcm_for(true, deregister_call.encode(), dest_id);
 	}
 
 	fn create_wrapped(
@@ -109,7 +128,7 @@ impl SystemTokenInterface for SystemTokenHandler {
 		decimals: u8,
 		system_token_weight: Self::SystemTokenWeight,
 	) {
-		let create_call = ParachainRuntimePallets::InfraParaCore(ParachainCalls::CreateWrapped(
+		let create_call = ParachainRuntimePallets::InfraParaCore(InfraParaCoreCalls::CreateWrapped(
 			owner,
 			original,
 			currency_type,
@@ -119,19 +138,19 @@ impl SystemTokenInterface for SystemTokenHandler {
 			decimals,
 			system_token_weight,
 		));
-		send_xcm_for(create_call.encode(), dest_id);
+		send_xcm_for(true, create_call.encode(), dest_id);
 	}
 
 	fn suspend_system_token(dest_id: Self::DestId, asset_id: Self::Location) {
 		let suspend_call =
-			ParachainRuntimePallets::InfraParaCore(ParachainCalls::SuspendSystemToken(asset_id));
-		send_xcm_for(suspend_call.encode(), dest_id);
+			ParachainRuntimePallets::InfraParaCore(InfraParaCoreCalls::SuspendSystemToken(asset_id));
+		send_xcm_for(true, suspend_call.encode(), dest_id);
 	}
 
 	fn unsuspend_system_token(dest_id: Self::DestId, asset_id: Self::Location) {
 		let unsuspend_call =
-			ParachainRuntimePallets::InfraParaCore(ParachainCalls::UnsuspendSystemToken(asset_id));
-		send_xcm_for(unsuspend_call.encode(), dest_id);
+			ParachainRuntimePallets::InfraParaCore(InfraParaCoreCalls::UnsuspendSystemToken(asset_id));
+		send_xcm_for(true, unsuspend_call.encode(), dest_id);
 	}
 }
 
@@ -154,9 +173,9 @@ impl RewardInterface for RewardHandler {
 					return
 				};
 				let distribute_reward_call = ParachainRuntimePallets::InfraParaCore(
-					ParachainCalls::DistriubteReward(who, reanchored, amount),
+					InfraParaCoreCalls::DistriubteReward(who, reanchored, amount),
 				);
-				send_xcm_for(distribute_reward_call.encode(), para_id);
+				send_xcm_for(true, distribute_reward_call.encode(), para_id);
 			} else {
 				// Relay Chain
 				if let Err(_) = Self::Fungibles::mint_into(asset, &who, amount) {
@@ -169,11 +188,11 @@ impl RewardInterface for RewardHandler {
 	}
 }
 
-pub(super) fn send_xcm_for(call: Vec<u8>, dest_id: u32) {
+pub(super) fn send_xcm_for(is_native: bool, call: Vec<u8>, dest_id: u32) {
 	let message = Xcm(vec![
 		Instruction::UnpaidExecution { weight_limit: WeightLimit::Unlimited, check_origin: None },
 		Instruction::Transact {
-			origin_kind: OriginKind::Native,
+			origin_kind: if is_native { OriginKind::Native } else { OriginKind::Superuser },
 			require_weight_at_most: Weight::from_parts(1_000_000_000, 200000),
 			call: call.into(),
 		},

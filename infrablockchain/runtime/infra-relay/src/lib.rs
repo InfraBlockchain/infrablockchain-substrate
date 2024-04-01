@@ -40,7 +40,7 @@ use runtime_parachains::{
 	runtime_api_impl::v7 as parachains_runtime_api_impl,
 	scheduler as parachains_scheduler, session_info as parachains_session_info,
 	shared as parachains_shared, system_token_manager,
-	system_token_manager::SystemTokenInterface,
+	system_token_manager::{SystemTokenInterface, OracleInterface},
 };
 
 use authority_discovery_primitives::AuthorityId as AuthorityDiscoveryId;
@@ -107,7 +107,7 @@ use infra_relay_runtime_constants::{currency::*, fee::*, system_parachain::ASSET
 mod weights;
 
 mod infra;
-use infra::{ParaConfigHandler, RewardHandler, SystemTokenHandler};
+use infra::{ParaConfigHandler, RewardHandler, SystemTokenHandler, OracleManager};
 
 // XCM
 pub mod xcm_config;
@@ -1138,6 +1138,7 @@ impl system_token_manager::Config for Runtime {
 	type SystemTokenId = MultiLocation;
 	type UniversalLocation = UniversalLocation;
 	type SystemTokenHandler = SystemTokenHandler;
+	type OracleManager = OracleManager;
 	type StringLimit = StringLimit;
 	type MaxSystemTokens = MaxSystemTokens;
 	type MaxOriginalUsedParaIds = MaxOriginalUsedParaIds;
