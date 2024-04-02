@@ -226,6 +226,9 @@ pub mod pallet {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
+		#[pallet::constant]
+		type FeeDistributionToggle: Get<bool>;
+
 		/// Number of sessions per era.
 		#[pallet::constant]
 		type SessionsPerEra: Get<SessionIndex>;
@@ -350,7 +353,7 @@ pub mod pallet {
 			amount: SystemTokenBalanceOf<T>,
 		},
 		/// Reward has been distributed
-		RewardDistributed { of: EraIndex, at: EraIndex },
+		RewardDistributed { beneficiary: T::AccountId, of: EraIndex, at: EraIndex, rewards: Vec<Reward<SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>>> },
 	}
 
 	#[pallet::error]

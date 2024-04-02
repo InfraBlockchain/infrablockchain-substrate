@@ -26,7 +26,7 @@ use frame_system::{
 	pallet_prelude::*,
 };
 use lite_json::JsonValue;
-use sp_runtime::{infra::*, offchain::http, traits::Zero, traits::AtLeast32BitUnsigned};
+use sp_runtime::{infra::*, offchain::http, traits::AtLeast32BitUnsigned};
 use sp_std::{prelude::ToOwned, vec::Vec};
 
 pub use pallet::*;
@@ -68,20 +68,21 @@ pub mod pallet {
 
 	/// List of Fiat that should be requested via offchain call
 	#[pallet::storage]
-	pub type RequestedFiat<T: Config> = StorageValue<_, Vec<Fiat>>;
-
-	/// Standard exchange rate time based on unix timestamp
-	#[pallet::storage]
-	pub type RequestStandardTime<T: Config> = StorageValue<_, StandardUnixTime, ValueQuery>;
+	pub type Requested<T: Config> = StorageValue<_, Vec<Fiat>>;
 
 	/// Exhange rate for each currency
 	#[pallet::storage]
 	pub type ExchangeRates<T: Config> =
 		StorageMap<_, Twox64Concat, Fiat, ExchangeRate, OptionQuery>;
 
-	/// System Tokens registered in the system for fetching exchange rates
+	/// Defines the block when next unsigned transaction will be accepted.
+	///
+	/// To prevent spam of unsigned (and unpaid!) transactions on the network,
+	/// we only allow one transaction every `T::UnsignedInterval` blocks.
+	/// This storage entry defines when new transaction is going to be accepted.
 	#[pallet::storage]
-	pub type SystemTokens<T: Config> = StorageValue<_, Fiat>;
+	#[pallet::getter(fn next_unsigned_at)]
+	pub(super) type NextUnsignedAt<T: Config> = StorageValue<_, BlockNumberFor<T>, ValueQuery>;
 
 	#[pallet::validate_unsigned]
 	impl<T: Config> ValidateUnsigned for Pallet<T> {
@@ -91,9 +92,14 @@ pub mod pallet {
 			if let Call::submit_exchange_rates_unsigned { .. } = call {
 				// TODO: Needs to add some validity check for the transaction
 				// - Make it signed payload
-
+				let current = <frame_system::Pallet<T>>::block_number();
+				let next_unsigned_at = <NextUnsignedAt<T>>::get();
+				if next_unsigned_at > current {
+					return InvalidTransaction::Stale.into()
+				}
 				ValidTransaction::with_tag_prefix("OffchainWorker")
 					.priority(T::UnsignedPriority::get())
+					.and_provides(next_unsigned_at)
 					.longevity(5)
 					.propagate(true)
 					.build()
@@ -107,7 +113,7 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Fiat requested from RC
-		FiatRequested { fiat: Vec<Fiat> },
+		Requested { fiat: Vec<Fiat> },
 		/// Exchange rates submitted
 		ExchangeRatesSubmitted { exchange_rates: Vec<(Fiat, ExchangeRate)> },
 	}
@@ -126,15 +132,12 @@ pub mod pallet {
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		fn offchain_worker(block_number: BlockNumberFor<T>) {
-			if block_number % T::RequestPeriod::get() == Zero::zero() {
-				// We only request exchange rate if there is any fiat requested from RC
-				if let Some(fiats) = RequestedFiat::<T>::get() {
-					if let Err(_) = Self::fetch_exchange_rate(fiats.clone()) {
-						log::warn!("❌❌ Failed to fetch exchange rate for => {:?}", fiats);
-					}
-				} 
-			}
+		fn offchain_worker(_n: BlockNumberFor<T>) {
+			if let Some(currencies) = Requested::<T>::get() {
+				if let Err(_) = Self::fetch_exchange_rate(currencies.clone()) {
+					log::warn!("❌❌ Failed to fetch exchange rate for => {:?}", currencies);
+				}
+			} 
 		}
 	}
 
@@ -149,8 +152,9 @@ pub mod pallet {
 		) -> DispatchResult {
 			// This ensures that the function can only be called via unsigned transaction.
 			ensure_none(origin)?;
-
 			T::SystemTokenOracle::submit_exchange_rates(exchange_rates.clone());
+			let current_block = <frame_system::Pallet<T>>::block_number();
+			<NextUnsignedAt<T>>::put(current_block + T::RequestPeriod::get());
 			Self::deposit_event(Event::<T>::ExchangeRatesSubmitted { exchange_rates });
 			Ok(())
 		}
@@ -162,15 +166,15 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_root(origin)?;
 			for f in fiat.iter() {
-				RequestedFiat::<T>::mutate(|maybe_fiats| {
-					let mut fiats = maybe_fiats.take().unwrap_or_default();
-					if !fiats.contains(&f) {
-						fiats.push(f.clone());
+				Requested::<T>::mutate(|maybe_currencies| {
+					let mut currencies = maybe_currencies.take().unwrap_or_default();
+					if !currencies.contains(&f) {
+						currencies.push(f.clone());
 					}
-					*maybe_fiats = Some(fiats);
+					*maybe_currencies = Some(currencies);
 				});
 			}
-			Self::deposit_event(Event::<T>::FiatRequested { fiat });
+			Self::deposit_event(Event::<T>::Requested { fiat });
 			Ok(())
 		}
 		
@@ -209,7 +213,7 @@ impl<T: Config> Pallet<T> {
 		}
 		let call = Call::submit_exchange_rates_unsigned { exchange_rates };
 		if let Err(_) = SubmitTransaction::<T, Call<T>>::submit_unsigned_transaction(call.into()) {
-			log::error!("❌❌ Failed to submit exchange rates.");
+			
 		} 
 		Ok(())
 	}

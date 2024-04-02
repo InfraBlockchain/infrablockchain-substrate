@@ -602,7 +602,6 @@ pub mod token {
 				Fiat::ZAR => Vec::from(b"ZAR".as_ref()),
 				Fiat::ZMW => Vec::from(b"ZMW".as_ref()),
 				Fiat::ZWL => Vec::from(b"ZWL".as_ref()),
-				_ => return Err(()),
 			})
 		}
 	}

@@ -31,7 +31,7 @@ pub use frame_support::{
 	BoundedVec, PalletId, Parameter,
 };
 use frame_system::pallet_prelude::*;
-use softfloat::F64;
+use softfloat::SystemTokenWeight;
 
 pub use pallet::*;
 use sp_runtime::{
@@ -58,6 +58,9 @@ pub mod pallet {
 		type Fungibles: InspectSystemToken<Self::AccountId, AssetId = Self::SystemTokenId>
 			+ InspectSystemTokenMetadata<Self::AccountId>
 			+ ManageSystemToken<Self::AccountId>;
+		/// Type for handling high precision system token weight
+		// TODO: Generics
+		type HigherPrecision: SystemTokenWeight<SystemTokenWeightOf<Self>, SystemTokenDecimal, ExchangeRate>;
 		/// Id of System Token
 		type SystemTokenId: SystemTokenId;
 		/// This chain's Universal Location
@@ -166,6 +169,8 @@ pub mod pallet {
 		ErrorUpdateSystemTokenWeight,
 		/// Error occurred while reanchoring system token id
 		ErrorReanchorSystemTokenId,
+		/// Error occurred while calculating system token weight
+		ErrorCalculateSystemTokenWeight,
 		/// Request for RC is already made
 		AlreadyRequested,
 	}
@@ -542,20 +547,19 @@ impl<T: Config> Pallet<T> {
 		currency: &Fiat,
 		original: &T::SystemTokenId,
 	) -> Result<SystemTokenWeightOf<T>, DispatchError> {
-		let SystemConfig { base_system_token_detail, .. } =
-			configuration::Pallet::<T>::active_system_config();
-		let BaseSystemTokenDetail { base_currency, base_weight, base_decimals } =
-			base_system_token_detail;
+		let exchange_rate_to_base = ExchangeRates::<T>::get(currency)
+			.ok_or(Error::<T>::ExchangeRateNotRequested)?;
+		let BaseSystemTokenDetail { base_weight, base_decimals, .. } =
+			configuration::Pallet::<T>::active_system_config()
+			.base_system_token_detail;
 		let SystemTokenMetadata { decimals, .. } =
 			Metadata::<T>::get(original).ok_or(Error::<T>::MetadataNotFound)?;
-		let exponents: i32 = (base_decimals as i32) - (decimals as i32);
-		let decimal_to_base = F64::from_i32(10).powi(exponents);
-		let exchange_rate_to_base: F64 = ExchangeRates::<T>::get(currency)
-			.ok_or(Error::<T>::ExchangeRateNotRequested)?
-			.into();
-		let f64_base_weight: F64 = F64::from_i128(base_weight as i128);
-		let system_token_weight: SystemTokenWeightOf<T> =
-			(f64_base_weight * decimal_to_base / exchange_rate_to_base).into();
+		let system_token_weight = T::HigherPrecision::calc_system_token_weight(
+			base_weight, 
+			base_decimals, 
+			decimals,
+			exchange_rate_to_base
+		).map_err(|_| Error::<T>::ErrorCalculateSystemTokenWeight)?;
 		Ok(system_token_weight)
 	}
 

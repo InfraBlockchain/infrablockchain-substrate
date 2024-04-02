@@ -259,7 +259,9 @@ impl<T: Config> Pallet<T> {
 		});
 		StartSessionIndexPerEra::<T>::insert(&new_planned_era, session_index);
 		Self::deposit_event(Event::<T>::NewEraTriggered { era_index: new_planned_era });
-		Self::distribute_reward(reward_era, new_planned_era);
+		if T::FeeDistributionToggle::get() {
+			Self::distribute_reward(reward_era, new_planned_era);
+		}
 		Some(Self::elect_validators(new_planned_era))
 
 		// Clean old era information.
@@ -277,13 +279,15 @@ impl<T: Config> Pallet<T> {
 	pub fn distribute_reward(of: EraIndex, at: EraIndex) {
 		let vs = RewardInfo::<T>::iter_prefix(of);
 		for v in vs {
-			let (who, rewards) = v;
-			for r in rewards {
-				T::RewardHandler::distribute_reward(who.clone(), r.asset, r.amount.into());
+			if let Some(rewards) = RewardInfo::<T>::get(&of, &v.0) {
+				for r in rewards.clone() {
+					T::RewardHandler::distribute_reward(v.0.clone(), r.asset, r.amount.into());
+				}
+				Self::deposit_event(Event::<T>::RewardDistributed { beneficiary: v.0, of, at, rewards });
 			}
 		}
-		let _ = RewardInfo::<T>::clear_prefix(of, u32::MAX, None);
-		Self::deposit_event(Event::<T>::RewardDistributed { of, at });
+		// TODO: Consider how we treat the old data
+		// let _ = RewardInfo::<T>::clear_prefix(of, u32::MAX, None);
 	}
 
 	/// Elect validators from `SeedTrustValidatorPool::<T>` and `PotValidatorPool::<T>`

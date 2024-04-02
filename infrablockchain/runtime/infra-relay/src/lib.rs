@@ -73,7 +73,7 @@ use primitives::{
 	OccupiedCoreAssumption, PersistedValidationData, ScrapedOnChainVotes, SessionInfo, Signature,
 	ValidationCode, ValidationCodeHash, ValidatorId, ValidatorIndex, PARACHAIN_KEY_TYPE_ID,
 };
-use sp_core::OpaqueMetadata;
+use sp_core::{ConstBool, OpaqueMetadata};
 use sp_mmr_primitives as mmr;
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
@@ -1113,6 +1113,7 @@ parameter_types! {
 
 impl pallet_validator_election::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
+	type FeeDistributionToggle = ConstBool<false>;
 	type BlocksPerYear = BlocksPerYear;
 	type SessionsPerEra = SessionsPerEra;
 	type RewardHandler = RewardHandler;
@@ -1135,6 +1136,7 @@ impl system_token_manager::Config for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeEvent = RuntimeEvent;
 	type Fungibles = NativeAndForeignAssets;
+	type HigherPrecision = softfloat::F64;
 	type SystemTokenId = MultiLocation;
 	type UniversalLocation = UniversalLocation;
 	type SystemTokenHandler = SystemTokenHandler;

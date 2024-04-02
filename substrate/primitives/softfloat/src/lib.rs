@@ -38,6 +38,26 @@ pub trait BlockTimeWeight<Amount, BlockNumber>:
 	fn block_time_weight(adjusted: Amount, current: BlockNumber, per_year: BlockNumber) -> Self;
 }
 
+pub trait SystemTokenWeight<Weight, Decimal, ExchangeRate>:
+	Sized
+	+ Copy
+	+ core::fmt::Debug
+	+ PartialEq
+	+ PartialOrd
+	+ core::ops::Add
+	+ core::ops::Sub
+	+ core::ops::Div
+	+ core::ops::Mul
+	+ core::ops::AddAssign
+	+ core::ops::SubAssign
+	+ core::ops::MulAssign
+	+ core::ops::DivAssign
+{	
+	type Error;
+
+	fn calc_system_token_weight(base_weight: u128, base_decimals: Decimal, currency_decimals: Decimal, exchange_rate_to_base: ExchangeRate) -> Result<Weight, Self::Error>;
+}
+
 macro_rules! impl_traits {
 	($ty:ty, $native_ty:ty, $from_native:ident, $to_native:ident) => {
 		impl From<$native_ty> for $ty {
@@ -156,6 +176,23 @@ macro_rules! impl_traits {
 				let adjusted: $ty = adjusted.into();
 				let block_time_weight = adjusted.mul(block_time_rational);
 				block_time_weight
+			}
+		}
+
+		impl<Weight, Decimal, ExchangeRate> SystemTokenWeight<Weight, Decimal, ExchangeRate> for $ty
+		where
+			Weight: From<$ty>,
+			Decimal: TryInto<i32>,
+			ExchangeRate: TryInto<$ty>,
+		{	
+			type Error = ();
+			fn calc_system_token_weight(base_weight: u128, base_decimals: Decimal, currency_decimals: Decimal, exchange_rate_to_base: ExchangeRate) -> Result<Weight, Self::Error> {
+				let base_d: i32 = base_decimals.try_into().map_err(|_| ())?;
+				let currency_d: i32 = currency_decimals.try_into().map_err(|_| ())?;
+				let e_r_to_base: $ty = exchange_rate_to_base.try_into().map_err(|_| ())?;
+				let decimal_to_base = Self::from_i32(10).powi(base_d - currency_d);
+				let base_w: $ty = Self::from(base_weight);
+				Ok((base_w * decimal_to_base / e_r_to_base).into())
 			}
 		}
 	};
