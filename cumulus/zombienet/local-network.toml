@@ -87,26 +87,26 @@ command = "../../infra-did-parachain/target/release/infra-did-parachain"
 rpc_port = 10000
 ws_port = 10001
 
-[[parachains]]
-id = 2000
-chain = "newnal-infra-local"
-cumulus_based = true
+# [[parachains]]
+# id = 2000
+# chain = "newnal-infra-local"
+# cumulus_based = true
 
-[[parachains.collators]]
-name = "newnal-alice"
-validator = true
-args = ["-lparachain=debug", "-l=xcm=trace"]
-command = "../../infra-did-parachain/target/release/infra-newnal-parachain"
-rpc_port = 10100
-ws_port = 10101
+# [[parachains.collators]]
+# name = "newnal-alice"
+# validator = true
+# args = ["-lparachain=debug", "-l=xcm=trace"]
+# command = "../../infra-did-parachain/target/release/infra-newnal-parachain"
+# rpc_port = 10100
+# ws_port = 10101
 
-[[parachains.collators]]
-name = "newnal-bob"
-validator = true
-args = ["-lparachain=debug", "-l=xcm=trace"]
-command = "../../infra-did-parachain/target/release/infra-newnal-parachain"
-rpc_port = 10200
-ws_port = 10201
+# [[parachains.collators]]
+# name = "newnal-bob"
+# validator = true
+# args = ["-lparachain=debug", "-l=xcm=trace"]
+# command = "../../infra-did-parachain/target/release/infra-newnal-parachain"
+# rpc_port = 10200
+# ws_port = 10201
 
 # [[parachains]]
 # id = 1001
