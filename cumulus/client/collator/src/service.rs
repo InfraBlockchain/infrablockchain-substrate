@@ -27,7 +27,9 @@ use sp_core::traits::SpawnNamed;
 use sp_runtime::traits::{Block as BlockT, HashingFor, Header as HeaderT, Zero};
 
 use cumulus_client_consensus_common::ParachainCandidate;
-use node_primitives::{BlockData, Collation, CollationSecondedSignal, MaybeCompressedPoV, PoV};
+use node_primitives::{
+	BlockData, Collation, CollationSecondedSignal, MaybeCompressedPoV, PoV,
+};
 
 use codec::Encode;
 use futures::channel::oneshot;
@@ -245,8 +247,9 @@ where
 
 		let block_data = ParachainBlockData::<Block>::new(header, extrinsics, compact_proof);
 
-		let pov =
-			node_primitives::maybe_compress_pov(PoV { block_data: BlockData(block_data.encode()) });
+		let pov = node_primitives::maybe_compress_pov(PoV {
+			block_data: BlockData(block_data.encode()),
+		});
 
 		let upward_messages = collation_info
 			.upward_messages

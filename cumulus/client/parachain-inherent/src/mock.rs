@@ -19,8 +19,9 @@ use codec::Decode;
 use cumulus_primitives_core::{
 	relay_chain, InboundDownwardMessage, InboundHrmpMessage, ParaId, PersistedValidationData,
 };
+use cumulus_primitives_parachain_inherent::MessageQueueChain;
 use sc_client_api::{Backend, StorageProvider};
-use sp_core::twox_128;
+use sp_crypto_hashing::twox_128;
 use sp_inherents::{InherentData, InherentDataProvider};
 use sp_runtime::traits::Block;
 use std::collections::BTreeMap;
@@ -61,6 +62,8 @@ pub struct MockValidationDataInherentDataProvider<R = ()> {
 	pub raw_downward_messages: Vec<Vec<u8>>,
 	// Inbound Horizontal messages sorted by channel
 	pub raw_horizontal_messages: Vec<(ParaId, Vec<u8>)>,
+	// Additional key-value pairs that should be injected.
+	pub additional_key_values: Option<Vec<(Vec<u8>, Vec<u8>)>>,
 }
 
 pub trait GenerateRandomness<I> {
@@ -166,7 +169,7 @@ impl<R: Send + Sync + GenerateRandomness<u64>> InherentDataProvider
 
 		// Process the downward messages and set up the correct head
 		let mut downward_messages = Vec::new();
-		let mut dmq_mqc = crate::MessageQueueChain(self.xcm_config.starting_dmq_mqc_head);
+		let mut dmq_mqc = MessageQueueChain::new(self.xcm_config.starting_dmq_mqc_head);
 		for msg in &self.raw_downward_messages {
 			let wrapped = InboundDownwardMessage { sent_at: relay_parent_number, msg: msg.clone() };
 
@@ -186,7 +189,7 @@ impl<R: Send + Sync + GenerateRandomness<u64>> InherentDataProvider
 
 		// Now iterate again, updating the heads as we go
 		for (para_id, messages) in &horizontal_messages {
-			let mut channel_mqc = crate::MessageQueueChain(
+			let mut channel_mqc = MessageQueueChain::new(
 				*self
 					.xcm_config
 					.starting_hrmp_mqc_heads
@@ -209,6 +212,10 @@ impl<R: Send + Sync + GenerateRandomness<u64>> InherentDataProvider
 		// Randomness is set by randomness generator
 		sproof_builder.randomness =
 			self.relay_randomness_config.generate_randomness(self.current_para_block.into());
+
+		if let Some(key_values) = &self.additional_key_values {
+			sproof_builder.additional_key_values = key_values.clone()
+		}
 
 		let (relay_parent_storage_root, proof) = sproof_builder.into_state_root_and_proof();
 

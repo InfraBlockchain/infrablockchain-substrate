@@ -18,7 +18,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode};
+use codec::{Decode, Encode, MaxEncodedLen};
 use parachain_primitives::primitives::HeadData;
 use scale_info::TypeInfo;
 use sp_runtime::{infra::SystemConfig, RuntimeDebug};
@@ -26,10 +26,12 @@ use sp_std::prelude::*;
 
 pub use infrablockchain_core_primitives::{InboundDownwardMessage, OpaquePoT};
 pub use parachain_primitives::primitives::{
-	DmpMessageHandler, Id as ParaId, IsSystem, PoTs, UpwardMessage, ValidationParams,
-	XcmpMessageFormat, XcmpMessageHandler,
+	DmpMessageHandler, Id as ParaId, IsSystem, PoTs, UpwardMessage, ValidationParams, XcmpMessageFormat,
+	XcmpMessageHandler,
 };
-pub use primitives::{AbridgedHostConfiguration, AbridgedHrmpChannel, PersistedValidationData};
+pub use primitives::{
+	AbridgedHostConfiguration, AbridgedHrmpChannel, PersistedValidationData,
+};
 
 pub use sp_runtime::{
 	generic::{Digest, DigestItem},
@@ -84,6 +86,42 @@ impl From<MessageSendError> for &'static str {
 	}
 }
 
+/// The origin of an inbound message.
+#[derive(Encode, Decode, MaxEncodedLen, Clone, Eq, PartialEq, TypeInfo, Debug)]
+pub enum AggregateMessageOrigin {
+	/// The message came from the para-chain itself.
+	Here,
+	/// The message came from the relay-chain.
+	///
+	/// This is used by the DMP queue.
+	Parent,
+	/// The message came from a sibling para-chain.
+	///
+	/// This is used by the HRMP queue.
+	Sibling(ParaId),
+}
+
+impl From<AggregateMessageOrigin> for MultiLocation {
+	fn from(origin: AggregateMessageOrigin) -> Self {
+		match origin {
+			AggregateMessageOrigin::Here => MultiLocation::here(),
+			AggregateMessageOrigin::Parent => MultiLocation::parent(),
+			AggregateMessageOrigin::Sibling(id) => MultiLocation::new(1, Junction::Parachain(id.into())),
+		}
+	}
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+impl From<u32> for AggregateMessageOrigin {
+	fn from(x: u32) -> Self {
+		match x {
+			0 => Self::Here,
+			1 => Self::Parent,
+			p => Self::Sibling(ParaId::from(p)),
+		}
+	}
+}
+
 /// Information about an XCMP channel.
 pub struct ChannelInfo {
 	/// The maximum number of messages that can be pending in the channel at once.
@@ -102,7 +140,7 @@ pub struct ChannelInfo {
 
 pub trait GetChannelInfo {
 	fn get_channel_status(id: ParaId) -> ChannelStatus;
-	fn get_channel_max(id: ParaId) -> Option<usize>;
+	fn get_channel_info(id: ParaId) -> Option<ChannelInfo>;
 }
 
 /// Something that should be called when sending an upward message.

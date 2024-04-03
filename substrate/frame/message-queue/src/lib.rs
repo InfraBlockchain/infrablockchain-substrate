@@ -194,7 +194,7 @@ use frame_support::{
 	defensive,
 	pallet_prelude::*,
 	traits::{
-		DefensiveTruncateFrom, EnqueueMessage, ExecuteOverweightError, Footprint, ProcessMessage,
+		Defensive, DefensiveSaturating, DefensiveTruncateFrom, EnqueueMessage, ExecuteOverweightError, Footprint, QueueFootprint, ProcessMessage,
 		ProcessMessageError, QueuePausedQuery, ServiceQueues,
 	},
 	BoundedSlice, CloneNoBound, DefaultNoBound,
@@ -420,6 +420,16 @@ pub struct BookState<MessageOrigin> {
 impl<MessageOrigin> Default for BookState<MessageOrigin> {
 	fn default() -> Self {
 		Self { begin: 0, end: 0, count: 0, ready_neighbours: None, message_count: 0, size: 0 }
+	}
+}
+
+impl<MessageOrigin> From<BookState<MessageOrigin>> for QueueFootprint {
+	fn from(book: BookState<MessageOrigin>) -> Self {
+		QueueFootprint {
+			pages: book.count,
+			ready_pages: book.end.defensive_saturating_sub(book.begin),
+			storage: Footprint { count: book.message_count, size: book.size },
+		}
 	}
 }
 
@@ -1462,8 +1472,7 @@ impl<T: Config> EnqueueMessage<MessageOriginOf<T>> for Pallet<T> {
 		BookStateFor::<T>::insert(&origin, &book_state);
 	}
 
-	fn footprint(origin: MessageOriginOf<T>) -> Footprint {
-		let book_state = BookStateFor::<T>::get(&origin);
-		Footprint { count: book_state.message_count, size: book_state.size }
+	fn footprint(origin: MessageOriginOf<T>) -> QueueFootprint {
+		BookStateFor::<T>::get(&origin).into()
 	}
 }

@@ -29,7 +29,7 @@
 
 use codec::{Decode, Encode, MaxEncodedLen};
 use cumulus_primitives_core::{
-	relay_chain, AbridgedHostConfiguration, ChannelStatus, CollationInfo, DmpMessageHandler,
+	relay_chain, AbridgedHostConfiguration, ChannelInfo, ChannelStatus, CollationInfo, DmpMessageHandler,
 	GetChannelInfo, InboundDownwardMessage, InboundHrmpMessage, MessageSendError, MultiLocation,
 	OutboundHrmpMessage, ParaId, PersistedValidationData, UpdateRCConfig, UpwardMessage,
 	UpwardMessageSender, XcmpMessageHandler, XcmpMessageSource,
@@ -1046,10 +1046,17 @@ impl<T: Config> GetChannelInfo for Pallet<T> {
 		ChannelStatus::Ready(max_size_now as usize, max_size_ever as usize)
 	}
 
-	fn get_channel_max(id: ParaId) -> Option<usize> {
-		let channels = Self::relevant_messaging_state()?.egress_channels;
+	fn get_channel_info(id: ParaId) -> Option<ChannelInfo> {
+		let channels = RelevantMessagingState::<T>::get()?.egress_channels;
 		let index = channels.binary_search_by_key(&id, |item| item.0).ok()?;
-		Some(channels[index].1.max_message_size as usize)
+		let info = ChannelInfo {
+			max_capacity: channels[index].1.max_capacity,
+			max_total_size: channels[index].1.max_total_size,
+			max_message_size: channels[index].1.max_message_size,
+			msg_count: channels[index].1.msg_count,
+			total_size: channels[index].1.total_size,
+		};
+		Some(info)
 	}
 }
 

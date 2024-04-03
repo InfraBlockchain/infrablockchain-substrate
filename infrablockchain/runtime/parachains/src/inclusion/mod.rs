@@ -943,7 +943,7 @@ impl<T: Config> Pallet<T> {
 
 	pub(crate) fn relay_dispatch_queue_size(para_id: ParaId) -> (u32, u32) {
 		let fp = T::MessageQueue::footprint(AggregateMessageOrigin::Ump(UmpQueueId::Para(para_id)));
-		(fp.count as u32, fp.size as u32)
+		(fp.storage.count as u32, fp.storage.size as u32)
 	}
 
 	/// Check that all the upward messages sent by a candidate pass the acceptance criteria.
@@ -1347,6 +1347,6 @@ impl<T: Config> QueueFootprinter for Pallet<T> {
 	type Origin = UmpQueueId;
 
 	fn message_count(origin: Self::Origin) -> u64 {
-		T::MessageQueue::footprint(AggregateMessageOrigin::Ump(origin)).count
+		T::MessageQueue::footprint(AggregateMessageOrigin::Ump(origin)).storage.count
 	}
 }

@@ -117,10 +117,6 @@ pub mod pallet {
 		/// The effective value of this type should not change while the chain is running.
 		///
 		/// For backwards compatibility either use [`MinimumPeriodTimesTwo`] or a const.
-		///
-		/// This associated type is only present when compiled with the `experimental`
-		/// feature.
-		#[cfg(feature = "experimental")]
 		type SlotDuration: Get<<Self as pallet_timestamp::Config>::Moment>;
 	}
 

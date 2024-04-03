@@ -34,7 +34,7 @@ use cumulus_test_client::{
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 use futures::{channel::mpsc, executor::block_on, select, FutureExt, Stream, StreamExt};
 use futures_timer::Delay;
-use primitives::HeadData;
+use polkadot_primitives::HeadData;
 use sc_client_api::{Backend as _, UsageProvider};
 use sc_consensus::{BlockImport, BlockImportParams, ForkChoiceStrategy};
 use sp_consensus::{BlockOrigin, BlockStatus};
@@ -134,6 +134,15 @@ impl RelayChainInterface for Relaychain {
 			return Ok(None)
 		};
 		Ok(Some(PersistedValidationData { parent_head, ..Default::default() }))
+	}
+
+	async fn validation_code_hash(
+		&self,
+		_: PHash,
+		_: ParaId,
+		_: OccupiedCoreAssumption,
+	) -> RelayChainResult<Option<ValidationCodeHash>> {
+		unimplemented!("Not needed for test")
 	}
 
 	async fn candidate_pending_availability(
@@ -579,7 +588,7 @@ fn follow_new_best_sets_best_after_it_is_imported() {
 		block_import_params.fork_choice = Some(ForkChoiceStrategy::Custom(false));
 		block_import_params.body = Some(body);
 
-		// Now import the unkown block to make it "known"
+		// Now import the unknown block to make it "known"
 		client.import_block(block_import_params).await.unwrap();
 
 		loop {
@@ -1124,7 +1133,8 @@ fn find_potential_parents_aligned_with_pending() {
 
 	let backend = Arc::new(Backend::new_test(1000, 1));
 	let client = Arc::new(TestClientBuilder::with_backend(backend.clone()).build());
-	let mut para_import = ParachainBlockImport::new(client.clone(), backend.clone());
+	let mut para_import =
+		ParachainBlockImport::new_with_delayed_best_block(client.clone(), backend.clone());
 
 	let relay_parent = relay_hash_from_block_num(10);
 	// Choose different relay parent for alternative chain to get new hashes.
@@ -1279,7 +1289,8 @@ fn find_potential_parents_aligned_no_pending() {
 
 	let backend = Arc::new(Backend::new_test(1000, 1));
 	let client = Arc::new(TestClientBuilder::with_backend(backend.clone()).build());
-	let mut para_import = ParachainBlockImport::new(client.clone(), backend.clone());
+	let mut para_import =
+		ParachainBlockImport::new_with_delayed_best_block(client.clone(), backend.clone());
 
 	let relay_parent = relay_hash_from_block_num(10);
 	// Choose different relay parent for alternative chain to get new hashes.

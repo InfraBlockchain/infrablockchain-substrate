@@ -18,11 +18,11 @@ use std::{collections::HashSet, convert::TryFrom};
 
 pub use sc_network::{PeerId, ReputationChange};
 
-use node_network_protocol::{
+use polkadot_node_network_protocol::{
 	grid_topology::SessionGridTopology, peer_set::ProtocolVersion, ObservedRole, OurView, View,
 	WrongVariant,
 };
-use primitives::{AuthorityDiscoveryId, SessionIndex, ValidatorIndex};
+use polkadot_primitives::{AuthorityDiscoveryId, SessionIndex, ValidatorIndex};
 
 /// A struct indicating new gossip topology.
 #[derive(Debug, Clone, PartialEq)]

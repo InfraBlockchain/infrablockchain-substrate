@@ -29,15 +29,18 @@ use futures::Future;
 use parity_scale_codec::{Decode, Encode, Error as CodecError, Input};
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 
-pub use parachain_primitives::primitives::{BlockData, HorizontalMessages, PoTs, UpwardMessages};
 use primitives::{
 	BlakeTwo256, BlockNumber, CandidateCommitments, CandidateHash, CollatorPair,
 	CommittedCandidateReceipt, CompactStatement, EncodeAs, Hash, HashT, HeadData, Id as ParaId,
-	OpaqueRemoteAssetMetadata, PersistedValidationData, SessionIndex, Signed, UncheckedSigned,
-	ValidationCode, ValidationCodeHash, ValidatorIndex, MAX_CODE_SIZE, MAX_POV_SIZE,
+	PersistedValidationData, SessionIndex, Signed, UncheckedSigned, ValidationCode, OpaqueRemoteAssetMetadata
+	ValidationCodeHash, ValidatorIndex, MAX_CODE_SIZE, MAX_POV_SIZE,
 };
 pub use sp_consensus_babe::{
 	AllowedSlots as BabeAllowedSlots, BabeEpochConfiguration, Epoch as BabeEpoch,
+};
+
+pub use polkadot_parachain_primitives::primitives::{
+	BlockData, HorizontalMessages, UpwardMessages,
 };
 
 pub mod approval;
@@ -49,6 +52,13 @@ pub use disputes::{
 	InvalidDisputeVote, SignedDisputeStatement, Timestamp, UncheckedDisputeMessage,
 	ValidDisputeVote, ACTIVE_DURATION_SECS,
 };
+
+/// The current node version, which takes the basic SemVer form `<major>.<minor>.<patch>`.
+/// In general, minor should be bumped on every release while major or patch releases are
+/// relatively rare.
+///
+/// The associated worker binaries should use the same version as the node that spawns them.
+pub const NODE_VERSION: &'static str = "1.8.0";
 
 // For a 16-ary Merkle Prefix Trie, we can expect at most 16 32-byte hashes per node
 // plus some overhead:
@@ -406,7 +416,7 @@ impl MaybeCompressedPoV {
 /// - contains a proof of validity.
 #[derive(Debug, Clone, Encode, Decode)]
 #[cfg(not(target_os = "unknown"))]
-pub struct Collation<BlockNumber = primitives::BlockNumber> {
+pub struct Collation<BlockNumber = polkadot_primitives::BlockNumber> {
 	/// Messages destined to be interpreted by the Relay chain itself.
 	pub upward_messages: UpwardMessages,
 	/// The horizontal messages sent by the parachain.
@@ -436,7 +446,7 @@ pub struct CollationSecondedSignal {
 	pub relay_parent: Hash,
 	/// The statement about seconding the collation.
 	///
-	/// Anything else than [`Statement::Seconded`](Statement::Seconded) is forbidden here.
+	/// Anything else than [`Statement::Seconded`] is forbidden here.
 	pub statement: SignedFullStatement,
 }
 

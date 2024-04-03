@@ -31,13 +31,26 @@ use SendError::*;
 
 /// Simple value-bearing trait for determining/expressing the assets required to be paid for a
 /// messages to be delivered to a parachain.
-pub trait PriceForParachainDelivery {
+pub trait PriceForMessageDelivery {
+	/// Type used for charging different prices to different destinations
+	type Id;
 	/// Return the assets required to deliver `message` to the given `para` destination.
-	fn price_for_parachain_delivery(para: ParaId, message: &Xcm<()>) -> MultiAssets;
+	fn price_for_delivery(id: Self::Id, message: &Xcm<()>) -> MultiAssets;
 }
-impl PriceForParachainDelivery for () {
-	fn price_for_parachain_delivery(_: ParaId, _: &Xcm<()>) -> MultiAssets {
+impl PriceForMessageDelivery for () {
+	type Id = ();
+
+	fn price_for_delivery(_: Self::Id, _: &Xcm<()>) -> MultiAssets {
 		MultiAssets::new()
+	}
+}
+
+pub struct NoPriceForMessageDelivery<Id>(PhantomData<Id>);
+impl<Id> PriceForMessageDelivery for NoPriceForMessageDelivery<Id> {
+	type Id = Id;
+
+	fn price_for_delivery(_: Self::Id, _: &Xcm<()>) -> Assets {
+		Assets::new()
 	}
 }
 

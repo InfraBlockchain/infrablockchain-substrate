@@ -16,13 +16,17 @@
 
 //! Client side code for generating the parachain inherent.
 
-use crate::ParachainInherentData;
 use codec::Decode;
 use cumulus_primitives_core::{
 	relay_chain::{self, Hash as PHash, HrmpChannelId},
 	ParaId, PersistedValidationData,
 };
 use cumulus_relay_chain_interface::RelayChainInterface;
+
+mod mock;
+
+pub use cumulus_primitives_parachain_inherent::{ParachainInherentData, INHERENT_IDENTIFIER};
+pub use mock::{MockValidationDataInherentDataProvider, MockXcmConfig};
 
 const LOG_TARGET: &str = "parachain-inherent";
 
@@ -98,7 +102,6 @@ async fn collect_relay_storage_proof(
 		relay_well_known_keys::TWO_EPOCHS_AGO_RANDOMNESS.to_vec(),
 		relay_well_known_keys::CURRENT_SLOT.to_vec(),
 		relay_well_known_keys::ACTIVE_CONFIG.to_vec(),
-		relay_well_known_keys::ACTIVE_SYSTEM_CONFIG.to_vec(),
 		relay_well_known_keys::dmq_mqc_head(para_id),
 		// TODO paritytech/polkadot#6283: Remove all usages of `relay_dispatch_queue_size`
 		// We need to keep this here until all parachains have migrated to
@@ -111,7 +114,6 @@ async fn collect_relay_storage_proof(
 		relay_well_known_keys::upgrade_go_ahead_signal(para_id),
 		relay_well_known_keys::upgrade_restriction_signal(para_id),
 		relay_well_known_keys::para_head(para_id),
-		relay_well_known_keys::update_system_token_weight(para_id),
 	];
 	relevant_keys.extend(ingress_channels.into_iter().map(|sender| {
 		relay_well_known_keys::hrmp_channels(HrmpChannelId { sender, recipient: para_id })
@@ -134,7 +136,9 @@ async fn collect_relay_storage_proof(
 		.ok()
 }
 
-impl ParachainInherentData {
+pub struct ParachainInherentDataProvider;
+
+impl ParachainInherentDataProvider {
 	/// Create the [`ParachainInherentData`] at the given `relay_parent`.
 	///
 	/// Returns `None` if the creation failed.
@@ -155,7 +159,7 @@ impl ParachainInherentData {
 					target: LOG_TARGET,
 					relay_parent = ?relay_parent,
 					error = ?e,
-					"An error occured during requesting the downward messages.",
+					"An error occurred during requesting the downward messages.",
 				);
 			})
 			.ok()?;
@@ -167,7 +171,7 @@ impl ParachainInherentData {
 					target: LOG_TARGET,
 					relay_parent = ?relay_parent,
 					error = ?e,
-					"An error occured during requesting the inbound HRMP messages.",
+					"An error occurred during requesting the inbound HRMP messages.",
 				);
 			})
 			.ok()?;
@@ -178,23 +182,5 @@ impl ParachainInherentData {
 			validation_data: validation_data.clone(),
 			relay_chain_state,
 		})
-	}
-}
-
-#[async_trait::async_trait]
-impl sp_inherents::InherentDataProvider for ParachainInherentData {
-	async fn provide_inherent_data(
-		&self,
-		inherent_data: &mut sp_inherents::InherentData,
-	) -> Result<(), sp_inherents::Error> {
-		inherent_data.put_data(crate::INHERENT_IDENTIFIER, &self)
-	}
-
-	async fn try_handle_error(
-		&self,
-		_: &sp_inherents::InherentIdentifier,
-		_: &[u8],
-	) -> Option<Result<(), sp_inherents::Error>> {
-		None
 	}
 }

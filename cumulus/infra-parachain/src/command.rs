@@ -439,7 +439,7 @@ pub fn run() -> Result<()> {
 				info!("Parachain Account: {}", parachain_account);
 				info!("Is collating: {}", if config.role.is_authority() { "yes" } else { "no" });
 				match config.chain_spec.runtime() {
-					Runtime::AssetHubInfra => crate::service::start_generic_aura_node::<
+					Runtime::AssetHubInfra => crate::service::start_asset_hub_lookahead_node::<
 						asset_hub_runtime::RuntimeApi,
 						AuraId,
 					>(config, infra_relay_config, collator_options, id, hwbench)
