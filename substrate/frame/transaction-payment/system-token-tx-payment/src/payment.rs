@@ -67,7 +67,7 @@ pub trait OnChargeSystemToken<T: Config> {
 		tip: Self::Balance,
 		already_withdrawn: Self::LiquidityInfo,
 		refundable: bool,
-	) -> Result<(SystemTokenBalanceOf<T>, SystemTokenBalanceOf<T>), TransactionValidityError>;
+	) -> Result<(SystemTokenBalanceOf<T>, SystemTokenBalanceOf<T>, SystemTokenBalanceOf<T>), TransactionValidityError>;
 }
 
 /// Allows specifying what to do with the withdrawn asset fees.
@@ -159,7 +159,7 @@ where
 		tip: Self::Balance,
 		paid: Self::LiquidityInfo,
 		refundable: bool,
-	) -> Result<(SystemTokenBalanceOf<T>, SystemTokenBalanceOf<T>), TransactionValidityError> {
+	) -> Result<(SystemTokenBalanceOf<T>, SystemTokenBalanceOf<T>, SystemTokenBalanceOf<T>), TransactionValidityError> {
 		let min_converted_fee = if corrected_fee.is_zero() { Zero::zero() } else { One::one() };
 		// Convert the corrected fee and tip into the asset used for payment.
 		let converted_fee = CON::to_system_token_balance(paid.asset(), corrected_fee)
@@ -181,8 +181,21 @@ where
 		// below the existential balance. In that case we don't refund anything.
 		let final_fee_amount = final_fee.peek();
 		let _ = <T::Fungibles as Balanced<T::AccountId>>::resolve(who, refund);
-		// Handle the final fee, e.g. by transferring to the block author or burning.
-		HC::handle_credit(final_fee);
-		Ok((final_fee_amount, converted_tip.into()))
+		// Handle final_fee 
+		let reward = T::RewardFraction::get() * final_fee_amount;
+		let (block_author_reward, remain) = final_fee.split(reward);
+		// 1. To Bucket
+		let bucket_id: T::AccountId = T::PalletId::get().into_account_truncating();
+		let bucket_amount = remain.peek();
+		let _ = <T::Fungibles as Balanced<T::AccountId>>::resolve(&bucket_id, remain);
+		Pallet::<T>::deposit_event(
+			Event::<T>::FeeHandled {
+				bucket_amount,
+				remainder: reward,
+			}
+		);
+		// 2. Handle the final fee, e.g. by transferring to the block author or burning.
+		HC::handle_credit(block_author_reward);
+		Ok((final_fee_amount, bucket_amount, converted_tip.into()))
 	}
 }

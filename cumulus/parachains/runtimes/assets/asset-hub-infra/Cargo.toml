@@ -60,6 +60,7 @@ sp-storage = { path = "../../../../../substrate/primitives/storage", default-fea
 sp-transaction-pool = { path = "../../../../../substrate/primitives/transaction-pool", default-features = false }
 sp-version = { path = "../../../../../substrate/primitives/version", default-features = false }
 sp-weights = { path = "../../../../../substrate/primitives/weights", default-features = false }
+sp-arithmetic = { path = "../../../../../substrate/primitives/arithmetic", default-features = false }
 
 # Infra Relay
 infrablockchain-core-primitives = { path = "../../../../../infrablockchain/core-primitives", default-features = false }
@@ -190,6 +191,7 @@ std = [
 	"sp-session/std",
 	"sp-std/std",
 	"sp-transaction-pool/std",
+	"sp-arithmetic/std",
 	"sp-version/std",
 	"xcm-builder/std",
 	"xcm-executor/std",

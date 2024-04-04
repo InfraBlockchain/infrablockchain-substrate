@@ -31,6 +31,7 @@ sp-core = { path = "../../../primitives/core", default-features = false }
 sp-io = { path = "../../../primitives/io", default-features = false }
 sp-runtime = { path = "../../../primitives/runtime", default-features = false }
 sp-std = { path = "../../../primitives/std", default-features = false }
+sp-arithmetic = { path = "../../../primitives/arithmetic", default-features = false }
 
 # frames
 frame-benchmarking = { path = "../../benchmarking", default-features = false, optional = true}
@@ -55,6 +56,7 @@ std = [
 	"sp-io/std",
 	"sp-runtime/std",
 	"sp-std/std",
+	"sp-arithmetic/std",
 	"frame-benchmarking?/std",
 	"frame-support/std",
 	"frame-system/std",

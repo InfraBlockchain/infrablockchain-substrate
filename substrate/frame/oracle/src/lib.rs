@@ -18,6 +18,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 mod types;
+
 pub use types::*;
 
 use frame_support::pallet_prelude::*;
@@ -25,7 +26,7 @@ use frame_system::{
 	offchain::{SendTransactionTypes, SubmitTransaction},
 	pallet_prelude::*,
 };
-use lite_json::JsonValue;
+use lite_json::{JsonValue, NumberValue};
 use sp_runtime::{infra::*, offchain::http, traits::AtLeast32BitUnsigned};
 use sp_std::{prelude::ToOwned, vec::Vec};
 
@@ -154,7 +155,8 @@ pub mod pallet {
 			ensure_none(origin)?;
 			T::SystemTokenOracle::submit_exchange_rates(exchange_rates.clone());
 			let current_block = <frame_system::Pallet<T>>::block_number();
-			<NextUnsignedAt<T>>::put(current_block + T::RequestPeriod::get());
+			let next_unsigned_at = current_block + T::RequestPeriod::get();
+			<NextUnsignedAt<T>>::put(next_unsigned_at);
 			Self::deposit_event(Event::<T>::ExchangeRatesSubmitted { exchange_rates });
 			Ok(())
 		}
@@ -204,7 +206,33 @@ impl<T: Config> Pallet<T> {
 // ocw
 impl<T: Config> Pallet<T> {
 
-	/// Fetch the exchange rate from the oracle.
+	/// Adjust exxchange rate to fit the 6 decimal places
+	/// 
+	/// # Arguments
+	/// 
+	/// * `i` - integer
+	/// * `f` - fraction
+	/// * `l` - franction length
+	/// 
+	/// # Returns
+	/// 
+	/// * `u64`: Adjusted exchange rate
+	fn adjust_exchange_rate(i: u64, f: u64, l: u32) -> u64 {
+		let max: u32 = 6;
+		let adjustment = |length: u32| -> u64 {
+			let mut l = length;
+			if l > max { 
+				l = 0;
+			} 
+			l = max - l;
+			10u64.pow(l)
+		};
+		let mut res = i.saturating_mul(adjustment(0));
+		res += f.saturating_mul(adjustment(l));
+		res
+	}
+
+	/// Fetch the exchange rate for given list of fiats
 	fn fetch_exchange_rate(fiats: Vec<Fiat>) -> Result<(), http::Error> {
 		let mut exchange_rates: Vec<(Fiat, ExchangeRate)> = Vec::new();
 		for fiat in fiats {
@@ -284,7 +312,8 @@ impl<T: Config> Pallet<T> {
 		for (k, v) in obj.iter() {
 			if k.iter().copied().eq("conversion_rate".chars()) {
 				if let JsonValue::Number(n) = v {
-					exchange_rate = Some(n.integer);
+					let NumberValue { integer, fraction, fraction_length, .. } = n.clone();
+					exchange_rate = Some(Self::adjust_exchange_rate(integer, fraction, fraction_length));
 				} else {
 					return Err(Error::<T>::ParseError.into());
 				}

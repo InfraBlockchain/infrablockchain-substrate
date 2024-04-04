@@ -53,6 +53,6 @@ pub enum InitialPayment<T: Config> {
 pub struct Detail<Account, ChargeAsset, AssetBalance> {
 	pub fee_payer: Account,
 	pub paid_asset: ChargeAsset,
-	pub converted_fee: AssetBalance,
+	pub paid_fee_amount: AssetBalance,
 	pub tip: Option<AssetBalance>,
 }

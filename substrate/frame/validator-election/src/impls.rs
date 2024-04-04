@@ -39,7 +39,7 @@ impl<T: Config> TaaV for Pallet<T> {
 	type Error = sp_runtime::DispatchError;
 
 	fn process(bytes: &mut Vec<u8>) -> Result<(), Self::Error> {
-		let PoT { fee_amount, maybe_vote } = PoT::<
+		let PoT { reward, maybe_vote } = PoT::<
 			T::AccountId,
 			SystemTokenAssetIdOf<T>,
 			SystemTokenBalanceOf<T>,
@@ -47,7 +47,7 @@ impl<T: Config> TaaV for Pallet<T> {
 		>::decode(&mut &bytes[..])
 		.map_err(|_| Error::<T>::ErrorDecode)?;
 
-		Self::do_process_fee(fee_amount);
+		Self::do_process_reward(reward);
 
 		if let Some(vote) = maybe_vote {
 			Self::do_process_vote(vote)
@@ -169,8 +169,8 @@ impl<T: Config> Pallet<T> {
 	///
 	/// 1. Check if the current era is set
 	/// 2. Add some rewards for validators who have authored the block
-	fn do_process_fee(fee_amount: Fee<SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>>) {
-		let Fee { asset, amount } = fee_amount;
+	fn do_process_reward(reward: Reward<SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>>) {
+		let Reward { asset, amount } = reward;
 		// 1.
 		if let Some(current_era) = CurrentEra::<T>::get() {
 			// 2.

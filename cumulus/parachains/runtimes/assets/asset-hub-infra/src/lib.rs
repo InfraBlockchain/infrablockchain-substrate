@@ -74,7 +74,7 @@ use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
-
+use sp_arithmetic::Perbill;
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{
 	construct_runtime,
@@ -276,22 +276,28 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 	}
 }
 
+parameter_types! {
+	pub const RewardFraction: Perbill = Perbill::from_percent(80);
+}
+
 impl pallet_system_token_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type SystemConfig = InfraParaCore;
 	type PoTHandler = ParachainSystem;
 	type Fungibles = NativeAndForeignAssets;
+	type RewardFraction = RewardFraction;
 	type OnChargeSystemToken =
-		TransactionFeeCharger<Runtime, SystemTokenConversion, CreditToBucket>;
+		TransactionFeeCharger<Runtime, SystemTokenConversion, CreditHandler>;
 	type BootstrapCallFilter = BootstrapCallFilter;
 	type PalletId = FeeTreasuryId;
 }
 
-pub struct CreditToBucket;
-impl HandleCredit<AccountId, NativeAndForeignAssets> for CreditToBucket {
+pub struct CreditHandler;
+impl HandleCredit<AccountId, NativeAndForeignAssets> for CreditHandler {
 	fn handle_credit(credit: Credit<AccountId, NativeAndForeignAssets>) {
-		let dest = FeeTreasuryId::get().into_account_truncating();
-		let _ = <NativeAndForeignAssets as Balanced<AccountId>>::resolve(&dest, credit);
+		if let Some(author) = pallet_authorship::Pallet::<Runtime>::author() {
+			let _ = <NativeAndForeignAssets as Balanced<AccountId>>::resolve(&author, credit);
+		}
 	}
 }
 

@@ -339,18 +339,6 @@ impl pallet_transaction_payment::Config for Runtime {
 	type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
 }
 
-parameter_types! {
-	pub const FeeTreasuryId: PalletId = PalletId(*b"infrapid");
-}
-
-pub struct CreditToBucket;
-impl HandleCredit<AccountId, NativeAndForeignAssets> for CreditToBucket {
-	fn handle_credit(credit: Credit<AccountId, NativeAndForeignAssets>) {
-		let dest = FeeTreasuryId::get().into_account_truncating();
-		let _ = <NativeAndForeignAssets as Balanced<AccountId>>::resolve(&dest, credit);
-	}
-}
-
 pub struct BootstrapCallFilter;
 impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 	#[cfg(not(feature = "fast-runtime"))]
@@ -386,15 +374,30 @@ impl frame_support::traits::Contains<RuntimeCall> for BootstrapCallFilter {
 	}
 }
 
+parameter_types! {
+	pub const RewardFraction: Perbill = Perbill::from_percent(80);
+	pub const FeeTreasuryId: PalletId = PalletId(*b"infratrs");
+}
+
 impl pallet_system_token_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type SystemConfig = Configuration;
 	type PoTHandler = ValidatorElection;
 	type Fungibles = NativeAndForeignAssets;
+	type RewardFraction = RewardFraction;
 	type OnChargeSystemToken =
-		TransactionFeeCharger<Runtime, SystemTokenConversion, CreditToBucket>;
+		TransactionFeeCharger<Runtime, SystemTokenConversion, CreditHandler>;
 	type BootstrapCallFilter = BootstrapCallFilter;
 	type PalletId = FeeTreasuryId;
+}
+
+pub struct CreditHandler;
+impl HandleCredit<AccountId, NativeAndForeignAssets> for CreditHandler {
+	fn handle_credit(credit: Credit<AccountId, NativeAndForeignAssets>) {
+		if let Some(author) = pallet_authorship::Pallet::<Runtime>::author() {
+			let _ = <NativeAndForeignAssets as Balanced<AccountId>>::resolve(&author, credit);
+		}
+	}
 }
 
 impl pallet_system_token_conversion::Config for Runtime {

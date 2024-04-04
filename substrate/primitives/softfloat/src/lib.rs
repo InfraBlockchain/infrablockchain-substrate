@@ -189,10 +189,12 @@ macro_rules! impl_traits {
 			fn calc_system_token_weight(base_weight: u128, base_decimals: Decimal, currency_decimals: Decimal, exchange_rate_to_base: ExchangeRate) -> Result<Weight, Self::Error> {
 				let base_d: i32 = base_decimals.try_into().map_err(|_| ())?;
 				let currency_d: i32 = currency_decimals.try_into().map_err(|_| ())?;
+				let exchange_rate_scale: $ty = Self::from_i32(10).powi(6);
 				let e_r_to_base: $ty = exchange_rate_to_base.try_into().map_err(|_| ())?;
+				let exchange_rate_adjustment = e_r_to_base / exchange_rate_scale;
 				let decimal_to_base = Self::from_i32(10).powi(base_d - currency_d);
 				let base_w: $ty = Self::from(base_weight);
-				Ok((base_w * decimal_to_base / e_r_to_base).into())
+				Ok((base_w * decimal_to_base / exchange_rate_adjustment).into())
 			}
 		}
 	};

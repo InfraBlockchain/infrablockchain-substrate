@@ -38,7 +38,7 @@ use scale_info::TypeInfo;
 use softfloat::BlockTimeWeight;
 use sp_arithmetic::traits::AtLeast32BitUnsigned;
 use sp_runtime::{
-	infra::{Fee, PoT, TaaV, Vote},
+	infra::{Reward, PoT, TaaV, Vote},
 	traits::Member,
 	RuntimeDebug,
 };
@@ -130,30 +130,6 @@ pub enum Forcing {
 impl Default for Forcing {
 	fn default() -> Self {
 		Forcing::NotForcing
-	}
-}
-
-#[derive(
-	Copy,
-	Clone,
-	PartialEq,
-	Eq,
-	Encode,
-	Decode,
-	RuntimeDebug,
-	TypeInfo,
-	MaxEncodedLen,
-	serde::Serialize,
-	serde::Deserialize,
-)]
-pub struct Reward<AssetId, Amount> {
-	asset: AssetId,
-	amount: Amount,
-}
-
-impl<AssetId, Amount: Balance> Reward<AssetId, Amount> {
-	pub fn new(asset: AssetId) -> Self {
-		Self { asset, amount: Default::default() }
 	}
 }
 

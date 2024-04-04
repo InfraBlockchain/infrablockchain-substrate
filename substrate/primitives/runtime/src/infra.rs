@@ -166,16 +166,16 @@ pub mod voting {
 	#[derive(Encode, Decode, Clone, PartialEq, Eq, sp_core::RuntimeDebug, TypeInfo)]
 	#[cfg_attr(feature = "std", derive(Default, Hash))]
 	pub struct PoT<Account, AssetId, Amount, Weight> {
-		/// Amount of fee paid for transaction
-		pub fee_amount: Fee<AssetId, Amount>,
+		/// Reward amount for each transaction
+		pub reward: Reward<AssetId, Amount>,
 		/// Amount of vote for `Account` based on `fee_amount`
 		pub maybe_vote: Option<Vote<Account, Weight>>,
 	}
 
-	/// `Proof-of-Transaction` which may contain `Vote` and **must** contain `Fee` amount
+	/// Reward amount for each transaction
 	#[derive(Encode, Decode, Clone, PartialEq, Eq, sp_core::RuntimeDebug, TypeInfo)]
 	#[cfg_attr(feature = "std", derive(Default, Hash))]
-	pub struct Fee<AssetId, Amount> {
+	pub struct Reward<AssetId, Amount> {
 		/// Which asset is used for fee
 		pub asset: AssetId,
 		/// Amount of fee
