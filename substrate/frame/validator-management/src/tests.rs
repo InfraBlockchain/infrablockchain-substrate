@@ -61,7 +61,7 @@ fn pot_works() {
 			assert_eq!(current_era, 1);
 			assert_eq!(PotValidators::<TestRuntime>::get().len(), 1);
 			assert_eq!(
-				*validator_election_events().last().unwrap(),
+				*validator_management_events().last().unwrap(),
 				Event::ValidatorsElected {
 					validators: vec![
 						sp_keyring::Sr25519Keyring::Alice.to_account_id(),

@@ -25,10 +25,7 @@ pub use impls::*;
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{
 	traits::{
-		tokens::{
-			fungibles::{Inspect, InspectSystemToken, Mutate},
-			Balance,
-		},
+		tokens::fungibles::{Inspect, InspectSystemToken, Mutate},
 		EstimateNextNewSession, Get,
 	},
 	Parameter,
@@ -38,7 +35,7 @@ use scale_info::TypeInfo;
 use softfloat::BlockTimeWeight;
 use sp_arithmetic::traits::AtLeast32BitUnsigned;
 use sp_runtime::{
-	infra::{Reward, PoT, TaaV, Vote},
+	infra::{Reward, RewardOrigin, PoT, TaaV, Vote},
 	traits::Member,
 	RuntimeDebug,
 };
@@ -61,15 +58,16 @@ pub type SystemTokenAssetIdOf<T> =
 	<<T as Config>::Fungibles as Inspect<<T as frame_system::Config>::AccountId>>::AssetId;
 pub type SystemTokenBalanceOf<T> =
 	<<T as Config>::Fungibles as Inspect<<T as frame_system::Config>::AccountId>>::Balance;
+pub type DestIdOf<T> = <<T as Config>::RewardHandler as RewardInterface>::DestId;
 
-pub(crate) const LOG_TARGET: &str = "runtime::voting-manager";
+pub(crate) const LOG_TARGET: &str = "runtime::validator-management";
 // syntactic sugar for logging.
 #[macro_export]
 macro_rules! log {
 	($level:tt, $patter:expr $(, $values:expr)* $(,)?) => {
 		log::$level!(
 			target: crate::LOG_TARGET,
-			concat!("[{:?}] 🗳️ ", $patter), <frame_system::Pallet<T>>::block_number() $(, $values)*
+			concat!("[{:?}] ", $patter), <frame_system::Pallet<T>>::block_number() $(, $values)*
 		)
 	};
 }
@@ -202,15 +200,11 @@ pub mod pallet {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
-		#[pallet::constant]
-		type FeeDistributionToggle: Get<bool>;
-
 		/// Number of sessions per era.
 		#[pallet::constant]
 		type SessionsPerEra: Get<SessionIndex>;
 
-		// F64::from_i128(5_256_000)(e.g 10 blocks/min * 60 min/hours* 24 hours/day * 365 days/year)
-		/// The number of blocks per year
+		/// Number of blocks per year to calculate weighted vote
 		#[pallet::constant]
 		type BlocksPerYear: Get<BlockNumberFor<Self>>;
 
@@ -329,7 +323,7 @@ pub mod pallet {
 			amount: SystemTokenBalanceOf<T>,
 		},
 		/// Reward has been distributed
-		RewardDistributed { beneficiary: T::AccountId, of: EraIndex, at: EraIndex, rewards: Vec<Reward<SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>>> },
+		RewardDistributed { dest: RewardOrigin<DestIdOf<T>>, beneficiary: T::AccountId, reward: Reward<DestIdOf<T>, SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>> },
 	}
 
 	#[pallet::error]
@@ -344,6 +338,8 @@ pub mod pallet {
 		SeedTrustSlotsShouldBeProvided,
 		/// Error occured while decoding types mostly `PotVote`
 		ErrorDecode,
+		/// No permission to dispatch the transaction(e.g Claim reward)
+		NotAccessible,
 	}
 
 	/// The current era index.
@@ -410,16 +406,15 @@ pub mod pallet {
 	pub type RewardInfo<T: Config> = StorageDoubleMap<
 		_,
 		Twox64Concat,
-		EraIndex,
-		Twox64Concat,
 		T::AccountId,
-		Vec<Reward<SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>>>,
+		Twox64Concat,
+		RewardOrigin<DestIdOf<T>>,
+		Vec<Reward<DestIdOf<T>, SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>>>,
 	>;
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::call_index(0)]
-		#[pallet::weight(0)]
 		pub fn set_number_of_validators(
 			origin: OriginFor<T>,
 			new_total_slots: u32,
@@ -432,7 +427,6 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(1)]
-		#[pallet::weight(0)]
 		pub fn add_seed_trust_validator(origin: OriginFor<T>, who: T::AccountId) -> DispatchResult {
 			ensure_root(origin)?;
 			let mut seed_trust_validators = SeedTrustValidatorPool::<T>::get();
@@ -444,7 +438,6 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(2)]
-		#[pallet::weight(0)]
 		pub fn set_min_vote_weight_threshold(
 			origin: OriginFor<T>,
 			new: T::Score,
@@ -458,12 +451,26 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(3)]
-		#[pallet::weight(0)]
 		pub fn set_pool_status(origin: OriginFor<T>, status: Pool) -> DispatchResult {
 			ensure_root(origin)?;
 			PoolStatus::<T>::put(status);
 			Self::deposit_event(Event::<T>::PoolStatusSet { status });
 
+			Ok(())
+		}
+
+		/// Claim reward that has been collected. Anyone can call
+		#[pallet::call_index(4)]
+		pub fn claim_reward(origin: OriginFor<T>, dest: RewardOrigin<DestIdOf<T>>, rewarded_asset: SystemTokenAssetIdOf<T>) -> DispatchResult {
+			let maybe_validator = ensure_signed(origin)?;
+			let mut maybe_reward = RewardInfo::<T>::get(&maybe_validator, &dest);
+			let rewards = maybe_reward.take().ok_or(Error::<T>::NotAccessible)?;
+			for reward in rewards.into_iter() {
+				if reward.asset == rewarded_asset {
+					T::RewardHandler::distribute_reward(maybe_validator.clone(), reward.clone());
+					Self::deposit_event(Event::<T>::RewardDistributed { dest: dest.clone(), beneficiary: maybe_validator.clone(), reward });
+				}
+			}
 			Ok(())
 		}
 	}

@@ -6024,7 +6024,7 @@ dependencies = [
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-treasury",
  "pallet-utility",
- "pallet-validator-election",
+ "pallet-validator-management",
  "pallet-vesting",
  "pallet-xcm",
  "parachain-primitives",
@@ -9851,7 +9851,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
- "pallet-validator-election",
+ "pallet-validator-management",
  "parity-scale-codec",
  "scale-info",
  "sp-core",
@@ -11369,7 +11369,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-validator-election"
+name = "pallet-validator-management"
 version = "0.1.0"
 dependencies = [
  "frame-benchmarking",
@@ -12211,7 +12211,7 @@ dependencies = [
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
- "pallet-validator-election",
+ "pallet-validator-management",
  "pallet-vesting",
  "pallet-xcm",
  "parachain-primitives",
@@ -13310,7 +13310,7 @@ dependencies = [
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-treasury",
- "pallet-validator-election",
+ "pallet-validator-management",
  "pallet-vesting",
  "parity-scale-codec",
  "polkadot-primitives-test-helpers",
@@ -13370,7 +13370,7 @@ dependencies = [
  "pallet-system-token-tx-payment",
  "pallet-timestamp",
  "pallet-transaction-payment",
- "pallet-validator-election",
+ "pallet-validator-management",
  "pallet-vesting",
  "pallet-xcm",
  "parachain-primitives",

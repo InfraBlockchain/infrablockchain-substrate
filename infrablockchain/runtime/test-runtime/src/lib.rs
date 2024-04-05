@@ -486,7 +486,7 @@ impl parachains_configuration::Config for Runtime {
 
 impl parachains_shared::Config for Runtime {}
 
-impl pallet_validator_election::Config for Runtime {
+impl pallet_validator_management::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type SessionsPerEra = SessionsPerEra;
 	type InfraVoteAccountId = VoteAccountId;
@@ -720,7 +720,7 @@ construct_runtime! {
 
 		Sudo: pallet_sudo::{Pallet, Call, Storage, Config<T>, Event<T>},
 
-		ValidatorElection: pallet_validator_election::{Pallet, Call, Storage, Config<T>, Event<T>}
+		ValidatorManagement: pallet_validator_management::{Pallet, Call, Storage, Config<T>, Event<T>}
 
 		TestNotifier: pallet_test_notifier::{Pallet, Call, Event<T>},
 	}

@@ -42,7 +42,7 @@ pallet-treasury = { path = "../../../substrate/frame/treasury", default-features
 pallet-asset-rate = { path = "../../../substrate/frame/asset-rate", default-features = false }
 pallet-election-provider-multi-phase = { path = "../../../substrate/frame/election-provider-multi-phase", default-features = false }
 frame-election-provider-support = { path = "../../../substrate/frame/election-provider-support", default-features = false }
-pallet-validator-election = { path = "../../../substrate/frame/validator-election", default-features = false }
+pallet-validator-management = { path = "../../../substrate/frame/validator-management", default-features = false }
 frame-benchmarking = { path = "../../../substrate/frame/benchmarking", default-features = false, optional = true }
 pallet-babe = { path = "../../../substrate/frame/babe", default-features = false, optional = true }
 pallet-system-token-conversion = { path = "../../../substrate/frame/system-token-conversion", default-features = false }
@@ -92,7 +92,7 @@ std = [
 	"pallet-transaction-payment/std",
 	"pallet-treasury/std",
 	"pallet-vesting/std",
-	"pallet-validator-election/std",
+	"pallet-validator-management/std",
 	"pallet-system-token-conversion/std",
 	"parity-scale-codec/std",
 	"primitives/std",

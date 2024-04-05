@@ -19,7 +19,7 @@ scale-info = { version = "2.5.0", default-features = false, features = ["derive"
 frame-benchmarking = { path = "../benchmarking", default-features = false, optional = true}
 frame-support = { path = "../support", default-features = false}
 frame-system = { path = "../system", default-features = false}
-pallet-validator-election = { path = "../validator-election", default-features = false }
+pallet-validator-management = { path = "../validator-management", default-features = false }
 sp-core = { path = "../../primitives/core", default-features = false}
 sp-io = { path = "../../primitives/io", default-features = false}
 sp-runtime = { path = "../../primitives/runtime", default-features = false}
@@ -32,7 +32,7 @@ std = [
 	"frame-benchmarking?/std",
 	"frame-support/std",
 	"frame-system/std",
-	"pallet-validator-election/std",
+	"pallet-validator-management/std",
 	"log/std",
 	"scale-info/std",
 	"sp-core/std",

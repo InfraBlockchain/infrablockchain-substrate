@@ -51,6 +51,7 @@ use frame_support::{
 		tokens::{
 			fungibles::{self, Balanced, Credit},
 			pay::PayAssetFromAccount,
+			Preservation::Preserve
 		},
 		AsEnsureOriginWithArg, ConstU128, ConstU32, EitherOfDiverse, InstanceFilter,
 		KeyOwnerProofSystem, LockIdentifier, PrivilegeCmp, ProcessMessage, ProcessMessageError,
@@ -62,9 +63,9 @@ use frame_system::{EnsureRoot, EnsureWithSuccess};
 use pallet_grandpa::{fg_primitives, AuthorityId as GrandpaId};
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use pallet_session::historical as session_historical;
-use pallet_system_token_tx_payment::{HandleCredit, TransactionFeeCharger};
+use pallet_system_token_tx_payment::{HandleCredit, TransactionFeeCharger, RewardOriginInfo};
 use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
-use pallet_validator_election::{RewardInterface, SessionIndex};
+use pallet_validator_management::{RewardInterface, SessionIndex};
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use primitives::{
 	slashing, AccountId, AccountIndex, Balance, BlockNumber, CandidateEvent, CandidateHash,
@@ -73,7 +74,7 @@ use primitives::{
 	OccupiedCoreAssumption, PersistedValidationData, ScrapedOnChainVotes, SessionInfo, Signature,
 	ValidationCode, ValidationCodeHash, ValidatorId, ValidatorIndex, PARACHAIN_KEY_TYPE_ID,
 };
-use sp_core::{ConstBool, OpaqueMetadata};
+use sp_core::OpaqueMetadata;
 use sp_mmr_primitives as mmr;
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
@@ -91,7 +92,7 @@ use sp_std::{cmp::Ordering, collections::btree_map::BTreeMap, prelude::*};
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 use static_assertions::const_assert;
-use xcm::latest::{Junction, MultiLocation, SystemTokenId};
+use xcm::latest::{Junction, MultiLocation};
 
 pub use frame_system::Call as SystemCall;
 pub use pallet_balances::Call as BalancesCall;
@@ -382,13 +383,22 @@ parameter_types! {
 impl pallet_system_token_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type SystemConfig = Configuration;
-	type PoTHandler = ValidatorElection;
+	type PoTHandler = ValidatorManagement;
 	type Fungibles = NativeAndForeignAssets;
 	type RewardFraction = RewardFraction;
+	type RewardOrigin = RewardOrigin;
 	type OnChargeSystemToken =
 		TransactionFeeCharger<Runtime, SystemTokenConversion, CreditHandler>;
 	type BootstrapCallFilter = BootstrapCallFilter;
 	type PalletId = FeeTreasuryId;
+}
+
+pub struct RewardOrigin;
+impl RewardOriginInfo for RewardOrigin {
+	type Origin = u32;
+	fn reward_origin_info() -> voting::RewardOrigin<Self::Origin> {
+		voting::RewardOrigin::Local
+	}
 }
 
 pub struct CreditHandler;
@@ -448,7 +458,7 @@ impl pallet_session::Config for Runtime {
 	type ValidatorIdOf = ValidatorIdOf;
 	type ShouldEndSession = Babe;
 	type NextSessionRotation = Babe;
-	type SessionManager = ValidatorElection;
+	type SessionManager = ValidatorManagement;
 	type SessionHandler = <SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
 	type Keys = SessionKeys;
 	type WeightInfo = weights::pallet_session::WeightInfo<Runtime>;
@@ -1104,7 +1114,7 @@ impl parachains_inclusion::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type DisputesHandler = ParasDisputes;
 	type RewardValidators = RewardValidators;
-	type PoTHandler = ValidatorElection;
+	type PoTHandler = ValidatorManagement;
 	type MessageQueue = MessageQueue;
 	type WeightInfo = weights::runtime_parachains_inclusion::WeightInfo<Runtime>;
 }
@@ -1114,9 +1124,8 @@ parameter_types! {
 	pub const BlocksPerYear: BlockNumber = YEAR;
 }
 
-impl pallet_validator_election::Config for Runtime {
+impl pallet_validator_management::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type FeeDistributionToggle = ConstBool<false>;
 	type BlocksPerYear = BlocksPerYear;
 	type SessionsPerEra = SessionsPerEra;
 	type RewardHandler = RewardHandler;
@@ -1480,7 +1489,7 @@ construct_runtime! {
 		Offences: pallet_offences::{Pallet, Storage, Event} = 8,
 		Historical: session_historical::{Pallet} = 33,
 		// This should be above Session Pallet
-		ValidatorElection: pallet_validator_election::{Pallet, Call, Storage, Config<T>, Event<T>} = 25,
+		ValidatorManagement: pallet_validator_management::{Pallet, Call, Storage, Config<T>, Event<T>} = 25,
 		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 9,
 		Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config<T>, Event, ValidateUnsigned} = 11,
 		ImOnline: pallet_im_online::{Pallet, Call, Storage, Event<T>, ValidateUnsigned, Config<T>} = 12,
@@ -1578,7 +1587,7 @@ pub type Migrations = migrations::Upgrades;
 pub mod migrations {
 	use super::*;
 	// Put any migrations
-	pub type Upgrades = pallet_validator_election::migrations::v1::MigrationToV1<Runtime>;
+	pub type Upgrades = pallet_validator_management::migrations::v1::MigrationToV1<Runtime>;
 }
 
 /// Unchecked extrinsic type as expected by this runtime.

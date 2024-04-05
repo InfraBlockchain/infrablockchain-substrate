@@ -353,7 +353,7 @@ members = [
 	"substrate/frame/uniques",
 	"substrate/frame/utility",
 	"substrate/frame/vesting",
-	"substrate/frame/validator-election",
+	"substrate/frame/validator-management",
 	"substrate/frame/whitelist",
 	"substrate/primitives/api",
 	"substrate/primitives/api/proc-macro",

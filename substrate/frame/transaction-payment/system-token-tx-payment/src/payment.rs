@@ -188,12 +188,6 @@ where
 		let bucket_id: T::AccountId = T::PalletId::get().into_account_truncating();
 		let bucket_amount = remain.peek();
 		let _ = <T::Fungibles as Balanced<T::AccountId>>::resolve(&bucket_id, remain);
-		Pallet::<T>::deposit_event(
-			Event::<T>::FeeHandled {
-				bucket_amount,
-				remainder: reward,
-			}
-		);
 		// 2. Handle the final fee, e.g. by transferring to the block author or burning.
 		HC::handle_credit(block_author_reward);
 		Ok((final_fee_amount, bucket_amount, converted_tip.into()))

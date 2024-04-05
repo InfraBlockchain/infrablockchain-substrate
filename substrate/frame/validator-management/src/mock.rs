@@ -1,4 +1,4 @@
-use crate::{self as pallet_validator_election, *};
+use crate::{self as pallet_validator_management, *};
 use frame_support::{
 	parameter_types,
 	traits::{ConstU32, ConstU64, Hooks, OneSessionHandler},
@@ -27,7 +27,7 @@ frame_support::construct_runtime!(
 	{
 		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>},
-		ValidatorElection: pallet_validator_election::{Pallet, Call, Storage, Config<T>, Event<T>},
+		ValidatorManagement: pallet_validator_management::{Pallet, Call, Storage, Config<T>, Event<T>},
 	}
 );
 
@@ -63,7 +63,7 @@ parameter_types! {
 	pub static SessionsPerEra: u32 = 5;
 }
 
-impl pallet_validator_election::Config for TestRuntime {
+impl pallet_validator_management::Config for TestRuntime {
 	type RuntimeEvent = RuntimeEvent;
 	type SessionsPerEra = SessionsPerEra;
 	type InfraVoteAccountId = VoteAccountId;
@@ -223,7 +223,7 @@ impl ExtBuilder {
 			vec![Alice.to_account_id(), Bob.to_account_id(), Charlie.to_account_id()];
 		let account_keyring = vec![Alice, Bob, Charlie, Dave, Eve, Ferdie];
 
-		let _ = pallet_validator_election::GenesisConfig::<TestRuntime> {
+		let _ = pallet_validator_management::GenesisConfig::<TestRuntime> {
 			seed_trust_validators: seed_trust_validators.clone(),
 			total_validator_slots: self.total_number_of_validators,
 			seed_trust_slots: self.number_of_seed_trust_validators,
@@ -329,7 +329,7 @@ pub(crate) fn create_mock_vote_status(num: usize) -> MockVoteStatus {
 	MockVoteStatus::create_mock_pot(num)
 }
 
-pub(crate) fn validator_election_events() -> Vec<crate::Event<TestRuntime>> {
+pub(crate) fn validator_management_events() -> Vec<crate::Event<TestRuntime>> {
 	System::events()
 		.into_iter()
 		.map(|r| r.event)

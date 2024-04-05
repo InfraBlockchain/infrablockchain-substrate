@@ -61,11 +61,11 @@ use xcm_config::UniversalLocation;
 
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use sp_api::impl_runtime_apis;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
+use sp_core::{crypto::KeyTypeId, Get, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	infra::*,
-	traits::{AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT},
+	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
 	transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,
 };
@@ -93,7 +93,7 @@ use frame_system::{
 	EnsureRoot, EnsureSigned,
 };
 
-use pallet_system_token_tx_payment::{HandleCredit, TransactionFeeCharger};
+use pallet_system_token_tx_payment::{HandleCredit, TransactionFeeCharger, RewardOriginInfo};
 use parachains_common::{
 	constants::*, impls::DealWithFees, infra_relay::consensus::*, opaque::*, AccountId, AuraId,
 	Balance, BlockNumber, Hash, Nonce, Signature,
@@ -286,10 +286,20 @@ impl pallet_system_token_tx_payment::Config for Runtime {
 	type PoTHandler = ParachainSystem;
 	type Fungibles = NativeAndForeignAssets;
 	type RewardFraction = RewardFraction;
+	type RewardOrigin = RewardOrigin;
 	type OnChargeSystemToken =
 		TransactionFeeCharger<Runtime, SystemTokenConversion, CreditHandler>;
 	type BootstrapCallFilter = BootstrapCallFilter;
 	type PalletId = FeeTreasuryId;
+}
+
+pub struct RewardOrigin;
+impl RewardOriginInfo for RewardOrigin {
+	type Origin = u32;
+	fn reward_origin_info() -> voting::RewardOrigin<Self::Origin> {
+		let para_id = <parachain_info::Pallet<Runtime> as Get<cumulus_primitives_core::ParaId>>::get().into();
+		voting::RewardOrigin::Remote(para_id)
+	}
 }
 
 pub struct CreditHandler;
@@ -610,6 +620,7 @@ impl cumulus_pallet_infra_parachain_core::Config for Runtime {
 	type UniversalLocation = UniversalLocation;
 	type Fungibles = NativeAndForeignAssets;
 	type ActiveRequestPeriod = ActiveRequestPeriod;
+	type FeeTreasuryId = FeeTreasuryId;
 }
 
 impl parachain_info::Config for Runtime {}

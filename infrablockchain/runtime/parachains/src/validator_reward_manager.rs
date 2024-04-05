@@ -35,7 +35,7 @@ use frame_support::{
 };
 use frame_system::pallet_prelude::*;
 pub use pallet::*;
-use pallet_validator_election::{RewardInterface, SessionIndex};
+use pallet_validator_management::{RewardInterface, SessionIndex};
 use scale_info::TypeInfo;
 use softfloat::F64;
 use sp_runtime::{

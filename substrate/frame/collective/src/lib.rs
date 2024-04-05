@@ -1059,7 +1059,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	}
 }
 
-impl<T: Config<I>, I: 'static> pallet_validator_election::CollectiveInterface<T::AccountId>
+impl<T: Config<I>, I: 'static> pallet_validator_management::CollectiveInterface<T::AccountId>
 	for Pallet<T, I>
 {
 	fn set_new_members(new: Vec<T::AccountId>) {

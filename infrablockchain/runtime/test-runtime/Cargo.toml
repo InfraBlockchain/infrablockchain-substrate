@@ -37,7 +37,7 @@ tx-pool-api = { package = "sp-transaction-pool", path = "../../../substrate/prim
 block-builder-api = { package = "sp-block-builder", path = "../../../substrate/primitives/block-builder", default-features = false }
 
 # custom
-pallet-validator-election = { path = "../../../substrate/frame/validator-election", default-features = false }
+pallet-validator-management = { path = "../../../substrate/frame/validator-management", default-features = false }
 
 pallet-authority-discovery = { path = "../../../substrate/frame/authority-discovery", default-features = false }
 pallet-authorship = { path = "../../../substrate/frame/authorship", default-features = false }
@@ -102,7 +102,7 @@ std = [
 	"inherents/std",
 	"log/std",
 	"offchain-primitives/std",
-	"pallet-validator-election/std",
+	"pallet-validator-management/std",
 	"pallet-authority-discovery/std",
 	"pallet-authorship/std",
 	"pallet-babe/std",

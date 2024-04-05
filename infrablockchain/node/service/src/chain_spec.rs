@@ -265,7 +265,7 @@ fn infra_relay_staging_testnet_config_genesis(
 		},
 		paras: Default::default(),
 		xcm_pallet: Default::default(),
-		validator_election: infra_relay::ValidatorElectionConfig {
+		validator_management: infra_relay::ValidatorManagementConfig {
 			seed_trust_validators: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
 			total_validator_slots: 2,
 			seed_trust_slots: 2,
@@ -452,7 +452,7 @@ pub fn infra_relay_testnet_genesis(
 		},
 		paras: Default::default(),
 		xcm_pallet: Default::default(),
-		validator_election: infra_relay::ValidatorElectionConfig {
+		validator_management: infra_relay::ValidatorManagementConfig {
 			seed_trust_validators: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
 			total_validator_slots: 2,
 			seed_trust_slots: 2,

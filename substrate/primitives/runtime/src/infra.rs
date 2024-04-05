@@ -165,9 +165,9 @@ pub mod voting {
 	/// `Proof-of-Transaction` which may contain `Vote` and **must** contain `Fee` amount
 	#[derive(Encode, Decode, Clone, PartialEq, Eq, sp_core::RuntimeDebug, TypeInfo)]
 	#[cfg_attr(feature = "std", derive(Default, Hash))]
-	pub struct PoT<Account, AssetId, Amount, Weight> {
+	pub struct PoT<Account, DestId, AssetId, Amount, Weight> {
 		/// Reward amount for each transaction
-		pub reward: Reward<AssetId, Amount>,
+		pub reward: Reward<DestId, AssetId, Amount>,
 		/// Amount of vote for `Account` based on `fee_amount`
 		pub maybe_vote: Option<Vote<Account, Weight>>,
 	}
@@ -175,11 +175,33 @@ pub mod voting {
 	/// Reward amount for each transaction
 	#[derive(Encode, Decode, Clone, PartialEq, Eq, sp_core::RuntimeDebug, TypeInfo)]
 	#[cfg_attr(feature = "std", derive(Default, Hash))]
-	pub struct Reward<AssetId, Amount> {
+	pub struct Reward<DestId, AssetId, Amount> {
+		/// Origin of this reward to be distributed to
+		pub origin: RewardOrigin<DestId>,
 		/// Which asset is used for fee
 		pub asset: AssetId,
 		/// Amount of fee
 		pub amount: Amount,
+	}
+
+	/// Origin of reward
+	#[derive(Encode, Decode, Clone, Default, PartialEq, Eq, sp_core::RuntimeDebug, TypeInfo)]
+	#[cfg_attr(feature = "std", derive(Hash))]
+	pub enum RewardOrigin<DestId> {
+		/// Means `reward` is originated from local
+		#[default] 
+		Local,
+		/// Means `reward` is originated from remote
+		Remote(DestId)
+	}
+	
+	impl<DestId> From<RewardOrigin<DestId>> for Option<DestId> {
+		fn from(origin: RewardOrigin<DestId>) -> Self {
+			match origin {
+				RewardOrigin::Local => None,
+				RewardOrigin::Remote(dest) => Some(dest),
+			}
+		}
 	}
 
 	#[derive(Encode, Decode, Clone, PartialEq, Eq, sp_core::RuntimeDebug, TypeInfo)]

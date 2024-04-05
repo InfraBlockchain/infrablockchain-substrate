@@ -156,34 +156,35 @@ impl SystemTokenInterface for SystemTokenHandler {
 
 pub struct RewardHandler;
 impl RewardInterface for RewardHandler {
+	type DestId = u32;
 	type AccountId = AccountId;
 	type AssetKind = MultiLocation;
 	type Balance = SystemTokenBalance;
 	type Fungibles = NativeAndForeignAssets;
 
-	fn distribute_reward(who: Self::AccountId, asset: Self::AssetKind, amount: Self::Balance) {
-		if let Ok((maybe_origin_id, _, _)) = asset.id() {
-			if let Some(para_id) = maybe_origin_id {
-				let target = MultiLocation::new(0, X1(Parachain(para_id)));
-				let context = UniversalLocation::get();
-				let mut reanchored = asset.clone();
-				if let Err(_) = reanchored.reanchor(&target, context) {
-					// Something went wrong
-					log::error!("Failed to reanchor asset remotely.");
-					return
-				};
-				let distribute_reward_call = ParachainRuntimePallets::InfraParaCore(
-					InfraParaCoreCalls::DistriubteReward(who, reanchored, amount),
-				);
-				send_xcm_for(true, distribute_reward_call.encode(), para_id);
-			} else {
-				// Relay Chain
-				if let Err(_) = Self::Fungibles::mint_into(asset, &who, amount) {
-					log::error!("Failed to distribute reward locally.");
-				}
-			}
+	fn distribute_reward(who: Self::AccountId, reward: Reward<Self::DestId, Self::AssetKind, Self::Balance>) {
+		let Reward { origin, asset, amount } = reward;
+		let origin: Option<Self::DestId> = origin.into();
+		if let Some(dest_id) = origin {
+			// Handle remote asset
+			let target = MultiLocation::new(0, X1(Parachain(dest_id)));
+			let context = UniversalLocation::get();
+			let mut reanchored = asset.clone();
+			if let Err(_) = reanchored.reanchor(&target, context) {
+				// Something went wrong
+				log::error!("Failed to reanchor asset remotely.");
+				return
+			};
+			let distribute_reward_call = ParachainRuntimePallets::InfraParaCore(
+				InfraParaCoreCalls::DistriubteReward(who, reanchored, amount),
+			);
+			send_xcm_for(true, distribute_reward_call.encode(), dest_id);
 		} else {
-			log::error!("❌❌❌❌ Failed to get asset id.");
+			// Handle local asset
+			let source: AccountId = FeeTreasuryId::get().into_account_truncating();
+			if let Err(_) = <Self::Fungibles as Mutate<AccountId>>::transfer(asset, &source, &who, amount, Preserve) {
+				log::error!("❌❌ Error on transfering reward from {:?} to {:?} ❌❌", source, who);
+			};
 		}
 	}
 }

@@ -72,6 +72,8 @@ pub mod pallet {
 		type Fungibles: Balanced<Self::AccountId>
 			+ InspectSystemToken<Self::AccountId>
 			+ ReanchorSystemToken<SystemTokenAssetIdOf<Self>>;
+		/// Type that indicates the origin of the reward
+		type RewardOrigin: RewardOriginInfo;
 		/// The fraction of the fee that is given to the block author
 		type RewardFraction: Get<Perbill>;
 		/// The actual transaction charging logic that charges the fees.
@@ -94,11 +96,6 @@ pub mod pallet {
 		TransactionFeePaid {
 			paid_fee_detail: Detail<T::AccountId, SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>>,
 			vote_candidate: Option<T::AccountId>,
-		},
-		/// Final fee has been handled with given `bucket_amount` and `remainder`
-		FeeHandled {
-			bucket_amount: SystemTokenBalanceOf<T>,
-			remainder: SystemTokenBalanceOf<T>,
 		},
 		/// Currently, Runtime is in bootstrap mode.
 		OnBootstrapping,
@@ -175,7 +172,8 @@ where
 			.map(|candidate| Self::taav(candidate, &paid_asset, paid_fee))
 			.transpose()?;
 
-		let pot = PoT { reward: Reward { asset: reanchored, amount: bucket_amount }, maybe_vote: vote };
+		let reward_origin = T::RewardOrigin::reward_origin_info();
+		let pot = PoT { reward: Reward { origin: reward_origin, asset: reanchored, amount: bucket_amount }, maybe_vote: vote };
 
 		if let Err(_) = T::PoTHandler::process(&mut pot.encode()) {
 			log::error!("Failed to process `proof-of-transaction` : {:?}", pot);
@@ -442,10 +440,8 @@ where
 	}
 }
 
-pub struct CreditToBucket<T>(PhantomData<T>);
-impl<T: Config> HandleCredit<T::AccountId, T::Fungibles> for CreditToBucket<T> {
-	fn handle_credit(credit: Credit<T::AccountId, T::Fungibles>) {
-		let dest = T::PalletId::get().into_account_truncating();
-		let _ = <T::Fungibles as Balanced<T::AccountId>>::resolve(&dest, credit);
-	}
+pub trait RewardOriginInfo {
+	type Origin: Parameter;
+	
+	fn reward_origin_info() -> RewardOrigin<Self::Origin>;
 }

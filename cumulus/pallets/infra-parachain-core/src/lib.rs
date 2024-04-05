@@ -5,13 +5,17 @@ use cumulus_pallet_xcm::{ensure_relay, Origin};
 use cumulus_primitives_core::UpdateRCConfig;
 use frame_support::{
 	pallet_prelude::*,
-	traits::fungibles::{
-		Inspect, InspectSystemToken, InspectSystemTokenMetadata, ManageSystemToken, Mutate,
+	traits::tokens::{
+		fungibles::{
+			Inspect, InspectSystemToken, InspectSystemTokenMetadata, ManageSystemToken, Mutate,
+		},
+		Preservation::Preserve
 	},
+	PalletId
 };
 use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
-use sp_runtime::{infra::*, Saturating};
+use sp_runtime::{infra::*, Saturating, traits::AccountIdConversion};
 use sp_std::vec::Vec;
 
 pub use pallet::*;
@@ -70,6 +74,9 @@ pub mod pallet {
 		/// Active request period for registering System Token
 		#[pallet::constant]
 		type ActiveRequestPeriod: Get<BlockNumberFor<Self>>;
+		/// Account where reward is handled from
+		#[pallet::constant]
+		type FeeTreasuryId: Get<PalletId>;
 	}
 
 	#[pallet::pallet]
@@ -123,7 +130,7 @@ pub mod pallet {
 		/// Reward has been distributed
 		RewardDistributed {
 			who: T::AccountId,
-			asset_id: SystemTokenAssetIdOf<T>,
+			asset: SystemTokenAssetIdOf<T>,
 			amount: SystemTokenBalanceOf<T>,
 		},
 	}
@@ -352,13 +359,17 @@ pub mod pallet {
 		pub fn distribute_reward(
 			origin: OriginFor<T>,
 			who: T::AccountId,
-			original: SystemTokenAssetIdOf<T>,
+			asset: SystemTokenAssetIdOf<T>,
 			amount: SystemTokenBalanceOf<T>,
 		) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
-			T::Fungibles::mint_into(original.clone(), &who, amount.clone())
-				.map_err(|_| Error::<T>::ErrorDistributeReward)?;
-			Self::deposit_event(Event::<T>::RewardDistributed { who, asset_id: original, amount });
+			let bucket: T::AccountId = T::FeeTreasuryId::get().into_account_truncating();
+			T::Fungibles::transfer(asset.clone(), &bucket, &who, amount.clone(), Preserve)
+				.map_err(|_| {
+					log::error!("❌❌ Error on distributing reward from {:?} to {:?} ❌❌", bucket, who);
+					Error::<T>::ErrorDistributeReward
+				})?;
+			Self::deposit_event(Event::<T>::RewardDistributed { who, asset, amount });
 			Ok(())
 		}
 
