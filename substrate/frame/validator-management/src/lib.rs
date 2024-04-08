@@ -26,18 +26,18 @@ use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{
 	traits::{
 		tokens::fungibles::{Inspect, InspectSystemToken, Mutate},
-		EstimateNextNewSession, Get,
+		EstimateNextNewSession, Get, 
 	},
 	Parameter,
 };
 pub use pallet::*;
 use scale_info::TypeInfo;
 use softfloat::BlockTimeWeight;
-use sp_arithmetic::traits::AtLeast32BitUnsigned;
+use sp_arithmetic::{traits::AtLeast32BitUnsigned, FixedU128, FixedPointNumber};
 use sp_runtime::{
 	infra::{Reward, RewardOrigin, PoT, TaaV, Vote},
 	traits::Member,
-	RuntimeDebug,
+	RuntimeDebug
 };
 
 #[cfg(test)]

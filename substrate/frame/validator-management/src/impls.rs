@@ -1,5 +1,4 @@
 use crate::*;
-use frame_system::pallet_prelude::BlockNumberFor;
 
 pub trait CollectiveInterface<AccountId> {
 	fn set_new_members(new: Vec<AccountId>);
@@ -172,13 +171,18 @@ impl<T: Config> Pallet<T> {
 		if let Some(current_era) = CurrentEra::<T>::get() {
 			// 2.
 			// TODO: Penalty on misbehaved validators @Hugo
-			for v in T::SessionInterface::validators().iter() {
+			let validators = T::SessionInterface::validators();
+			let len = validators.len();
+			let div_amount = FixedU128::saturating_from_rational(1, len).saturating_mul_int(amount);
+			for v in validators.iter() {
+				// if MISBEHAVED(v): 
+				// 	continue;
 				RewardInfo::<T>::mutate_exists(&v, &origin, |maybe_reward| {
 					let mut rewards = maybe_reward.take().unwrap_or_default();
 					if let Some(reward) = rewards.iter_mut().find(|r| r.asset == asset) {
-						reward.amount += amount;
+						reward.amount += div_amount;
 					} else {
-						rewards.push(Reward { origin: origin.clone(), asset: asset.clone(), amount });
+						rewards.push(Reward { origin: origin.clone(), asset: asset.clone(), amount: div_amount });
 					}
 					*maybe_reward = Some(rewards);
 				});
