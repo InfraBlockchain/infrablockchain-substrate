@@ -1,0 +1,53 @@
+[package]
+name = "infra-asset-common"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Assets common utilities"
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = [
+	"derive",
+] }
+log = { version = "0.4.20", default-features = false }
+scale-info = { version = "2.9.0", default-features = false, features = ["derive"] }
+
+# primitives
+sp-api = { path = "../../../substrate/primitives/api", default-features = false}
+sp-runtime = { path = "../../../substrate/primitives/runtime", default-features = false}
+sp-std = { path = "../../../substrate/primitives/std", default-features = false}
+
+# frame
+frame-support = { path = "../../../substrate/frame/support", default-features = false }
+frame-system = { path = "../../../substrate/frame/system", default-features = false }
+pallet-assets = { path = "../../../substrate/frame/assets", default-features = false}
+
+# infra
+polkadot-primitives = { path = "../../primitives", default-features = false }
+
+# xcm
+xcm = { package = "staging-xcm", path = "..", default-features = false }
+xcm-builder = { package = "staging-xcm-builder", path = "../xcm-builder", default-features = false }
+xcm-executor = { package = "staging-xcm-executor", path = "../xcm-executor", default-features = false }
+cumulus-primitives-utility = { path = "../../../cumulus/primitives/utility", default-features = false }
+
+[build-dependencies]
+substrate-wasm-builder = { path = "../../../substrate/utils/wasm-builder" }
+
+[features]
+default = ["std"]
+std = [
+	"log/std",
+	"polkadot-primitives/std",
+	"codec/std",
+	"frame-support/std",
+	"frame-system/std",
+	"sp-api/std",
+	"sp-std/std",
+	"xcm/std",
+	"xcm-builder/std",
+	"xcm-executor/std",
+	"pallet-assets/std",
+	"cumulus-primitives-utility/std",
+]

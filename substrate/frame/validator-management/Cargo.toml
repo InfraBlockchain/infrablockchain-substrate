@@ -1,0 +1,64 @@
+[package]
+name = "pallet-validator-management"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+license = "Apache-2.0"
+homepage = "https://infrablockchain.net"
+repository.workspace = true
+description = "FRAME for electing validator by Proof-of-Transaction"
+readme = "README.md"
+
+[dependencies]
+
+# External
+serde = { version = "1.0.188", default-features = false, features = ["alloc", "derive"] }
+codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false, features = [
+	"derive",
+	"max-encoded-len",
+] }
+log = { version = "0.4.17", default-features = false }
+scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
+softfloat = { path = "../../primitives/softfloat", default-features = false }
+
+# primitives
+sp-application-crypto = { path = "../../primitives/application-crypto", default-features = false }
+sp-core = { path = "../../../substrate/primitives/core", default-features = false }
+sp-io = { path = "../../../substrate/primitives/io", default-features = false }
+sp-runtime = { path = "../../primitives/runtime", default-features = false }
+sp-std = { path = "../../primitives/std", default-features = false }
+sp-arithmetic = { path = "../../primitives/arithmetic", default-features = false }
+
+# frames
+frame-benchmarking = { path = "../benchmarking", default-features = false, optional = true }
+frame-support = { path = "../support", default-features = false }
+frame-system = { path = "../system", default-features = false }
+pallet-authorship = { path = "../authorship", default-features = false }
+pallet-assets = { path = "../assets", default-features = false }
+pallet-session = { path = "../session", default-features = false }
+
+
+[dev-dependencies]
+sp-tracing = { path = "../../../substrate/primitives/tracing" }
+sp-keyring = { path = "../../../substrate/primitives/keyring" }
+
+[features]
+default = ["std"]
+std = [
+	"serde/std",
+	"scale-info/std",
+	"codec/std",
+	"log/std",
+	"sp-application-crypto/std",
+	"sp-arithmetic/std",
+	"sp-core/std",
+	"sp-io/std",
+	"sp-runtime/std",
+	"sp-std/std",
+	"frame-benchmarking?/std",
+	"frame-support/std",
+	"frame-system/std",
+	"pallet-authorship/std",
+	"pallet-assets/std",
+	"pallet-session/std",
+]

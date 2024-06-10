@@ -1,0 +1,71 @@
+[package]
+name = "pallet-data-market"
+description = "Universal Resource Identifer to register its ownership of data"
+version = "0.1.1"
+license = "Apache-2.0"
+authors.workspace = true
+repository.workspace = true
+edition.workspace = true
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+
+codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false, features = [
+    "derive",
+    "max-encoded-len",
+] }
+scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
+serde = { version = "1.0.188", features = ["derive"], optional = true }
+lite-json = { version = "0.2.0", default-features = false }
+bs58 = { version = "0.4.0", default-features = false, features = ["alloc"] }
+nuuid = { version = "0.5.0", default-features = false }
+fixedstr = { version = "0.4", default-features = false }
+hex = { version = "0.4.3", default-features = false }
+log = { version = "0.4.17", default-features = false }
+
+# System
+frame-benchmarking = { path = "../benchmarking", default-features = false, optional = true }
+frame-support = { path = "../support", default-features = false }
+frame-system = { path = "../system", default-features = false }
+
+# Primitives
+sp-runtime = { path = "../../primitives/runtime", default-features = false }
+sp-std = { path = "../../primitives/std", default-features = false }
+sp-core = { path = "../../primitives/core", default-features = false }
+sp-io = { path = "../../primitives/io", default-features = false }
+
+xcm = { package = "staging-xcm", path = "../../../polkadot/xcm", default-features = false }
+
+[dev-dependencies]
+sp-keyring = { path = "../../primitives/keyring", default-features = false }
+pallet-assets = { path = "../assets", default-features = false }
+pallet-timestamp = { path = "../timestamp", default-features = false }
+pallet-balances = { path = "../balances", default-features = false }
+
+[features]
+default = ["std"]
+runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
+std = [
+    "pallet-assets/std",
+    "pallet-balances/std",
+    "log/std",
+    "codec/std",
+    "scale-info/std",
+    "lite-json/std",
+    "bs58/std",
+    "nuuid/std",
+    "fixedstr/std",
+    "hex/std",
+    "serde",
+    "frame-benchmarking/std",
+    "frame-support/std",
+    "frame-system/std",
+    "sp-runtime/std",
+    "sp-core/std",
+    "sp-std/std",
+    "sp-io/std",
+    "xcm/std",
+]
+try-runtime = ["frame-support/try-runtime"]

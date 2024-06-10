@@ -1,0 +1,65 @@
+[package]
+name = "pallet-system-token-tx-payment"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+license = "Apache-2.0"
+homepage = "https://infrablockchain.net"
+repository.workspace = true
+description = "pallet to manage transaction payments in system token"
+readme = "README.md"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+# External
+serde = { version = "1.0.188", default-features = false, optional = true, features = [
+	"derive",
+	"alloc",
+] }
+codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false, features = [
+	"derive",
+	"max-encoded-len",
+] }
+log = { version = "0.4.17", default-features = false }
+scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
+
+# primitives
+sp-core = { path = "../../../primitives/core", default-features = false }
+sp-io = { path = "../../../primitives/io", default-features = false }
+sp-runtime = { path = "../../../primitives/runtime", default-features = false }
+sp-std = { path = "../../../primitives/std", default-features = false }
+sp-arithmetic = { path = "../../../primitives/arithmetic", default-features = false }
+
+# frames
+frame-benchmarking = { path = "../../benchmarking", default-features = false, optional = true}
+frame-support = { path = "../../support", default-features = false }
+frame-system = { path = "../../system", default-features = false }
+pallet-transaction-payment = { path = "..", default-features = false }
+pallet-assets = { path = "../../assets", default-features = false }
+pallet-system-token-conversion = { path = "../../system-token-conversion", default-features = false }
+
+[dev-dependencies]
+
+pallet-authorship = { path = "../../authorship" }
+pallet-balances = { path = "../../balances" }
+
+[features]
+default = ["std"]
+std = [
+	"scale-info/std",
+	"serde",
+	"codec/std",
+	"sp-core/std",
+	"sp-io/std",
+	"sp-runtime/std",
+	"sp-std/std",
+	"sp-arithmetic/std",
+	"frame-benchmarking?/std",
+	"frame-support/std",
+	"frame-system/std",
+	"pallet-transaction-payment/std",
+	"pallet-assets/std",
+	"pallet-system-token-conversion/std",
+]

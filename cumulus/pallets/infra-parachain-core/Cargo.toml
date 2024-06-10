@@ -1,0 +1,57 @@
+[package]
+name = "cumulus-pallet-infra-parachain-core"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+description = "Adds functionality to handle Cumulus-based chain policy which is governed by Relay-chain"
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
+scale-info = { version = "2.9.0", default-features = false, features = ["derive"] }
+log = { version = "0.4.20", default-features = false }
+
+# Primitives
+sp-runtime = { path = "../../../substrate/primitives/runtime", default-features = false}
+sp-std = { path = "../../../substrate/primitives/std", default-features = false}
+sp-core = { path = "../../../substrate/primitives/core", default-features = false}
+softfloat = { path = "../../../substrate/primitives/softfloat", default-features = false }
+
+# FRAME 
+frame-support = { path = "../../../substrate/frame/support", default-features = false}
+frame-system = { path = "../../../substrate/frame/system", default-features = false}
+pallet-assets = { path = "../../../substrate/frame/assets", default-features = false}
+
+
+# InfraBlockchain
+polkadot-primitives = { path = "../../../polkadot/primitives", default-features = false}
+xcm = { package = "staging-xcm", path = "../../../polkadot/xcm", default-features = false}
+
+# Cumulus
+cumulus-primitives-core = { path = "../../primitives/core", default-features = false }
+cumulus-pallet-parachain-system = { path = "../parachain-system", default-features = false}
+cumulus-pallet-xcm = { path = "../xcm", default-features = false }
+
+[features]
+default = [ "std" ]
+std = [
+	"codec/std",
+	"softfloat/std",
+	"scale-info/std",
+	"log/std",
+	"frame-support/std",
+	"frame-system/std",
+	"pallet-assets/std",
+	"polkadot-primitives/std",
+	"sp-runtime/std",
+	"sp-std/std",
+	"sp-core/std",
+    "cumulus-pallet-parachain-system/std",
+    "cumulus-pallet-xcm/std",
+	"xcm/std",
+]
+try-runtime = [
+	"cumulus-pallet-parachain-system/try-runtime",
+	"frame-support/try-runtime",
+	"frame-system/try-runtime",
+	"sp-runtime/try-runtime",
+]
