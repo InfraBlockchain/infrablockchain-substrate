@@ -1,12 +1,16 @@
 [package]
 name = "cumulus-client-pov-recovery"
-version = "0.1.0"
+version = "0.7.0"
 authors.workspace = true
 description = "Cumulus-specific networking protocol"
 edition.workspace = true
+license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
+
+[lints]
+workspace = true
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.0.0", features = [ "derive" ] }
+codec = { package = "parity-scale-codec", version = "3.0.0", features = ["derive"] }
 futures = "0.3.28"
 futures-timer = "3.0.2"
 rand = "0.8.5"
@@ -19,16 +23,16 @@ sp-consensus = { path = "../../../substrate/primitives/consensus/common" }
 sp-maybe-compressed-blob = { path = "../../../substrate/primitives/maybe-compressed-blob" }
 sp-runtime = { path = "../../../substrate/primitives/runtime" }
 
-# InfraBlockchain
-node-primitives = { path = "../../../infrablockchain/node/primitives" }
-node-subsystem = { path = "../../../infrablockchain/node/subsystem" }
-infrablockchain-overseer = { path = "../../../infrablockchain/node/overseer" }
-primitives = { path = "../../../infrablockchain/primitives" }
+# Polkadot
+polkadot-node-primitives = { path = "../../../polkadot/node/primitives" }
+polkadot-node-subsystem = { path = "../../../polkadot/node/subsystem" }
+polkadot-overseer = { path = "../../../polkadot/node/overseer" }
+polkadot-primitives = { path = "../../../polkadot/primitives" }
 
 # Cumulus
 cumulus-primitives-core = { path = "../../primitives/core" }
 cumulus-relay-chain-interface = { path = "../relay-chain-interface" }
-async-trait = "0.1.73"
+async-trait = "0.1.79"
 
 [dev-dependencies]
 tokio = { version = "1.32.0", features = ["macros"] }

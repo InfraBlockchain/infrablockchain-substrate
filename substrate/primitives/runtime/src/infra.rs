@@ -48,10 +48,10 @@ pub mod config {
 		/// Check if system configuration is valid
 		pub fn check_validity(&self) -> Result<(), InitError> {
 			if self.base_system_token_detail.base_weight == 0 {
-				return Err(InitError::InvalidBaseSystemTokenDetail)
+				return Err(InitError::InvalidBaseSystemTokenDetail);
 			}
 			if self.weight_scale == 0 {
-				return Err(InitError::InvalidWeightScale)
+				return Err(InitError::InvalidWeightScale);
 			}
 			Ok(())
 		}
@@ -189,12 +189,12 @@ pub mod voting {
 	#[cfg_attr(feature = "std", derive(Hash))]
 	pub enum RewardOrigin<DestId> {
 		/// Means `reward` is originated from local
-		#[default] 
+		#[default]
 		Local,
 		/// Means `reward` is originated from remote
-		Remote(DestId)
+		Remote(DestId),
 	}
-	
+
 	impl<DestId> From<RewardOrigin<DestId>> for Option<DestId> {
 		fn from(origin: RewardOrigin<DestId>) -> Self {
 			match origin {

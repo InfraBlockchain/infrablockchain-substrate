@@ -16,9 +16,12 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub mod impls;
-pub mod infra_relay;
+pub mod message_queue;
 pub mod xcm_config;
+pub use constants::*;
+pub use opaque::*;
 pub use types::*;
+
 /// Common types of parachains.
 mod types {
 	use sp_runtime::traits::{IdentifyAccount, Verify};
@@ -37,11 +40,8 @@ mod types {
 	/// never know...
 	pub type AccountIndex = u32;
 
-	/// General type for asset id
-	pub type AssetId = u32;
-
 	/// Balance of an account.
-	pub type Balance = sp_runtime::infra::SystemTokenBalance;
+	pub type Balance = u128;
 
 	/// Index of a transaction in the chain.
 	pub type Nonce = u32;
@@ -55,6 +55,13 @@ mod types {
 	// Aura consensus authority.
 	pub type AuraId = sp_consensus_aura::sr25519::AuthorityId;
 
+	// Aura consensus authority used by Asset Hub Polkadot.
+	//
+	// Because of registering the authorities with an ed25519 key before switching from Shell
+	// to Asset Hub Polkadot, we were required to deploy a hotfix that changed Asset Hub Polkadot's
+	// Aura keys to ed22519. In the future that may change again.
+	pub type AssetHubPolkadotAuraId = sp_consensus_aura::ed25519::AuthorityId;
+
 	// Id used for identifying assets.
 	pub type AssetIdForTrustBackedAssets = u32;
 
@@ -66,7 +73,7 @@ mod types {
 }
 
 /// Common constants of parachains.
-pub mod constants {
+mod constants {
 	use super::types::BlockNumber;
 	use frame_support::{
 		weights::{constants::WEIGHT_REF_TIME_PER_SECOND, Weight},
@@ -97,7 +104,7 @@ pub mod constants {
 	/// We allow for 0.5 seconds of compute with a 6 second average block time.
 	pub const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(
 		WEIGHT_REF_TIME_PER_SECOND.saturating_div(2),
-		primitives::MAX_POV_SIZE as u64,
+		polkadot_primitives::MAX_POV_SIZE as u64,
 	);
 
 	/// Treasury pallet id of the local chain, used to convert into AccountId
@@ -109,7 +116,7 @@ pub mod constants {
 /// of data like extrinsics, allowing for them to continue syncing the network through upgrades
 /// to even the core data structures.
 pub mod opaque {
-	use super::types::BlockNumber;
+	use super::*;
 	use sp_runtime::{generic, traits::BlakeTwo256};
 
 	pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;

@@ -21,13 +21,13 @@ use cumulus_primitives_core::{
 	relay_chain::{
 		runtime_api::ParachainHost, Block as PBlock, BlockId, CommittedCandidateReceipt,
 		Hash as PHash, Header as PHeader, InboundHrmpMessage, OccupiedCoreAssumption, SessionIndex,
-		ValidatorId,
+		ValidationCodeHash, ValidatorId,
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
 use futures::{FutureExt, Stream, StreamExt};
-use infrablockchain_service::{
+use polkadot_service::{
 	CollatorPair, Configuration, FullBackend, FullClient, Handle, NewFull, TaskManager,
 };
 use sc_cli::SubstrateCli;
@@ -109,6 +109,19 @@ impl RelayChainInterface for RelayChainInProcessInterface {
 		occupied_core_assumption: OccupiedCoreAssumption,
 	) -> RelayChainResult<Option<PersistedValidationData>> {
 		Ok(self.full_client.runtime_api().persisted_validation_data(
+			hash,
+			para_id,
+			occupied_core_assumption,
+		)?)
+	}
+
+	async fn validation_code_hash(
+		&self,
+		hash: PHash,
+		para_id: ParaId,
+		occupied_core_assumption: OccupiedCoreAssumption,
+	) -> RelayChainResult<Option<ValidationCodeHash>> {
+		Ok(self.full_client.runtime_api().validation_code_hash(
 			hash,
 			para_id,
 			occupied_core_assumption,
@@ -266,38 +279,36 @@ pub fn check_block_in_chain(
 
 /// Build the Polkadot full node using the given `config`.
 #[sc_tracing::logging::prefix_logs_with("Relaychain")]
-fn build_infrablockchain_full_node(
+fn build_polkadot_full_node(
 	config: Configuration,
 	parachain_config: &Configuration,
 	telemetry_worker_handle: Option<TelemetryWorkerHandle>,
 	hwbench: Option<sc_sysinfo::HwBench>,
-) -> Result<(NewFull, Option<CollatorPair>), infrablockchain_service::Error> {
+) -> Result<(NewFull, Option<CollatorPair>), polkadot_service::Error> {
 	let (is_parachain_node, maybe_collator_key) = if parachain_config.role.is_authority() {
 		let collator_key = CollatorPair::generate().0;
-		(
-			infrablockchain_service::IsParachainNode::Collator(collator_key.clone()),
-			Some(collator_key),
-		)
+		(polkadot_service::IsParachainNode::Collator(collator_key.clone()), Some(collator_key))
 	} else {
-		(infrablockchain_service::IsParachainNode::FullNode, None)
+		(polkadot_service::IsParachainNode::FullNode, None)
 	};
 
-	let relay_chain_full_node = infrablockchain_service::build_full(
+	let relay_chain_full_node = polkadot_service::build_full(
 		config,
-		infrablockchain_service::NewFullParams {
+		polkadot_service::NewFullParams {
 			is_parachain_node,
-			grandpa_pause: None,
 			// Disable BEEFY. It should not be required by the internal relay chain node.
 			enable_beefy: false,
+			force_authoring_backoff: false,
 			jaeger_agent: None,
 			telemetry_worker_handle,
 
 			// Cumulus doesn't spawn PVF workers, so we can disable version checks.
 			node_version: None,
+			secure_validator_mode: false,
 			workers_path: None,
 			workers_names: None,
 
-			overseer_gen: infrablockchain_service::RealOverseerGen,
+			overseer_gen: polkadot_service::CollatorOverseerGen,
 			overseer_message_channel_capacity_override: None,
 			malus_finality_delay: None,
 			hwbench,
@@ -309,7 +320,7 @@ fn build_infrablockchain_full_node(
 
 /// Builds a relay chain interface by constructing a full relay chain node
 pub fn build_inprocess_relay_chain(
-	mut infrablockchain_config: Configuration,
+	mut polkadot_config: Configuration,
 	parachain_config: &Configuration,
 	telemetry_worker_handle: Option<TelemetryWorkerHandle>,
 	task_manager: &mut TaskManager,
@@ -317,11 +328,11 @@ pub fn build_inprocess_relay_chain(
 ) -> RelayChainResult<(Arc<(dyn RelayChainInterface + 'static)>, Option<CollatorPair>)> {
 	// This is essentially a hack, but we want to ensure that we send the correct node version
 	// to the telemetry.
-	infrablockchain_config.impl_version = infrablockchain_cli::Cli::impl_version();
-	infrablockchain_config.impl_name = infrablockchain_cli::Cli::impl_name();
+	polkadot_config.impl_version = polkadot_cli::Cli::impl_version();
+	polkadot_config.impl_name = polkadot_cli::Cli::impl_name();
 
-	let (full_node, collator_key) = build_infrablockchain_full_node(
-		infrablockchain_config,
+	let (full_node, collator_key) = build_polkadot_full_node(
+		polkadot_config,
 		parachain_config,
 		telemetry_worker_handle,
 		hwbench,
@@ -346,12 +357,12 @@ pub fn build_inprocess_relay_chain(
 mod tests {
 	use super::*;
 
+	use polkadot_primitives::Block as PBlock;
 	use polkadot_test_client::{
 		construct_transfer_extrinsic, BlockBuilderExt, Client, ClientBlockImportExt,
 		DefaultTestClientBuilderExt, InitPolkadotBlockBuilder, TestClientBuilder,
 		TestClientBuilderExt,
 	};
-	use primitives::Block as PBlock;
 	use sp_consensus::{BlockOrigin, SyncOracle};
 	use sp_runtime::traits::Block as BlockT;
 	use std::sync::Arc;

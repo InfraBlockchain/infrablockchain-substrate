@@ -37,23 +37,23 @@ pub trait WeightInfo {
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	fn set_claim_sr25519(l: u32) -> Weight {
-		Weight::from_ref_time(49_216_000_u64)
+		Weight::from_all(49_216_000_u64)
 			// Standard Error: 0
-			.saturating_add(Weight::from_ref_time(3_000_u64).saturating_mul(l as u64))
+			.saturating_add(Weight::from_all(3_000_u64).saturating_mul(l as u64))
 			.saturating_add(T::DbWeight::get().reads(3_u64))
 			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
 	fn set_claim_ed25519(l: u32) -> Weight {
-		Weight::from_ref_time(49_142_000_u64)
+		Weight::from_all(49_142_000_u64)
 			// Standard Error: 0
-			.saturating_add(Weight::from_ref_time(2_000_u64).saturating_mul(l as u64))
+			.saturating_add(Weight::from_all(2_000_u64).saturating_mul(l as u64))
 			.saturating_add(T::DbWeight::get().reads(3_u64))
 			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
 	fn set_claim_secp256k1(l: u32) -> Weight {
-		Weight::from_ref_time(152_813_000_u64)
+		Weight::from_all(152_813_000_u64)
 			// Standard Error: 0
-			.saturating_add(Weight::from_ref_time(1_000_u64).saturating_mul(l as u64))
+			.saturating_add(Weight::from_all(1_000_u64).saturating_mul(l as u64))
 			.saturating_add(T::DbWeight::get().reads(3_u64))
 			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
@@ -62,23 +62,23 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 // For backwards compatibility and tests
 impl WeightInfo for () {
 	fn set_claim_sr25519(l: u32) -> Weight {
-		Weight::from_ref_time(49_216_000_u64)
+		Weight::from_all(49_216_000_u64)
 			// Standard Error: 0
-			.saturating_add(Weight::from_ref_time(3_000_u64).saturating_mul(l as u64))
+			.saturating_add(Weight::from_all(3_000_u64).saturating_mul(l as u64))
 			.saturating_add(RocksDbWeight::get().reads(3_u64))
 			.saturating_add(RocksDbWeight::get().writes(2_u64))
 	}
 	fn set_claim_ed25519(l: u32) -> Weight {
-		Weight::from_ref_time(49_142_000_u64)
+		Weight::from_all(49_142_000_u64)
 			// Standard Error: 0
-			.saturating_add(Weight::from_ref_time(2_000_u64).saturating_mul(l as u64))
+			.saturating_add(Weight::from_all(2_000_u64).saturating_mul(l as u64))
 			.saturating_add(RocksDbWeight::get().reads(3_u64))
 			.saturating_add(RocksDbWeight::get().writes(2_u64))
 	}
 	fn set_claim_secp256k1(l: u32) -> Weight {
-		Weight::from_ref_time(152_813_000_u64)
+		Weight::from_all(152_813_000_u64)
 			// Standard Error: 0
-			.saturating_add(Weight::from_ref_time(1_000_u64).saturating_mul(l as u64))
+			.saturating_add(Weight::from_all(1_000_u64).saturating_mul(l as u64))
 			.saturating_add(RocksDbWeight::get().reads(3_u64))
 			.saturating_add(RocksDbWeight::get().writes(2_u64))
 	}

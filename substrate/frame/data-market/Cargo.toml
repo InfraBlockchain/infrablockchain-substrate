@@ -36,7 +36,7 @@ sp-std = { path = "../../primitives/std", default-features = false }
 sp-core = { path = "../../primitives/core", default-features = false }
 sp-io = { path = "../../primitives/io", default-features = false }
 
-xcm = { package = "staging-xcm", path = "../../../infrablockchain/xcm", default-features = false }
+xcm = { package = "staging-xcm", path = "../../../polkadot/xcm", default-features = false }
 
 [dev-dependencies]
 sp-keyring = { path = "../../primitives/keyring", default-features = false }

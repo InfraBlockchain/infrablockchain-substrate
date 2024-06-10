@@ -27,7 +27,7 @@ use jsonrpsee::{
 	core::{
 		client::{Client as JsonRpcClient, ClientT, Subscription},
 		params::ArrayParams,
-		Error as JsonRpseeError, JsonValue,
+		ClientError as JsonRpseeError, JsonValue,
 	},
 	ws_client::WsClientBuilder,
 };
@@ -293,7 +293,8 @@ impl ReconnectingWebsocketWorker {
 	///   listeners. If an error occurs during sending, the receiver has been closed and we remove
 	///   the sender from the list.
 	/// - Find a new valid RPC server to connect to in case the websocket connection is terminated.
-	///   If the worker is not able to connec to an RPC server from the list, the worker shuts down.
+	///   If the worker is not able to connect to an RPC server from the list, the worker shuts
+	///   down.
 	pub async fn run(mut self) {
 		let mut pending_requests = FuturesUnordered::new();
 
@@ -352,7 +353,7 @@ impl ReconnectingWebsocketWorker {
 					},
 					None => {
 						tracing::error!(target: LOG_TARGET, "RPC client receiver closed. Stopping RPC Worker.");
-						return
+						return;
 					}
 				},
 				should_retry = pending_requests.next(), if !pending_requests.is_empty() => {
@@ -371,7 +372,7 @@ impl ReconnectingWebsocketWorker {
 									?hash,
 									"Duplicate imported block header. This might happen after switching to a new RPC node. Skipping distribution."
 								);
-								continue
+								continue;
 							}
 							imported_blocks_cache.insert(hash, ());
 							distribute_header(header, &mut self.imported_header_listeners);

@@ -18,12 +18,16 @@
 
 use frame_support::traits::{
 	fungibles::{self, Balanced, Credit},
-	Contains, ContainsPair, Currency, Get, Imbalance, OnUnbalanced,
+	Contains, ContainsPair, Currency, Get, Imbalance, OnUnbalanced, OriginTrait,
 };
 use pallet_asset_tx_payment::HandleCredit;
 use sp_runtime::traits::Zero;
-use sp_std::marker::PhantomData;
-use xcm::latest::{AssetId, Fungibility::Fungible, MultiAsset, MultiLocation};
+use sp_std::{marker::PhantomData, prelude::*};
+use xcm::latest::{
+	Asset, AssetId, Fungibility, Fungibility::Fungible, Junction, Junctions::Here, Location,
+	Parent, WeightLimit,
+};
+use xcm_executor::traits::ConvertLocation;
 
 /// Type alias to conveniently refer to the `Currency::NegativeImbalance` associated type.
 pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<
@@ -38,7 +42,7 @@ pub struct ToStakingPot<R>(PhantomData<R>);
 impl<R> OnUnbalanced<NegativeImbalance<R>> for ToStakingPot<R>
 where
 	R: pallet_balances::Config + pallet_collator_selection::Config,
-	AccountIdOf<R>: From<primitives::AccountId> + Into<primitives::AccountId>,
+	AccountIdOf<R>: From<polkadot_primitives::AccountId> + Into<polkadot_primitives::AccountId>,
 	<R as frame_system::Config>::RuntimeEvent: From<pallet_balances::Event<R>>,
 {
 	fn on_nonzero_unbalanced(amount: NegativeImbalance<R>) {
@@ -53,7 +57,7 @@ pub struct DealWithFees<R>(PhantomData<R>);
 impl<R> OnUnbalanced<NegativeImbalance<R>> for DealWithFees<R>
 where
 	R: pallet_balances::Config + pallet_collator_selection::Config,
-	AccountIdOf<R>: From<primitives::AccountId> + Into<primitives::AccountId>,
+	AccountIdOf<R>: From<polkadot_primitives::AccountId> + Into<polkadot_primitives::AccountId>,
 	<R as frame_system::Config>::RuntimeEvent: From<pallet_balances::Event<R>>,
 {
 	fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance<R>>) {
@@ -73,7 +77,7 @@ impl<R, I> HandleCredit<AccountIdOf<R>, pallet_assets::Pallet<R, I>> for AssetsT
 where
 	I: 'static,
 	R: pallet_authorship::Config + pallet_assets::Config<I>,
-	AccountIdOf<R>: From<primitives::AccountId> + Into<primitives::AccountId>,
+	AccountIdOf<R>: From<polkadot_primitives::AccountId> + Into<polkadot_primitives::AccountId>,
 {
 	fn handle_credit(credit: Credit<AccountIdOf<R>, pallet_assets::Pallet<R, I>>) {
 		if let Some(author) = pallet_authorship::Pallet::<R>::author() {
@@ -107,26 +111,72 @@ where
 	}
 }
 
-/// Allow not checking in assets that have issuance > 0.
-pub struct AnyIssuance<AccountId, Assets>(PhantomData<(AccountId, Assets)>);
-impl<AccountId, Assets> Contains<<Assets as fungibles::Inspect<AccountId>>::AssetId>
-	for AnyIssuance<AccountId, Assets>
-where
-	Assets: fungibles::Inspect<AccountId>,
-{
-	fn contains(_id: &<Assets as fungibles::Inspect<AccountId>>::AssetId) -> bool {
-		true
+/// Asset filter that allows all assets from a certain location.
+pub struct AssetsFrom<T>(PhantomData<T>);
+impl<T: Get<Location>> ContainsPair<Asset, Location> for AssetsFrom<T> {
+	fn contains(asset: &Asset, origin: &Location) -> bool {
+		let loc = T::get();
+		&loc == origin &&
+			matches!(asset, Asset { id: AssetId(asset_loc), fun: Fungible(_a) }
+			if asset_loc.match_and_split(&loc).is_some())
 	}
 }
 
-/// Asset filter that allows all assets from a certain location.
-pub struct AssetsFrom<T>(PhantomData<T>);
-impl<T: Get<MultiLocation>> ContainsPair<MultiAsset, MultiLocation> for AssetsFrom<T> {
-	fn contains(asset: &MultiAsset, origin: &MultiLocation) -> bool {
-		let loc = T::get();
-		&loc == origin &&
-			matches!(asset, MultiAsset { id: AssetId::Concrete(asset_loc), fun: Fungible(_a) }
-			if asset_loc.match_and_split(&loc).is_some())
+/// Type alias to conveniently refer to the `Currency::Balance` associated type.
+pub type BalanceOf<T> =
+	<pallet_balances::Pallet<T> as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+
+/// Implements `OnUnbalanced::on_unbalanced` to teleport slashed assets to relay chain treasury
+/// account.
+pub struct ToParentTreasury<TreasuryAccount, AccountIdConverter, T>(
+	PhantomData<(TreasuryAccount, AccountIdConverter, T)>,
+);
+
+impl<TreasuryAccount, AccountIdConverter, T> OnUnbalanced<NegativeImbalance<T>>
+	for ToParentTreasury<TreasuryAccount, AccountIdConverter, T>
+where
+	T: pallet_balances::Config + pallet_xcm::Config + frame_system::Config,
+	<<T as frame_system::Config>::RuntimeOrigin as OriginTrait>::AccountId: From<AccountIdOf<T>>,
+	[u8; 32]: From<<T as frame_system::Config>::AccountId>,
+	TreasuryAccount: Get<AccountIdOf<T>>,
+	AccountIdConverter: ConvertLocation<AccountIdOf<T>>,
+	BalanceOf<T>: Into<Fungibility>,
+{
+	fn on_unbalanced(amount: NegativeImbalance<T>) {
+		let amount = match amount.drop_zero() {
+			Ok(..) => return,
+			Err(amount) => amount,
+		};
+		let imbalance = amount.peek();
+		let root_location: Location = Here.into();
+		let root_account: AccountIdOf<T> =
+			match AccountIdConverter::convert_location(&root_location) {
+				Some(a) => a,
+				None => {
+					log::warn!("Failed to convert root origin into account id");
+					return
+				},
+			};
+		let treasury_account: AccountIdOf<T> = TreasuryAccount::get();
+
+		<pallet_balances::Pallet<T>>::resolve_creating(&root_account, amount);
+
+		let result = <pallet_xcm::Pallet<T>>::limited_teleport_assets(
+			<<T as frame_system::Config>::RuntimeOrigin>::root(),
+			Box::new(Parent.into()),
+			Box::new(
+				Junction::AccountId32 { network: None, id: treasury_account.into() }
+					.into_location()
+					.into(),
+			),
+			Box::new((Parent, imbalance).into()),
+			0,
+			WeightLimit::Unlimited,
+		);
+
+		if let Err(err) = result {
+			log::warn!("Failed to teleport slashed assets: {:?}", err);
+		}
 	}
 }
 
@@ -134,13 +184,13 @@ impl<T: Get<MultiLocation>> ContainsPair<MultiAsset, MultiLocation> for AssetsFr
 mod tests {
 	use super::*;
 	use frame_support::{
-		parameter_types,
+		derive_impl, parameter_types,
 		traits::{ConstU32, FindAuthor, ValidatorRegistration},
 		PalletId,
 	};
 	use frame_system::{limits, EnsureRoot};
 	use pallet_collator_selection::IdentityCollator;
-	use primitives::AccountId;
+	use polkadot_primitives::AccountId;
 	use sp_core::{ConstU64, H256};
 	use sp_runtime::{
 		traits::{BlakeTwo256, IdentityLookup},
@@ -167,6 +217,7 @@ mod tests {
 		pub const MaxReserves: u32 = 50;
 	}
 
+	#[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 	impl frame_system::Config for Test {
 		type BaseCallFilter = frame_support::traits::Everything;
 		type RuntimeOrigin = RuntimeOrigin;
@@ -204,8 +255,8 @@ mod tests {
 		type MaxReserves = MaxReserves;
 		type ReserveIdentifier = [u8; 8];
 		type RuntimeHoldReason = RuntimeHoldReason;
+		type RuntimeFreezeReason = RuntimeFreezeReason;
 		type FreezeIdentifier = ();
-		type MaxHolds = ConstU32<1>;
 		type MaxFreezes = ConstU32<1>;
 	}
 
@@ -277,13 +328,13 @@ mod tests {
 	#[test]
 	fn assets_from_filters_correctly() {
 		parameter_types! {
-			pub SomeSiblingParachain: MultiLocation = MultiLocation::new(1, X1(Parachain(1234)));
+			pub SomeSiblingParachain: Location = (Parent, Parachain(1234)).into();
 		}
 
 		let asset_location = SomeSiblingParachain::get()
 			.pushed_with_interior(GeneralIndex(42))
-			.expect("multilocation will only have 2 junctions; qed");
-		let asset = MultiAsset { id: Concrete(asset_location), fun: 1_000_000u128.into() };
+			.expect("location will only have 2 junctions; qed");
+		let asset = Asset { id: AssetId(asset_location), fun: 1_000_000u128.into() };
 		assert!(
 			AssetsFrom::<SomeSiblingParachain>::contains(&asset, &SomeSiblingParachain::get()),
 			"AssetsFrom should allow assets from any of its interior locations"

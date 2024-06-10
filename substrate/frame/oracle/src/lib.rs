@@ -42,7 +42,6 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config + SendTransactionTypes<Call<Self>> {
-
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
@@ -79,7 +78,7 @@ pub mod pallet {
 	/// Defines the block when next unsigned transaction will be accepted.
 	///
 	/// To prevent spam of unsigned (and unpaid!) transactions on the network,
-	/// we only allow one transaction every `T::UnsignedInterval` blocks.
+	/// we only allow one transaction every `T::RequestPeriod` blocks.
 	/// This storage entry defines when new transaction is going to be accepted.
 	#[pallet::storage]
 	#[pallet::getter(fn next_unsigned_at)]
@@ -91,14 +90,15 @@ pub mod pallet {
 
 		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
 			if let Call::submit_exchange_rates_unsigned { .. } = call {
+				log::info!("Validating unsigned => {:?}", call);
 				// TODO: Needs to add some validity check for the transaction
 				// - Make it signed payload
 				let current = <frame_system::Pallet<T>>::block_number();
 				let next_unsigned_at = <NextUnsignedAt<T>>::get();
 				if next_unsigned_at > current {
-					return InvalidTransaction::Stale.into()
+					return InvalidTransaction::Stale.into();
 				}
-				ValidTransaction::with_tag_prefix("OffchainWorker")
+				ValidTransaction::with_tag_prefix("SystemTokenOracle")
 					.priority(T::UnsignedPriority::get())
 					.and_provides(next_unsigned_at)
 					.longevity(5)
@@ -135,10 +135,11 @@ pub mod pallet {
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn offchain_worker(_n: BlockNumberFor<T>) {
 			if let Some(currencies) = Requested::<T>::get() {
-				if let Err(_) = Self::fetch_exchange_rate(currencies.clone()) {
+				if let Err(e) = Self::fetch_exchange_rate(currencies.clone()) {
 					log::warn!("❌❌ Failed to fetch exchange rate for => {:?}", currencies);
+					log::info!("Error! {:?}", e);
 				}
-			} 
+			}
 		}
 	}
 
@@ -162,10 +163,7 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(1)]
-		pub fn request_fiat(
-			origin: OriginFor<T>,
-			fiat: Vec<Fiat>, 
-		) -> DispatchResult {
+		pub fn request_fiat(origin: OriginFor<T>, fiat: Vec<Fiat>) -> DispatchResult {
 			ensure_root(origin)?;
 			for f in fiat.iter() {
 				Requested::<T>::mutate(|maybe_currencies| {
@@ -179,7 +177,7 @@ pub mod pallet {
 			Self::deposit_event(Event::<T>::Requested { fiat });
 			Ok(())
 		}
-		
+
 		#[pallet::call_index(2)]
 		pub fn add_oracle(origin: OriginFor<T>) -> DispatchResult {
 			ensure_root(origin)?;
@@ -191,8 +189,12 @@ pub mod pallet {
 // utils
 impl<T: Config> Pallet<T> {
 	fn get_url(fiat: Fiat) -> Result<Vec<u8>, DispatchError> {
-		let base_fiat = T::SystemConfig::system_config().map_err(|_| Error::<T>::SystemConfigMissing)?.base_system_token_detail.base_currency;
-		let base_fiat_bytes: Vec<u8> = base_fiat.try_into().map_err(|_| Error::<T>::ConversionError)?;
+		let base_fiat = T::SystemConfig::system_config()
+			.map_err(|_| Error::<T>::SystemConfigMissing)?
+			.base_system_token_detail
+			.base_currency;
+		let base_fiat_bytes: Vec<u8> =
+			base_fiat.try_into().map_err(|_| Error::<T>::ConversionError)?;
 		let fiat_to_bytes: Vec<u8> = fiat.try_into().map_err(|_| Error::<T>::ConversionError)?;
 		let mut url: Vec<u8> = Vec::new();
 		url.extend_from_slice(API_END_POINT.as_bytes());
@@ -205,25 +207,24 @@ impl<T: Config> Pallet<T> {
 
 // ocw
 impl<T: Config> Pallet<T> {
-
 	/// Adjust exxchange rate to fit the 6 decimal places
-	/// 
+	///
 	/// # Arguments
-	/// 
+	///
 	/// * `i` - integer
 	/// * `f` - fraction
 	/// * `l` - franction length
-	/// 
+	///
 	/// # Returns
-	/// 
+	///
 	/// * `u64`: Adjusted exchange rate
 	fn adjust_exchange_rate(i: u64, f: u64, l: u32) -> u64 {
 		let max: u32 = 6;
 		let adjustment = |length: u32| -> u64 {
 			let mut l = length;
-			if l > max { 
+			if l > max {
 				l = 0;
-			} 
+			}
 			l = max - l;
 			10u64.pow(l)
 		};
@@ -240,9 +241,7 @@ impl<T: Config> Pallet<T> {
 			exchange_rates.push(res);
 		}
 		let call = Call::submit_exchange_rates_unsigned { exchange_rates };
-		if let Err(_) = SubmitTransaction::<T, Call<T>>::submit_unsigned_transaction(call.into()) {
-			
-		} 
+		if let Err(_) = SubmitTransaction::<T, Call<T>>::submit_unsigned_transaction(call.into()) {}
 		Ok(())
 	}
 
@@ -263,12 +262,10 @@ impl<T: Config> Pallet<T> {
 			log::warn!("No UTF8 body");
 			http::Error::Unknown
 		})?;
-		Ok(
-			Self::parse_json(body_str).map_err(|_| {
-				log::warn!("Failed to parse json");
-				http::Error::Unknown
-			})?
-		)
+		Ok(Self::parse_json(body_str).map_err(|_| {
+			log::warn!("Failed to parse json");
+			http::Error::Unknown
+		})?)
 	}
 
 	fn parse_json(exchange_rate_str: &str) -> Result<(Fiat, ExchangeRate), DispatchError> {
@@ -278,7 +275,7 @@ impl<T: Config> Pallet<T> {
 				JsonValue::Object(obj) => {
 					// let standard_time = Self::standard_time(&obj)?;
 
-					return Ok(Self::exchange_rate_for(&obj)?)
+					return Ok(Self::exchange_rate_for(&obj)?);
 				},
 				_ => return Err(Error::<T>::ParseError.into()),
 			};
@@ -287,19 +284,21 @@ impl<T: Config> Pallet<T> {
 		}
 	}
 
-	fn _standard_time(obj: &Vec<(Vec<char>, JsonValue)>) -> Result<StandardUnixTime, DispatchError> {
+	fn _standard_time(
+		obj: &Vec<(Vec<char>, JsonValue)>,
+	) -> Result<StandardUnixTime, DispatchError> {
 		if let Some((_, v)) =
 			obj.iter().find(|(k, _)| k.iter().copied().eq("time_last_update_unix".chars()))
 		{
 			match v {
 				JsonValue::Number(n) => {
 					log::info!("Standard Time => {:?}", n.integer);
-					return Ok(n.integer)
+					return Ok(n.integer);
 				},
 				_ => return Err(Error::<T>::ParseError.into()),
 			}
 		} else {
-			return Err(Error::<T>::ParseError.into())
+			return Err(Error::<T>::ParseError.into());
 		}
 	}
 
@@ -308,12 +307,13 @@ impl<T: Config> Pallet<T> {
 	) -> Result<(Fiat, ExchangeRate), DispatchError> {
 		let mut exchange_rate = None;
 		let mut target_code = None;
-	
+
 		for (k, v) in obj.iter() {
 			if k.iter().copied().eq("conversion_rate".chars()) {
 				if let JsonValue::Number(n) = v {
 					let NumberValue { integer, fraction, fraction_length, .. } = n.clone();
-					exchange_rate = Some(Self::adjust_exchange_rate(integer, fraction, fraction_length));
+					exchange_rate =
+						Some(Self::adjust_exchange_rate(integer, fraction, fraction_length));
 				} else {
 					return Err(Error::<T>::ParseError.into());
 				}
@@ -323,14 +323,15 @@ impl<T: Config> Pallet<T> {
 						.iter()
 						.flat_map(|&c| c.encode_utf8(&mut [0; 4]).as_bytes().to_owned())
 						.collect::<Vec<u8>>();
-					let fiat: Fiat = byte_vec.try_into().map_err(|_| Error::<T>::CurrencyNotFound)?;
+					let fiat: Fiat =
+						byte_vec.try_into().map_err(|_| Error::<T>::CurrencyNotFound)?;
 					target_code = Some(fiat);
 				} else {
 					return Err(Error::<T>::ParseError.into());
 				}
 			}
 		}
-	
+
 		let exchange_rate = exchange_rate.ok_or(Error::<T>::ParseError)?;
 		let target_code = target_code.ok_or(Error::<T>::ParseError)?;
 		Ok((target_code, exchange_rate))
@@ -347,7 +348,7 @@ impl<T: Config> Pallet<T> {
 				_ => return Err(Error::<T>::ParseError.into()),
 			}
 		} else {
-			return Err(Error::<T>::ParseError.into())
+			return Err(Error::<T>::ParseError.into());
 		};
 		let mut exchange_rates: Vec<(Fiat, ExchangeRate)> = Vec::new();
 		for (k, v) in exchange_obj.into_iter() {

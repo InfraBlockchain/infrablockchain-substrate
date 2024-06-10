@@ -26,10 +26,10 @@ use sp_core::traits::SpawnNamed;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 
 use cumulus_client_consensus_common::ParachainConsensus;
-use infrablockchain_overseer::Handle as OverseerHandle;
-use node_primitives::{CollationGenerationConfig, CollationResult, MaybeCompressedPoV};
-use node_subsystem::messages::{CollationGenerationMessage, CollatorProtocolMessage};
-use primitives::{CollatorPair, Id as ParaId};
+use polkadot_node_primitives::{CollationGenerationConfig, CollationResult, MaybeCompressedPoV};
+use polkadot_node_subsystem::messages::{CollationGenerationMessage, CollatorProtocolMessage};
+use polkadot_overseer::Handle as OverseerHandle;
+use polkadot_primitives::{CollatorPair, Id as ParaId};
 
 use codec::{Decode, Encode};
 use futures::prelude::*;
@@ -155,10 +155,10 @@ pub mod relay_chain_driven {
 		channel::{mpsc, oneshot},
 		prelude::*,
 	};
-	use infrablockchain_overseer::Handle as OverseerHandle;
-	use node_primitives::{CollationGenerationConfig, CollationResult};
-	use node_subsystem::messages::{CollationGenerationMessage, CollatorProtocolMessage};
-	use primitives::{CollatorPair, Id as ParaId};
+	use polkadot_node_primitives::{CollationGenerationConfig, CollationResult};
+	use polkadot_node_subsystem::messages::{CollationGenerationMessage, CollatorProtocolMessage};
+	use polkadot_overseer::Handle as OverseerHandle;
+	use polkadot_primitives::{CollatorPair, Id as ParaId};
 
 	use cumulus_primitives_core::{relay_chain::Hash as PHash, PersistedValidationData};
 
@@ -242,17 +242,19 @@ pub async fn initialize_collator_subsystems(
 	overseer_handle: &mut OverseerHandle,
 	key: CollatorPair,
 	para_id: ParaId,
+	reinitialize: bool,
 ) {
-	overseer_handle
-		.send_msg(
-			CollationGenerationMessage::Initialize(CollationGenerationConfig {
-				key,
-				para_id,
-				collator: None,
-			}),
-			"StartCollator",
-		)
-		.await;
+	let config = CollationGenerationConfig { key, para_id, collator: None };
+
+	if reinitialize {
+		overseer_handle
+			.send_msg(CollationGenerationMessage::Reinitialize(config), "StartCollator")
+			.await;
+	} else {
+		overseer_handle
+			.send_msg(CollationGenerationMessage::Initialize(config), "StartCollator")
+			.await;
+	}
 
 	overseer_handle
 		.send_msg(CollatorProtocolMessage::CollateOn(para_id), "StartCollator")
@@ -343,11 +345,11 @@ mod tests {
 	use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 	use cumulus_test_runtime::{Block, Header};
 	use futures::{channel::mpsc, executor::block_on, StreamExt};
-	use infrablockchain_overseer::{dummy::dummy_overseer_builder, HeadSupportsParachains};
-	use node_primitives::CollationGenerationConfig;
-	use node_subsystem::messages::CollationGenerationMessage;
-	use node_subsystem_test_helpers::ForwardSubsystem;
-	use primitives::HeadData;
+	use polkadot_node_primitives::CollationGenerationConfig;
+	use polkadot_node_subsystem::messages::CollationGenerationMessage;
+	use polkadot_node_subsystem_test_helpers::ForwardSubsystem;
+	use polkadot_overseer::{dummy::dummy_overseer_builder, HeadSupportsParachains};
+	use polkadot_primitives::HeadData;
 	use sp_consensus::BlockOrigin;
 	use sp_core::{testing::TaskExecutor, Pair};
 	use sp_runtime::traits::BlakeTwo256;

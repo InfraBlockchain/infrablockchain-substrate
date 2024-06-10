@@ -74,7 +74,10 @@ fn parse_external_addresses(external_addresses: Vec<Vec<u8>>) -> Vec<Multiaddr> 
 			match addr.parse() {
 				Ok(addr) => Some(addr),
 				Err(err) => {
-					debug!(target: LOG_TARGET, "Could not parse mixnode address {addr}: {err}",);
+					debug!(
+						target: LOG_TARGET,
+						"Could not parse mixnode address {addr}: {err}",
+					);
 					None
 				},
 			}
@@ -91,14 +94,17 @@ fn fixup_external_addresses(external_addresses: &mut Vec<Multiaddr>, peer_id: &P
 		Some(_) => {
 			debug!(
 				target: LOG_TARGET,
-				"Mixnode address {} does not match mixnode peer ID {}, ignoring", addr, peer_id
+				"Mixnode address {} does not match mixnode peer ID {}, ignoring",
+				addr,
+				peer_id
 			);
 			false
 		},
 		None if matches!(addr.iter().last(), Some(Protocol::P2p(_))) => {
 			debug!(
 				target: LOG_TARGET,
-				"Mixnode address {} has unrecognised P2P protocol, ignoring", addr
+				"Mixnode address {} has unrecognised P2P protocol, ignoring",
+				addr
 			);
 			false
 		},
@@ -129,7 +135,8 @@ fn into_core_mixnode(mixnode: RuntimeMixnode) -> CoreMixnode<Vec<Multiaddr>> {
 	} else {
 		debug!(
 			target: LOG_TARGET,
-			"Failed to convert mixnet peer ID {:x?} to libp2p peer ID", mixnode.peer_id,
+			"Failed to convert mixnet peer ID {:x?} to libp2p peer ID",
+			mixnode.peer_id,
 		);
 		Vec::new()
 	};
@@ -189,6 +196,7 @@ where
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use multiaddr::multiaddr;
 
 	#[test]
 	fn fixup_empty_external_addresses() {

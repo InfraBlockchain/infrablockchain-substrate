@@ -21,7 +21,10 @@ pub trait RewardInterface {
 	type Fungibles: Mutate<Self::AccountId>;
 
 	/// Fee will be distributed to the validators for current session
-	fn distribute_reward(who: Self::AccountId, reward: Reward<Self::DestId, Self::AssetKind, Self::Balance>);
+	fn distribute_reward(
+		who: Self::AccountId,
+		reward: Reward<Self::DestId, Self::AssetKind, Self::Balance>,
+	);
 }
 
 impl<T: Config> TaaV for Pallet<T> {
@@ -165,7 +168,9 @@ impl<T: Config> Pallet<T> {
 	///
 	/// 1. Check if the current era is set
 	/// 2. Add some rewards for validators who have authored the block
-	fn handle_reward(reward: Reward<DestIdOf<T>, SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>>) {
+	fn handle_reward(
+		reward: Reward<DestIdOf<T>, SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>>,
+	) {
 		let Reward { origin, asset, amount } = reward;
 		// 1.
 		if let Some(current_era) = CurrentEra::<T>::get() {
@@ -175,14 +180,18 @@ impl<T: Config> Pallet<T> {
 			let len = validators.len();
 			let div_amount = FixedU128::saturating_from_rational(1, len).saturating_mul_int(amount);
 			for v in validators.iter() {
-				// if MISBEHAVED(v): 
+				// if MISBEHAVED(v):
 				// 	continue;
 				RewardInfo::<T>::mutate_exists(&v, &origin, |maybe_reward| {
 					let mut rewards = maybe_reward.take().unwrap_or_default();
 					if let Some(reward) = rewards.iter_mut().find(|r| r.asset == asset) {
 						reward.amount += div_amount;
 					} else {
-						rewards.push(Reward { origin: origin.clone(), asset: asset.clone(), amount: div_amount });
+						rewards.push(Reward {
+							origin: origin.clone(),
+							asset: asset.clone(),
+							amount: div_amount,
+						});
 					}
 					*maybe_reward = Some(rewards);
 				});

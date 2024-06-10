@@ -514,7 +514,10 @@ impl<T: Config> Pallet<T> {
 		};
 
 		if Self::already_registered(session_index, authority_index) {
-			log::trace!(target: LOG_TARGET, "Already registered a mixnode for the next session",);
+			log::trace!(
+				target: LOG_TARGET,
+				"Already registered a mixnode for the next session",
+			);
 			return false
 		}
 
@@ -528,7 +531,10 @@ impl<T: Config> Pallet<T> {
 		match SubmitTransaction::<T, Call<T>>::submit_unsigned_transaction(call.into()) {
 			Ok(()) => true,
 			Err(()) => {
-				log::debug!(target: LOG_TARGET, "Failed to submit registration transaction",);
+				log::debug!(
+					target: LOG_TARGET,
+					"Failed to submit registration transaction",
+				);
 				false
 			},
 		}

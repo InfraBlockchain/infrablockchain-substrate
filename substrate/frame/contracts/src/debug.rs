@@ -15,9 +15,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub use crate::exec::{ExecResult, ExportedFunction};
+pub use crate::{
+	exec::{ExecResult, ExportedFunction},
+	primitives::ExecReturnValue,
+};
 use crate::{Config, LOG_TARGET};
-pub use pallet_contracts_primitives::ExecReturnValue;
 
 /// Umbrella trait for all interfaces that serves for debugging.
 pub trait Debugger<T: Config>: Tracing<T> + CallInterceptor<T> {}
@@ -65,10 +67,7 @@ impl<T: Config> Tracing<T> for () {
 		entry_point: ExportedFunction,
 		input_data: &[u8],
 	) {
-		log::trace!(
-			target: LOG_TARGET,
-			"call {entry_point:?} account: {contract_address:?}, input_data: {input_data:?}"
-		)
+		log::trace!(target: LOG_TARGET, "call {entry_point:?} account: {contract_address:?}, input_data: {input_data:?}")
 	}
 }
 

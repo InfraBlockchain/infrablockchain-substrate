@@ -159,11 +159,7 @@ where
 		let total_deposits_to_unreserve =
 			account_deposits.clone().into_values().sum::<BalanceOf<T, I>>();
 		log::info!(target: LOG_TARGET, "Total accounts: {}", account_deposits.keys().count());
-		log::info!(
-			target: LOG_TARGET,
-			"Total amount to unreserve: {:?}",
-			total_deposits_to_unreserve
-		);
+		log::info!(target: LOG_TARGET, "Total amount to unreserve: {:?}", total_deposits_to_unreserve);
 
 		// Return the actual amount reserved before the upgrade to verify integrity of the upgrade
 		// in the post_upgrade hook.

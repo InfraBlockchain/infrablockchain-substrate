@@ -24,7 +24,6 @@ codec = { package = "parity-scale-codec", version = "3.6.1", default-features = 
 ] }
 log = { version = "0.4.17", default-features = false }
 scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
-softfloat = { path = "../../../primitives/softfloat", default-features = false }
 
 # primitives
 sp-core = { path = "../../../primitives/core", default-features = false }

@@ -82,7 +82,6 @@ use sp_std::alloc::format;
 
 pub mod curve;
 pub mod generic;
-pub mod infra;
 pub mod legacy;
 mod multiaddress;
 pub mod offchain;
@@ -92,6 +91,8 @@ mod runtime_string;
 pub mod testing;
 pub mod traits;
 pub mod transaction_validity;
+
+pub mod infra;
 
 pub use crate::runtime_string::*;
 
@@ -467,7 +468,7 @@ impl Verify for MultiSignature {
 }
 
 /// Signature verify that can work with any known signature types..
-#[derive(Eq, PartialEq, Clone, Default, Encode, Decode, RuntimeDebug)]
+#[derive(Eq, PartialEq, Clone, Default, Encode, Decode, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct AnySignature(H512);
 
@@ -955,6 +956,32 @@ pub fn print(print: impl traits::Printable) {
 	print.print();
 }
 
+/// Utility function to declare string literals backed by an array of length N.
+///
+/// The input can be shorter than N, in that case the end of the array is padded with zeros.
+///
+/// [`str_array`] is useful when converting strings that end up in the storage as fixed size arrays
+/// or in const contexts where static data types have strings that could also end up in the storage.
+///
+/// # Example
+///
+/// ```rust
+/// # use sp_runtime::str_array;
+/// const MY_STR: [u8; 6] = str_array("data");
+/// assert_eq!(MY_STR, *b"data\0\0");
+/// ```
+pub const fn str_array<const N: usize>(s: &str) -> [u8; N] {
+	debug_assert!(s.len() <= N, "String literal doesn't fit in array");
+	let mut i = 0;
+	let mut arr = [0; N];
+	let s = s.as_bytes();
+	while i < s.len() {
+		arr[i] = s[i];
+		i += 1;
+	}
+	arr
+}
+
 /// Describes on what should happen with a storage transaction.
 pub enum TransactionOutcome<R> {
 	/// Commit the transaction.
@@ -971,6 +998,16 @@ impl<R> TransactionOutcome<R> {
 			Self::Rollback(r) => r,
 		}
 	}
+}
+
+/// Confines the kind of extrinsics that can be included in a block.
+#[derive(Debug, Default, PartialEq, Eq, Clone, Copy, Encode, Decode, TypeInfo)]
+pub enum ExtrinsicInclusionMode {
+	/// All extrinsics are allowed to be included in this block.
+	#[default]
+	AllExtrinsics,
+	/// Inherents are allowed to be included.
+	OnlyInherents,
 }
 
 #[cfg(test)]

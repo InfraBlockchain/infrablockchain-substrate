@@ -35,9 +35,9 @@ pub trait WeightInfo {
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	fn deploy(l: u32) -> Weight {
-		Weight::from_ref_time(5_881_000_u64)
+		Weight::from_all(5_881_000_u64)
 			// Standard Error: 0
-			.saturating_add(Weight::from_ref_time(1_000_u64).saturating_mul(l as u64))
+			.saturating_add(Weight::from_all(1_000_u64).saturating_mul(l as u64))
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
@@ -46,9 +46,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 // For backwards compatibility and tests
 impl WeightInfo for () {
 	fn deploy(l: u32) -> Weight {
-		Weight::from_ref_time(5_881_000_u64)
+		Weight::from_all(5_881_000_u64)
 			// Standard Error: 0
-			.saturating_add(Weight::from_ref_time(1_000_u64).saturating_mul(l as u64))
+			.saturating_add(Weight::from_all(1_000_u64).saturating_mul(l as u64))
 			.saturating_add(RocksDbWeight::get().reads(1_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}

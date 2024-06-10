@@ -27,28 +27,28 @@ use crate::matching::{LocalLocationPattern, ParentLocation};
 use frame_support::traits::{Equals, EverythingBut};
 use parachains_common::{AssetIdForTrustBackedAssets, CollectionId, ItemId};
 use xcm_builder::{
-	AsPrefixedGeneralIndex, MatchedConvertedConcreteId, StartsWith, V3LocationConverter,
+	AsPrefixedGeneralIndex, MatchedConvertedConcreteId, StartsWith, V4V3LocationConverter,
 };
 use xcm_executor::traits::JustTry;
 
-/// `MultiLocation` vs `AssetIdForTrustBackedAssets` converter for `TrustBackedAssets`
+/// `Location` vs `AssetIdForTrustBackedAssets` converter for `TrustBackedAssets`
 pub type AssetIdForTrustBackedAssetsConvert<TrustBackedAssetsPalletLocation> =
 	AsPrefixedGeneralIndex<
 		TrustBackedAssetsPalletLocation,
 		AssetIdForTrustBackedAssets,
 		JustTry,
-		xcm::v3::MultiLocation,
+		xcm::v3::Location,
 	>;
 
 pub type AssetIdForTrustBackedAssetsConvertLatest<TrustBackedAssetsPalletLocation> =
 	AsPrefixedGeneralIndex<TrustBackedAssetsPalletLocation, AssetIdForTrustBackedAssets, JustTry>;
 
-/// `MultiLocation` vs `CollectionId` converter for `Uniques`
+/// `Location` vs `CollectionId` converter for `Uniques`
 pub type CollectionIdForUniquesConvert<UniquesPalletLocation> =
 	AsPrefixedGeneralIndex<UniquesPalletLocation, CollectionId, JustTry>;
 
 /// [`MatchedConvertedConcreteId`] converter dedicated for `TrustBackedAssets`
-pub type NativeAssetsConvertedConcreteId<TrustBackedAssetsPalletLocation, Balance> =
+pub type TrustBackedAssetsConvertedConcreteId<TrustBackedAssetsPalletLocation, Balance> =
 	MatchedConvertedConcreteId<
 		AssetIdForTrustBackedAssets,
 		Balance,
@@ -68,27 +68,27 @@ pub type UniquesConvertedConcreteId<UniquesPalletLocation> = MatchedConvertedCon
 	JustTry,
 >;
 
-/// [`MatchedConvertedConcreteId`] converter dedicated for storing `AssetId` as `MultiLocation`.
+/// [`MatchedConvertedConcreteId`] converter dedicated for storing `AssetId` as `Location`.
 pub type LocationConvertedConcreteId<LocationFilter, Balance> = MatchedConvertedConcreteId<
-	xcm::v3::MultiLocation,
+	xcm::v3::Location,
 	Balance,
 	LocationFilter,
-	V3LocationConverter,
+	V4V3LocationConverter,
 	JustTry,
 >;
 
 /// [`MatchedConvertedConcreteId`] converter dedicated for `TrustBackedAssets`
 pub type TrustBackedAssetsAsLocation<TrustBackedAssetsPalletLocation, Balance> =
 	MatchedConvertedConcreteId<
-		xcm::v3::MultiLocation,
+		xcm::v3::Location,
 		Balance,
 		StartsWith<TrustBackedAssetsPalletLocation>,
-		V3LocationConverter,
+		V4V3LocationConverter,
 		JustTry,
 	>;
 
 /// [`MatchedConvertedConcreteId`] converter dedicated for storing `ForeignAssets` with `AssetId` as
-/// `MultiLocation`.
+/// `Location`.
 ///
 /// Excludes by default:
 /// - parent as relay chain
@@ -101,8 +101,8 @@ pub type ForeignAssetsConvertedConcreteId<AdditionalLocationExclusionFilter, Bal
 			// Excludes relay/parent chain currency
 			Equals<ParentLocation>,
 			// Here we rely on fact that something like this works:
-			// assert!(MultiLocation::new(1,
-			// [Parachain(100)]).starts_with(&MultiLocation::parent()));
+			// assert!(Location::new(1,
+			// [Parachain(100)]).starts_with(&Location::parent()));
 			// assert!([Parachain(100)].into().starts_with(&Here));
 			StartsWith<LocalLocationPattern>,
 			// Here we can exclude more stuff or leave it as `()`
@@ -112,7 +112,7 @@ pub type ForeignAssetsConvertedConcreteId<AdditionalLocationExclusionFilter, Bal
 	>;
 
 type AssetIdForPoolAssets = u32;
-/// `MultiLocation` vs `AssetIdForPoolAssets` converter for `PoolAssets`.
+/// `Location` vs `AssetIdForPoolAssets` converter for `PoolAssets`.
 pub type AssetIdForPoolAssetsConvert<PoolAssetsPalletLocation> =
 	AsPrefixedGeneralIndex<PoolAssetsPalletLocation, AssetIdForPoolAssets, JustTry>;
 /// [`MatchedConvertedConcreteId`] converter dedicated for `PoolAssets`
@@ -136,11 +136,11 @@ mod tests {
 	#[test]
 	fn asset_id_for_trust_backed_assets_convert_works() {
 		frame_support::parameter_types! {
-			pub TrustBackedAssetsPalletLocation: MultiLocation = MultiLocation::new(5, [PalletInstance(13)]);
+			pub TrustBackedAssetsPalletLocation: Location = Location::new(5, [PalletInstance(13)]);
 		}
 		let local_asset_id = 123456789 as AssetIdForTrustBackedAssets;
 		let expected_reverse_ref =
-			MultiLocation::new(5, [PalletInstance(13), GeneralIndex(local_asset_id.into())]);
+			Location::new(5, [PalletInstance(13), GeneralIndex(local_asset_id.into())]);
 
 		assert_eq!(
 			AssetIdForTrustBackedAssetsConvertLatest::<TrustBackedAssetsPalletLocation>::convert_back(
@@ -161,11 +161,11 @@ mod tests {
 	#[test]
 	fn trust_backed_assets_match_fungibles_works() {
 		frame_support::parameter_types! {
-			pub TrustBackedAssetsPalletLocation: MultiLocation = MultiLocation::new(0, [PalletInstance(13)]);
+			pub TrustBackedAssetsPalletLocation: Location = Location::new(0, [PalletInstance(13)]);
 		}
 		// setup convert
 		type TrustBackedAssetsConvert =
-			NativeAssetsConvertedConcreteId<TrustBackedAssetsPalletLocation, u128>;
+			TrustBackedAssetsConvertedConcreteId<TrustBackedAssetsPalletLocation, u128>;
 
 		let test_data = vec![
 			// missing GeneralIndex
@@ -248,7 +248,7 @@ mod tests {
 	#[test]
 	fn location_converted_concrete_id_converter_works() {
 		frame_support::parameter_types! {
-			pub Parachain100Pattern: MultiLocation = MultiLocation::new(1, [Parachain(100)]);
+			pub Parachain100Pattern: Location = Location::new(1, [Parachain(100)]);
 			pub UniversalLocationNetworkId: NetworkId = NetworkId::ByGenesis([9; 32]);
 		}
 
@@ -305,16 +305,16 @@ mod tests {
 			// ok
 			(
 				ma_1000(1, [Parachain(200)].into()),
-				Ok((xcm::v3::MultiLocation::new(1, [xcm::v3::Junction::Parachain(200)]), 1000)),
+				Ok((xcm::v3::Location::new(1, [xcm::v3::Junction::Parachain(200)]), 1000)),
 			),
 			(
 				ma_1000(2, [Parachain(200)].into()),
-				Ok((xcm::v3::MultiLocation::new(2, [xcm::v3::Junction::Parachain(200)]), 1000)),
+				Ok((xcm::v3::Location::new(2, [xcm::v3::Junction::Parachain(200)]), 1000)),
 			),
 			(
 				ma_1000(1, [Parachain(200), GeneralIndex(1234)].into()),
 				Ok((
-					xcm::v3::MultiLocation::new(
+					xcm::v3::Location::new(
 						1,
 						[xcm::v3::Junction::Parachain(200), xcm::v3::Junction::GeneralIndex(1234)],
 					),
@@ -324,7 +324,7 @@ mod tests {
 			(
 				ma_1000(2, [Parachain(200), GeneralIndex(1234)].into()),
 				Ok((
-					xcm::v3::MultiLocation::new(
+					xcm::v3::Location::new(
 						2,
 						[xcm::v3::Junction::Parachain(200), xcm::v3::Junction::GeneralIndex(1234)],
 					),
@@ -334,7 +334,7 @@ mod tests {
 			(
 				ma_1000(2, [GlobalConsensus(NetworkId::ByGenesis([7; 32]))].into()),
 				Ok((
-					xcm::v3::MultiLocation::new(
+					xcm::v3::Location::new(
 						2,
 						[xcm::v3::Junction::GlobalConsensus(xcm::v3::NetworkId::ByGenesis(
 							[7; 32],
@@ -354,7 +354,7 @@ mod tests {
 					.into(),
 				),
 				Ok((
-					xcm::v3::MultiLocation::new(
+					xcm::v3::Location::new(
 						2,
 						[
 							xcm::v3::Junction::GlobalConsensus(xcm::v3::NetworkId::ByGenesis(
@@ -371,7 +371,7 @@ mod tests {
 
 		for (asset, expected_result) in test_data {
 			assert_eq!(
-				<Convert as MatchesFungibles<xcm::v3::MultiLocation, u128>>::matches_fungibles(
+				<Convert as MatchesFungibles<xcm::v3::Location, u128>>::matches_fungibles(
 					&asset.clone().try_into().unwrap()
 				),
 				expected_result,
@@ -383,6 +383,6 @@ mod tests {
 
 	// Create Asset
 	fn ma_1000(parents: u8, interior: Junctions) -> Asset {
-		(MultiLocation::new(parents, interior), 1000).into()
+		(Location::new(parents, interior), 1000).into()
 	}
 }

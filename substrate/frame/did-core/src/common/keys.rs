@@ -28,14 +28,14 @@ pub enum PublicKey {
 }
 
 impl From<ed25519::Public> for PublicKey {
-	fn from(ed25519::Public(pubkey): ed25519::Public) -> Self {
-		PublicKey::ed25519(pubkey)
+	fn from(value: ed25519::Public) -> Self {
+		PublicKey::ed25519(value.into())
 	}
 }
 
 impl From<sr25519::Public> for PublicKey {
-	fn from(sr25519::Public(pubkey): sr25519::Public) -> Self {
-		PublicKey::sr25519(pubkey)
+	fn from(value: sr25519::Public) -> Self {
+		PublicKey::sr25519(value.into())
 	}
 }
 

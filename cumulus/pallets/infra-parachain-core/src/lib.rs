@@ -9,18 +9,18 @@ use frame_support::{
 		fungibles::{
 			Inspect, InspectSystemToken, InspectSystemTokenMetadata, ManageSystemToken, Mutate,
 		},
-		Preservation::Preserve
+		Preservation::Preserve,
 	},
-	PalletId
+	PalletId,
 };
 use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
-use sp_runtime::{infra::*, Saturating, traits::AccountIdConversion};
+use sp_runtime::{infra::*, traits::AccountIdConversion, Saturating};
 use sp_std::vec::Vec;
 
 pub use pallet::*;
 
-use xcm::latest::{InteriorMultiLocation, SystemTokenId};
+use xcm::latest::{InteriorLocation, SystemTokenId};
 
 pub type SystemTokenAssetIdOf<T> =
 	<<T as Config>::Fungibles as Inspect<<T as frame_system::Config>::AccountId>>::AssetId;
@@ -63,7 +63,7 @@ pub mod pallet {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Univeral location of this network
-		type UniversalLocation: Get<InteriorMultiLocation>;
+		type UniversalLocation: Get<InteriorLocation>;
 		/// Type of SystemTokenId used in InfraBlockchain
 		type SystemTokenId: SystemTokenId;
 		/// Type that interacts with local asset
@@ -253,7 +253,7 @@ pub mod pallet {
 		pub fn update_runtime_state(origin: OriginFor<T>) -> DispatchResult {
 			ensure_relay(<T as Config>::RuntimeOrigin::from(origin))?;
 			if RuntimeState::<T>::get() == Mode::Normal {
-				return Ok(())
+				return Ok(());
 			}
 			ensure!(RCSystemConfig::<T>::get().is_some(), Error::<T>::NotAllowedToChangeState);
 			// TODO-1: Check whether it is allowed to change `Normal` state
@@ -366,7 +366,11 @@ pub mod pallet {
 			let bucket: T::AccountId = T::FeeTreasuryId::get().into_account_truncating();
 			T::Fungibles::transfer(asset.clone(), &bucket, &who, amount.clone(), Preserve)
 				.map_err(|_| {
-					log::error!("❌❌ Error on distributing reward from {:?} to {:?} ❌❌", bucket, who);
+					log::error!(
+						"❌❌ Error on distributing reward from {:?} to {:?} ❌❌",
+						bucket,
+						who
+					);
 					Error::<T>::ErrorDistributeReward
 				})?;
 			Self::deposit_event(Event::<T>::RewardDistributed { who, asset, amount });

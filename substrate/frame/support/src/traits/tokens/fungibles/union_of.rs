@@ -16,6 +16,8 @@
 // limitations under the License.
 
 //! Type to combine two `fungibles::*` implementations into one union `fungibles::*` implementation.
+//!
+//! See the [`crate::traits::fungibles`] doc for more information about fungibles traits.
 
 use frame_support::traits::{
 	tokens::{
@@ -27,8 +29,8 @@ use frame_support::traits::{
 use sp_runtime::{
 	infra::{Fiat, ReanchorSystemToken},
 	traits::Convert,
-	DispatchError, DispatchResult,
-	Either::{self, Left, Right},
+	DispatchError, DispatchResult, Either,
+	Either::{Left, Right},
 };
 use sp_std::vec::Vec;
 

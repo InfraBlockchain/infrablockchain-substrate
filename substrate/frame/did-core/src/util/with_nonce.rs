@@ -4,7 +4,7 @@ use sp_runtime::{
 	DispatchError,
 };
 use sp_std::{convert::TryInto, fmt::Debug};
-
+use frame_system::pallet_prelude::BlockNumberFor;
 use crate::common::Types;
 
 /// Wrapper for any kind of entity with a nonce.
@@ -66,9 +66,10 @@ impl<T: Types, D> WithNonce<T, D> {
 	where
 		T: frame_system::Config,
 		T::BlockNumber:
-			From<<<<T as frame_system::Config>::Block as BlockT>::Header as HeaderT>::Number>,
+			From<BlockNumberFor<T>>,
 	{
-		Self::new_with_nonce(data, <frame_system::Pallet<T>>::block_number().into())
+		let bn = <frame_system::Pallet<T>>::block_number();
+		Self::new_with_nonce(data, T::BlockNumber::from(bn))
 	}
 
 	/// Adds supplied nonce to the given `data`.

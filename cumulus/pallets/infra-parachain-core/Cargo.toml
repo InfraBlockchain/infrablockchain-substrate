@@ -23,8 +23,8 @@ pallet-assets = { path = "../../../substrate/frame/assets", default-features = f
 
 
 # InfraBlockchain
-primitives = { path = "../../../infrablockchain/primitives", default-features = false}
-xcm = { package = "staging-xcm", path = "../../../infrablockchain/xcm", default-features = false}
+polkadot-primitives = { path = "../../../polkadot/primitives", default-features = false}
+xcm = { package = "staging-xcm", path = "../../../polkadot/xcm", default-features = false}
 
 # Cumulus
 cumulus-primitives-core = { path = "../../primitives/core", default-features = false }
@@ -41,7 +41,7 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-assets/std",
-	"primitives/std",
+	"polkadot-primitives/std",
 	"sp-runtime/std",
 	"sp-std/std",
 	"sp-core/std",

@@ -18,18 +18,20 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode};
-use parachain_primitives::primitives::HeadData;
+use codec::{Decode, Encode, MaxEncodedLen};
+use polkadot_parachain_primitives::primitives::HeadData;
 use scale_info::TypeInfo;
 use sp_runtime::{infra::SystemConfig, RuntimeDebug};
 use sp_std::prelude::*;
 
-pub use infrablockchain_core_primitives::{InboundDownwardMessage, OpaquePoT};
-pub use parachain_primitives::primitives::{
-	DmpMessageHandler, Id as ParaId, IsSystem, PoTs, UpwardMessage, ValidationParams,
-	XcmpMessageFormat, XcmpMessageHandler,
+pub use polkadot_core_primitives::{InboundDownwardMessage, OpaquePoT, OpaqueRemoteAssetMetadata};
+pub use polkadot_parachain_primitives::primitives::{
+	DmpMessageHandler, Id as ParaId, IsSystem, UpwardMessage, ValidationParams, XcmpMessageFormat,
+	XcmpMessageHandler,
 };
-pub use primitives::{AbridgedHostConfiguration, AbridgedHrmpChannel, PersistedValidationData};
+pub use polkadot_primitives::{
+	AbridgedHostConfiguration, AbridgedHrmpChannel, PersistedValidationData,
+};
 
 pub use sp_runtime::{
 	generic::{Digest, DigestItem},
@@ -41,11 +43,10 @@ pub use xcm::latest::prelude::*;
 
 /// A module that re-exports relevant relay chain definitions.
 pub mod relay_chain {
-	pub use infrablockchain_core_primitives::*;
-	pub use primitives::*;
+	pub use polkadot_core_primitives::*;
+	pub use polkadot_primitives::*;
 }
 
-// TODO: Generic
 pub trait UpdateRCConfig<AssetId, Weight> {
 	/// System config set by Relay Chain
 	fn update_system_config(system_config: SystemConfig);
@@ -54,10 +55,10 @@ pub trait UpdateRCConfig<AssetId, Weight> {
 }
 
 /// An inbound HRMP message.
-pub type InboundHrmpMessage = primitives::InboundHrmpMessage<relay_chain::BlockNumber>;
+pub type InboundHrmpMessage = polkadot_primitives::InboundHrmpMessage<relay_chain::BlockNumber>;
 
 /// And outbound HRMP message
-pub type OutboundHrmpMessage = primitives::OutboundHrmpMessage<ParaId>;
+pub type OutboundHrmpMessage = polkadot_primitives::OutboundHrmpMessage<ParaId>;
 
 /// Error description of a message send failure.
 #[derive(Eq, PartialEq, Copy, Clone, RuntimeDebug, Encode, Decode)]
@@ -84,6 +85,42 @@ impl From<MessageSendError> for &'static str {
 	}
 }
 
+/// The origin of an inbound message.
+#[derive(Encode, Decode, MaxEncodedLen, Clone, Eq, PartialEq, TypeInfo, Debug)]
+pub enum AggregateMessageOrigin {
+	/// The message came from the para-chain itself.
+	Here,
+	/// The message came from the relay-chain.
+	///
+	/// This is used by the DMP queue.
+	Parent,
+	/// The message came from a sibling para-chain.
+	///
+	/// This is used by the HRMP queue.
+	Sibling(ParaId),
+}
+
+impl From<AggregateMessageOrigin> for Location {
+	fn from(origin: AggregateMessageOrigin) -> Self {
+		match origin {
+			AggregateMessageOrigin::Here => Location::here(),
+			AggregateMessageOrigin::Parent => Location::parent(),
+			AggregateMessageOrigin::Sibling(id) => Location::new(1, Junction::Parachain(id.into())),
+		}
+	}
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+impl From<u32> for AggregateMessageOrigin {
+	fn from(x: u32) -> Self {
+		match x {
+			0 => Self::Here,
+			1 => Self::Parent,
+			p => Self::Sibling(ParaId::from(p)),
+		}
+	}
+}
+
 /// Information about an XCMP channel.
 pub struct ChannelInfo {
 	/// The maximum number of messages that can be pending in the channel at once.
@@ -102,7 +139,7 @@ pub struct ChannelInfo {
 
 pub trait GetChannelInfo {
 	fn get_channel_status(id: ParaId) -> ChannelStatus;
-	fn get_channel_max(id: ParaId) -> Option<usize>;
+	fn get_channel_info(id: ParaId) -> Option<ChannelInfo>;
 }
 
 /// Something that should be called when sending an upward message.
@@ -311,7 +348,7 @@ pub struct CollationInfoV1 {
 	/// The vote result sent by the parachain.
 	pub proof_of_transaction: Option<Vec<OpaquePoT>>,
 	/// Requested assets sent by the parachain.
-	pub requested_asset: Option<relay_chain::OpaqueRemoteAssetMetadata>,
+	pub requested_asset: Option<OpaqueRemoteAssetMetadata>,
 }
 
 impl CollationInfoV1 {
@@ -349,7 +386,7 @@ pub struct CollationInfo {
 	/// The proof of transaction sent by the parachain.
 	pub proof_of_transaction: Option<Vec<OpaquePoT>>,
 	/// Requested assets sent by the parachain.
-	pub requested_asset: Option<relay_chain::OpaqueRemoteAssetMetadata>,
+	pub requested_asset: Option<OpaqueRemoteAssetMetadata>,
 }
 
 sp_api::decl_runtime_apis! {

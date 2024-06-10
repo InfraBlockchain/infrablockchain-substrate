@@ -201,8 +201,7 @@ impl OutChannels {
 					debug!(
 						target: LOG_TARGET,
 						"Channel `{}` is overflowed again. Number of events: {}",
-						sender.name,
-						current_pending
+						sender.name, current_pending
 					);
 				}
 				sender.warning_fired = SenderWarningState::FiredFull;
@@ -213,8 +212,7 @@ impl OutChannels {
 				debug!(
 					target: LOG_TARGET,
 					"Channel `{}` is no longer overflowed. Number of events: {}",
-					sender.name,
-					current_pending
+					sender.name, current_pending
 				);
 			}
 

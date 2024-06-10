@@ -35,12 +35,13 @@ use frame_support::{
 			fungibles::{Balanced, Credit, Inspect, InspectSystemToken},
 			WithdrawConsequence,
 		},
-		CallMetadata, Contains, GetCallMetadata, IsType, 
+		CallMetadata, Contains, GetCallMetadata, IsType,
 	},
 	DefaultNoBound, PalletId,
 };
 use pallet_transaction_payment::OnChargeTransaction;
 use scale_info::TypeInfo;
+use sp_arithmetic::Perbill;
 use sp_runtime::{
 	infra::*,
 	traits::{
@@ -50,7 +51,6 @@ use sp_runtime::{
 	transaction_validity::{TransactionValidity, TransactionValidityError, ValidTransaction},
 	FixedPointNumber, FixedPointOperand, FixedU128,
 };
-use sp_arithmetic::Perbill;
 use sp_std::prelude::*;
 
 pub use pallet::*;
@@ -173,7 +173,10 @@ where
 			.transpose()?;
 
 		let reward_origin = T::RewardOrigin::reward_origin_info();
-		let pot = PoT { reward: Reward { origin: reward_origin, asset: reanchored, amount: bucket_amount }, maybe_vote: vote };
+		let pot = PoT {
+			reward: Reward { origin: reward_origin, asset: reanchored, amount: bucket_amount },
+			maybe_vote: vote,
+		};
 
 		if let Err(_) = T::PoTHandler::process(&mut pot.encode()) {
 			log::error!("Failed to process `proof-of-transaction` : {:?}", pot);
@@ -442,6 +445,6 @@ where
 
 pub trait RewardOriginInfo {
 	type Origin: Parameter;
-	
+
 	fn reward_origin_info() -> RewardOrigin<Self::Origin>;
 }

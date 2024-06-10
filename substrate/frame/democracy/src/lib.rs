@@ -211,7 +211,7 @@ pub mod pallet {
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
-	/// The current storage version.
+	/// The in-code storage version.
 	const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
 	#[pallet::pallet]
@@ -484,7 +484,7 @@ pub mod pallet {
 		Blacklisted { proposal_hash: T::Hash },
 		/// An account has voted in a referendum
 		Voted { voter: T::AccountId, ref_index: ReferendumIndex, vote: AccountVote<BalanceOf<T>> },
-		/// An account has secconded a proposal
+		/// An account has seconded a proposal
 		Seconded { seconder: T::AccountId, prop_index: PropIndex },
 		/// A proposal got canceled.
 		ProposalCanceled { prop_index: PropIndex },
@@ -1605,31 +1605,31 @@ impl<T: Config> Pallet<T> {
 		index: ReferendumIndex,
 		status: ReferendumStatus<BlockNumberFor<T>, BoundedCallOf<T>, BalanceOf<T>>,
 	) -> bool {
-		// The referendum is enacted by the scheduler without any further voting,
-		// as it had secured the approval of more than 2/3 of validators in the earlier Motion.
-		Self::deposit_event(Event::<T>::Passed { ref_index: index });
-		// Actually `hold` the proposal now since we didn't hold it when it came in via the
-		// submit extrinsic and we now know that it will be needed. This will be reversed by
-		// Scheduler pallet once it is executed which assumes that we will already have placed
-		// a `hold` on it.
-		T::Preimages::hold(&status.proposal);
+		let total_issuance = T::Currency::total_issuance();
+		let approved = status.threshold.approved(status.tally, total_issuance);
 
-		// Earliest it can be scheduled for is next block.
-		let when = now.saturating_add(status.delay.max(One::one()));
-		if T::Scheduler::schedule_named(
-			(DEMOCRACY_ID, index).encode_into::<_, T::Hashing>(),
-			DispatchTime::At(when),
-			None,
-			63,
-			frame_system::RawOrigin::Root.into(),
-			status.proposal,
-		)
-		.is_err()
-		{
-			frame_support::print("LOGIC ERROR: bake_referendum/schedule_named failed");
+		if approved {
+			Self::deposit_event(Event::<T>::Passed { ref_index: index });
+
+			// Earliest it can be scheduled for is next block.
+			let when = now.saturating_add(status.delay.max(One::one()));
+			if T::Scheduler::schedule_named(
+				(DEMOCRACY_ID, index).encode_into::<_, T::Hashing>(),
+				DispatchTime::At(when),
+				None,
+				63,
+				frame_system::RawOrigin::Root.into(),
+				status.proposal,
+			)
+			.is_err()
+			{
+				frame_support::print("LOGIC ERROR: bake_referendum/schedule_named failed");
+			}
+		} else {
+			Self::deposit_event(Event::<T>::NotPassed { ref_index: index });
 		}
 
-		true
+		approved
 	}
 
 	/// Current era is ending; we should finish up any proposals.

@@ -1,0 +1,63 @@
+[relaychain]
+default_command = "../target/release/polkadot"
+default_args = [ "-lparachain=debug" ]
+chain = "infra-relay-local"
+
+	[[relaychain.nodes]]
+	name = "alice"
+	validator = true
+	args = ["-lparachain=debug", "-l=xcm=trace"]
+	rpc_port = 7100
+	ws_port = 7101
+
+	[[relaychain.nodes]]
+	name = "bob"
+	validator = true
+	args = ["-lparachain=debug", "-l=xcm=trace"]
+	rpc_port = 7200
+	ws_port = 7201
+
+	[[relaychain.nodes]]
+	name = "charlie"
+	validator = true
+	args = ["-lparachain=debug", "-l=xcm=trace"]
+	rpc_port = 7300
+	ws_port = 7301
+
+	[[relaychain.nodes]]
+	name = "dave"
+	validator = true
+	args = ["-lparachain=debug", "-l=xcm=trace"]
+	rpc_port = 7400
+	ws_port = 7401
+
+	[[relaychain.nodes]]
+	name = "eve"
+	validator = true
+	args = ["-lparachain=debug", "-l=xcm=trace"]
+	rpc_port = 7500
+	ws_port = 7501
+
+[[parachains]]
+id = 1000
+chain = "asset-hub-infra-local"
+cumulus_based = true
+
+	# run alice as parachain collator
+	[[parachains.collators]]
+	name = "alice"
+	validator = true
+	command = "../target/release/infra-parachain"
+	args = ["-lparachain=debug"]
+	rpc_port = 9500
+	ws_port = 9501
+
+	# run bob as parachain collator
+	[[parachains.collators]]
+	name = "bob"
+	validator = true
+	command = "../target/release/infra-parachain"
+	args = ["-lparachain=debug"]
+	rpc_port = 9600
+	ws_port = 9601
+

@@ -18,10 +18,10 @@
 
 use codec::{Decode, Encode};
 use cumulus_primitives_core::{
-	relay_chain, AbridgedHostConfiguration, AbridgedHrmpChannel, MultiLocation, ParaId,
+	relay_chain, AbridgedHostConfiguration, AbridgedHrmpChannel, ParaId,
 };
 use scale_info::TypeInfo;
-use sp_runtime::{infra::SystemTokenWeight, traits::HashingFor};
+use sp_runtime::traits::HashingFor;
 use sp_state_machine::{Backend, TrieBackend, TrieBackendBuilder};
 use sp_std::vec::Vec;
 use sp_trie::{HashDBT, MemoryDB, StorageProof, EMPTY_PREFIX};
@@ -86,15 +86,13 @@ pub enum Error {
 	UpgradeRestriction(ReadEntryErr),
 	/// The updated infra system config cannot be read
 	UpdatedInfraSystemConfig(ReadEntryErr),
-	/// Updated system token weight cannot be read
-	UpdateSystemTokenWeight(ReadEntryErr),
 	/// The host configuration cannot be extracted.
 	Config(ReadEntryErr),
 	/// The DMQ MQC head cannot be extracted.
 	DmqMqcHead(ReadEntryErr),
 	/// Relay dispatch queue cannot be extracted.
 	RelayDispatchQueueRemainingCapacity(ReadEntryErr),
-	/// The hrmp inress channel index cannot be extracted.
+	/// The hrmp ingress channel index cannot be extracted.
 	HrmpIngressChannelIndex(ReadEntryErr),
 	/// The hrmp egress channel index cannot be extracted.
 	HrmpEgressChannelIndex(ReadEntryErr),
@@ -147,10 +145,7 @@ where
 	match read_entry(backend, key, None) {
 		Ok(v) => Ok(Some(v)),
 		Err(ReadEntryErr::Absent) => Ok(None),
-		Err(err) => {
-			log::info!("Error!{:?}", err);
-			Err(err)
-		},
+		Err(err) => Err(err),
 	}
 }
 
@@ -175,7 +170,7 @@ impl RelayChainStateProof {
 	) -> Result<Self, Error> {
 		let db = proof.into_memory_db::<HashingFor<relay_chain::Block>>();
 		if !db.contains(&relay_parent_storage_root, EMPTY_PREFIX) {
-			return Err(Error::RootMismatch)
+			return Err(Error::RootMismatch);
 		}
 		let trie_backend = TrieBackendBuilder::new(db, relay_parent_storage_root).build();
 
@@ -185,6 +180,8 @@ impl RelayChainStateProof {
 	/// Read the [`MessagingStateSnapshot`] from the relay chain state proof.
 	///
 	/// Returns an error if anything failed at reading or decoding.
+	///
+	/// You must update keys for `cumulus/client/parachain-inherent/src/lib.rs` to query from RC state
 	pub fn read_messaging_state_snapshot(
 		&self,
 		host_config: &AbridgedHostConfiguration,
@@ -281,16 +278,6 @@ impl RelayChainStateProof {
 			ingress_channels,
 			egress_channels,
 		})
-	}
-
-	pub fn read_updated_system_token_weight(
-		&self,
-	) -> Result<Option<Vec<(MultiLocation, SystemTokenWeight)>>, Error> {
-		read_optional_entry(
-			&self.trie_backend,
-			&relay_chain::well_known_keys::update_system_token_weight(self.para_id),
-		)
-		.map_err(Error::UpdateSystemTokenWeight)
 	}
 
 	pub fn read_active_system_config(&self) -> Result<relay_chain::SystemConfig, Error> {

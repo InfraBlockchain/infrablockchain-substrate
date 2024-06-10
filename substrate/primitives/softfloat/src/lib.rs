@@ -52,10 +52,15 @@ pub trait SystemTokenWeight<Weight, Decimal, ExchangeRate>:
 	+ core::ops::SubAssign
 	+ core::ops::MulAssign
 	+ core::ops::DivAssign
-{	
+{
 	type Error;
 
-	fn calc_system_token_weight(base_weight: u128, base_decimals: Decimal, currency_decimals: Decimal, exchange_rate_to_base: ExchangeRate) -> Result<Weight, Self::Error>;
+	fn calc_system_token_weight(
+		base_weight: u128,
+		base_decimals: Decimal,
+		currency_decimals: Decimal,
+		exchange_rate_to_base: ExchangeRate,
+	) -> Result<Weight, Self::Error>;
 }
 
 macro_rules! impl_traits {
@@ -184,9 +189,14 @@ macro_rules! impl_traits {
 			Weight: From<$ty>,
 			Decimal: TryInto<i32>,
 			ExchangeRate: TryInto<$ty>,
-		{	
+		{
 			type Error = ();
-			fn calc_system_token_weight(base_weight: u128, base_decimals: Decimal, currency_decimals: Decimal, exchange_rate_to_base: ExchangeRate) -> Result<Weight, Self::Error> {
+			fn calc_system_token_weight(
+				base_weight: u128,
+				base_decimals: Decimal,
+				currency_decimals: Decimal,
+				exchange_rate_to_base: ExchangeRate,
+			) -> Result<Weight, Self::Error> {
 				let base_d: i32 = base_decimals.try_into().map_err(|_| ())?;
 				let currency_d: i32 = currency_decimals.try_into().map_err(|_| ())?;
 				let exchange_rate_scale: $ty = Self::from_i32(10).powi(6);

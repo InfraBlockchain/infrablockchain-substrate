@@ -26,7 +26,7 @@ use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 use cumulus_client_pov_recovery::{RecoveryKind, RecoveryRequest};
 use cumulus_relay_chain_interface::{RelayChainInterface, RelayChainResult};
 
-use primitives::{Hash as PHash, Id as ParaId, OccupiedCoreAssumption};
+use polkadot_primitives::{Hash as PHash, Id as ParaId, OccupiedCoreAssumption};
 
 use codec::Decode;
 use futures::{channel::mpsc::Sender, pin_mut, select, FutureExt, Stream, StreamExt};

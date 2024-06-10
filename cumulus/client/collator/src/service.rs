@@ -27,7 +27,9 @@ use sp_core::traits::SpawnNamed;
 use sp_runtime::traits::{Block as BlockT, HashingFor, Header as HeaderT, Zero};
 
 use cumulus_client_consensus_common::ParachainCandidate;
-use node_primitives::{BlockData, Collation, CollationSecondedSignal, MaybeCompressedPoV, PoV};
+use polkadot_node_primitives::{
+	BlockData, Collation, CollationSecondedSignal, MaybeCompressedPoV, PoV,
+};
 
 use codec::Encode;
 use futures::channel::oneshot;
@@ -190,7 +192,7 @@ where
 						target: LOG_TARGET,
 						"Could not fetch `CollectCollationInfo` runtime api version."
 					);
-					return Ok(None)
+					return Ok(None);
 				},
 			};
 
@@ -226,7 +228,7 @@ where
 			Ok(proof) => proof,
 			Err(e) => {
 				tracing::error!(target: "cumulus-collator", "Failed to compact proof: {:?}", e);
-				return None
+				return None;
 			},
 		};
 
@@ -245,8 +247,9 @@ where
 
 		let block_data = ParachainBlockData::<Block>::new(header, extrinsics, compact_proof);
 
-		let pov =
-			node_primitives::maybe_compress_pov(PoV { block_data: BlockData(block_data.encode()) });
+		let pov = polkadot_node_primitives::maybe_compress_pov(PoV {
+			block_data: BlockData(block_data.encode()),
+		});
 
 		let upward_messages = collation_info
 			.upward_messages
@@ -270,7 +273,6 @@ where
 				)
 			})
 			.ok()?;
-
 		let proof_of_transaction = if let Some(res) = collation_info.proof_of_transaction {
 			let bounded = res
 				.try_into()

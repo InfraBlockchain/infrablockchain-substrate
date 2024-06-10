@@ -37,7 +37,7 @@ use parity_util_mem::MallocSizeOf;
 
 /// Parachain id.
 ///
-/// This is an equivalent of the `parachain_primitives::Id`, which is a compact-encoded
+/// This is an equivalent of the `polkadot_parachain_primitives::Id`, which is a compact-encoded
 /// `u32`.
 #[derive(
 	Clone,
@@ -65,7 +65,7 @@ impl From<u32> for ParaId {
 
 /// Parachain head.
 ///
-/// This is an equivalent of the `parachain_primitives::HeadData`.
+/// This is an equivalent of the `polkadot_parachain_primitives::HeadData`.
 ///
 /// The parachain head means (at least in Cumulus) a SCALE-encoded parachain header.
 #[derive(
@@ -89,11 +89,18 @@ pub type ParaHasher = crate::Hasher;
 
 /// Raw storage proof of parachain heads, stored in polkadot-like chain runtime.
 #[derive(Clone, Decode, Encode, Eq, PartialEq, RuntimeDebug, TypeInfo)]
-pub struct ParaHeadsProof(pub RawStorageProof);
+pub struct ParaHeadsProof {
+	/// Unverified storage proof of finalized parachain heads.
+	pub storage_proof: RawStorageProof,
+}
 
 impl Size for ParaHeadsProof {
 	fn size(&self) -> u32 {
-		u32::try_from(self.0.iter().fold(0usize, |sum, node| sum.saturating_add(node.len())))
-			.unwrap_or(u32::MAX)
+		u32::try_from(
+			self.storage_proof
+				.iter()
+				.fold(0usize, |sum, node| sum.saturating_add(node.len())),
+		)
+		.unwrap_or(u32::MAX)
 	}
 }

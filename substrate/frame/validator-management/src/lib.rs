@@ -26,18 +26,18 @@ use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{
 	traits::{
 		tokens::fungibles::{Inspect, InspectSystemToken, Mutate},
-		EstimateNextNewSession, Get, 
+		EstimateNextNewSession, Get,
 	},
 	Parameter,
 };
 pub use pallet::*;
 use scale_info::TypeInfo;
 use softfloat::BlockTimeWeight;
-use sp_arithmetic::{traits::AtLeast32BitUnsigned, FixedU128, FixedPointNumber};
+use sp_arithmetic::{traits::AtLeast32BitUnsigned, FixedPointNumber, FixedU128};
 use sp_runtime::{
-	infra::{Reward, RewardOrigin, PoT, TaaV, Vote},
+	infra::{PoT, Reward, RewardOrigin, TaaV, Vote},
 	traits::Member,
-	RuntimeDebug
+	RuntimeDebug,
 };
 
 #[cfg(test)]
@@ -323,7 +323,11 @@ pub mod pallet {
 			amount: SystemTokenBalanceOf<T>,
 		},
 		/// Reward has been distributed
-		RewardDistributed { dest: RewardOrigin<DestIdOf<T>>, beneficiary: T::AccountId, reward: Reward<DestIdOf<T>, SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>> },
+		RewardDistributed {
+			dest: RewardOrigin<DestIdOf<T>>,
+			beneficiary: T::AccountId,
+			reward: Reward<DestIdOf<T>, SystemTokenAssetIdOf<T>, SystemTokenBalanceOf<T>>,
+		},
 	}
 
 	#[pallet::error]
@@ -461,14 +465,22 @@ pub mod pallet {
 
 		/// Claim reward that has been collected. Anyone can call
 		#[pallet::call_index(4)]
-		pub fn claim_reward(origin: OriginFor<T>, dest: RewardOrigin<DestIdOf<T>>, rewarded_asset: SystemTokenAssetIdOf<T>) -> DispatchResult {
+		pub fn claim_reward(
+			origin: OriginFor<T>,
+			dest: RewardOrigin<DestIdOf<T>>,
+			rewarded_asset: SystemTokenAssetIdOf<T>,
+		) -> DispatchResult {
 			let maybe_validator = ensure_signed(origin)?;
 			let mut maybe_reward = RewardInfo::<T>::get(&maybe_validator, &dest);
 			let rewards = maybe_reward.take().ok_or(Error::<T>::NotAccessible)?;
 			for reward in rewards.into_iter() {
 				if reward.asset == rewarded_asset {
 					T::RewardHandler::distribute_reward(maybe_validator.clone(), reward.clone());
-					Self::deposit_event(Event::<T>::RewardDistributed { dest: dest.clone(), beneficiary: maybe_validator.clone(), reward });
+					Self::deposit_event(Event::<T>::RewardDistributed {
+						dest: dest.clone(),
+						beneficiary: maybe_validator.clone(),
+						reward,
+					});
 				}
 			}
 			Ok(())

@@ -47,7 +47,7 @@
 //!     let voter = (v, weight_of(&v), targets_of(&v));
 //!     if size_tracker.try_register_voter(&voter, &voter_bounds).is_err() {
 //!         // voter bounds size exhausted
-//!         break
+//!         break;
 //!     }
 //!     selected_voters.push(voter);
 //! }
@@ -84,7 +84,7 @@ use frame_election_provider_support::{
 pub struct StaticTracker<DataProvider> {
 	pub size: usize,
 	pub counter: usize,
-	_marker: sp_std::marker::PhantomData<DataProvider>,
+	_marker: core::marker::PhantomData<DataProvider>,
 }
 
 impl<DataProvider> Default for StaticTracker<DataProvider> {

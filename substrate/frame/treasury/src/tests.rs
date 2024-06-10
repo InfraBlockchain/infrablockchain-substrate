@@ -20,14 +20,13 @@
 #![cfg(test)]
 
 use core::{cell::RefCell, marker::PhantomData};
-use sp_core::H256;
 use sp_runtime::{
-	traits::{BadOrigin, BlakeTwo256, Dispatchable, IdentityLookup},
+	traits::{BadOrigin, Dispatchable, IdentityLookup},
 	BuildStorage,
 };
 
 use frame_support::{
-	assert_err_ignore_postinfo, assert_noop, assert_ok,
+	assert_err_ignore_postinfo, assert_noop, assert_ok, derive_impl,
 	pallet_prelude::Pays,
 	parameter_types,
 	traits::{
@@ -47,37 +46,19 @@ type TreasuryCall = crate::Call<Test>;
 frame_support::construct_runtime!(
 	pub enum Test
 	{
-		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
-		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		Treasury: treasury::{Pallet, Call, Storage, Config<T>, Event<T>},
+		System: frame_system,
+		Balances: pallet_balances,
+		Treasury: treasury,
 		Utility: pallet_utility,
 	}
 );
 
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 impl frame_system::Config for Test {
-	type BaseCallFilter = frame_support::traits::Everything;
-	type BlockWeights = ();
-	type BlockLength = ();
-	type DbWeight = ();
-	type RuntimeOrigin = RuntimeOrigin;
-	type Nonce = u64;
-	type RuntimeCall = RuntimeCall;
-	type Hash = H256;
-	type Hashing = BlakeTwo256;
 	type AccountId = u128; // u64 is not enough to hold bytes used to generate bounty account
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Block = Block;
-	type RuntimeEvent = RuntimeEvent;
-	type BlockHashCount = ConstU64<250>;
-	type Version = ();
-	type PalletInfo = PalletInfo;
 	type AccountData = pallet_balances::AccountData<u64>;
-	type OnNewAccount = ();
-	type OnKilledAccount = ();
-	type SystemWeightInfo = ();
-	type SS58Prefix = ();
-	type OnSetCode = ();
-	type MaxConsumers = ConstU32<16>;
 }
 impl pallet_balances::Config for Test {
 	type MaxLocks = ();
@@ -92,7 +73,7 @@ impl pallet_balances::Config for Test {
 	type FreezeIdentifier = ();
 	type MaxFreezes = ();
 	type RuntimeHoldReason = ();
-	type MaxHolds = ();
+	type RuntimeFreezeReason = ();
 }
 
 impl pallet_utility::Config for Test {
@@ -217,16 +198,28 @@ impl Config for Test {
 	type BenchmarkHelper = ();
 }
 
-pub fn new_test_ext() -> sp_io::TestExternalities {
-	let mut t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
-	pallet_balances::GenesisConfig::<Test> {
-		// Total issuance will be 200 with treasury account initialized at ED.
-		balances: vec![(0, 100), (1, 98), (2, 1)],
+pub struct ExtBuilder {}
+
+impl Default for ExtBuilder {
+	fn default() -> Self {
+		Self {}
 	}
-	.assimilate_storage(&mut t)
-	.unwrap();
-	crate::GenesisConfig::<Test>::default().assimilate_storage(&mut t).unwrap();
-	t.into()
+}
+
+impl ExtBuilder {
+	pub fn build(self) -> sp_io::TestExternalities {
+		let mut t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
+		pallet_balances::GenesisConfig::<Test> {
+			// Total issuance will be 200 with treasury account initialized at ED.
+			balances: vec![(0, 100), (1, 98), (2, 1)],
+		}
+		.assimilate_storage(&mut t)
+		.unwrap();
+		crate::GenesisConfig::<Test>::default().assimilate_storage(&mut t).unwrap();
+		let mut ext = sp_io::TestExternalities::new(t);
+		ext.execute_with(|| System::set_block_number(1));
+		ext
+	}
 }
 
 fn get_payment_id(i: SpendIndex) -> Option<u64> {
@@ -239,7 +232,7 @@ fn get_payment_id(i: SpendIndex) -> Option<u64> {
 
 #[test]
 fn genesis_config_works() {
-	new_test_ext().execute_with(|| {
+	ExtBuilder::default().build().execute_with(|| {
 		assert_eq!(Treasury::pot(), 0);
 		assert_eq!(Treasury::proposal_count(), 0);
 	});
@@ -247,7 +240,7 @@ fn genesis_config_works() {
 
 #[test]
 fn spend_local_origin_permissioning_works() {
-	new_test_ext().execute_with(|| {
+	ExtBuilder::default().build().execute_with(|| {
 		assert_noop!(Treasury::spend_local(RuntimeOrigin::signed(1), 1, 1), BadOrigin);
 		assert_noop!(
 			Treasury::spend_local(RuntimeOrigin::signed(10), 6, 1),
@@ -271,7 +264,7 @@ fn spend_local_origin_permissioning_works() {
 #[docify::export]
 #[test]
 fn spend_local_origin_works() {
-	new_test_ext().execute_with(|| {
+	ExtBuilder::default().build().execute_with(|| {
 		// Check that accumulate works when we have Some value in Dummy already.
 		Balances::make_free_balance_be(&Treasury::account_id(), 101);
 		// approve spend of some amount to beneficiary `6`.
@@ -295,7 +288,7 @@ fn spend_local_origin_works() {
 
 #[test]
 fn minting_works() {
-	new_test_ext().execute_with(|| {
+	ExtBuilder::default().build().execute_with(|| {
 		// Check that accumulate works when we have Some value in Dummy already.
 		Balances::make_free_balance_be(&Treasury::account_id(), 101);
 		assert_eq!(Treasury::pot(), 100);
@@ -304,7 +297,7 @@ fn minting_works() {
 
 #[test]
 fn spend_proposal_takes_min_deposit() {
-	new_test_ext().execute_with(|| {
+	ExtBuilder::default().build().execute_with(|| {
 		assert_ok!({
 			#[allow(deprecated)]
 			Treasury::propose_spend(RuntimeOrigin::signed(0), 1, 3)
@@ -316,7 +309,7 @@ fn spend_proposal_takes_min_deposit() {
 
 #[test]
 fn spend_proposal_takes_proportional_deposit() {
-	new_test_ext().execute_with(|| {
+	ExtBuilder::default().build().execute_with(|| {
 		assert_ok!({
 			#[allow(deprecated)]
 			Treasury::propose_spend(RuntimeOrigin::signed(0), 100, 3)
@@ -328,7 +321,7 @@ fn spend_proposal_takes_proportional_deposit() {
 
 #[test]
 fn spend_proposal_fails_when_proposer_poor() {
-	new_test_ext().execute_with(|| {
+	ExtBuilder::default().build().execute_with(|| {
 		assert_noop!(
 			{
 				#[allow(deprecated)]
@@ -341,7 +334,7 @@ fn spend_proposal_fails_when_proposer_poor() {
 
 #[test]
 fn accepted_spend_proposal_ignored_outside_spend_period() {
-	new_test_ext().execute_with(|| {
+	ExtBuilder::default().build().execute_with(|| {
 		Balances::make_free_balance_be(&Treasury::account_id(), 101);
 
 		assert_ok!({
@@ -361,7 +354,7 @@ fn accepted_spend_proposal_ignored_outside_spend_period() {
 
 #[test]
 fn unused_pot_should_diminish() {
-	new_test_ext().execute_with(|| {
+	ExtBuilder::default().build().execute_with(|| {
 		let init_total_issuance = Balances::total_issuance();
 		Balances::make_free_balance_be(&Treasury::account_id(), 101);
 		assert_eq!(Balances::total_issuance(), init_total_issuance + 100);
@@ -374,7 +367,7 @@ fn unused_pot_should_diminish() {
 
 #[test]
 fn rejected_spend_proposal_ignored_on_spend_period() {
-	new_test_ext().execute_with(|| {
+	ExtBuilder::default().build().execute_with(|| {
 		Balances::make_free_balance_be(&Treasury::account_id(), 101);
 
 		assert_ok!({
@@ -394,7 +387,7 @@ fn rejected_spend_proposal_ignored_on_spend_period() {
 
 #[test]
 fn reject_already_rejected_spend_proposal_fails() {
-	new_test_ext().execute_with(|| {
+	ExtBuilder::default().build().execute_with(|| {
 		Balances::make_free_balance_be(&Treasury::account_id(), 101);
 
 		assert_ok!({
@@ -417,7 +410,7 @@ fn reject_already_rejected_spend_proposal_fails() {
 
 #[test]
 fn reject_non_existent_spend_proposal_fails() {
-	new_test_ext().execute_with(|| {
+	ExtBuilder::default().build().execute_with(|| {
 		assert_noop!(
 			{
 				#[allow(deprecated)]
@@ -430,7 +423,7 @@ fn reject_non_existent_spend_proposal_fails() {
 
 #[test]
 fn accept_non_existent_spend_proposal_fails() {
-	new_test_ext().execute_with(|| {
+	ExtBuilder::default().build().execute_with(|| {
 		assert_noop!(
 			{
 				#[allow(deprecated)]
@@ -443,7 +436,7 @@ fn accept_non_existent_spend_proposal_fails() {
 
 #[test]
 fn accept_already_rejected_spend_proposal_fails() {
-	new_test_ext().execute_with(|| {
+	ExtBuilder::default().build().execute_with(|| {
 		Balances::make_free_balance_be(&Treasury::account_id(), 101);
 
 		assert_ok!({
@@ -466,7 +459,7 @@ fn accept_already_rejected_spend_proposal_fails() {
 
 #[test]
 fn accepted_spend_proposal_enacted_on_spend_period() {
-	new_test_ext().execute_with(|| {
+	ExtBuilder::default().build().execute_with(|| {
 		Balances::make_free_balance_be(&Treasury::account_id(), 101);
 		assert_eq!(Treasury::pot(), 100);
 
@@ -487,7 +480,7 @@ fn accepted_spend_proposal_enacted_on_spend_period() {
 
 #[test]
 fn pot_underflow_should_not_diminish() {
-	new_test_ext().execute_with(|| {
+	ExtBuilder::default().build().execute_with(|| {
 		Balances::make_free_balance_be(&Treasury::account_id(), 101);
 		assert_eq!(Treasury::pot(), 100);
 
@@ -514,7 +507,7 @@ fn pot_underflow_should_not_diminish() {
 // i.e. pot should not include existential deposit needed for account survival.
 #[test]
 fn treasury_account_doesnt_get_deleted() {
-	new_test_ext().execute_with(|| {
+	ExtBuilder::default().build().execute_with(|| {
 		Balances::make_free_balance_be(&Treasury::account_id(), 101);
 		assert_eq!(Treasury::pot(), 100);
 		let treasury_balance = Balances::free_balance(&Treasury::account_id());
@@ -613,7 +606,7 @@ fn genesis_funding_works() {
 
 #[test]
 fn max_approvals_limited() {
-	new_test_ext().execute_with(|| {
+	ExtBuilder::default().build().execute_with(|| {
 		Balances::make_free_balance_be(&Treasury::account_id(), u64::MAX);
 		Balances::make_free_balance_be(&0, u64::MAX);
 
@@ -645,7 +638,7 @@ fn max_approvals_limited() {
 
 #[test]
 fn remove_already_removed_approval_fails() {
-	new_test_ext().execute_with(|| {
+	ExtBuilder::default().build().execute_with(|| {
 		Balances::make_free_balance_be(&Treasury::account_id(), 101);
 
 		assert_ok!({
@@ -669,7 +662,7 @@ fn remove_already_removed_approval_fails() {
 
 #[test]
 fn spending_local_in_batch_respects_max_total() {
-	new_test_ext().execute_with(|| {
+	ExtBuilder::default().build().execute_with(|| {
 		// Respect the `max_total` for the given origin.
 		assert_ok!(RuntimeCall::from(UtilityCall::batch_all {
 			calls: vec![
@@ -694,7 +687,7 @@ fn spending_local_in_batch_respects_max_total() {
 
 #[test]
 fn spending_in_batch_respects_max_total() {
-	new_test_ext().execute_with(|| {
+	ExtBuilder::default().build().execute_with(|| {
 		// Respect the `max_total` for the given origin.
 		assert_ok!(RuntimeCall::from(UtilityCall::batch_all {
 			calls: vec![
@@ -739,7 +732,7 @@ fn spending_in_batch_respects_max_total() {
 
 #[test]
 fn spend_origin_works() {
-	new_test_ext().execute_with(|| {
+	ExtBuilder::default().build().execute_with(|| {
 		assert_ok!(Treasury::spend(RuntimeOrigin::signed(10), Box::new(1), 1, Box::new(6), None));
 		assert_ok!(Treasury::spend(RuntimeOrigin::signed(10), Box::new(1), 2, Box::new(6), None));
 		assert_noop!(
@@ -764,7 +757,7 @@ fn spend_origin_works() {
 
 #[test]
 fn spend_works() {
-	new_test_ext().execute_with(|| {
+	ExtBuilder::default().build().execute_with(|| {
 		System::set_block_number(1);
 		assert_ok!(Treasury::spend(RuntimeOrigin::signed(10), Box::new(1), 2, Box::new(6), None));
 
@@ -796,7 +789,7 @@ fn spend_works() {
 
 #[test]
 fn spend_expires() {
-	new_test_ext().execute_with(|| {
+	ExtBuilder::default().build().execute_with(|| {
 		assert_eq!(<Test as Config>::PayoutPeriod::get(), 5);
 
 		// spend `0` expires in 5 blocks after the creating.
@@ -816,7 +809,7 @@ fn spend_expires() {
 #[docify::export]
 #[test]
 fn spend_payout_works() {
-	new_test_ext().execute_with(|| {
+	ExtBuilder::default().build().execute_with(|| {
 		System::set_block_number(1);
 		// approve a `2` coins spend of asset `1` to beneficiary `6`, the spend valid from now.
 		assert_ok!(Treasury::spend(RuntimeOrigin::signed(10), Box::new(1), 2, Box::new(6), None));
@@ -838,7 +831,7 @@ fn spend_payout_works() {
 
 #[test]
 fn payout_retry_works() {
-	new_test_ext().execute_with(|| {
+	ExtBuilder::default().build().execute_with(|| {
 		System::set_block_number(1);
 		assert_ok!(Treasury::spend(RuntimeOrigin::signed(10), Box::new(1), 2, Box::new(6), None));
 		assert_ok!(Treasury::payout(RuntimeOrigin::signed(1), 0));
@@ -863,7 +856,7 @@ fn payout_retry_works() {
 
 #[test]
 fn spend_valid_from_works() {
-	new_test_ext().execute_with(|| {
+	ExtBuilder::default().build().execute_with(|| {
 		assert_eq!(<Test as Config>::PayoutPeriod::get(), 5);
 		System::set_block_number(1);
 
@@ -895,7 +888,7 @@ fn spend_valid_from_works() {
 
 #[test]
 fn void_spend_works() {
-	new_test_ext().execute_with(|| {
+	ExtBuilder::default().build().execute_with(|| {
 		System::set_block_number(1);
 		// spend cannot be voided if already attempted.
 		assert_ok!(Treasury::spend(
@@ -926,7 +919,7 @@ fn void_spend_works() {
 
 #[test]
 fn check_status_works() {
-	new_test_ext().execute_with(|| {
+	ExtBuilder::default().build().execute_with(|| {
 		assert_eq!(<Test as Config>::PayoutPeriod::get(), 5);
 		System::set_block_number(1);
 
@@ -982,5 +975,169 @@ fn check_status_works() {
 		let info = Treasury::check_status(RuntimeOrigin::signed(1), 4).unwrap();
 		assert_eq!(info.pays_fee, Pays::No);
 		System::assert_last_event(Event::<Test, _>::SpendProcessed { index: 4 }.into());
+	});
+}
+
+#[test]
+fn try_state_proposals_invariant_1_works() {
+	ExtBuilder::default().build().execute_with(|| {
+		use frame_support::pallet_prelude::DispatchError::Other;
+		// Add a proposal using `propose_spend`
+		assert_ok!({
+			#[allow(deprecated)]
+			Treasury::propose_spend(RuntimeOrigin::signed(0), 1, 3)
+		});
+		assert_eq!(Proposals::<Test>::iter().count(), 1);
+		assert_eq!(ProposalCount::<Test>::get(), 1);
+		// Check invariant 1 holds
+		assert!(ProposalCount::<Test>::get() as usize >= Proposals::<Test>::iter().count());
+		// Break invariant 1 by decreasing `ProposalCount`
+		ProposalCount::<Test>::put(0);
+		// Invariant 1 should be violated
+		assert_eq!(
+			Treasury::do_try_state(),
+			Err(Other("Actual number of proposals exceeds `ProposalCount`."))
+		);
+	});
+}
+
+#[test]
+fn try_state_proposals_invariant_2_works() {
+	ExtBuilder::default().build().execute_with(|| {
+		use frame_support::pallet_prelude::DispatchError::Other;
+		// Add a proposal using `propose_spend`
+		assert_ok!({
+			#[allow(deprecated)]
+			Treasury::propose_spend(RuntimeOrigin::signed(0), 1, 3)
+		});
+		assert_eq!(Proposals::<Test>::iter().count(), 1);
+		let current_proposal_count = ProposalCount::<Test>::get();
+		assert_eq!(current_proposal_count, 1);
+		// Check invariant 2 holds
+		assert!(
+			Proposals::<Test>::iter_keys()
+			.all(|proposal_index| {
+					proposal_index < current_proposal_count
+			})
+		);
+		// Break invariant 2 by inserting the proposal under key = 1
+		let proposal = Proposals::<Test>::take(0).unwrap();
+		Proposals::<Test>::insert(1, proposal);
+		// Invariant 2 should be violated
+		assert_eq!(
+			Treasury::do_try_state(),
+			Err(Other("`ProposalCount` should by strictly greater than any ProposalIndex used as a key for `Proposals`."))
+		);
+	});
+}
+
+#[test]
+fn try_state_proposals_invariant_3_works() {
+	ExtBuilder::default().build().execute_with(|| {
+		use frame_support::pallet_prelude::DispatchError::Other;
+		// Add a proposal using `propose_spend`
+		assert_ok!({
+			#[allow(deprecated)]
+			Treasury::propose_spend(RuntimeOrigin::signed(0), 10, 3)
+		});
+		assert_eq!(Proposals::<Test>::iter().count(), 1);
+		// Approve the proposal
+		assert_ok!({
+			#[allow(deprecated)]
+			Treasury::approve_proposal(RuntimeOrigin::root(), 0)
+		});
+		assert_eq!(Approvals::<Test>::get().len(), 1);
+		// Check invariant 3 holds
+		assert!(Approvals::<Test>::get()
+			.iter()
+			.all(|proposal_index| { Proposals::<Test>::contains_key(proposal_index) }));
+		// Break invariant 3 by adding another key to `Approvals`
+		let mut approvals_modified = Approvals::<Test>::get();
+		approvals_modified.try_push(2).unwrap();
+		Approvals::<Test>::put(approvals_modified);
+		// Invariant 3 should be violated
+		assert_eq!(
+			Treasury::do_try_state(),
+			Err(Other("Proposal indices in `Approvals` must also be contained in `Proposals`."))
+		);
+	});
+}
+
+#[test]
+fn try_state_spends_invariant_1_works() {
+	ExtBuilder::default().build().execute_with(|| {
+		use frame_support::pallet_prelude::DispatchError::Other;
+		// Propose and approve a spend
+		assert_ok!({
+			Treasury::spend(RuntimeOrigin::signed(10), Box::new(1), 1, Box::new(6), None)
+		});
+		assert_eq!(Spends::<Test>::iter().count(), 1);
+		assert_eq!(SpendCount::<Test>::get(), 1);
+		// Check invariant 1 holds
+		assert!(SpendCount::<Test>::get() as usize >= Spends::<Test>::iter().count());
+		// Break invariant 1 by decreasing `SpendCount`
+		SpendCount::<Test>::put(0);
+		// Invariant 1 should be violated
+		assert_eq!(
+			Treasury::do_try_state(),
+			Err(Other("Actual number of spends exceeds `SpendCount`."))
+		);
+	});
+}
+
+#[test]
+fn try_state_spends_invariant_2_works() {
+	ExtBuilder::default().build().execute_with(|| {
+		use frame_support::pallet_prelude::DispatchError::Other;
+		// Propose and approve a spend
+		assert_ok!({
+			Treasury::spend(RuntimeOrigin::signed(10), Box::new(1), 1, Box::new(6), None)
+		});
+		assert_eq!(Spends::<Test>::iter().count(), 1);
+		let current_spend_count = SpendCount::<Test>::get();
+		assert_eq!(current_spend_count, 1);
+		// Check invariant 2 holds
+		assert!(
+			Spends::<Test>::iter_keys()
+			.all(|spend_index| {
+					spend_index < current_spend_count
+			})
+		);
+		// Break invariant 2 by inserting the spend under key = 1
+		let spend = Spends::<Test>::take(0).unwrap();
+		Spends::<Test>::insert(1, spend);
+		// Invariant 2 should be violated
+		assert_eq!(
+			Treasury::do_try_state(),
+			Err(Other("`SpendCount` should by strictly greater than any SpendIndex used as a key for `Spends`."))
+		);
+	});
+}
+
+#[test]
+fn try_state_spends_invariant_3_works() {
+	ExtBuilder::default().build().execute_with(|| {
+		use frame_support::pallet_prelude::DispatchError::Other;
+		// Propose and approve a spend
+		assert_ok!({
+			Treasury::spend(RuntimeOrigin::signed(10), Box::new(1), 1, Box::new(6), None)
+		});
+		assert_eq!(Spends::<Test>::iter().count(), 1);
+		let current_spend_count = SpendCount::<Test>::get();
+		assert_eq!(current_spend_count, 1);
+		// Check invariant 3 holds
+		assert!(Spends::<Test>::iter_values()
+			.all(|SpendStatus { valid_from, expire_at, .. }| { valid_from < expire_at }));
+		// Break invariant 3 by reversing spend.expire_at and spend.valid_from
+		let spend = Spends::<Test>::take(0).unwrap();
+		Spends::<Test>::insert(
+			0,
+			SpendStatus { valid_from: spend.expire_at, expire_at: spend.valid_from, ..spend },
+		);
+		// Invariant 3 should be violated
+		assert_eq!(
+			Treasury::do_try_state(),
+			Err(Other("Spend cannot expire before it becomes valid."))
+		);
 	});
 }

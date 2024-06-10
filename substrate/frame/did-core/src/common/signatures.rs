@@ -50,10 +50,14 @@ impl SigValue {
 
 		let result = match (public_key, self) {
 			(PublicKey::Sr25519(pk_bytes), SigValue::Sr25519(sig_bytes)) => {
-				verify!(message, sig_bytes, pk_bytes, sr25519::Signature, sr25519::Public)
+				let sig = sr25519::Signature::from(sig_bytes.0);
+				let pk = sr25519::Public::from(pk_bytes.0);
+				sig.verify(message, &pk)
 			},
 			(PublicKey::Ed25519(pk_bytes), SigValue::Ed25519(sig_bytes)) => {
-				verify!(message, sig_bytes, pk_bytes, ed25519::Signature, ed25519::Public)
+				let sig = ed25519::Signature::from(sig_bytes.0);
+				let pk = ed25519::Public::from(pk_bytes.0);
+				sig.verify(message, &pk)
 			},
 			_ => Err(VerificationError::IncompatibleKey(public_key.clone(), self.clone()))?,
 		};
@@ -71,21 +75,25 @@ impl SigValue {
 }
 
 impl From<ed25519::Signature> for SigValue {
-	fn from(ed25519::Signature(sig): ed25519::Signature) -> Self {
-		SigValue::Ed25519(sig.into())
+	fn from(value: ed25519::Signature) -> Self {
+		let bytes: [u8; ed25519::SIGNATURE_SERIALIZED_SIZE] = value.into();
+		SigValue::Ed25519(Bytes64(bytes))
 	}
 }
 
 impl From<sr25519::Signature> for SigValue {
-	fn from(sr25519::Signature(sig): sr25519::Signature) -> Self {
-		SigValue::Sr25519(sig.into())
+	fn from(value: sr25519::Signature) -> Self {
+		let bytes: [u8; sr25519::SIGNATURE_SERIALIZED_SIZE] = value.into();
+		SigValue::Sr25519(Bytes64(bytes))
 	}
 }
 
 // Weight for Sr25519 sig verification
-pub const SR25519_WEIGHT: Weight = Weight::from_ref_time(140_000_000);
+// TODO: proof size
+pub const SR25519_WEIGHT: Weight = Weight::from_parts(140_000_000, 0);
 // Weight for Ed25519 sig verification
-pub const ED25519_WEIGHT: Weight = Weight::from_ref_time(152_000_000);
+// TODO: proof size
+pub const ED25519_WEIGHT: Weight = Weight::from_parts(152_000_000, 0);
 
 #[cfg(test)]
 mod tests {

@@ -26,7 +26,7 @@ use sp_std::fmt::Debug;
 use super::{fungible, fungibles, Balance, Preservation::Expendable};
 
 /// Can be implemented by `PayFromAccount` using a `fungible` impl, but can also be implemented with
-/// XCM/MultiAsset and made generic over assets.
+/// XCM/Asset and made generic over assets.
 pub trait Pay {
 	/// The type by which we measure units of the currency in which we make payments.
 	type Balance: Balance;
@@ -115,7 +115,7 @@ where
 
 /// Simple implementation of `Pay` for assets which makes a payment from a "pot" - i.e. a single
 /// account.
-pub struct PayAssetFromAccount<F, A>(sp_std::marker::PhantomData<(F, A)>);
+pub struct PayAssetFromAccount<F, A>(core::marker::PhantomData<(F, A)>);
 impl<A, F> frame_support::traits::tokens::Pay for PayAssetFromAccount<F, A>
 where
 	A: TypedGet,

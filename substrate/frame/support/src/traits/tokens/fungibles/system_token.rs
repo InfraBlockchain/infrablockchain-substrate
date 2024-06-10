@@ -1,4 +1,3 @@
-use softfloat::F64;
 use sp_runtime::{
 	infra::{Fiat, RemoteAssetMetadata},
 	DispatchError,
@@ -12,7 +11,7 @@ use super::metadata;
 /// Interface for inspecting System Token
 pub trait Inspect<AccountId>: super::Inspect<AccountId> {
 	/// Associate type of weight for System Token
-	type SystemTokenWeight: Balance + From<F64>;
+	type SystemTokenWeight: Balance;
 
 	/// Returns true if the asset is a system token which refers to `is_sufficient = true`
 	fn is_system_token(asset: &Self::AssetId) -> bool;

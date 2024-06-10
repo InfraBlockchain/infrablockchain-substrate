@@ -24,9 +24,8 @@ pub struct SystemTokenOracle;
 impl SystemTokenOracleInterface for SystemTokenOracle {
 	fn submit_exchange_rates(exchange_rates: Vec<(Fiat, ExchangeRate)>) {
 		use crate::oracle::SystemTokenManagerCalls::UpdateExchangeRates;
-		let update_exchange_rate_call = RelayRuntimePallets::SystemTokenManager(
-			UpdateExchangeRates(exchange_rates),
-		);
+		let update_exchange_rate_call =
+			RelayRuntimePallets::SystemTokenManager(UpdateExchangeRates(exchange_rates));
 		let message = Xcm(vec![
 			Instruction::UnpaidExecution {
 				weight_limit: WeightLimit::Unlimited,
@@ -39,7 +38,7 @@ impl SystemTokenOracleInterface for SystemTokenOracle {
 			},
 		]);
 
-		match InfraXcm::send_xcm(Here, MultiLocation::parent(), message.clone()) {
+		match InfraXcm::send_xcm(Here, Location::parent(), message.clone()) {
 			Ok(_) => log::info!(
 				target: "runtime::system-token-oracle",
 				"Instruction to `exchange rate` sent successfully."

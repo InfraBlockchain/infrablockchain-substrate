@@ -18,14 +18,12 @@
 use codec::{Decode, Encode, MaxEncodedLen};
 use core::ops::{Add, AddAssign, Div, Mul, Sub, SubAssign};
 use sp_arithmetic::traits::{Bounded, CheckedAdd, CheckedSub, Zero};
-use sp_debug_derive::RuntimeDebug;
 
 use super::*;
 
-#[derive(
-	Encode, Decode, MaxEncodedLen, TypeInfo, Eq, PartialEq, Copy, Clone, RuntimeDebug, Default,
-)]
+#[derive(Encode, Decode, MaxEncodedLen, TypeInfo, Eq, PartialEq, Copy, Clone, Debug, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 pub struct Weight {
 	#[codec(compact)]
 	/// The weight of computational time used based on some reference hardware.
@@ -51,12 +49,6 @@ impl Weight {
 	/// Return the reference time part of the weight.
 	pub const fn ref_time(&self) -> u64 {
 		self.ref_time
-	}
-
-	/// Construct only ref time [`Weight`] from only having a ref time part.
-	/// ToDo: This call should be repaced with from_parts.
-	pub const fn from_ref_time(ref_time: u64) -> Self {
-		Self { ref_time, proof_size: 0 }
 	}
 
 	/// Return the storage size part of the weight.
