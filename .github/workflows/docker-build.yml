@@ -1,0 +1,93 @@
+name: Docker build
+
+# Controls when the action will run.
+on:
+    # Triggers the workflow on push or pull request events but only for the master branch
+    push:
+        branches: [master, docker-build]
+
+    # Allows you to run this workflow manually from the Actions tab
+    workflow_dispatch:
+
+env:
+    AWS_REGION: us-east-1
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+    docker:
+        # The type of runner that the job will run on
+        runs-on: ubuntu-22.04
+
+        # Steps represent a sequence of tasks that will be executed as part of the job
+        steps:
+            # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+            - uses: actions/checkout@v2
+
+            - uses: actions/cache@v3
+              with:
+                  path: |
+                      ~/.cargo/registry
+                      ~/.cargo/git
+                      target
+                  key: ${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
+                  restore-keys: |
+                      ${{ runner.os }}-cargo-build-
+                      ${{ runner.os }}-cargo-
+                      ${{ runner.os }}-
+
+            - name: Set-Up
+              run: sudo apt install -y git clang curl libssl-dev llvm libudev-dev protobuf-compiler
+
+            - name: Install Rustup
+              run: |
+                  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+                  source ~/.cargo/env
+                  rustup default nightly-2024-06-01
+                  rustup target add wasm32-unknown-unknown
+
+            - name: Check Build
+              run: |
+                  cargo build --release
+
+            - name: Configure AWS credentials
+              uses: aws-actions/configure-aws-credentials@v1
+              with:
+                  aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }} # 나의 ECR 정보
+                  aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                  aws-region: ${{ env.AWS_REGION }}
+
+            - name: Login to Amazon ECR
+              id: login-ecr
+              uses: aws-actions/amazon-ecr-login@v1
+
+            - name: Docker login
+              id: login-docker
+              run: |
+                  aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/v8x3j0k5
+
+            - name: Build, tag, and push image to Amazon ECR (relay)
+              id: build-image-relay
+              env:
+                  ECR_REGISTRY: public.ecr.aws/v8x3j0k5/infra-relaychain
+                  IMAGE_TAG: master
+              run: |
+                  # Build a docker container and
+                  # push it to ECR so that it can
+                  # be deployed to ECS.
+                  docker system prune -a -f
+                  docker build -f docker/dockerfiles/infra-relaychain/injected_infra-relaychain_builder.Dockerfile -t public.ecr.aws/v8x3j0k5/infra-relaychain:$IMAGE_TAG .
+                  docker push public.ecr.aws/v8x3j0k5/infra-relaychain:$IMAGE_TAG
+                  echo "::set-output name=image::public.ecr.aws/v8x3j0k5/infra-relaychain:$IMAGE_TAG"
+
+            - name: Build, tag, and push image to Amazon ECR (para)
+              id: build-image-para
+              env:
+                  ECR_REGISTRY: public.ecr.aws/v8x3j0k5/infra-para
+                  IMAGE_TAG: master
+              run: |
+                  # Build a docker container and
+                  # push it to ECR so that it can
+                  # be deployed to ECS.
+                  docker build -f docker/dockerfiles/infra-parachain/injected_infra-parachain.Dockerfile -t public.ecr.aws/v8x3j0k5/infra-para:$IMAGE_TAG --progress=plain . 
+                  docker push public.ecr.aws/v8x3j0k5/infra-para:$IMAGE_TAG
+                  echo "::set-output name=image::public.ecr.aws/v8x3j0k5/infra-para:$IMAGE_TAG"
