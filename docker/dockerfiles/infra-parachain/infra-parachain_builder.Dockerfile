@@ -22,6 +22,7 @@ RUN rustup default nightly-2024-06-01
 
 # install wasm toolchain for substrate
 RUN rustup target add wasm32-unknown-unknown --toolchain nightly-2024-06-01
+RUN rustup component add rust-src --toolchain nightly-2024-06-01
 
 #compiler ENV
 ENV CC clang
