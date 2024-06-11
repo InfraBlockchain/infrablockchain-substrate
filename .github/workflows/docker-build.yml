@@ -43,7 +43,8 @@ jobs:
                   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
                   source ~/.cargo/env
                   rustup default nightly-2024-06-01
-                  rustup target add wasm32-unknown-unknown
+                  rustup target add wasm32-unknown-unknown --toolchain nightly-2024-06-01
+                  rustup component add rust-src --toolchain nightly-2024-06-01
 
             - name: Check Build
               run: |
