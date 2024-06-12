@@ -463,7 +463,7 @@ members = [
     "templates/parachain/pallets/template",
     "templates/parachain/runtime",
 ]
-default-members = ["polkadot", "cumulus/infra-parachain", "substrate/bin/node/runtime"]
+default-members = ["polkadot", "cumulus/infra-parachain"]
 
 [workspace.lints.rust]
 suspicious_double_ref_op = { level = "allow", priority = 2 }

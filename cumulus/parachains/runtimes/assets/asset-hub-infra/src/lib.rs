@@ -652,20 +652,8 @@ impl parachain_info::Config for Runtime {}
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
 
-parameter_types! {
-	/// The asset ID for the asset that we use to pay for message delivery fees.
-	// TODO: System Token
-	pub FeeAssetId: AssetId = AssetId(xcm_config::TokenLocation::get());
-	/// The base fee for the message delivery fees.
-	pub const BaseDeliveryFee: u128 = CENTS.saturating_mul(3);
-}
-
-pub type PriceForSiblingParachainDelivery = polkadot_runtime_common::xcm_sender::ExponentialPrice<
-	FeeAssetId,
-	BaseDeliveryFee,
-	TransactionByteFee,
-	XcmpQueue,
->;
+pub type PriceForSiblingParachainDelivery =
+	polkadot_runtime_common::xcm_sender::NoPriceForMessageDelivery<cumulus_primitives_core::ParaId>;
 
 impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type WeightInfo = weights::cumulus_pallet_xcmp_queue::WeightInfo<Runtime>;
