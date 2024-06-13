@@ -463,7 +463,6 @@ members = [
     "templates/parachain/pallets/template",
     "templates/parachain/runtime",
 ]
-#default-members = ["polkadot", "cumulus/infra-parachain", "substrate/bin/node/runtime"]
 default-members = ["polkadot", "cumulus/infra-parachain"]
 
 [workspace.lints.rust]
